@@ -254,13 +254,15 @@
             <span class="close-btn" onclick="closeModal('authModal')">&times;</span>
             <h2 id="authTitle" style="text-align:center; color:white;">Вхід в Кабінет</h2>
             <form id="authForm" style="margin-top: 30px;">
-                <input type="email" id="email" class="form-input" placeholder="Електронна пошта" required>
+                <input type="email" id="email" class="form-input" placeholder="Електронна пошта (@gmail.com)" required>
                 <input type="password" id="pass" class="form-input" placeholder="Пароль" required>
                 
                 <div id="regFields">
                     <input type="text" id="regName" class="form-input" placeholder="Ім'я та Прізвище (NickName)">
                     <input type="text" id="regRank" class="form-input" placeholder="Ваше звання/посада">
                     <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
+                    <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
+                    <input type="text" id="regPassport" class="form-input" placeholder="Посилання на паспорт (Imgur/PostImage)">
                 </div>
 
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
@@ -292,7 +294,6 @@
             }
         }
 
-        // Перемикач режимів входу/реєстрації
         let isLoginMode = true;
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
@@ -356,32 +357,47 @@
             const errorElement = document.getElementById('authError');
             const loginBtn = document.getElementById('loginBtn');
 
+            // ВАЛІДАЦІЯ GMAIL
+            if (!email.toLowerCase().endsWith("@gmail.com")) {
+                errorElement.innerText = "Помилка: Використовуйте тільки пошту @gmail.com";
+                errorElement.style.display = "block";
+                return;
+            }
+
             errorElement.style.display = "none";
             loginBtn.disabled = true;
 
             try {
                 if (isLoginMode) {
-                    // ЛОГІКА ВХОДУ
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
-                    // ЛОГІКА РЕЄСТРАЦІЇ
                     const name = document.getElementById('regName').value.trim();
                     const rank = document.getElementById('regRank').value.trim();
                     const gameID = document.getElementById('regGameID').value.trim();
+                    const discord = document.getElementById('regDiscord').value.trim();
+                    const passport = document.getElementById('regPassport').value.trim();
 
-                    if (!name || !rank || !gameID) {
+                    if (!name || !rank || !gameID || !discord || !passport) {
                         throw new Error("Будь ласка, заповніть всі поля реєстрації!");
+                    }
+
+                    // ПЕРЕВІРКА ПОСИЛАННЯ
+                    const validLinks = ["imgur.com", "postimg.cc", "postimages.org"];
+                    const isLinkValid = validLinks.some(link => passport.includes(link));
+                    if (!isLinkValid) {
+                        throw new Error("Паспорт має бути посиланням на Imgur або PostImages!");
                     }
 
                     const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
                     const user = userCredential.user;
 
-                    // Запис у базу
                     await setDoc(doc(db, "users", user.uid), {
                         name: name,
                         rank: rank,
                         gameID: Number(gameID),
+                        discord: discord,
+                        passport: passport,
                         reprimands: 0,
                         warns: 0,
                         role: "user"
@@ -390,7 +406,6 @@
                     window.location.href = "cabinet.html";
                 }
             } catch (error) {
-                console.error("Auth Error:", error);
                 errorElement.innerText = "Помилка: " + (error.message.includes('auth/') ? "Перевірте дані" : error.message);
                 errorElement.style.display = "block";
                 loginBtn.disabled = false;
