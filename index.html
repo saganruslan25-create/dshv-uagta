@@ -162,7 +162,7 @@
             <a onclick="openModal('aboutModal'); toggleMenu()">Від нас</a>
             <a onclick="openModal('reqModal'); toggleMenu()">Вимоги</a>
             <a href="https://ukraine-gta.com.ua/uk/" target="_blank" style="opacity: 0.5; font-size: 12px;">Сайт Проекту</a>
-            <a onclick="openModal('authModal'); toggleMenu()" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary); box-shadow: none;">Кабінет</a>
+            <a onclick="handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary); box-shadow: none;">Кабінет</a>
             <a href="#join" class="btn-accent" onclick="toggleMenu()">Вступити</a>
         </div>
     </nav>
@@ -279,13 +279,23 @@
         }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; document.body.style.overflow = 'hidden'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+        // Логіка кліку по кнопці Кабінет
+        function handleCabinetClick() {
+            const btn = document.getElementById('cabinetBtn');
+            if (btn.innerText === "КАБІНЕТ") {
+                openModal('authModal');
+            } else {
+                window.location.href = "cabinet.html";
+            }
+        }
     </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ТВОЇ ДАНІ, ЯКІ Я ВЗЯВ З ФОТО
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXHmS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -298,6 +308,21 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Перевірка стану входу
+        onAuthStateChanged(auth, async (user) => {
+            const cabinetBtn = document.getElementById('cabinetBtn');
+            if (user) {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    cabinetBtn.innerText = docSnap.data().name.toUpperCase();
+                }
+            } else {
+                cabinetBtn.innerText = "КАБІНЕТ";
+            }
+        });
 
         // ЛОГІКА ВХОДУ
         document.getElementById('loginBtn').addEventListener('click', async () => {
@@ -306,13 +331,10 @@
             const errorElement = document.getElementById('authError');
 
             try {
-                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-                alert('Успішний вхід! Вітаємо, боєць.');
-                closeModal('authModal');
-                // Тут можна додати логіку показу статистики замість кнопки входу
+                await signInWithEmailAndPassword(auth, email, pass);
+                window.location.href = "cabinet.html"; // Перекидаємо в кабінет після входу
             } catch (error) {
-                console.error(error);
-                errorElement.innerText = "Помилка входу: перевірте пошту та пароль (або створіть користувача в Firebase)";
+                errorElement.innerText = "Помилка входу: перевірте дані";
                 errorElement.style.display = "block";
             }
         });
