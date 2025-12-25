@@ -150,6 +150,10 @@
         .m-list li b { color: var(--primary-bright); min-width: 25px; }
         .close-btn { position: absolute; top: 35px; right: 40px; font-size: 40px; cursor: pointer; color: var(--primary); }
 
+        /* Стилі для перемикача реєстрації */
+        #regFields { display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+        .switch-auth { color: var(--text-gray); font-size: 13px; cursor: pointer; display: block; margin-top: 20px; text-align: center; text-decoration: underline; }
+
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -246,14 +250,23 @@
     </div>
 
     <div class="modal-overlay" id="authModal">
-        <div class="modal-content" style="max-width: 400px;">
+        <div class="modal-content" style="max-width: 450px;">
             <span class="close-btn" onclick="closeModal('authModal')">&times;</span>
-            <h2 style="text-align:center; color:white;">Вхід в Кабінет</h2>
+            <h2 id="authTitle" style="text-align:center; color:white;">Вхід в Кабінет</h2>
             <form id="authForm" style="margin-top: 30px;">
                 <input type="email" id="email" class="form-input" placeholder="Електронна пошта" required>
                 <input type="password" id="pass" class="form-input" placeholder="Пароль" required>
+                
+                <div id="regFields">
+                    <input type="text" id="regName" class="form-input" placeholder="Ім'я та Прізвище (NickName)">
+                    <input type="text" id="regRank" class="form-input" placeholder="Ваше звання/посада">
+                    <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
+                </div>
+
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
                 <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none;"></p>
+                
+                <span class="switch-auth" id="switchAuthBtn" onclick="toggleAuthMode()">Ще не маєте акаунту? Реєстрація</span>
             </form>
         </div>
     </div>
@@ -278,12 +291,34 @@
                 window.location.href = "cabinet.html";
             }
         }
+
+        // Перемикач режимів входу/реєстрації
+        let isLoginMode = true;
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            const regFields = document.getElementById('regFields');
+            const authTitle = document.getElementById('authTitle');
+            const loginBtn = document.getElementById('loginBtn');
+            const switchBtn = document.getElementById('switchAuthBtn');
+
+            if (isLoginMode) {
+                regFields.style.display = 'none';
+                authTitle.innerText = 'Вхід в Кабінет';
+                loginBtn.innerText = 'Увійти';
+                switchBtn.innerText = 'Ще не маєте акаунту? Реєстрація';
+            } else {
+                regFields.style.display = 'block';
+                authTitle.innerText = 'Реєстрація бійця';
+                loginBtn.innerText = 'Створити профіль';
+                switchBtn.innerText = 'Вже є акаунт? Увійти';
+            }
+        }
     </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -312,38 +347,55 @@
             }
         });
 
-        // ВИПРАВЛЕНА ЛОГІКА ВХОДУ
         const authForm = document.getElementById('authForm');
         authForm.addEventListener('submit', async (e) => {
-            e.preventDefault(); // ФІКС: Зупиняємо перезавантаження сторінки!
+            e.preventDefault();
 
-            const email = document.getElementById('email').value.trim(); // ФІКС: Прибираємо пробіли
+            const email = document.getElementById('email').value.trim();
             const pass = document.getElementById('pass').value.trim();
             const errorElement = document.getElementById('authError');
             const loginBtn = document.getElementById('loginBtn');
 
-            loginBtn.innerText = "ВХІД...";
+            errorElement.style.display = "none";
             loginBtn.disabled = true;
 
             try {
-                await signInWithEmailAndPassword(auth, email, pass);
-                window.location.href = "cabinet.html";
-            } catch (error) {
-                console.error("Firebase Error:", error.code);
-                
-                // Alert покаже справжню причину, якщо вхід заблоковано ключем
-                if (error.code === 'auth/network-request-failed') {
-                    alert("Помилка мережі. Перевірте Authorized Domains у Firebase.");
-                }
+                if (isLoginMode) {
+                    // ЛОГІКА ВХОДУ
+                    await signInWithEmailAndPassword(auth, email, pass);
+                    window.location.href = "cabinet.html";
+                } else {
+                    // ЛОГІКА РЕЄСТРАЦІЇ
+                    const name = document.getElementById('regName').value.trim();
+                    const rank = document.getElementById('regRank').value.trim();
+                    const gameID = document.getElementById('regGameID').value.trim();
 
-                errorElement.innerText = "Помилка входу: перевірте дані";
+                    if (!name || !rank || !gameID) {
+                        throw new Error("Будь ласка, заповніть всі поля реєстрації!");
+                    }
+
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    const user = userCredential.user;
+
+                    // Запис у базу
+                    await setDoc(doc(db, "users", user.uid), {
+                        name: name,
+                        rank: rank,
+                        gameID: Number(gameID),
+                        reprimands: 0,
+                        warns: 0,
+                        role: "user"
+                    });
+
+                    window.location.href = "cabinet.html";
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+                errorElement.innerText = "Помилка: " + (error.message.includes('auth/') ? "Перевірте дані" : error.message);
                 errorElement.style.display = "block";
-                
-                loginBtn.innerText = "УВІЙТИ";
                 loginBtn.disabled = false;
             }
         });
     </script>
 </body>
 </html>
-
