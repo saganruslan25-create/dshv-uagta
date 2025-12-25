@@ -11,16 +11,15 @@
         nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 8%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: fixed; width: 100%; box-sizing: border-box; z-index: 100; border-bottom: 1px solid rgba(34,197,94,0.1); }
         .logo-box { background: var(--primary); color: black; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-decoration: none; }
         .section { padding: 120px 5% 60px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: var(--card-bg); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.06); width: 100%; max-width: 550px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        .card { background: var(--card-bg); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.06); width: 100%; max-width: 550px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); display: block; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
         .stat-box { background: rgba(255,255,255,0.04); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
         .stat-val { display: block; font-size: 24px; font-weight: 800; color: var(--primary); }
         .stat-label { font-size: 11px; color: var(--text-gray); text-transform: uppercase; }
         .admin-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
-        .admin-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; max-width: 250px; }
-        .btn-sm { padding: 6px 10px; font-size: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; color: white; transition: 0.2s; }
-        .btn-sm:hover { opacity: 0.8; }
-        #authCard, #userProfile, #loading { display: none; }
+        .admin-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
+        .btn-sm { padding: 8px 12px; font-size: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; color: white; }
+        #userProfile, #loading { display: none; }
     </style>
 </head>
 <body>
@@ -36,20 +35,20 @@
     </div>
 
     <div class="card" id="userProfile">
-        <h2 id="uName" style="margin:0">---</h2>
-        <p id="uRank" style="color:var(--primary); font-weight:700; margin-top:5px;">---</p>
+        <h2 id="uName" style="margin:0">Завантаження...</h2>
+        <p id="uRank" style="color:var(--primary); font-weight:700; margin-top:5px;">Посада</p>
         
         <div class="stat-grid">
             <div class="stat-box"><span class="stat-val" id="uID">0</span><span class="stat-label">ID ГРАВЦЯ</span></div>
-            <div class="stat-box"><span class="stat-val" id="uStatus">Активний</span><span class="stat-label">СТАТУС</span></div>
+            <div class="stat-box"><span class="stat-val" id="uStatus" style="color: #3b82f6;">Активний</span><span class="stat-label">СТАТУС</span></div>
             <div class="stat-box"><span class="stat-val" id="uWarns" style="color: var(--warning);">0</span><span class="stat-label">ПОПЕРЕДЖЕННЯ</span></div>
             <div class="stat-box"><span class="stat-val" id="uRep" style="color: var(--danger);">0</span><span class="stat-label">ДОГАНИ</span></div>
         </div>
 
-        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 10px; border-radius: 10px; cursor:pointer;">Вийти з системи</button>
+        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 10px; border-radius: 10px; cursor:pointer;">Вийти</button>
 
         <div id="adminArea" style="display:none; margin-top:30px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
-            <h3 style="color:var(--primary); font-size:14px; margin-bottom: 15px;">💎 ПАНЕЛЬ УПРАВЛІННЯ</h3>
+            <h3 style="color:var(--primary); font-size:14px; margin-bottom: 15px;">💎 ПАНЕЛЬ АДМІНІСТРАТОРА</h3>
             <div id="allUsersList"></div>
         </div>
     </div>
@@ -80,26 +79,23 @@
     });
 
     async function loadData(uid) {
-        const s = await getDoc(doc(db, "name", uid)); // Використовуємо твою назву колекції "name"
+        // ПЕРЕВІРКА: чи твоя колекція в Firebase називається "name" чи "users"?
+        // Якщо "users", то заміни "name" на "users" нижче.
+        const s = await getDoc(doc(db, "name", uid)); 
         if (s.exists()) {
             const d = s.data();
             document.getElementById('userProfile').style.display = 'block';
-            document.getElementById('uName').innerText = d.name;
-            document.getElementById('uRank').innerText = d.rank;
-            document.getElementById('uID').innerText = d.gameID;
+            document.getElementById('uName').innerText = d.name || "Без імені";
+            document.getElementById('uRank').innerText = d.rank || "Без посади";
+            document.getElementById('uID').innerText = d.gameID || "0";
             
             const reps = d.reprimands || 0;
             document.getElementById('uRep').innerText = reps;
             document.getElementById('uWarns').innerText = d.warns || 0;
 
-            // Логіка статусу (Авто-звільнення при 3 доганах)
-            const statusEl = document.getElementById('uStatus');
             if (reps >= 3) {
-                statusEl.innerText = "ЗВІЛЬНЕНИЙ";
-                statusEl.style.color = "var(--danger)";
-            } else {
-                statusEl.innerText = "Активний";
-                statusEl.style.color = "#3b82f6";
+                document.getElementById('uStatus').innerText = "ЗВІЛЬНЕНИЙ";
+                document.getElementById('uStatus').style.color = "var(--danger)";
             }
 
             if (d.role === 'admin') { 
@@ -121,30 +117,27 @@
 
             cont.innerHTML += `
                 <div class="admin-item">
-                    <div style="font-size:13px;"><b>${u.name}</b><br><small color="#888">${u.rank}</small></div>
+                    <div><b>${u.name}</b><br><small>${u.rank}</small></div>
                     <div class="admin-btns">
-                        <button class="btn-sm" style="background:var(--danger);" onclick="updateStat('${id}','reprimands',${r+1})">+ Д</button>
-                        <button class="btn-sm" style="background:#475569;" onclick="updateStat('${id}','reprimands',${Math.max(0,r-1)})">- Д</button>
-                        <button class="btn-sm" style="background:var(--warning);" onclick="updateStat('${id}','warns',${w+1})">+ П</button>
-                        <button class="btn-sm" style="background:#475569;" onclick="updateStat('${id}','warns',${Math.max(0,w-1)})">- П</button>
+                        <button class="btn-sm" style="background:var(--danger);" onclick="editStat('${id}','reprimands',${r+1})">+ Д</button>
+                        <button class="btn-sm" style="background:#475569;" onclick="editStat('${id}','reprimands',${Math.max(0,r-1)})">- Д</button>
+                        <button class="btn-sm" style="background:var(--warning);" onclick="editStat('${id}','warns',${w+1})">+ П</button>
+                        <button class="btn-sm" style="background:#475569;" onclick="editStat('${id}','warns',${Math.max(0,w-1)})">- П</button>
                         <button class="btn-sm" style="background:#3b82f6;" onclick="changeRank('${id}')">Ранг</button>
                     </div>
                 </div>`;
         });
     }
 
-    window.updateStat = async (id, field, val) => {
+    window.editStat = async (id, field, val) => {
         await updateDoc(doc(db, "name", id), { [field]: val });
         renderList();
         if(id === auth.currentUser.uid) loadData(id);
     };
 
     window.changeRank = async (id) => {
-        const newR = prompt("Введіть нову посаду:");
-        if (newR) { 
-            await updateDoc(doc(db, "name", id), { rank: newR }); 
-            renderList(); 
-        }
+        const newR = prompt("Нова посада:");
+        if (newR) { await updateDoc(doc(db, "name", id), { rank: newR }); renderList(); }
     };
 
     window.logout = () => { signOut(auth).then(() => window.location.href = "index.html"); };
