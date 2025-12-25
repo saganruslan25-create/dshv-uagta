@@ -32,19 +32,19 @@
 
 <section class="section">
     <div id="loading" style="display: block; text-align: center;">
-        <p style="color: var(--text-gray)">Завантаження даних...</p>
+        <p style="color: var(--text-gray)">Синхронізація з базою даних ДШВ...</p>
     </div>
 
     <div class="card" id="authCard">
-        <h2>Вхід в Кабінет</h2>
+        <h2>Вхід в систему</h2>
         <input type="email" id="email" class="form-input" placeholder="Електронна пошта">
         <input type="password" id="pass" class="form-input" placeholder="Пароль">
-        <button class="btn-submit" id="loginBtn">УВІЙТИ</button>
+        <button class="btn-submit" id="loginBtn">АВТОРИЗУВАТИСЯ</button>
     </div>
 
     <div class="card" id="userProfile">
-        <h2 id="uName" style="margin:0">Ім'я Прізвище</h2>
-        <p id="uRank" style="color:var(--primary); font-weight:700; margin-top:5px;">Посада</p>
+        <h2 id="uName" style="margin:0">Завантаження...</h2>
+        <p id="uRank" style="color:var(--primary); font-weight:700; margin-top:5px;">Завантаження посади...</p>
         
         <div class="stat-grid">
             <div class="stat-box"><span class="stat-val" id="uID">0</span><span class="stat-label">ID ГРАВЦЯ</span></div>
@@ -53,10 +53,10 @@
             <div class="stat-box"><span class="stat-val" id="uRep" style="color: var(--danger);">0</span><span class="stat-label">ДОГАНИ</span></div>
         </div>
 
-        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 10px; border-radius: 10px; cursor:pointer;">Вийти</button>
+        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 10px; border-radius: 10px; cursor:pointer; font-weight: bold;">Завершити сесію</button>
 
         <div id="adminArea" style="display:none; margin-top:30px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
-            <h3 style="color:var(--primary); font-size:14px; margin-bottom: 15px;">💎 ПАНЕЛЬ АДМІНІСТРАТОРА</h3>
+            <h3 style="color:var(--primary); font-size:14px; margin-bottom: 15px;">💎 ПАНЕЛЬ УПРАВЛІННЯ (ADMIN)</h3>
             <div id="allUsersList"></div>
         </div>
     </div>
@@ -68,7 +68,7 @@
     import { getFirestore, doc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00", // Твій робочий ключ
         authDomain: "dsv-gta.firebaseapp.com",
         projectId: "dsv-gta",
         storageBucket: "dsv-gta.firebasestorage.app",
@@ -80,33 +80,59 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // Слідкуємо за авторизацією
     onAuthStateChanged(auth, (user) => {
         document.getElementById('loading').style.display = 'none';
-        if (user) { loadData(user.uid); } 
-        else { document.getElementById('authCard').style.display = 'block'; document.getElementById('userProfile').style.display = 'none'; }
+        if (user) { 
+            loadData(user.uid); 
+        } else { 
+            document.getElementById('authCard').style.display = 'block'; 
+            document.getElementById('userProfile').style.display = 'none'; 
+        }
     });
 
+    // Логіка кнопки входу
     document.getElementById('loginBtn').onclick = async () => {
         const e = document.getElementById('email').value;
         const p = document.getElementById('pass').value;
-        try { await signInWithEmailAndPassword(auth, e, p); } catch (err) { alert("Помилка: " + err.message); }
+        try { 
+            await signInWithEmailAndPassword(auth, e, p); 
+        } catch (err) { 
+            alert("Помилка доступу: " + err.message); 
+        }
     };
 
+    // Завантаження даних бійця з Firestore
     async function loadData(uid) {
-        const s = await getDoc(doc(db, "users", uid));
-        if (s.exists()) {
-            const d = s.data();
-            document.getElementById('authCard').style.display = 'none';
-            document.getElementById('userProfile').style.display = 'block';
-            document.getElementById('uName').innerText = d.name;
-            document.getElementById('uRank').innerText = d.rank;
-            document.getElementById('uID').innerText = d.gameID;
-            document.getElementById('uWarns').innerText = d.warns || 0;
-            document.getElementById('uRep').innerText = d.reprimands || 0;
-            if (d.role === 'admin') { document.getElementById('adminArea').style.display = 'block'; renderList(); }
+        try {
+            const s = await getDoc(doc(db, "users", uid));
+            if (s.exists()) {
+                const d = s.data();
+                document.getElementById('authCard').style.display = 'none';
+                document.getElementById('userProfile').style.display = 'block';
+                document.getElementById('uName').innerText = d.name || "Невідомий боєць";
+                document.getElementById('uRank').innerText = d.rank || "Без посади";
+                document.getElementById('uID').innerText = d.gameID || "0";
+                document.getElementById('uWarns').innerText = d.warns || 0;
+                document.getElementById('uRep').innerText = d.reprimands || 0;
+                
+                if (d.role === 'admin') { 
+                    document.getElementById('adminArea').style.display = 'block'; 
+                    renderList(); 
+                }
+            } else {
+                // Якщо користувач увійшов, але в базі Firestore його ще не створили
+                document.getElementById('authCard').style.display = 'none';
+                document.getElementById('userProfile').style.display = 'block';
+                document.getElementById('uName').innerText = "Профіль не створено";
+                document.getElementById('uRank').innerText = "Зверніться до адміністрації";
+            }
+        } catch (error) {
+            console.error("Помилка Firestore:", error);
         }
     }
 
+    // Список користувачів для адміна
     async function renderList() {
         const snap = await getDocs(collection(db, "users"));
         const cont = document.getElementById('allUsersList');
@@ -116,16 +142,17 @@
             const id = uDoc.id;
             cont.innerHTML += `
                 <div class="admin-item">
-                    <div><b>${u.name}</b> [ID: ${u.gameID}]<br><small>${u.rank}</small></div>
+                    <div><b>${u.name || 'Анонім'}</b> [ID: ${u.gameID || '?'}]<br><small>${u.rank || 'Рядовий'}</small></div>
                     <div class="admin-btns">
                         <button class="btn-sm" style="background:#ef4444;" onclick="edit('${id}','reprimands',${(u.reprimands||0)+1})">+ Догана</button>
-                        <button class="btn-sm" style="background:#f59e0b;" onclick="edit('${id}','warns',${(u.warns||0)+1})">+ Попередж.</button>
+                        <button class="btn-sm" style="background:#f59e0b;" onclick="edit('${id}','warns',${(u.warns||0)+1})">+ Попередження</button>
                         <button class="btn-sm" style="background:#3b82f6;" onclick="changeRank('${id}')">Ранг</button>
                     </div>
                 </div>`;
         });
     }
 
+    // Функції редагування для адміна
     window.edit = async (id, field, val) => {
         await updateDoc(doc(db, "users", id), { [field]: val });
         renderList();
@@ -133,11 +160,16 @@
     };
 
     window.changeRank = async (id) => {
-        const newR = prompt("Введіть нову посаду:");
-        if (newR) { await updateDoc(doc(db, "users", id), { rank: newR }); renderList(); }
+        const newR = prompt("Введіть нову посаду для бійця:");
+        if (newR) { 
+            await updateDoc(doc(db, "users", id), { rank: newR }); 
+            renderList(); 
+        }
     };
 
-    window.logout = () => { signOut(auth).then(() => location.reload()); };
+    window.logout = () => { 
+        signOut(auth).then(() => location.reload()); 
+    };
 </script>
 </body>
 </html>
