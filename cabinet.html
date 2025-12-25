@@ -6,20 +6,20 @@
     <title>ДШВ | ОСОБИСТИЙ КАБІНЕТ</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        :root { --primary: #22c55e; --bg: #030507; --card-bg: rgba(255, 255, 255, 0.03); --text-gray: #94a3b8; --danger: #ef4444; }
+        :root { --primary: #22c55e; --bg: #030507; --card-bg: rgba(255, 255, 255, 0.03); --text-gray: #94a3b8; --danger: #ef4444; --warning: #f59e0b; }
         body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
         nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 8%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: fixed; width: 100%; box-sizing: border-box; z-index: 100; border-bottom: 1px solid rgba(34,197,94,0.1); }
         .logo-box { background: var(--primary); color: black; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-decoration: none; }
         .section { padding: 120px 5% 60px; display: flex; flex-direction: column; align-items: center; }
         .card { background: var(--card-bg); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.06); width: 100%; max-width: 550px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        .form-input { width: 100%; padding: 15px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; margin-bottom: 15px; box-sizing: border-box; }
-        .btn-submit { width: 100%; background: var(--primary); color: black; padding: 15px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
         .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
         .stat-box { background: rgba(255,255,255,0.04); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
         .stat-val { display: block; font-size: 24px; font-weight: 800; color: var(--primary); }
         .stat-label { font-size: 11px; color: var(--text-gray); text-transform: uppercase; }
-        .admin-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
-        .btn-sm { padding: 8px 12px; font-size: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; color: white; margin: 2px; }
+        .admin-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .admin-btns { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; max-width: 250px; }
+        .btn-sm { padding: 6px 10px; font-size: 10px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; color: white; transition: 0.2s; }
+        .btn-sm:hover { opacity: 0.8; }
         #authCard, #userProfile, #loading { display: none; }
     </style>
 </head>
@@ -27,36 +27,29 @@
 
 <nav>
     <a href="index.html" class="logo-box">ДШВ</a>
-    <div id="navUser" style="font-size: 12px; font-weight: 600; color: var(--primary);">СИСТЕМА УПРАВЛІННЯ</div>
+    <div style="font-size: 12px; font-weight: 600; color: var(--primary);">СИСТЕМА УПРАВЛІННЯ</div>
 </nav>
 
 <section class="section">
     <div id="loading" style="display: block; text-align: center;">
-        <p style="color: var(--text-gray)">Синхронізація з базою даних ДШВ...</p>
-    </div>
-
-    <div class="card" id="authCard">
-        <h2>Вхід в систему</h2>
-        <input type="email" id="email" class="form-input" placeholder="Електронна пошта">
-        <input type="password" id="pass" class="form-input" placeholder="Пароль">
-        <button class="btn-submit" id="loginBtn">АВТОРИЗУВАТИСЯ</button>
+        <p style="color: var(--text-gray)">Синхронізація з базою ДШВ...</p>
     </div>
 
     <div class="card" id="userProfile">
-        <h2 id="uName" style="margin:0">Завантаження...</h2>
-        <p id="uRank" style="color:var(--primary); font-weight:700; margin-top:5px;">Завантаження посади...</p>
+        <h2 id="uName" style="margin:0">---</h2>
+        <p id="uRank" style="color:var(--primary); font-weight:700; margin-top:5px;">---</p>
         
         <div class="stat-grid">
             <div class="stat-box"><span class="stat-val" id="uID">0</span><span class="stat-label">ID ГРАВЦЯ</span></div>
-            <div class="stat-box"><span class="stat-val" style="color: #3b82f6;">Активний</span><span class="stat-label">СТАТУС</span></div>
-            <div class="stat-box"><span class="stat-val" id="uWarns" style="color: #f59e0b;">0</span><span class="stat-label">ПОПЕРЕДЖЕННЯ</span></div>
+            <div class="stat-box"><span class="stat-val" id="uStatus">Активний</span><span class="stat-label">СТАТУС</span></div>
+            <div class="stat-box"><span class="stat-val" id="uWarns" style="color: var(--warning);">0</span><span class="stat-label">ПОПЕРЕДЖЕННЯ</span></div>
             <div class="stat-box"><span class="stat-val" id="uRep" style="color: var(--danger);">0</span><span class="stat-label">ДОГАНИ</span></div>
         </div>
 
-        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 10px; border-radius: 10px; cursor:pointer; font-weight: bold;">Завершити сесію</button>
+        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 10px; border-radius: 10px; cursor:pointer;">Вийти з системи</button>
 
         <div id="adminArea" style="display:none; margin-top:30px; border-top:1px solid rgba(255,255,255,0.1); padding-top:20px;">
-            <h3 style="color:var(--primary); font-size:14px; margin-bottom: 15px;">💎 ПАНЕЛЬ УПРАВЛІННЯ (ADMIN)</h3>
+            <h3 style="color:var(--primary); font-size:14px; margin-bottom: 15px;">💎 ПАНЕЛЬ УПРАВЛІННЯ</h3>
             <div id="allUsersList"></div>
         </div>
     </div>
@@ -64,11 +57,11 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
-        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00", // Твій робочий ключ
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
         authDomain: "dsv-gta.firebaseapp.com",
         projectId: "dsv-gta",
         storageBucket: "dsv-gta.firebasestorage.app",
@@ -80,96 +73,81 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Слідкуємо за авторизацією
     onAuthStateChanged(auth, (user) => {
         document.getElementById('loading').style.display = 'none';
-        if (user) { 
-            loadData(user.uid); 
-        } else { 
-            document.getElementById('authCard').style.display = 'block'; 
-            document.getElementById('userProfile').style.display = 'none'; 
-        }
+        if (user) { loadData(user.uid); } 
+        else { window.location.href = "index.html"; }
     });
 
-    // Логіка кнопки входу
-    document.getElementById('loginBtn').onclick = async () => {
-        const e = document.getElementById('email').value;
-        const p = document.getElementById('pass').value;
-        try { 
-            await signInWithEmailAndPassword(auth, e, p); 
-        } catch (err) { 
-            alert("Помилка доступу: " + err.message); 
-        }
-    };
-
-    // Завантаження даних бійця з Firestore
     async function loadData(uid) {
-        try {
-            const s = await getDoc(doc(db, "users", uid));
-            if (s.exists()) {
-                const d = s.data();
-                document.getElementById('authCard').style.display = 'none';
-                document.getElementById('userProfile').style.display = 'block';
-                document.getElementById('uName').innerText = d.name || "Невідомий боєць";
-                document.getElementById('uRank').innerText = d.rank || "Без посади";
-                document.getElementById('uID').innerText = d.gameID || "0";
-                document.getElementById('uWarns').innerText = d.warns || 0;
-                document.getElementById('uRep').innerText = d.reprimands || 0;
-                
-                if (d.role === 'admin') { 
-                    document.getElementById('adminArea').style.display = 'block'; 
-                    renderList(); 
-                }
+        const s = await getDoc(doc(db, "name", uid)); // Використовуємо твою назву колекції "name"
+        if (s.exists()) {
+            const d = s.data();
+            document.getElementById('userProfile').style.display = 'block';
+            document.getElementById('uName').innerText = d.name;
+            document.getElementById('uRank').innerText = d.rank;
+            document.getElementById('uID').innerText = d.gameID;
+            
+            const reps = d.reprimands || 0;
+            document.getElementById('uRep').innerText = reps;
+            document.getElementById('uWarns').innerText = d.warns || 0;
+
+            // Логіка статусу (Авто-звільнення при 3 доганах)
+            const statusEl = document.getElementById('uStatus');
+            if (reps >= 3) {
+                statusEl.innerText = "ЗВІЛЬНЕНИЙ";
+                statusEl.style.color = "var(--danger)";
             } else {
-                // Якщо користувач увійшов, але в базі Firestore його ще не створили
-                document.getElementById('authCard').style.display = 'none';
-                document.getElementById('userProfile').style.display = 'block';
-                document.getElementById('uName').innerText = "Профіль не створено";
-                document.getElementById('uRank').innerText = "Зверніться до адміністрації";
+                statusEl.innerText = "Активний";
+                statusEl.style.color = "#3b82f6";
             }
-        } catch (error) {
-            console.error("Помилка Firestore:", error);
+
+            if (d.role === 'admin') { 
+                document.getElementById('adminArea').style.display = 'block'; 
+                renderList(); 
+            }
         }
     }
 
-    // Список користувачів для адміна
     async function renderList() {
-        const snap = await getDocs(collection(db, "users"));
+        const snap = await getDocs(collection(db, "name"));
         const cont = document.getElementById('allUsersList');
         cont.innerHTML = "";
         snap.forEach(uDoc => {
             const u = uDoc.data();
             const id = uDoc.id;
+            const r = u.reprimands || 0;
+            const w = u.warns || 0;
+
             cont.innerHTML += `
                 <div class="admin-item">
-                    <div><b>${u.name || 'Анонім'}</b> [ID: ${u.gameID || '?'}]<br><small>${u.rank || 'Рядовий'}</small></div>
+                    <div style="font-size:13px;"><b>${u.name}</b><br><small color="#888">${u.rank}</small></div>
                     <div class="admin-btns">
-                        <button class="btn-sm" style="background:#ef4444;" onclick="edit('${id}','reprimands',${(u.reprimands||0)+1})">+ Догана</button>
-                        <button class="btn-sm" style="background:#f59e0b;" onclick="edit('${id}','warns',${(u.warns||0)+1})">+ Попередження</button>
+                        <button class="btn-sm" style="background:var(--danger);" onclick="updateStat('${id}','reprimands',${r+1})">+ Д</button>
+                        <button class="btn-sm" style="background:#475569;" onclick="updateStat('${id}','reprimands',${Math.max(0,r-1)})">- Д</button>
+                        <button class="btn-sm" style="background:var(--warning);" onclick="updateStat('${id}','warns',${w+1})">+ П</button>
+                        <button class="btn-sm" style="background:#475569;" onclick="updateStat('${id}','warns',${Math.max(0,w-1)})">- П</button>
                         <button class="btn-sm" style="background:#3b82f6;" onclick="changeRank('${id}')">Ранг</button>
                     </div>
                 </div>`;
         });
     }
 
-    // Функції редагування для адміна
-    window.edit = async (id, field, val) => {
-        await updateDoc(doc(db, "users", id), { [field]: val });
+    window.updateStat = async (id, field, val) => {
+        await updateDoc(doc(db, "name", id), { [field]: val });
         renderList();
         if(id === auth.currentUser.uid) loadData(id);
     };
 
     window.changeRank = async (id) => {
-        const newR = prompt("Введіть нову посаду для бійця:");
+        const newR = prompt("Введіть нову посаду:");
         if (newR) { 
-            await updateDoc(doc(db, "users", id), { rank: newR }); 
+            await updateDoc(doc(db, "name", id), { rank: newR }); 
             renderList(); 
         }
     };
 
-    window.logout = () => { 
-        signOut(auth).then(() => location.reload()); 
-    };
+    window.logout = () => { signOut(auth).then(() => window.location.href = "index.html"); };
 </script>
 </body>
 </html>
