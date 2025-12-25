@@ -24,7 +24,8 @@
         .admin-item { background: rgba(255,255,255,0.02); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
         .admin-btns { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
         
-        .btn-sm { padding: 8px 12px; font-size: 11px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; color: white; }
+        .btn-sm { padding: 8px 12px; font-size: 11px; border-radius: 8px; border: none; cursor: pointer; font-weight: 700; color: white; transition: 0.2s; }
+        .btn-sm:active { transform: scale(0.95); }
         .btn-logout { width: 100%; background: rgba(255,255,255,0.05); color: var(--text-gray); padding: 12px; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; font-weight: 600; margin-top: 10px; }
 
         #userProfile, #loading { display: none; }
@@ -39,7 +40,7 @@
 
 <section class="section">
     <div id="loading" style="display: block;">
-        <p style="color: var(--primary); font-weight: 600;">⚡ Синхронізація з базою ДШВ...</p>
+        <p style="color: var(--primary); font-weight: 600;">⚡ Синхронізація з базою ДШВ (колекція users)...</p>
     </div>
 
     <div class="card" id="userProfile">
@@ -99,6 +100,7 @@
 
     async function loadData(uid) {
         try {
+            // Тепер використовуємо колекцію "users"
             const s = await getDoc(doc(db, "users", uid)); 
             document.getElementById('loading').style.display = 'none';
             
@@ -114,6 +116,7 @@
                 document.getElementById('uRep').innerText = r;
                 document.getElementById('uWarns').innerText = w;
 
+                // Логіка статусу
                 const st = document.getElementById('uStatus');
                 if (r >= 3) {
                     st.innerText = "ЗВІЛЬНЕНИЙ";
@@ -123,14 +126,15 @@
                     st.style.color = "#3b82f6";
                 }
 
+                // Відображення адмін-панелі
                 if (d.role === 'admin') { 
                     document.getElementById('adminArea').style.display = 'block'; 
                     renderList(); 
                 }
             } else {
-                alert("Помилка: Користувача не знайдено в колекції 'users'");
+                alert("Профіль не знайдено в колекції 'users'. Зверніться до адміністратора.");
             }
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("Помилка:", e); }
     }
 
     async function renderList() {
@@ -151,23 +155,23 @@
                         <small style="color:var(--text-gray)">${u.rank || 'Рядовий'}</small>
                     </div>
                     <div class="admin-btns">
-                        <button class="btn-sm" style="background:var(--danger);" onclick="upd('${id}','reprimands',${r+1})">+Д</button>
-                        <button class="btn-sm" style="background:#475569;" onclick="upd('${id}','reprimands',${Math.max(0,r-1)})">-Д</button>
-                        <button class="btn-sm" style="background:var(--warning);" onclick="upd('${id}','warns',${w+1})">+П</button>
-                        <button class="btn-sm" style="background:#475569;" onclick="upd('${id}','warns',${Math.max(0,w-1)})">-П</button>
-                        <button class="btn-sm" style="background:#3b82f6;" onclick="chR('${id}')">РАНГ</button>
+                        <button class="btn-sm" style="background:var(--danger);" onclick="updStat('${id}','reprimands',${r+1})">+ Д</button>
+                        <button class="btn-sm" style="background:#475569;" onclick="updStat('${id}','reprimands',${Math.max(0,r-1)})">- Д</button>
+                        <button class="btn-sm" style="background:var(--warning);" onclick="updStat('${id}','warns',${w+1})">+ П</button>
+                        <button class="btn-sm" style="background:#475569;" onclick="updStat('${id}','warns',${Math.max(0,w-1)})">- П</button>
+                        <button class="btn-sm" style="background:#3b82f6;" onclick="chRank('${id}')">РАНГ</button>
                     </div>
                 </div>`;
         });
     }
 
-    window.upd = async (id, f, v) => {
-        await updateDoc(doc(db, "users", id), { [f]: v });
+    window.updStat = async (id, field, val) => {
+        await updateDoc(doc(db, "users", id), { [field]: val });
         renderList();
         if(id === auth.currentUser.uid) loadData(id);
     };
 
-    window.chR = async (id) => {
+    window.chRank = async (id) => {
         const nr = prompt("Введіть новий ранг:");
         if (nr) { await updateDoc(doc(db, "users", id), { rank: nr }); renderList(); }
     };
