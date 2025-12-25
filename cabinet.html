@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | ОСОБИСТИЙ КАБІНЕТ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #22c55e; --bg: #030507; --card-bg: rgba(255, 255, 255, 0.03); --text-gray: #94a3b8; --danger: #ef4444; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; }
+        
+        /* Навігація */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 15px 8%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); position: fixed; width: 100%; box-sizing: border-box; z-index: 100; border-bottom: 1px solid rgba(34,197,94,0.1); }
+        .logo-box { background: var(--primary); color: black; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-decoration: none; }
+        
+        /* Контейнери */
+        .section { padding: 120px 5% 60px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: var(--card-bg); padding: 30px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.06); width: 100%; max-width: 550px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        
+        /* Форми */
+        .form-input { width: 100%; padding: 15px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; border-radius: 12px; margin-bottom: 15px; box-sizing: border-box; font-family: inherit; }
+        .btn-submit { width: 100%; background: var(--primary); color: black; padding: 15px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-submit:hover { opacity: 0.9; transform: translateY(-2px); }
+        
+        /* Профіль */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
+        .stat-box { background: rgba(255,255,255,0.04); padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .stat-val { display: block; font-size: 24px; font-weight: 800; color: var(--primary); }
+        .stat-label { font-size: 11px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* Адмін панель */
+        .admin-section { width: 100%; max-width: 800px; margin-top: 40px; }
+        .admin-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(34,197,94,0.2); border-radius: 20px; padding: 20px; }
+        .admin-item { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; margin-bottom: 10px; border-left: 4px solid var(--primary); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .admin-info b { font-size: 16px; }
+        .admin-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn-sm { padding: 8px 12px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; font-weight: 700; color: white; transition: 0.2s; }
+        .btn-sm:hover { filter: brightness(1.2); }
+        
+        .loader { border: 3px solid rgba(255,255,255,0.1); border-top: 3px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        
+        #authCard, #userProfile, #loading { display: none; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="#" class="logo-box">ДШВ</a>
+    <div id="navUser" style="font-size: 12px; font-weight: 600; color: var(--primary);">ПАНЕЛЬ КЕРУВАННЯ</div>
+</nav>
+
+<section class="section">
+    <div id="loading" style="display: block;">
+        <div class="loader"></div>
+        <p style="color: var(--text-gray)">Перевірка авторизації...</p>
+    </div>
+
+    <div class="card" id="authCard">
+        <h2 style="margin-top:0">Вхід в Кабінет</h2>
+        <p style="color: var(--text-gray); font-size: 14px; margin-bottom: 25px;">Введіть ваші дані для доступу до системи</p>
+        <input type="email" id="email" class="form-input" placeholder="Електронна пошта">
+        <input type="password" id="pass" class="form-input" placeholder="Пароль">
+        <button class="btn-submit" id="loginBtn">УВІЙТИ В СИСТЕМУ</button>
+    </div>
+
+    <div class="card" id="userProfile">
+        <div style="text-align: left;">
+            <h2 id="uName" style="margin:0; font-size: 28px;">Завантаження...</h2>
+            <p id="uRank" style="color:var(--primary); font-weight:700; margin: 5px 0 0 0; font-size: 18px;">Посада</p>
+        </div>
+        
+        <div class="stat-grid">
+            <div class="stat-box"><span class="stat-val" id="uID">0</span><span class="stat-label">ID ГРАВЦЯ</span></div>
+            <div class="stat-box"><span class="stat-val" style="color: #3b82f6;">Активний</span><span class="stat-label">СТАТУС</span></div>
+            <div class="stat-box"><span class="stat-val" id="uWarns" style="color: #f59e0b;">0</span><span class="stat-label">ПОПЕРЕДЖЕННЯ</span></div>
+            <div class="stat-box"><span class="stat-val" id="uRep" style="color: var(--danger);">0</span><span class="stat-label">ДОГАНИ</span></div>
+        </div>
+
+        <button onclick="window.logout()" style="width:100%; background:none; border:1px solid rgba(255,255,255,0.1); color:var(--text-gray); padding: 12px; border-radius: 12px; cursor:pointer; font-weight: 600;">Вийти з акаунту</button>
+
+        <div id="adminArea" style="display:none; margin-top:40px; text-align: left;">
+            <h3 style="color:var(--primary); font-size:16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">💎 СПИСОК ОСОБОВОГО СКЛАДУ</h3>
+            <div id="allUsersList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+</section>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXHmS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Слідкуємо за станом входу
+    onAuthStateChanged(auth, (user) => {
+        document.getElementById('loading').style.display = 'none';
+        if (user) {
+            loadData(user.uid);
+        } else {
+            document.getElementById('authCard').style.display = 'block';
+            document.getElementById('userProfile').style.display = 'none';
+        }
+    });
+
+    // Вхід
+    document.getElementById('loginBtn').onclick = async () => {
+        const e = document.getElementById('email').value;
+        const p = document.getElementById('pass').value;
+        if(!e || !p) return alert("Заповніть всі поля");
+        
+        try {
+            await signInWithEmailAndPassword(auth, e, p);
+        } catch (err) { 
+            alert("Помилка входу: Перевірте пошту та пароль"); 
+        }
+    };
+
+    // Завантаження даних користувача
+    async function loadData(uid) {
+        const s = await getDoc(doc(db, "users", uid));
+        if (s.exists()) {
+            const d = s.data();
+            document.getElementById('authCard').style.display = 'none';
+            document.getElementById('userProfile').style.display = 'block';
+            
+            document.getElementById('uName').innerText = d.name;
+            document.getElementById('uRank').innerText = d.rank;
+            document.getElementById('uID').innerText = d.gameID;
+            document.getElementById('uWarns').innerText = d.warns || 0;
+            document.getElementById('uRep').innerText = d.reprimands || 0;
+
+            if (d.role === 'admin') {
+                document.getElementById('adminArea').style.display = 'block';
+                renderList();
+            }
+        } else {
+            alert("Ваш профіль не знайдено в базі даних.");
+        }
+    }
+
+    // Список для адміна
+    async function renderList() {
+        const snap = await getDocs(collection(db, "users"));
+        const cont = document.getElementById('allUsersList');
+        cont.innerHTML = "";
+        
+        snap.forEach(uDoc => {
+            const u = uDoc.data();
+            const id = uDoc.id;
+            const item = document.createElement('div');
+            item.className = 'admin-item';
+            item.innerHTML = `
+                <div class="admin-info">
+                    <b>${u.name}</b> <span style="color:var(--text-gray)">[ID: ${u.gameID}]</span><br>
+                    <small style="color:var(--primary)">${u.rank}</small> | 
+                    <small>Д: ${u.reprimands || 0} П: ${u.warns || 0}</small>
+                </div>
+                <div class="admin-btns">
+                    <button class="btn-sm" style="background:#ef4444;" onclick="updateStat('${id}','reprimands',${(u.reprimands||0)+1})">+ Догана</button>
+                    <button class="btn-sm" style="background:#f59e0b;" onclick="updateStat('${id}','warns',${(u.warns||0)+1})">+ Попередж.</button>
+                    <button class="btn-sm" style="background:#3b82f6;" onclick="changeRank('${id}')">Ранг</button>
+                    <button class="btn-sm" style="background:#6b7280;" onclick="clearStats('${id}')">Очистити</button>
+                </div>`;
+            cont.appendChild(item);
+        });
+    }
+
+    // Глобальні функції для кнопок
+    window.updateStat = async (id, field, val) => {
+        await updateDoc(doc(db, "users", id), { [field]: val });
+        renderList();
+        if(id === auth.currentUser.uid) loadData(id); // Оновити свій профіль якщо правиш себе
+    };
+
+    window.changeRank = async (id) => {
+        const newR = prompt("Введіть нову посаду:");
+        if (newR) {
+            await updateDoc(doc(db, "users", id), { rank: newR });
+            renderList();
+            if(id === auth.currentUser.uid) loadData(id);
+        }
+    };
+
+    window.clearStats = async (id) => {
+        if(confirm("Скинути всі догани та попередження?")) {
+            await updateDoc(doc(db, "users", id), { reprimands: 0, warns: 0 });
+            renderList();
+            if(id === auth.currentUser.uid) loadData(id);
+        }
+    };
+
+    window.logout = () => {
+        signOut(auth).then(() => {
+            location.reload();
+        });
+    };
+</script>
+
+</body>
+</html>
