@@ -63,24 +63,25 @@
             background: rgba(255,255,255,0.03); margin-bottom: 10px; border: 1px solid transparent;
             transition: var(--transition);
         }
-        .menu-link:hover { background: rgba(34, 197, 94, 0.15); border-color: var(--primary); transform: translateX(10px); }
-
-        /* Стиль для кнопки перевірки рапортів */
-        #adminAppBtn {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid var(--primary);
-            animation: reportPulse 2s infinite;
+        
+        /* Стандартний ефект для всіх кнопок меню */
+        .menu-link:hover { 
+            background: rgba(34, 197, 94, 0.15); 
+            border-color: var(--primary); 
+            transform: translateX(10px); 
         }
-        @keyframes reportPulse {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+
+        /* Виправлення: Кнопка рапортів тепер ідентична іншим */
+        #adminAppBtn:hover {
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
         }
 
         .btn-exit {
             background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3);
             color: #ff7b7b; width: 100%; padding: 14px; border-radius: 14px; font-weight: 800; cursor: pointer;
+            transition: var(--transition);
         }
+        .btn-exit:hover { background: #ef4444; color: white; }
 
         .profile-card {
             background: var(--card-bg); border: 2px solid var(--primary);
@@ -114,9 +115,11 @@
             padding: 18px 25px; background: rgba(0,0,0,0.3); border-radius: 20px; margin-bottom: 12px;
         }
 
-        .admin-btn { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; }
+        .admin-btn { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .admin-btn:hover { background: var(--primary-bright); transform: scale(1.05); }
 
-        .ctrl-btn { width: 35px; height: 35px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; margin: 8px 4px 0; font-weight: 900; }
+        .ctrl-btn { width: 35px; height: 35px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; margin: 8px 4px 0; font-weight: 900; transition: 0.2s; }
+        .ctrl-btn:hover { background: var(--primary); color: black; }
 
         .delete-notice { color: #ff7b7b; font-size: 12px; font-weight: 800; margin-top: 25px; display: block; cursor: pointer; text-decoration: underline; }
 
@@ -161,7 +164,7 @@
 
     <div class="profile-card">
         <div class="avatar-wrap">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" width="70" style="filter:invert(1)">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" width="70" style="filter: invert(1);">
         </div>
         <h2 id="uName">Завантаження...</h2>
         <div id="uID" style="color:var(--primary-bright); font-size:14px; font-weight: 800; background: rgba(34, 197, 94, 0.1); display: inline-block; padding: 4px 15px; border-radius: 20px; margin-top: 10px;">ID: 0000</div>
@@ -259,10 +262,10 @@
             document.getElementById('uDiscord').innerText = d.discord || "---";
             document.getElementById('uPass').href = d.passport || "#";
 
-            // МАНІПУЛЯЦІЯ: Перевірка ролі адміна
+            // Перевірка прав адміна
             if (isMe && d.role === 'admin') {
                 document.getElementById('adminPanel').style.display = 'block';
-                document.getElementById('adminAppBtn').style.display = 'flex'; // Показуємо кнопку рапортів
+                document.getElementById('adminAppBtn').style.display = 'flex';
                 document.querySelectorAll('.adm-only').forEach(el => el.style.display = 'block');
                 renderUserList();
             }
@@ -282,7 +285,11 @@
         });
     }
 
-    window.viewUser = (uid) => { currentUID = uid; loadData(uid, uid === auth.currentUser.uid); window.scrollTo({top:0, behavior:'smooth'}); };
+    window.viewUser = (uid) => { 
+        currentUID = uid; 
+        loadData(uid, uid === auth.currentUser.uid); 
+        window.scrollTo({top:0, behavior:'smooth'}); 
+    };
 
     window.modify = async (f, v) => {
         const ref = doc(db, "users", currentUID);
@@ -300,7 +307,7 @@
 
     window.processDelete = async () => {
         const isMe = (currentUID === auth.currentUser.uid);
-        if (confirm("ВИДАЛИТИ?") && confirm("ОСТАТОЧНО?")) {
+        if (confirm("ВИДАЛИТИ ПРОФІЛЬ?") && confirm("ДІЙСНО ВИДАЛИТИ? ЦЕ НЕМОЖЛИВО СКАСУВАТИ!")) {
             try {
                 if (isMe) {
                     isLoggingOut = true;
@@ -312,7 +319,7 @@
                     currentUID = auth.currentUser.uid;
                     loadData(currentUID, true);
                 }
-            } catch (e) { alert("Помилка."); }
+            } catch (e) { alert("Помилка видалення."); }
         }
     };
 </script>
