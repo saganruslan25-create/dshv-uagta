@@ -9,48 +9,46 @@
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
-            --primary-dark: #166534;
             --bg: #030507;
             --card-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(34, 197, 94, 0.2);
+            --glass-border: rgba(34, 197, 94, 0.15);
             --text-gray: #94a3b8;
-            --error: #ef4444;
-            --warning: #f59e0b;
-            --neon-glow: 0 0 20px rgba(34, 197, 94, 0.3);
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --neon-glow: 0 0 15px rgba(34, 197, 94, 0.25);
+            --transition: all 0.25s ease-out;
         }
 
-        /* Глобальні стилі фону як у index.html */
-        * { box-sizing: border-box; }
+        /* Оптимізація продуктивності: прибираємо смикання при скролі */
+        * { 
+            box-sizing: border-box; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
         
         body {
             margin: 0;
             padding: 0;
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.18) 0%, transparent 50%),
-                radial-gradient(circle at 10% 80%, rgba(34, 197, 94, 0.1) 0%, transparent 40%),
-                radial-gradient(circle at 90% 90%, rgba(34, 197, 94, 0.1) 0%, transparent 40%);
-            background-attachment: fixed;
+            /* Оптимізований фон: один статичний градієнт замість трьох складних */
+            background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.15) 0%, transparent 70%) no-repeat fixed, var(--bg);
             color: white;
             font-family: 'Inter', sans-serif;
             min-height: 100vh;
-            overflow-x: hidden;
+            overflow-y: scroll; /* Плавний скрол */
         }
 
-        /* Навігація */
+        /* Навігація - фіксована з мінімальним блюром */
         nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 0 8%;
-            height: 80px;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(20px);
+            height: 70px;
+            background: rgba(0, 0, 0, 0.85);
             border-bottom: 1px solid var(--glass-border);
             position: sticky;
             top: 0;
             z-index: 1000;
+            will-change: transform;
         }
 
         .logo-container {
@@ -64,298 +62,197 @@
         .logo-badge {
             background: var(--primary);
             color: black;
-            padding: 5px 12px;
-            border-radius: 8px;
+            padding: 4px 10px;
+            border-radius: 6px;
             font-weight: 900;
-            font-size: 18px;
             box-shadow: var(--neon-glow);
         }
 
-        .system-status {
-            font-size: 11px;
-            font-weight: 800;
-            color: var(--primary-bright);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* Основний макет Dashboard */
+        /* Основний макет */
         .dashboard-container {
             display: grid;
-            grid-template-columns: 300px 1fr 2fr;
-            gap: 30px;
-            padding: 40px 8%;
+            grid-template-columns: 280px 1fr 2fr;
+            gap: 25px;
+            padding: 30px 8%;
             max-width: 1600px;
             margin: 0 auto;
         }
 
-        /* Sidebar (Ліве меню) */
-        .sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
+        /* Sidebar - Оптимізовано */
         .nav-card {
             background: var(--card-bg);
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 15px;
+            /* Зменшуємо блюр для підвищення FPS */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
 
         .menu-link {
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 16px;
-            border-radius: 14px;
+            gap: 12px;
+            padding: 14px;
+            border-radius: 12px;
             color: white;
             text-decoration: none;
             font-size: 14px;
             font-weight: 600;
-            border: 1px solid transparent;
             transition: var(--transition);
             background: rgba(255,255,255,0.02);
             margin-bottom: 8px;
+            border: 1px solid transparent;
         }
 
         .menu-link:hover {
             background: rgba(34, 197, 94, 0.1);
             border-color: var(--primary);
-            transform: translateX(8px);
             box-shadow: var(--neon-glow);
-        }
-
-        .menu-link.active {
-            background: var(--primary);
-            color: black;
+            transform: translateX(4px);
         }
 
         .btn-danger-outline {
-            background: rgba(239, 68, 68, 0.05);
+            background: rgba(239, 68, 68, 0.08);
             border: 1px solid rgba(239, 68, 68, 0.2);
             color: #f87171;
-            margin-top: 10px;
-            cursor: pointer;
             width: 100%;
-            padding: 14px;
+            padding: 12px;
             border-radius: 12px;
             font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
             transition: var(--transition);
         }
 
-        .btn-danger-outline:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: var(--error);
-        }
-
-        /* Центральна картка профілю */
+        /* Картка профілю - Hardware Accelerated */
         .profile-hero {
             background: var(--card-bg);
             border: 1px solid var(--primary);
-            border-radius: 40px;
-            padding: 60px 30px;
+            border-radius: 35px;
+            padding: 40px 20px;
             text-align: center;
-            backdrop-filter: blur(20px);
             box-shadow: var(--neon-glow);
             height: fit-content;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .profile-hero::after {
-            content: '';
-            position: absolute;
-            top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(34, 197, 94, 0.03) 0%, transparent 70%);
-            pointer-events: none;
+            will-change: transform;
+            backdrop-filter: blur(10px);
         }
 
         .avatar-circle {
-            width: 160px;
-            height: 160px;
-            margin: 0 auto 30px;
+            width: 130px;
+            height: 130px;
+            margin: 0 auto 20px;
             border-radius: 50%;
-            border: 4px solid var(--primary);
-            padding: 8px;
-            background: rgba(0,0,0,0.5);
-            box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+            border: 3px solid var(--primary);
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .avatar-circle img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            filter: drop-shadow(0 0 10px var(--primary));
+            width: 60%;
+            filter: drop-shadow(0 0 8px var(--primary));
         }
 
-        .user-title {
-            font-size: 28px;
-            font-weight: 900;
-            margin: 0;
-            letter-spacing: -0.5px;
-        }
-
-        .user-id-badge {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 6px 16px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 30px;
-            color: var(--text-gray);
-            font-size: 13px;
-            font-weight: 600;
-            border: 1px solid var(--glass-border);
-        }
-
-        /* Права сітка статистики */
+        /* Статистика */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
         }
 
         .stat-card {
             background: var(--card-bg);
             border: 1px solid var(--glass-border);
-            padding: 35px 20px;
-            border-radius: 30px;
+            padding: 25px 15px;
+            border-radius: 25px;
             text-align: center;
-            backdrop-filter: blur(15px);
             transition: var(--transition);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            will-change: transform;
         }
 
         .stat-card:hover {
             border-color: var(--primary);
-            transform: translateY(-8px);
             box-shadow: var(--neon-glow);
-        }
-
-        .stat-icon {
-            font-size: 24px;
-            margin-bottom: 15px;
-            opacity: 0.8;
         }
 
         .stat-label {
             color: var(--text-gray);
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 12px;
+            letter-spacing: 1.5px;
+            margin-bottom: 8px;
+            display: block;
         }
 
         .stat-value {
-            font-size: 22px;
+            font-size: 18px;
             font-weight: 900;
-            color: white;
         }
 
-        .value-rank { color: var(--primary-bright); }
-        .value-warn { color: var(--warning); }
-        .value-rep { color: var(--error); }
-
-        /* Адмін панель */
+        /* Адмінка - Список */
         .admin-section {
             grid-column: 1 / -1;
-            margin-top: 20px;
-            background: rgba(255,255,255,0.02);
+            background: rgba(255,255,255,0.01);
             border: 1px solid var(--glass-border);
-            border-radius: 35px;
-            padding: 40px;
-        }
-
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
+            border-radius: 30px;
+            padding: 25px;
+            margin-top: 15px;
         }
 
         .user-list-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 30px;
-            background: rgba(0,0,0,0.2);
-            border-radius: 20px;
-            margin-bottom: 12px;
+            padding: 15px 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            margin-bottom: 8px;
             border: 1px solid transparent;
-            transition: var(--transition);
-        }
-
-        .user-list-item:hover {
-            border-color: var(--primary);
-            background: rgba(34, 197, 94, 0.05);
         }
 
         .btn-view-profile {
             background: var(--primary);
             color: black;
             border: none;
-            padding: 10px 24px;
-            border-radius: 10px;
+            padding: 8px 18px;
+            border-radius: 8px;
             font-weight: 800;
             cursor: pointer;
-            font-size: 12px;
             text-transform: uppercase;
-        }
-
-        .controls-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+            font-size: 11px;
         }
 
         .ctrl-btn {
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             border: 1px solid var(--glass-border);
             background: rgba(255,255,255,0.05);
             color: white;
-            font-size: 18px;
-            font-weight: 800;
             cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .ctrl-btn:hover {
-            background: var(--primary);
-            color: black;
-            border-color: var(--primary);
-        }
-
-        /* Видалення */
-        .danger-zone {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px dashed rgba(239, 68, 68, 0.2);
-            text-align: center;
+            font-weight: 800;
+            margin: 0 3px;
         }
 
         .delete-link {
-            color: rgba(239, 68, 68, 0.5);
-            font-size: 12px;
-            cursor: pointer;
+            display: block;
+            text-align: center;
+            margin-top: 25px;
+            color: rgba(239, 68, 68, 0.4);
+            font-size: 11px;
             background: none;
             border: none;
+            cursor: pointer;
             text-decoration: underline;
         }
 
-        .delete-link:hover { color: var(--error); }
-
-        @media (max-width: 1200px) {
+        @media (max-width: 1100px) {
             .dashboard-container { grid-template-columns: 1fr; }
             .sidebar { order: 2; }
             .profile-hero { order: 1; }
-            .stats-grid { order: 3; }
         }
     </style>
 </head>
@@ -364,26 +261,20 @@
 <nav>
     <a href="index.html" class="logo-container">
         <div class="logo-badge">ДШВ</div>
-        <span style="font-weight: 800; letter-spacing: -1px;">UKRAINE GTA</span>
+        <span style="font-weight: 800;">UKRAINE GTA</span>
     </a>
-    <div class="system-status">System Online</div>
+    <div style="font-size: 10px; font-weight: 800; color: var(--primary-bright); letter-spacing: 1px;">CABINET OPTIMIZED</div>
 </nav>
 
 <div class="dashboard-container">
     <div class="sidebar">
         <div class="nav-card">
             <a href="index.html" class="menu-link">🏠 Головна сторінка</a>
-            <div class="menu-link">📜 Статут підрозділу</div>
-            <div class="menu-link">📈 Система підвищення</div>
-            <div class="menu-link">⚔️ Бойовий шлях (Soon)</div>
-            
-            <button onclick="window.logout()" class="btn-danger-outline" style="margin-top: 20px;">🚪 Завершити сесію</button>
+            <div class="menu-link">📜 Статут</div>
+            <div class="menu-link">📈 Підвищення</div>
+            <button onclick="window.logout()" class="btn-danger-outline">🚪 Вихід</button>
         </div>
-
-        <div id="adminTag" style="display:none; text-align: center; padding: 15px; background: rgba(34, 197, 94, 0.05); border-radius: 20px; border: 1px solid var(--primary); color: var(--primary); font-weight: 900; font-size: 11px; letter-spacing: 2px;">
-            ACCESS LEVEL: ADMINISTRATOR
-        </div>
-
+        <div id="adminTag" style="display:none; text-align: center; padding: 12px; background: rgba(34, 197, 94, 0.05); border-radius: 15px; border: 1px solid var(--primary); color: var(--primary); font-weight: 900; font-size: 10px; margin-top: 10px;">ADMINISTRATOR</div>
         <button onclick="window.deleteAccount()" class="delete-link">Видалити акаунт</button>
     </div>
 
@@ -391,68 +282,55 @@
         <div class="avatar-circle">
             <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="soldier">
         </div>
-        <h2 class="user-title" id="uName">Завантаження...</h2>
-        <div class="user-id-badge" id="uID">ID: 00000</div>
-        
-        <div id="editNotice" style="display:none; margin-top: 20px; color: var(--primary-bright); font-size: 11px; font-weight: 800;">
-            🔴 РЕЖИМ РЕДАГУВАННЯ БІЙЦЯ
-        </div>
+        <h2 id="uName" style="margin:0; font-size: 24px; font-weight: 900;">Завантаження...</h2>
+        <div id="uID" style="color: var(--text-gray); font-size: 12px; margin-top: 8px; font-weight: 600;">ID: 0000</div>
+        <div id="editNotice" style="display:none; margin-top: 15px; color: var(--primary-bright); font-size: 10px; font-weight: 800;">🔴 РЕДАГУВАННЯ БІЙЦЯ</div>
     </div>
 
     <div class="stats-wrapper">
         <div class="stats-grid">
             <div class="stat-card">
-                <span class="stat-label">Звання / Посада</span>
-                <span class="stat-value value-rank" id="uRank">---</span>
+                <span class="stat-label">Звання</span>
+                <span class="stat-value" id="uRank" style="color: var(--primary-bright);">---</span>
             </div>
-            
             <div class="stat-card">
                 <span class="stat-label">Попередження</span>
-                <span class="stat-value value-warn" id="uWarns">0</span>
-                <div class="controls-group admin-only" style="display:none;">
+                <span class="stat-value" id="uWarns">0</span>
+                <div class="admin-only" style="display:none; margin-top:10px;">
                     <button class="ctrl-btn" onclick="modify('warns', 1)">+</button>
                     <button class="ctrl-btn" onclick="modify('warns', -1)">-</button>
                 </div>
             </div>
-
             <div class="stat-card">
                 <span class="stat-label">Догани</span>
-                <span class="stat-value value-rep" id="uRep">0</span>
-                <div class="controls-group admin-only" style="display:none;">
+                <span class="stat-value" id="uRep" style="color:#ef4444;">0</span>
+                <div class="admin-only" style="display:none; margin-top:10px;">
                     <button class="ctrl-btn" onclick="modify('reprimands', 1)">+</button>
                     <button class="ctrl-btn" onclick="modify('reprimands', -1)">-</button>
                 </div>
             </div>
-
             <div class="stat-card">
-                <span class="stat-label">Паспортні дані</span>
-                <a href="#" id="uPass" target="_blank" class="stat-value" style="color: #3b82f6; text-decoration: none; font-size: 14px;">ПЕРЕГЛЯНУТИ ↗</a>
+                <span class="stat-label">Паспорт</span>
+                <a href="#" id="uPass" target="_blank" style="color: #3b82f6; text-decoration: none; font-size: 12px; font-weight: 800;">ВІДКРИТИ ↗</a>
             </div>
-
             <div class="stat-card">
-                <span class="stat-label">Discord ID</span>
-                <span class="stat-value" id="uDiscord" style="font-size: 14px;">---</span>
+                <span class="stat-label">Discord</span>
+                <span id="uDiscord" style="font-size: 12px; font-weight: 800;">---</span>
             </div>
-
             <div class="stat-card">
-                <span class="stat-label">Служба</span>
-                <span class="stat-value" style="color: var(--primary);">АКТИВНА</span>
+                <span class="stat-label">Статус</span>
+                <span style="color: var(--primary); font-weight: 900;">АКТИВНИЙ</span>
             </div>
         </div>
 
         <div id="adminPanel" class="admin-section" style="display:none;">
-            <div class="admin-header">
-                <h3 style="margin:0; font-weight: 900; letter-spacing: 1px;">📋 ОСОБОВИЙ СКЛАД ПІДРОЗДІЛУ</h3>
-                <span style="font-size: 12px; color: var(--text-gray);" id="totalUsers">Бійців: 0</span>
-            </div>
-            <div id="usersList">
-                </div>
+            <h3 style="margin:0 0 15px 0; font-size: 14px; letter-spacing: 1px;">📋 СПИСОК ОСОБОВОГО СКЛАДУ</h3>
+            <div id="usersList"></div>
         </div>
     </div>
 </div>
 
 <script type="module">
-    // ІМПОРТ FIREBASE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -473,7 +351,6 @@
     let currentEditingUID = "";
     let userRole = "user";
 
-    // ПЕРЕВІРКА АВТОРИЗАЦІЇ
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentEditingUID = user.uid;
@@ -483,112 +360,74 @@
         }
     });
 
-    // ЗАВАНТАЖЕННЯ ДАНИХ
     async function loadUserData(uid, isMe = false) {
-        try {
-            const userDoc = await getDoc(doc(db, "users", uid));
-            if (userDoc.exists()) {
-                const data = userDoc.data();
-                
-                // Заповнення полів
-                document.getElementById('uName').innerText = data.name || "Невідомий";
-                document.getElementById('uRank').innerText = data.rank || "Рядовий";
-                document.getElementById('uID').innerText = "ID: " + (data.gameID || "0000");
-                document.getElementById('uWarns').innerText = data.warns || 0;
-                document.getElementById('uRep').innerText = data.reprimands || 0;
-                document.getElementById('uDiscord').innerText = data.discord || "Відсутній";
-                document.getElementById('uPass').href = data.passport || "#";
+        const userDoc = await getDoc(doc(db, "users", uid));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            document.getElementById('uName').innerText = data.name;
+            document.getElementById('uRank').innerText = data.rank;
+            document.getElementById('uID').innerText = "ID: " + data.gameID;
+            document.getElementById('uWarns').innerText = data.warns || 0;
+            document.getElementById('uRep').innerText = data.reprimands || 0;
+            document.getElementById('uDiscord').innerText = data.discord || "---";
+            document.getElementById('uPass').href = data.passport || "#";
 
-                // Логіка адміна
-                if (isMe) {
-                    userRole = data.role;
-                    if (data.role === 'admin') {
-                        document.getElementById('adminTag').style.display = 'block';
-                        document.getElementById('adminPanel').style.display = 'block';
-                        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
-                        fetchUsersList();
-                    }
-                } else {
-                    document.getElementById('editNotice').style.display = 'block';
+            if (isMe) {
+                userRole = data.role;
+                if (data.role === 'admin') {
+                    document.getElementById('adminTag').style.display = 'block';
+                    document.getElementById('adminPanel').style.display = 'block';
+                    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+                    fetchUsersList();
                 }
+            } else {
+                document.getElementById('editNotice').style.display = 'block';
             }
-        } catch (err) {
-            console.error("Помилка завантаження:", err);
         }
     }
 
-    // ОТРИМАННЯ СПИСКУ ВСІХ ЮЗЕРІВ
     async function fetchUsersList() {
         const querySnapshot = await getDocs(collection(db, "users"));
         const listContainer = document.getElementById('usersList');
-        document.getElementById('totalUsers').innerText = "Бійців: " + querySnapshot.size;
-        
         listContainer.innerHTML = "";
         querySnapshot.forEach((uDoc) => {
             const u = uDoc.data();
             const item = document.createElement('div');
             item.className = "user-list-item";
             item.innerHTML = `
-                <div>
-                    <div style="font-weight:800; font-size:15px;">${u.name}</div>
-                    <div style="font-size:11px; color:var(--text-gray)">ID: ${u.gameID} | ${u.rank}</div>
-                </div>
-                <button class="btn-view-profile" onclick="window.viewSoldier('${uDoc.id}')">Переглянути</button>
+                <div><b>${u.name}</b> <span style="font-size:10px; color:gray;">[${u.gameID}]</span></div>
+                <button class="btn-view-profile" onclick="window.viewSoldier('${uDoc.id}')">Профіль</button>
             `;
             listContainer.appendChild(item);
         });
     }
 
-    // ПЕРЕГЛЯД КОНКРЕТНОГО БІЙЦЯ
     window.viewSoldier = (uid) => {
         currentEditingUID = uid;
         loadUserData(uid, false);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // ЗМІНА ПАРАМЕТРІВ (ДОГАНИ/ПРЕДИ)
     window.modify = async (field, val) => {
-        if (userRole !== 'admin') return;
-        
         const userRef = doc(db, "users", currentEditingUID);
         const snap = await getDoc(userRef);
-        if (snap.exists()) {
-            const currentVal = snap.data()[field] || 0;
-            const newVal = Math.max(0, currentVal + val);
-            
-            await updateDoc(userRef, { [field]: newVal });
-            loadUserData(currentEditingUID, currentEditingUID === auth.currentUser.uid);
-        }
+        const newVal = Math.max(0, (snap.data()[field] || 0) + val);
+        await updateDoc(userRef, { [field]: newVal });
+        loadUserData(currentEditingUID, currentEditingUID === auth.currentUser.uid);
     };
 
-    // ВИХІД
-    window.logout = () => {
-        signOut(auth).then(() => {
-            window.location.href = "index.html";
-        });
-    };
+    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-    // ВИДАЛЕННЯ АКАУНТА
     window.deleteAccount = async () => {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        const p1 = confirm("⚠️ Ви впевнені, що хочете видалити свій профіль? Всі дані будуть видалені назавжди.");
-        if (p1) {
-            const p2 = confirm("🚨 ПІДТВЕРДІТЬ ДІЮ: Після цього ви втратите доступ до кабінету.");
-            if (p2) {
-                try {
-                    await deleteDoc(doc(db, "users", user.uid));
-                    await deleteUser(user);
-                    alert("Ваш профіль видалено.");
-                    window.location.href = "index.html";
-                } catch (e) {
-                    alert("Помилка! Можливо, вам потрібно переавторизуватися для здійснення цієї дії.");
-                }
-            }
+        if (confirm("Видалити профіль?") && confirm("ПІДТВЕРДІТЬ ВИДАЛЕННЯ")) {
+            try {
+                const user = auth.currentUser;
+                await deleteDoc(doc(db, "users", user.uid));
+                await deleteUser(user);
+                window.location.href = "index.html";
+            } catch (e) { alert("Перезайдіть в акаунт для видалення."); }
         }
     };
-
 </script>
 </body>
 </html>
