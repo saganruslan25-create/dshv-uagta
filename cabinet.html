@@ -61,7 +61,7 @@
             display: flex; align-items: center; padding: 16px; border-radius: 16px;
             color: white; text-decoration: none; font-size: 14px; font-weight: 600;
             background: rgba(255,255,255,0.03); margin-bottom: 10px; border: 1px solid transparent;
-            transition: var(--transition);
+            transition: var(--transition); cursor: pointer;
         }
         .menu-link:hover { background: rgba(34, 197, 94, 0.15); border-color: var(--primary); transform: translateX(10px); }
 
@@ -103,12 +103,9 @@
         }
 
         .admin-btn { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; }
-
         .ctrl-btn { width: 35px; height: 35px; border-radius: 10px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; margin: 8px 4px 0; font-weight: 900; }
-
         .delete-notice { color: #ff7b7b; font-size: 12px; font-weight: 800; margin-top: 25px; display: block; cursor: pointer; text-decoration: underline; }
 
-        /* Мобільна адаптація */
         @media (max-width: 992px) {
             .dashboard-container { grid-template-columns: 1fr; padding: 20px 5%; gap: 20px; }
             nav { padding: 0 5%; }
@@ -116,15 +113,6 @@
             .profile-card { order: 1; padding: 30px 20px; }
             .stats-wrapper { order: 2; }
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-            .stat-value { font-size: 16px; }
-            .avatar-wrap { width: 100px; height: 100px; }
-            .user-row { flex-direction: column; gap: 15px; text-align: center; padding: 20px; }
-            .admin-btn { width: 100%; }
-        }
-
-        @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .logo-box { font-size: 16px; }
         }
     </style>
 </head>
@@ -141,7 +129,7 @@
         <a href="index.html" class="menu-link">🏠 Головна сторінка</a>
         <a href="reports.html" class="menu-link">📅 Щотижневі звіти</a>
         <a href="subotnik.html" class="menu-link">🧹 Суботник</a>
-        <a href="#" class="menu-link">📈 Рапорт на підвищення</a> 
+        <div id="appLink" class="menu-link" style="display:none; color:var(--primary-bright)" onclick="window.showApps()">📝 Рапорти на вступ</div>
         
         <button onclick="window.handleLogout()" class="btn-exit" style="margin-top: 15px;">🚪 Вийти</button>
     </div>
@@ -182,11 +170,6 @@
             </div>
 
             <div class="stat-card">
-                <span class="stat-label">Документи</span>
-                <a id="uPass" href="#" target="_blank" style="color:#3b82f6; text-decoration:none; font-size:12px; font-weight:900;">ПАСПОРТ ↗</a>
-            </div>
-
-            <div class="stat-card">
                 <span class="stat-label">Discord</span>
                 <span id="uDiscord" style="font-size:13px; font-weight: 700;">---</span>
             </div>
@@ -201,13 +184,18 @@
             <h3 style="margin:0 0 20px 0; font-size:16px; color:var(--primary);">📋 ОСОБОВИЙ СКЛАД</h3>
             <div id="usersList"></div>
         </div>
+
+        <div id="appsPanel" class="admin-panel" style="display:none; background: rgba(34, 197, 94, 0.05);">
+            <h3 style="margin:0 0 20px 0; font-size:16px; color:var(--primary);">📝 РАПОРТИ НА ВСТУП (LIVE)</h3>
+            <div id="appsList"></div>
+        </div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, collection, getDocs, updateDoc, deleteDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -245,16 +233,45 @@
             document.getElementById('uWarns').innerText = d.warns || 0;
             document.getElementById('uRep').innerText = d.reprimands || 0;
             document.getElementById('uDiscord').innerText = d.discord || "---";
-            document.getElementById('uPass').href = d.passport || "#";
 
             if (isMe && d.role === 'admin') {
                 document.getElementById('adminPanel').style.display = 'block';
+                document.getElementById('appLink').style.display = 'flex';
                 document.querySelectorAll('.adm-only').forEach(el => el.style.display = 'block');
                 renderUserList();
+                listenToApps(); // Починаємо слухати рапорти
             }
             document.getElementById('deleteBtn').innerText = isMe ? "Видалити мій профіль" : `Видалити: ${d.name}`;
         }
     }
+
+    // Слухаємо нові рапорти в реальному часі
+    function listenToApps() {
+        const q = query(collection(db, "applications"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const list = document.getElementById('appsList');
+            list.innerHTML = "";
+            snapshot.forEach(dDoc => {
+                const a = dDoc.data();
+                list.innerHTML += `
+                    <div class="user-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
+                        <div style="width:100%; display:flex; justify-content:space-between; align-items:center;">
+                            <strong style="color:var(--primary-bright)">${a.name}</strong>
+                            <button class="admin-btn" style="background:#ef4444; font-size:10px; padding:5px 10px;" onclick="window.delApp('${dDoc.id}')">Видалити</button>
+                        </div>
+                        <div style="font-size:13px;"><b>Discord:</b> ${a.discord}</div>
+                        <div style="font-size:12px; opacity:0.8; background:rgba(0,0,0,0.2); padding:10px; border-radius:10px; width:100%">${a.motivation}</div>
+                    </div>`;
+            });
+        });
+    }
+
+    window.showApps = () => {
+        document.getElementById('adminPanel').style.display = 'none';
+        document.getElementById('appsPanel').style.display = 'block';
+    };
+
+    window.delApp = async (id) => { if(confirm("Видалити рапорт?")) await deleteDoc(doc(db, "applications", id)); };
 
     async function renderUserList() {
         const users = await getDocs(collection(db, "users"));
@@ -268,7 +285,13 @@
         });
     }
 
-    window.viewUser = (uid) => { currentUID = uid; loadData(uid, uid === auth.currentUser.uid); window.scrollTo({top:0, behavior:'smooth'}); };
+    window.viewUser = (uid) => { 
+        currentUID = uid; 
+        loadData(uid, uid === auth.currentUser.uid); 
+        document.getElementById('appsPanel').style.display = 'none';
+        document.getElementById('adminPanel').style.display = 'block';
+        window.scrollTo({top:0, behavior:'smooth'}); 
+    };
 
     window.modify = async (f, v) => {
         const ref = doc(db, "users", currentUID);
