@@ -19,7 +19,6 @@
         body {
             margin: 0; padding: 0;
             background-color: var(--bg);
-            /* ФОН ЯК У INDEX.HTML */
             background-image: 
                 radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
                 radial-gradient(circle at 15% 85%, rgba(34, 197, 94, 0.1) 0%, transparent 40%),
@@ -49,20 +48,33 @@
         }
 
         /* БІЧНЕ МЕНЮ */
-        .sidebar { display: flex; flex-direction: column; gap: 15px; }
+        .sidebar { display: flex; flex-direction: column; gap: 12px; height: fit-content; }
         .side-btn {
             background: var(--card-bg); border: 1px solid var(--glass-border);
             color: white; padding: 18px; border-radius: 18px; text-align: left;
             cursor: pointer; transition: 0.3s; font-size: 13px; font-weight: 700;
             text-decoration: none; backdrop-filter: blur(10px);
+            display: block;
         }
         .side-btn:hover { 
             border-color: var(--primary-bright); 
             background: rgba(34, 197, 94, 0.08);
             box-shadow: var(--neon-shadow);
+            transform: translateX(5px);
         }
 
-        /* КАРТКА ПРОФІЛЮ */
+        .logout-btn {
+            background: rgba(239, 68, 68, 0.1) !important;
+            border: 1px solid rgba(239, 68, 68, 0.3) !important;
+            color: #f87171 !important;
+        }
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2) !important;
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        /* ЦЕНТРАЛЬНА ЧАСТИНА */
         .profile-main {
             background: var(--card-bg); border: 1px solid var(--primary);
             border-radius: 40px; padding: 50px 20px; text-align: center;
@@ -73,11 +85,11 @@
             width: 160px; height: 160px; border-radius: 50%;
             border: 3px solid var(--primary); margin: 0 auto 30px;
             padding: 5px; box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
         }
-        .avatar-wrap img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; filter: brightness(0.8); }
+        .avatar-wrap img { width: 70%; filter: drop-shadow(0 0 10px var(--primary)); }
 
-        /* СІТКА СТАТИСТИКИ (КВАДРАТИ) */
+        /* СТАТИСТИКА */
         .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .stat-card {
             background: var(--card-bg); border: 1px solid var(--glass-border);
@@ -86,9 +98,9 @@
         }
         .stat-card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: var(--neon-shadow); }
         .stat-label { color: var(--text-gray); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; display: block; }
-        .stat-value { font-size: 20px; font-weight: 800; color: white; }
+        .stat-value { font-size: 18px; font-weight: 800; color: white; word-break: break-word; }
 
-        /* АДМІН ПАНЕЛЬ */
+        /* АДМІНКА */
         .admin-block {
             grid-column: 1 / -1; background: var(--card-bg); 
             border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 35px;
@@ -101,25 +113,28 @@
         }
         .user-item:hover { border-color: var(--primary); background: rgba(34, 197, 94, 0.05); }
 
-        .btn-action {
+        .btn-view {
             background: var(--primary); color: black; border: none; 
             padding: 10px 20px; border-radius: 10px; font-weight: 800;
-            cursor: pointer; font-size: 11px; text-transform: uppercase;
+            cursor: pointer; font-size: 11px; text-transform: uppercase; transition: 0.3s;
         }
+        .btn-view:hover { box-shadow: 0 0 15px var(--primary); transform: scale(1.05); }
 
-        /* Кнопки редагування (для адміна) */
         .edit-btns { margin-top: 15px; display: flex; gap: 8px; justify-content: center; }
-        .btn-edit { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 800; }
-        .btn-edit:hover { background: var(--primary); color: black; }
+        .btn-edit { background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border); color: white; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; font-weight: 800; font-size: 16px; }
+        .btn-edit:hover { background: var(--primary); color: black; border-color: var(--primary); }
 
-        @media (max-width: 1100px) { .dashboard { grid-template-columns: 1fr; } }
+        @media (max-width: 1100px) { 
+            .dashboard { grid-template-columns: 1fr; }
+            .stats-container { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
 
 <nav>
     <a href="index.html" class="logo-box">ДШВ</a>
-    <div style="font-size: 12px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; letter-spacing: 1px;">Система Управління</div>
+    <div style="font-size: 12px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase;">Система Управління</div>
 </nav>
 
 <div class="dashboard">
@@ -127,16 +142,18 @@
         <a href="index.html" class="side-btn">🏠 Головна сторінка</a>
         <div class="side-btn">📜 Статут ДШВ (soon)</div>
         <div class="side-btn">📈 Рапорти підвищення (soon)</div>
-        <button onclick="window.logout()" class="side-btn" style="margin-top: auto; border-color: rgba(239, 68, 68, 0.3); color: #f87171;">🚪 Вийти з системи</button>
+        <button onclick="window.logout()" class="side-btn logout-btn">🚪 Вийти з системи</button>
+        
+        <div id="adminNotice" style="display:none; color: var(--primary); font-size: 10px; font-weight: 900; margin-top: 15px; border: 1px solid var(--primary); text-align: center; padding: 10px; border-radius: 15px; background: rgba(34, 197, 94, 0.05);">ADMIN ACCESS ACTIVE</div>
     </div>
 
     <div class="profile-main">
         <div class="avatar-wrap">
             <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="soldier">
         </div>
-        <h2 id="uName" style="margin: 0; font-size: 26px; font-weight: 800;">Завантаження...</h2>
-        <p id="uID" style="color: var(--text-gray); font-weight: 600; margin-top: 10px;">ID: ---</p>
-        <div id="adminNotice" style="display:none; color: var(--primary); font-size: 10px; font-weight: 900; margin-top: 15px; border: 1px solid var(--primary); display: inline-block; padding: 4px 12px; border-radius: 20px;">РЕЖИМ АДМІНІСТРАТОРА</div>
+        <h2 id="uName" style="margin: 0; font-size: 24px; font-weight: 800;">Завантаження...</h2>
+        <p id="uID" style="color: var(--text-gray); font-weight: 600; margin-top: 10px; font-size: 14px;">ID: ---</p>
+        <div id="viewingTag" style="display:none; color: #4ade80; font-size: 10px; margin-top: 10px; font-weight: 800;">🔴 ПЕРЕГЛЯД КАРТКИ БІЙЦЯ</div>
     </div>
 
     <div class="stats-container">
@@ -174,7 +191,7 @@
         </div>
 
         <div id="adminPanel" class="admin-block" style="display:none;">
-            <h3 style="margin-top:0; color: var(--primary); font-size: 16px; margin-bottom: 25px;">📋 ОСОБОВИЙ СКЛАД ПІДРОЗДІЛУ</h3>
+            <h3 style="margin-top:0; color: var(--primary); font-size: 16px; margin-bottom: 25px; letter-spacing: 1px;">📋 ОСОБОВИЙ СКЛАД</h3>
             <div id="usersList"></div>
         </div>
     </div>
@@ -225,11 +242,13 @@
             if (isMe) {
                 myRole = d.role;
                 if (d.role === 'admin') {
-                    document.getElementById('adminNotice').style.display = 'inline-block';
+                    document.getElementById('adminNotice').style.display = 'block';
                     document.getElementById('adminPanel').style.display = 'block';
                     document.querySelectorAll('.admin-ctrl').forEach(e => e.style.display = 'flex');
                     renderAdminList();
                 }
+            } else {
+                document.getElementById('viewingTag').style.display = 'block';
             }
         }
     }
@@ -243,7 +262,7 @@
             cont.innerHTML += `
                 <div class="user-item">
                     <span><b>${u.name}</b> <small style="color:var(--text-gray); margin-left:10px;">ID: ${u.gameID}</small></span>
-                    <button class="btn-action" onclick="window.viewUser('${uDoc.id}')">ПРОФІЛЬ</button>
+                    <button class="btn-view" onclick="window.viewUser('${uDoc.id}')">ПРОФІЛЬ</button>
                 </div>`;
         });
     }
