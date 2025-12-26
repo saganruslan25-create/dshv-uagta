@@ -59,7 +59,7 @@
         .profile-card {
             background: var(--card-bg); border: 1px solid var(--primary);
             border-radius: 35px; padding: 40px; text-align: center; height: fit-content;
-            box-shadow: var(--neon-glow);
+            box-shadow: var(--neon-glow); position: relative;
         }
 
         .avatar-wrap { width: 120px; height: 120px; border-radius: 50%; border: 3px solid var(--primary); margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); }
@@ -74,6 +74,9 @@
 
         .admin-btn { background: var(--primary); color: black; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 11px; }
         .ctrl-btn { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--glass-border); background: rgba(255,255,255,0.05); color: white; cursor: pointer; margin: 5px 2px 0; }
+        
+        .delete-notice { color: #f87171; font-size: 11px; font-weight: 800; margin-top: 15px; display: block; cursor: pointer; text-decoration: underline; opacity: 0.6; }
+        .delete-notice:hover { opacity: 1; }
     </style>
 </head>
 <body>
@@ -91,13 +94,14 @@
             <div class="menu-link">📈 Підвищення</div>
             <button onclick="window.handleLogout()" class="btn-exit">🚪 Вийти з системи</button>
         </div>
-        <button onclick="window.deleteAccount()" style="background:none; border:none; color:rgba(239,68,68,0.4); font-size:10px; cursor:pointer; text-decoration:underline; width:100%;">Видалити мій профіль</button>
     </div>
 
     <div class="profile-card">
         <div class="avatar-wrap"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" width="70"></div>
         <h2 id="uName" style="margin:0;">Завантаження...</h2>
         <div id="uID" style="color:var(--text-gray); font-size:13px; margin-top:5px;">ID: 0000</div>
+        
+        <span id="deleteBtn" class="delete-notice" onclick="window.processDelete()">Видалити цей профіль</span>
     </div>
 
     <div class="stats-wrapper">
@@ -141,11 +145,12 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUID = "";
-    let isLoggingOut = false; // Флаг для запобігання петлі перезавантаження
+    let currentUID = ""; // UID акаунта, який ми бачимо на екрані
+    let myRole = "user";
+    let isLoggingOut = false;
 
     onAuthStateChanged(auth, (user) => {
-        if (isLoggingOut) return; // Якщо ми виходимо, нічого не перевіряємо
+        if (isLoggingOut) return;
         if (user) {
             currentUID = user.uid;
             loadData(user.uid, true);
@@ -166,20 +171,35 @@
             document.getElementById('uDiscord').innerText = d.discord || "---";
             document.getElementById('uPass').href = d.passport || "#";
 
-            if (isMe && d.role === 'admin') {
-                document.getElementById('adminPanel').style.display = 'block';
-                document.querySelectorAll('.adm-only').forEach(el => el.style.display = 'block');
-                const users = await getDocs(collection(db, "users"));
-                const list = document.getElementById('usersList');
-                list.innerHTML = "";
-                users.forEach(uDoc => {
-                    list.innerHTML += `<div class="user-row"><span>${uDoc.data().name}</span><button class="admin-btn" onclick="window.viewUser('${uDoc.id}')">КЕРУВАТИ</button></div>`;
-                });
+            if (isMe) {
+                myRole = d.role;
+                if (d.role === 'admin') {
+                    document.getElementById('adminPanel').style.display = 'block';
+                    document.querySelectorAll('.adm-only').forEach(el => el.style.display = 'block');
+                    renderUserList();
+                }
             }
+            
+            // Оновлюємо текст кнопки видалення
+            const delBtn = document.getElementById('deleteBtn');
+            delBtn.innerText = isMe ? "Видалити мій акаунт" : `Видалити профіль бійця ${d.name}`;
         }
     }
 
-    window.viewUser = (uid) => { currentUID = uid; loadData(uid, false); window.scrollTo({top:0, behavior:'smooth'}); };
+    async function renderUserList() {
+        const users = await getDocs(collection(db, "users"));
+        const list = document.getElementById('usersList');
+        list.innerHTML = "";
+        users.forEach(uDoc => {
+            list.innerHTML += `<div class="user-row"><span>${uDoc.data().name}</span><button class="admin-btn" onclick="window.viewUser('${uDoc.id}')">КЕРУВАТИ</button></div>`;
+        });
+    }
+
+    window.viewUser = (uid) => { 
+        currentUID = uid; 
+        loadData(uid, uid === auth.currentUser.uid); 
+        window.scrollTo({top:0, behavior:'smooth'}); 
+    };
 
     window.modify = async (f, v) => {
         const ref = doc(db, "users", currentUID);
@@ -190,18 +210,36 @@
     };
 
     window.handleLogout = async () => {
-        isLoggingOut = true; // Активуємо захист від перезавантаження
+        isLoggingOut = true;
         await signOut(auth);
         window.location.href = "index.html";
     };
 
-    window.deleteAccount = async () => {
-        if (confirm("ВИДАЛИТИ ПРОФІЛЬ НАЗАВЖДИ?")) {
-            isLoggingOut = true;
-            const user = auth.currentUser;
-            await deleteDoc(doc(db, "users", user.uid));
-            await deleteUser(user);
-            window.location.href = "index.html";
+    window.processDelete = async () => {
+        const isMe = (currentUID === auth.currentUser.uid);
+        const confirmMsg = isMe 
+            ? "Ви впевнені, що хочете видалити СВІЙ акаунт назавжди?" 
+            : "Ви впевнені, що хочете видалити ПРОФІЛЬ ЦЬОГО БІЙЦЯ з бази?";
+
+        if (confirm(confirmMsg) && confirm("ПІДТВЕРДІТЬ ДІЮ ЩЕ РАЗ!")) {
+            try {
+                if (isMe) {
+                    // Видаляємо свій акаунт повністю
+                    isLoggingOut = true;
+                    await deleteDoc(doc(db, "users", currentUID));
+                    await deleteUser(auth.currentUser);
+                    window.location.href = "index.html";
+                } else {
+                    // Адмін видаляє чужий профіль тільки з бази Firestore
+                    await deleteDoc(doc(db, "users", currentUID));
+                    alert("Профіль бійця видалено з бази.");
+                    // Повертаємося до свого профілю
+                    currentUID = auth.currentUser.uid;
+                    loadData(currentUID, true);
+                }
+            } catch (e) {
+                alert("Помилка! Можливо, потрібно перелогінитися для видалення свого акаунта.");
+            }
         }
     };
 </script>
