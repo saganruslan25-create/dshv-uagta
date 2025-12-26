@@ -8,142 +8,165 @@
     <style>
         :root {
             --primary: #22c55e;
+            --neon-green: #00ff66;
             --bg: #030507;
             --card-bg: rgba(255, 255, 255, 0.03);
-            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(34, 197, 94, 0.2);
             --text-gray: #94a3b8;
+            --neon-glow: 0 0 15px rgba(34, 197, 94, 0.4);
         }
 
         body {
             margin: 0; background: var(--bg); color: white;
             font-family: 'Inter', sans-serif; min-height: 100vh;
-            background-image: radial-gradient(circle at 50% -20%, rgba(34, 197, 94, 0.15), transparent 50%);
+            background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
         }
 
-        /* Навігація як у index */
         nav {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 8%; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px);
             border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
         }
-        .logo-box { background: var(--primary); color: black; padding: 4px 10px; border-radius: 6px; font-weight: 800; text-decoration: none; }
+        .logo-box { 
+            background: var(--primary); color: black; padding: 4px 12px; border-radius: 6px; 
+            font-weight: 800; text-decoration: none; box-shadow: var(--neon-glow);
+        }
 
-        /* ОСНОВНИЙ КОНТЕЙНЕР (СІТКА ЗА МАКЕТОМ) */
         .dashboard {
-            display: grid;
-            grid-template-columns: 250px 1fr 2fr; /* Меню | Профіль | Статистика */
+            display: grid; grid-template-columns: 280px 1.2fr 2fr;
             gap: 25px; padding: 40px 5%; max-width: 1600px; margin: 0 auto;
         }
 
-        @media (max-width: 1100px) { .dashboard { grid-template-columns: 1fr; } }
-
-        /* ЛІВЕ МЕНЮ */
-        .sidebar { display: flex; flex-direction: column; gap: 12px; }
+        /* Кнопки меню */
+        .sidebar { display: flex; flex-direction: column; gap: 15px; }
         .side-btn {
             background: var(--card-bg); border: 1px solid var(--glass-border);
-            color: white; padding: 15px; border-radius: 14px; text-align: left;
+            color: white; padding: 16px; border-radius: 14px; text-align: left;
             cursor: pointer; transition: 0.3s; font-size: 13px; font-weight: 600;
+            text-decoration: none; display: block;
         }
-        .side-btn:hover { border-color: var(--primary); background: rgba(34, 197, 94, 0.05); }
-        .side-btn.admin { border-left: 4px solid var(--primary); }
+        .side-btn:hover { 
+            border-color: var(--neon-green); background: rgba(34, 197, 94, 0.1);
+            box-shadow: inset 0 0 10px rgba(34, 197, 94, 0.2);
+        }
 
-        /* ЦЕНТРАЛЬНА КАРТКА ПРОФІЛЮ */
+        /* Центральний блок - НЕОНОВИЙ */
         .profile-card {
-            background: var(--card-bg); border: 1px solid var(--glass-border);
-            border-radius: 30px; padding: 40px 20px; text-align: center;
-            backdrop-filter: blur(10px); height: fit-content;
+            background: var(--card-bg); border: 1px solid var(--neon-green);
+            border-radius: 30px; padding: 45px 20px; text-align: center;
+            backdrop-filter: blur(15px); box-shadow: var(--neon-glow);
+            position: relative; overflow: hidden;
         }
-        .avatar-circle {
-            width: 140px; height: 140px; background: rgba(255,255,255,0.05);
-            border: 2px dashed var(--primary); border-radius: 50%;
-            margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;
-            overflow: hidden;
+        .profile-card::before {
+            content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(34,197,94,0.05) 0%, transparent 70%);
         }
-        .avatar-circle img { width: 80%; opacity: 0.5; }
-        .profile-name { font-size: 22px; font-weight: 800; margin-bottom: 5px; }
-        .profile-id { color: var(--text-gray); font-size: 14px; letter-spacing: 1px; }
 
-        /* ПРАВА СІТКА СТАТИСТИКИ */
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+        .avatar-circle {
+            width: 150px; height: 150px; background: rgba(0,0,0,0.5);
+            border: 3px solid var(--neon-green); border-radius: 50%;
+            margin: 0 auto 25px; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
         }
+        .avatar-circle img { width: 70%; filter: drop-shadow(0 0 5px var(--neon-green)); }
+
+        /* Сітка карток */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .stat-item {
             background: var(--card-bg); border: 1px solid var(--glass-border);
-            padding: 30px 20px; border-radius: 24px; text-align: center;
-            transition: 0.3s; display: flex; flex-direction: column; justify-content: center;
+            padding: 25px; border-radius: 22px; text-align: center;
+            transition: 0.4s; position: relative;
         }
-        .stat-item:hover { transform: translateY(-5px); border-color: rgba(34,197,94,0.3); }
-        .stat-label { color: var(--text-gray); font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 10px; }
-        .stat-value { font-size: 20px; font-weight: 800; color: white; }
-        .stat-value.green { color: var(--primary); }
-
-        /* Кнопки адміна внизу списком */
+        .stat-item:hover { border-color: var(--neon-green); box-shadow: var(--neon-glow); transform: scale(1.02); }
+        .stat-label { color: var(--text-gray); font-size: 11px; font-weight: 800; text-transform: uppercase; margin-bottom: 12px; display: block; }
+        .stat-value { font-size: 20px; font-weight: 800; text-shadow: 0 0 10px rgba(255,255,255,0.1); }
+        
+        /* Адмінка - СПИСОК */
         .admin-panel {
-            grid-column: 1 / -1; background: rgba(0,0,0,0.3); 
-            border-radius: 24px; padding: 30px; margin-top: 20px; border: 1px solid rgba(34,197,94,0.1);
+            grid-column: 1 / -1; background: rgba(0,0,0,0.5); 
+            border-radius: 30px; padding: 35px; border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
         .user-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; border-bottom: 1px solid var(--glass-border);
+            padding: 15px 20px; background: rgba(255,255,255,0.02); border-radius: 12px;
+            margin-bottom: 10px; border: 1px solid transparent; transition: 0.3s;
         }
+        .user-row:hover { border-color: var(--neon-green); background: rgba(34, 197, 94, 0.05); }
+
+        .btn-view {
+            background: var(--primary); color: black; border: none; padding: 8px 16px;
+            border-radius: 8px; font-weight: 800; cursor: pointer; font-size: 12px;
+        }
+        
+        .edit-controls { margin-top: 15px; display: flex; gap: 10px; justify-content: center; }
+        .btn-upd { padding: 5px 10px; border-radius: 5px; border: none; cursor: pointer; font-weight: 700; font-size: 10px; }
+
+        @media (max-width: 1000px) { .dashboard { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
 
 <nav>
     <a href="index.html" class="logo-box">ДШВ</a>
-    <div style="font-size: 12px; font-weight: 700; color: var(--primary);">СИСТЕМА УПРАВЛІННЯ</div>
+    <div style="font-size: 12px; font-weight: 700; color: var(--neon-green); text-shadow: 0 0 10px var(--primary);">СИСТЕМА УПРАВЛІННЯ</div>
 </nav>
 
 <div class="dashboard">
     <div class="sidebar">
-        <button class="side-btn">Головна сторінка (soon)</button>
-        <button class="side-btn">Статут ДШВ (soon)</button>
-        <button class="side-btn">Рапорти на підвищення (soon)</button>
-        <div id="adminMenu" style="display: none; margin-top: 20px;">
-            <p style="font-size: 10px; color: var(--primary); margin-left: 10px; font-weight: 800;">ADMIN PANEL</p>
-            <button class="side-btn admin">Керування бійцями</button>
-            <button class="side-btn admin">Перегляд логів</button>
-        </div>
-        <button class="side-btn" onclick="window.logout()" style="margin-top: auto; opacity: 0.6;">Завершити сесію</button>
+        <a href="index.html" class="side-btn">🏠 Головна сторінка</a>
+        <div class="side-btn">📜 Статут ДШВ (soon)</div>
+        <div class="side-btn">📈 Підвищення (soon)</div>
+        <div id="adminTag" style="display:none; color: var(--neon-green); font-size: 10px; font-weight: 900; margin-left: 10px;">ADMIN ACCESS</div>
+        <button onclick="window.logout()" class="side-btn" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.2); margin-top: auto;">Вихід</button>
     </div>
 
     <div class="profile-card">
         <div class="avatar-circle">
-            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946429.png" alt="user">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="soldier">
         </div>
-        <div class="profile-name" id="uName">Завантаження...</div>
-        <div class="profile-id">ID ГРАВЦЯ: <span id="uID">---</span></div>
+        <div class="profile-name" id="uName">...</div>
+        <div class="profile-id" id="uID">Завантаження...</div>
+        <div id="viewingNotice" style="display:none; color: var(--neon-green); font-size: 11px; margin-top: 10px;">🔴 ПЕРЕГЛЯД ПРОФІЛЮ БІЙЦЯ</div>
     </div>
 
     <div class="stats-grid">
         <div class="stat-item">
-            <span class="stat-label">Посада</span>
-            <span class="stat-value" id="uRank" style="color: var(--primary);">---</span>
+            <span class="stat-label">Звання / Посада</span>
+            <span class="stat-value" id="uRank" style="color: var(--neon-green);">---</span>
         </div>
         <div class="stat-item">
             <span class="stat-label">Попередження</span>
-            <span class="stat-value" id="uWarns" style="color: #f59e0b;">0</span>
+            <span class="stat-value" id="uWarns">0</span>
+            <div class="edit-controls admin-only" style="display:none;">
+                <button class="btn-upd" style="background: #f59e0b;" onclick="changeVal('warns', 1)">+</button>
+                <button class="btn-upd" style="background: #475569;" onclick="changeVal('warns', -1)">-</button>
+            </div>
         </div>
         <div class="stat-item">
             <span class="stat-label">Догани</span>
-            <span class="stat-value" id="uRep" style="color: #ef4444;">0</span>
+            <span class="stat-value" id="uRep">0</span>
+            <div class="edit-controls admin-only" style="display:none;">
+                <button class="btn-upd" style="background: #ef4444;" onclick="changeVal('reprimands', 1)">+</button>
+                <button class="btn-upd" style="background: #475569;" onclick="changeVal('reprimands', -1)">-</button>
+            </div>
         </div>
         <div class="stat-item">
             <span class="stat-label">Паспорт</span>
-            <a href="#" id="uPass" target="_blank" class="stat-value" style="color: #3b82f6; text-decoration: none; font-size: 14px;">ВІДКРИТИ ↗</a>
+            <a href="#" id="uPass" target="_blank" class="stat-value" style="color: #3b82f6; text-decoration: none; font-size: 14px;">ПЕРЕГЛЯНУТИ ↗</a>
         </div>
         <div class="stat-item">
-            <span class="stat-label">Діскорд</span>
+            <span class="stat-label">Discord</span>
             <span class="stat-value" id="uDiscord" style="font-size: 14px;">---</span>
         </div>
         <div class="stat-item">
             <span class="stat-label">Статус</span>
-            <span class="stat-value green">АКТИВНИЙ</span>
+            <span class="stat-value" style="color: var(--neon-green);">АКТИВНИЙ</span>
         </div>
-        
-        <div id="adminSection" class="admin-panel" style="display: none;">
-            <h3 style="margin-top:0; font-size: 14px; color: var(--primary);">СПИСОК ОСОБОВОГО СКЛАДУ</h3>
+
+        <div id="adminPanel" class="admin-panel" style="display:none;">
+            <h3 style="margin-top:0; color: var(--neon-green); letter-spacing: 2px; font-size: 14px;">ОСОБОВИЙ СКЛАД</h3>
             <div id="usersList"></div>
         </div>
     </div>
@@ -167,55 +190,68 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    let currentViewId = ""; 
+    let isAdmin = false;
+
     onAuthStateChanged(auth, (user) => {
-        if (user) { loadUserData(user.uid); } 
-        else { window.location.href = "index.html"; }
+        if (user) { 
+            currentViewId = user.uid;
+            loadProfile(user.uid, true); 
+        } else { 
+            window.location.href = "index.html"; 
+        }
     });
 
-    async function loadUserData(uid) {
-        // Виправлення: перевіряємо колекцію "users", як ми створювали в index.html
-        const userDoc = await getDoc(doc(db, "users", uid));
-        
-        if (userDoc.exists()) {
-            const d = userDoc.data();
+    async function loadProfile(uid, isInitial = false) {
+        const s = await getDoc(doc(db, "users", uid));
+        if (s.exists()) {
+            const d = s.data();
             document.getElementById('uName').innerText = d.name;
             document.getElementById('uRank').innerText = d.rank;
-            document.getElementById('uID').innerText = d.gameID;
+            document.getElementById('uID').innerText = "ID: " + d.gameID;
             document.getElementById('uWarns').innerText = d.warns || 0;
             document.getElementById('uRep').innerText = d.reprimands || 0;
-            document.getElementById('uDiscord').innerText = d.discord || "Не вказано";
+            document.getElementById('uDiscord').innerText = d.discord || "-";
             document.getElementById('uPass').href = d.passport || "#";
 
-            if (d.role === 'admin') {
-                document.getElementById('adminMenu').style.display = 'block';
-                document.getElementById('adminSection').style.display = 'block';
-                renderAdminList();
+            if (isInitial && d.role === 'admin') {
+                isAdmin = true;
+                document.getElementById('adminTag').style.display = 'block';
+                document.getElementById('adminPanel').style.display = 'block';
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'flex');
+                renderList();
             }
-        } else {
-            alert("Помилка: Дані користувача не знайдені в колекції 'users'");
         }
     }
 
-    async function renderAdminList() {
+    async function renderList() {
         const snap = await getDocs(collection(db, "users"));
-        const list = document.getElementById('usersList');
-        list.innerHTML = "";
+        const cont = document.getElementById('usersList');
+        cont.innerHTML = "";
         snap.forEach(uDoc => {
             const u = uDoc.data();
-            list.innerHTML += `
+            cont.innerHTML += `
                 <div class="user-row">
-                    <span>${u.name} [ID: ${u.gameID}]</span>
-                    <div>
-                        <button onclick="upd('${uDoc.id}', 'reprimands', ${(u.reprimands||0)+1})" style="background:#ef4444; border:none; color:white; padding:5px 10px; border-radius:5px; cursor:pointer; margin-right:5px;">+ Догана</button>
-                        <button onclick="upd('${uDoc.id}', 'warns', ${(u.warns||0)+1})" style="background:#f59e0b; border:none; color:white; padding:5px 10px; border-radius:5px; cursor:pointer;">+ Пред</button>
-                    </div>
+                    <span>${u.name} <small style="color:gray; margin-left:10px;">ID: ${u.gameID}</small></span>
+                    <button class="btn-view" onclick="window.viewUser('${uDoc.id}')">ПРОФІЛЬ</button>
                 </div>`;
         });
     }
 
-    window.upd = async (id, field, val) => {
-        await updateDoc(doc(db, "users", id), { [field]: val });
-        location.reload();
+    window.viewUser = (uid) => {
+        currentViewId = uid;
+        document.getElementById('viewingNotice').style.display = 'block';
+        loadProfile(uid);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.changeVal = async (field, change) => {
+        if (!isAdmin) return;
+        const ref = doc(db, "users", currentViewId);
+        const s = await getDoc(ref);
+        const newVal = Math.max(0, (s.data()[field] || 0) + change);
+        await updateDoc(ref, { [field]: newVal });
+        loadProfile(currentViewId);
     };
 
     window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
