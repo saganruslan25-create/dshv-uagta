@@ -14,6 +14,7 @@
             --glass-border: rgba(34, 197, 94, 0.25);
             --text-gray: #94a3b8;
             --neon-glow: 0 0 25px rgba(34, 197, 94, 0.4);
+            --error: #ef4444;
         }
 
         body {
@@ -42,6 +43,24 @@
             margin: 40px auto;
             padding: 0 20px;
         }
+
+        /* СЕКЦІЯ СЕКРЕТНОГО КОДУ */
+        .secret-container {
+            background: rgba(34, 197, 94, 0.05);
+            border: 2px dashed var(--glass-border);
+            border-radius: 24px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 40px;
+            backdrop-filter: blur(10px);
+        }
+        .secret-label { font-size: 12px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; letter-spacing: 2px; }
+        .secret-code { font-size: 42px; font-weight: 900; color: white; margin: 15px 0; letter-spacing: 8px; text-shadow: var(--neon-glow); }
+        .btn-copy { 
+            background: var(--primary); color: black; border: none; padding: 10px 25px; 
+            border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s;
+        }
+        .btn-copy:hover { transform: scale(1.05); background: var(--primary-bright); }
 
         .header-flex {
             display: flex;
@@ -81,6 +100,13 @@
         .nickname { font-size: 20px; font-weight: 800; color: var(--primary-bright); }
         .discord-tag { font-size: 14px; color: var(--text-gray); margin-top: 5px; }
 
+        .status-badge {
+            font-size: 10px; padding: 5px 12px; border-radius: 8px; font-weight: 800; text-transform: uppercase; margin-top: 10px; display: inline-block;
+        }
+        .status-pending { background: #eab308; color: black; }
+        .status-approved { background: var(--primary); color: black; }
+        .status-rejected { background: var(--error); color: white; }
+
         .motivation-box {
             background: rgba(0,0,0,0.3);
             padding: 15px;
@@ -90,18 +116,30 @@
             color: #cbd5e1;
         }
 
+        .action-group {
+            display: flex; gap: 10px; margin-top: 20px;
+        }
+
+        .btn-action {
+            flex: 1; padding: 12px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; transition: 0.3s; font-size: 12px; text-transform: uppercase;
+        }
+        .btn-approve { background: var(--primary); color: black; }
+        .btn-reject { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .btn-approve:hover { background: var(--primary-bright); box-shadow: var(--neon-glow); }
+        .btn-reject:hover { background: #ef4444; color: white; }
+
         .btn-delete {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-gray);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 8px 15px;
             border-radius: 10px;
             font-weight: 700;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             transition: 0.3s;
         }
-        .btn-delete:hover { background: #ef4444; color: white; }
+        .btn-delete:hover { border-color: var(--error); color: var(--error); }
 
         .empty-state {
             text-align: center;
@@ -128,6 +166,12 @@
 </nav>
 
 <div class="container">
+    <div class="secret-container">
+        <div class="secret-label">Секретний код (Оновлюється кожні 2 хв)</div>
+        <div class="secret-code" id="secretDisplay">ЗАВАНТАЖЕННЯ...</div>
+        <button class="btn-copy" onclick="copySecret()">Скопіювати та надати бійцю</button>
+    </div>
+
     <div class="header-flex">
         <h1 style="font-weight: 900; margin: 0;">Рапорти на вступ</h1>
         <a href="cabinet.html" class="btn-back">← Назад в кабінет</a>
@@ -140,7 +184,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -154,6 +198,28 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
+    // --- ЛОГІКА СЕКРЕТНОГО КОДУ ---
+    async function generateSecret() {
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        document.getElementById('secretDisplay').innerText = code;
+        try {
+            await setDoc(doc(db, "system", "secret"), { 
+                code: code, 
+                lastUpdate: new Date() 
+            });
+        } catch (e) { console.error("Помилка оновлення коду:", e); }
+    }
+
+    // Запуск таймера оновлення коду
+    generateSecret();
+    setInterval(generateSecret, 120000);
+
+    window.copySecret = () => {
+        const code = document.getElementById('secretDisplay').innerText;
+        navigator.clipboard.writeText(code);
+        alert("Код " + code + " скопійовано!");
+    };
 
     // Перевірка на адміна
     onAuthStateChanged(auth, async (user) => {
@@ -185,30 +251,50 @@
             container.innerHTML = "";
             snapshot.forEach((appDoc) => {
                 const data = appDoc.data();
+                const id = appDoc.id;
                 const date = data.timestamp ? data.timestamp.toDate().toLocaleString('uk-UA') : 'Тільки що';
                 
+                const statusClass = `status-${data.status || 'pending'}`;
+                const statusText = data.status === 'approved' ? 'Прийнято' : (data.status === 'rejected' ? 'Відхилено' : 'Очікує');
+
                 container.innerHTML += `
-                    <div class="app-card" id="card-${appDoc.id}">
+                    <div class="app-card" id="card-${id}">
                         <div class="app-header">
                             <div>
                                 <div class="nickname">${data.name}</div>
                                 <div class="discord-tag">Discord: <b>${data.discord}</b></div>
-                                <div style="font-size: 11px; opacity: 0.5; margin-top: 5px;">Дата: ${date}</div>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                                <div style="font-size: 11px; opacity: 0.5; margin-top: 10px;">Дата: ${date}</div>
                             </div>
-                            <button class="btn-delete" onclick="window.deleteApp('${appDoc.id}')">Видалити рапорт</button>
+                            <button class="btn-delete" onclick="window.deleteApp('${id}')">Видалити</button>
                         </div>
+                        
                         <div style="font-size: 12px; text-transform: uppercase; color: var(--primary); font-weight: 800; margin-bottom: 8px;">Мотивація:</div>
-                        <div class="motivation-box">
-                            ${data.motivation}
-                        </div>
+                        <div class="motivation-box">${data.motivation}</div>
+
+                        ${(!data.status || data.status === 'pending') ? `
+                            <div class="action-group">
+                                <button class="btn-action btn-approve" onclick="window.updateStatus('${id}', 'approved')">Прийняти рапорт</button>
+                                <button class="btn-action btn-reject" onclick="window.updateStatus('${id}', 'rejected')">Відхилити</button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
         });
     }
 
+    // Оновлення статусу (Прийняти/Відхилити)
+    window.updateStatus = async (id, newStatus) => {
+        try {
+            await updateDoc(doc(db, "applications", id), { status: newStatus });
+        } catch (err) {
+            alert("Помилка зміни статусу.");
+        }
+    };
+
     window.deleteApp = async (id) => {
-        if (confirm("Ви дійсно хочете видалити цей рапорт?")) {
+        if (confirm("Ви дійсно хочете видалити цей рапорт з бази?")) {
             try {
                 await deleteDoc(doc(db, "applications", id));
             } catch (err) {
