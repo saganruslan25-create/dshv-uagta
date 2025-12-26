@@ -81,6 +81,14 @@
             border: 1px solid rgba(255,255,255,0.03); word-break: break-word;
         }
 
+        /* СТИЛЬ ДЛЯ РОЗУМНИХ ПОСИЛАНЬ */
+        .work-content a {
+            color: var(--primary-bright);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+        .work-content a:hover { color: white; }
+
         .controls { display: flex; gap: 10px; margin-top: 15px; justify-content: flex-end; }
         .ctrl-btn { background: none; border: 1px solid rgba(255,255,255,0.1); color: #888; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; text-transform: uppercase; }
         .ctrl-btn:hover { background: rgba(255,255,255,0.05); color: white; border-color: white; }
@@ -121,7 +129,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDoc, doc, query, orderBy, onSnapshot, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDoc, doc, query, orderBy, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -139,6 +147,12 @@
     let currentUserData = null;
     let editId = null;
 
+    // ФУНКЦІЯ РОЗУМНИХ ПОСИЛАНЬ
+    function linkify(text) {
+        const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+        return text.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
+    }
+
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const snap = await getDoc(doc(db, "users", user.uid));
@@ -154,21 +168,28 @@
 
         try {
             if (editId) {
-                await updateDoc(doc(db, "subotniks", editId), { date, content, edited: true });
+                // Виправлена логіка редагування
+                await updateDoc(doc(db, "subotniks", editId), { 
+                    date: date, 
+                    content: content, 
+                    edited: true 
+                });
                 editId = null;
                 document.getElementById('subBtn').innerText = "Опублікувати звіт";
             } else {
+                // Новий звіт
                 await addDoc(collection(db, "subotniks"), {
                     ownerId: currentUserData.uid,
                     name: currentUserData.name,
                     rank: currentUserData.rank,
-                    date, content,
-                    timestamp: new Date()
+                    date: date, 
+                    content: content,
+                    timestamp: serverTimestamp()
                 });
             }
             document.getElementById('subDate').value = "";
             document.getElementById('subContent').value = "";
-        } catch (e) { alert("Помилка!"); }
+        } catch (e) { alert("Помилка відправки!"); }
     };
 
     function loadSubs() {
@@ -179,21 +200,24 @@
             snapshot.forEach((s) => {
                 const data = s.data();
                 const id = s.id;
-                const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString('uk-UA') : "";
+                const time = data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString('uk-UA') : "...";
                 const isOwner = currentUserData && currentUserData.uid === data.ownerId;
                 const isAdmin = currentUserData && currentUserData.role === 'admin';
+                
+                // Обробка посилань
+                const safeContent = linkify(data.content);
 
                 feed.innerHTML += `
                     <div class="report-card">
                         <div class="report-header">
-                            <div class="user-name">${data.name} <span class="rank-tag">${data.rank}</span></div>
+                            <div class="user-name">👤 ${data.name} <span class="rank-tag">${data.rank}</span></div>
                             <div class="report-time">${time} ${data.edited ? '(змінено)' : ''}</div>
                         </div>
                         <div class="period-badge">🧹 ДАТА: ${data.date}</div>
-                        <div class="work-content">${data.content}</div>
-                        ${isOwner || isAdmin ? `
+                        <div class="work-content">${safeContent}</div>
+                        ${(isOwner || isAdmin) ? `
                             <div class="controls">
-                                ${isOwner ? `<button class="ctrl-btn" onclick="window.startEdit('${id}', '${data.date}', '${data.content.replace(/\n/g, "\\n")}')">Змінити</button>` : ''}
+                                ${isOwner ? `<button class="ctrl-btn" onclick="window.startEdit('${id}', '${data.date}', \`${data.content.replace(/`/g, "\\`").replace(/\${/g, "\\${")}\`)">Змінити</button>` : ''}
                                 <button class="ctrl-btn btn-del" onclick="window.deleteSub('${id}')">Видалити</button>
                             </div>
                         ` : ''}
@@ -203,6 +227,7 @@
         });
     }
 
+    // Виправлена функція старту редагування
     window.startEdit = (id, date, content) => {
         editId = id;
         document.getElementById('subDate').value = date;
