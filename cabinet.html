@@ -20,6 +20,7 @@
             margin: 0; padding: 0; background-color: var(--bg); color: white; font-family: 'Inter', sans-serif;
             background: radial-gradient(circle at 20% 20%, rgba(34, 197, 94, 0.15) 0%, transparent 40%), var(--bg);
             min-height: 100vh; overflow-x: hidden;
+            scroll-behavior: smooth;
         }
 
         /* НАВІГАЦІЯ */
@@ -34,10 +35,16 @@
             font-weight: 900; text-decoration: none; box-shadow: var(--neon-glow); 
         }
 
-        /* ГОЛОВНИЙ КОНТЕЙНЕР */
+        /* Анімація появи контенту */
         .dashboard-container { 
             display: grid; grid-template-columns: 280px 1fr 2fr; gap: 30px; 
             padding: 40px 8%; max-width: 1600px; margin: 0 auto; 
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         /* БОКОВА ПАНЕЛЬ */
@@ -52,6 +59,20 @@
         }
         .menu-link:hover { background: rgba(34, 197, 94, 0.15); border-color: var(--primary); transform: translateX(10px); }
         .menu-link.active { background: var(--primary); color: black; }
+
+        /* Пульсуюча кнопка рапортів для Адміна */
+        #adminAppBtn {
+            border: 1px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
 
         /* КАРТКА ПРОФІЛЮ */
         .profile-card { 
@@ -82,8 +103,10 @@
         .user-row { 
             display: flex; justify-content: space-between; align-items: center; 
             padding: 18px 25px; background: rgba(0,0,0,0.3); border-radius: 20px; 
-            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;
         }
+        .user-row:hover { background: rgba(34, 197, 94, 0.05); }
+
         .admin-btn { 
             background: var(--primary); color: black; border: none; padding: 10px 20px; 
             border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s;
@@ -122,7 +145,7 @@
             <a href="index.html" class="menu-link">🏠 Головна сторінка</a>
             <a href="#" class="menu-link">📅 Щотижневі звіти</a>
             <a href="#" class="menu-link">🧹 Суботник</a>
-            <a href="applications.html" id="adminAppBtn" class="menu-link" style="display:none; border: 1px solid var(--primary);">📈 Перегляд рапортів</a>
+            <a href="applications.html" id="adminAppBtn" class="menu-link" style="display:none; flex-direction: row; gap: 8px;">📈 Перегляд рапортів</a>
             <button onclick="logout()" class="btn-exit">🚪 Вийти з системи</button>
         </div>
     </div>
@@ -166,8 +189,7 @@
 
         <div id="adminSection" class="admin-panel" style="display:none;">
             <h3 style="margin: 0 0 25px 0; color: var(--primary); font-size: 20px; font-weight: 900; text-transform: uppercase;">📋 Управління особовим складом</h3>
-            <div id="usersList">
-                </div>
+            <div id="usersList"></div>
         </div>
     </div>
 </div>
@@ -206,7 +228,6 @@
         if (userDoc.exists()) {
             const data = userDoc.data();
             
-            // Оновлення інтерфейсу
             document.getElementById('userName').innerText = data.name;
             document.getElementById('userRankDisplay').innerText = data.rank;
             document.getElementById('statRank').innerText = data.rank;
@@ -214,10 +235,9 @@
             document.getElementById('statWarns').innerText = data.warns || 0;
             document.getElementById('statReprimands').innerText = data.reprimands || 0;
 
-            // Перевірка на адміна (тільки при першому завантаженні свого профілю)
             if (isInitialLoad) {
                 const myDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-                if (myDoc.data().role === 'admin') {
+                if (myDoc.exists() && myDoc.data().role === 'admin') {
                     document.getElementById('adminSection').style.display = 'block';
                     document.getElementById('adminAppBtn').style.display = 'flex';
                     document.querySelectorAll('.admin-controls').forEach(c => c.style.display = 'block');
