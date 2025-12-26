@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ДШВ | UKRAINE GTA</title>
+    
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
         :root {
             --primary: #22c55e;
@@ -12,143 +15,311 @@
             --bg: #030507;
             --card-bg: rgba(255, 255, 255, 0.03); 
             --modal-bg: rgba(10, 15, 26, 0.98);
+            --inner-glass: rgba(255, 255, 255, 0.04);
             --text-gray: #94a3b8;
         }
 
-        * { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(180deg, var(--primary-bright), var(--primary)); 
+            border-radius: 10px; 
+        }
+
+        html { scroll-behavior: smooth; }
 
         body {
             margin: 0; padding: 0;
             background-color: var(--bg);
-            /* Твій фірмовий фон */
             background-image: 
                 radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.25) 0%, transparent 50%),
                 radial-gradient(circle at 15% 85%, rgba(34, 197, 94, 0.15) 0%, transparent 40%),
                 radial-gradient(circle at 85% 85%, rgba(34, 197, 94, 0.15) 0%, transparent 40%);
-            background-attachment: fixed; 
-            color: white; 
-            font-family: 'Inter', sans-serif; 
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Inter', sans-serif;
             overflow-x: hidden;
         }
 
+        /* НАВІГАЦІЯ */
         nav {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 8%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(25px); 
-            position: fixed; width: 100%; z-index: 1000; border-bottom: 1px solid rgba(34, 197, 94, 0.1);
+            padding: 15px 8%; 
+            background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(25px); 
+            position: fixed; width: 100%; z-index: 1000;
+            box-sizing: border-box; 
+            border-bottom: 1px solid rgba(34, 197, 94, 0.1);
         }
 
-        .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-box { background: var(--primary); color: black; padding: 4px 10px; border-radius: 6px; font-weight: 800; box-shadow: 0 0 15px var(--primary); }
+        .logo { display: flex; align-items: center; gap: 10px; z-index: 1001; }
+        .logo-box { 
+            background: var(--primary); color: black; padding: 4px 10px; 
+            border-radius: 6px; font-weight: 800; box-shadow: 0 0 15px var(--primary);
+        }
 
-        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links { display: flex; gap: 15px; align-items: center; }
         .nav-links a { color: white; text-decoration: none; font-size: 14px; font-weight: 600; opacity: 0.8; transition: 0.3s; cursor: pointer; }
         .nav-links a:hover { opacity: 1; color: var(--primary-bright); }
 
-        .btn-accent { 
-            background: var(--primary); color: black !important; 
-            padding: 10px 22px; border-radius: 10px; font-weight: 800; 
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); transition: 0.3s; 
-            text-transform: uppercase; font-size: 12px; 
+        .btn-accent {
+            background: var(--primary); 
+            color: black !important; 
+            padding: 10px 22px; 
+            border-radius: 10px; 
+            font-weight: 800; 
+            opacity: 1 !important;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+            transition: 0.3s ease;
+            text-transform: uppercase;
+            font-size: 12px;
+            display: inline-block;
+        }
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
         }
 
-        .section { 
-            display: flex; flex-direction: column; align-items: center; 
-            justify-content: center; text-align: center; padding: 150px 8% 60px; 
+        /* БУРГЕР МЕНЮ */
+        .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; z-index: 2001; }
+        .burger span { display: block; width: 28px; height: 3px; background: var(--primary); border-radius: 2px; transition: 0.3s; }
+        .burger.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+        .burger.active span:nth-child(2) { opacity: 0; }
+        .burger.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+        @media (max-width: 900px) {
+            .burger { display: flex; }
+            .nav-links {
+                position: fixed; top: 0; right: -100%; width: 100%; height: 100vh;
+                background: rgba(3, 5, 7, 0.99); backdrop-filter: blur(25px);
+                flex-direction: column; justify-content: center; transition: 0.5s; z-index: 2000;
+                gap: 25px;
+            }
+            .nav-links.active { right: 0; }
+            .nav-links a { font-size: 20px; }
         }
 
-        .hero-title { font-size: clamp(34px, 8vw, 75px); font-weight: 800; margin: 0; }
-        .hero-sub { color: var(--primary-bright); font-weight: 900; letter-spacing: 5px; margin-top: 10px; text-transform: uppercase; }
+        /* ОСНОВНІ СЕКЦІЇ */
+        .section { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 120px 8% 60px; }
 
+        /* КАРТКИ ПЕРЕВАГ */
+        .grid-container {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;
+            width: 100%; max-width: 1200px; margin-top: 60px;
+        }
+        .card { 
+            background: var(--card-bg); padding: 35px; border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(15px);
+            transition: 0.4s ease; text-align: left;
+        }
+        .card:hover { border-color: var(--primary); transform: translateY(-8px); background: rgba(34, 197, 94, 0.05); }
+
+        @media (max-width: 1100px) { .grid-container { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 750px) { .grid-container { grid-template-columns: 1fr; } }
+
+        /* ФОРМА РАПОРТУ */
         .form-container { 
-            width: 100%; max-width: 600px; background: var(--card-bg); 
-            padding: 40px; border-radius: 35px; border: 1px solid rgba(34, 197, 94, 0.2); 
-            backdrop-filter: blur(20px); margin-top: 50px; 
+            width: 100%; max-width: 700px; background: var(--card-bg); padding: 50px; 
+            border-radius: 40px; border: 1px solid rgba(34, 197, 94, 0.2); backdrop-filter: blur(20px); margin-top: 50px;
         }
-
         .form-input { 
-            width: 100%; padding: 18px; background: rgba(0,0,0,0.4); 
-            border: 1px solid rgba(255,255,255,0.08); color: white; 
-            border-radius: 15px; margin-bottom: 15px; font-family: inherit;
+            width: 100%; padding: 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); 
+            color: white; border-radius: 18px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 25px;
         }
-
-        .btn-submit { 
-            width: 100%; background: var(--primary); color: black; 
-            padding: 18px; border: none; border-radius: 15px; 
-            font-weight: 900; cursor: pointer; text-transform: uppercase; 
-            transition: 0.3s;
+        .btn-submit {
+            width: 100%; background: var(--primary); color: black; padding: 22px; border: none; 
+            border-radius: 18px; font-weight: 900; cursor: pointer; font-size: 18px; text-transform: uppercase; transition: 0.3s;
         }
-        .btn-submit:hover { box-shadow: 0 0 20px var(--primary); transform: translateY(-2px); }
+        .btn-submit:hover { background: var(--primary-bright); box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
 
-        /* Модальне вікно авторизації */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0, 0, 0, 0.9); display: none; 
-            justify-content: center; align-items: center; z-index: 3000; 
-            backdrop-filter: blur(15px); 
+        /* МОДАЛКИ */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: none; justify-content: center; align-items: center; z-index: 3000; backdrop-filter: blur(15px);
         }
-
         .modal-content { 
-            background: var(--modal-bg); width: 90%; max-width: 450px; 
-            padding: 40px; border-radius: 35px; border: 1px solid var(--primary); 
-            position: relative; 
+            background: var(--modal-bg); width: 92%; max-width: 850px; max-height: 85vh; 
+            overflow-y: auto; padding: 50px; border-radius: 45px; border: 1px solid var(--primary); position: relative;
         }
+        .inner-glass-block {
+            background: var(--inner-glass); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 25px; padding: 30px; margin-bottom: 25px; backdrop-filter: blur(10px);
+        }
+        .m-list { list-style: none; padding: 0; margin: 0; }
+        .m-list li { margin-bottom: 12px; font-size: 15px; color: #cbd5e1; display: flex; gap: 15px; line-height: 1.6; text-align: left; }
+        .m-list li b { color: var(--primary-bright); min-width: 25px; }
+        .close-btn { position: absolute; top: 35px; right: 40px; font-size: 40px; cursor: pointer; color: var(--primary); }
 
-        .switch-auth { 
-            color: var(--text-gray); font-size: 13px; cursor: pointer; 
-            display: block; margin-top: 20px; text-decoration: underline; text-align: center; 
-        }
+        /* Стилі для перемикача реєстрації */
+        #regFields { display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
+        .switch-auth { color: var(--text-gray); font-size: 13px; cursor: pointer; display: block; margin-top: 20px; text-align: center; text-decoration: underline; }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
     <nav>
-        <div class="logo">
-            <div class="logo-box">ДШВ</div>
-            <strong>UKRAINE GTA</strong>
-        </div>
-        <div class="nav-links">
-            <a>Про нас</a>
-            <a onclick="handleCabinetClick()" class="btn-accent">Кабінет</a>
+        <div class="logo"><div class="logo-box">ДШВ</div><strong>UKRAINE GTA</strong></div>
+        <div class="burger" id="burgerBtn" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+        <div class="nav-links" id="navLinks">
+            <a onclick="openModal('aboutModal'); toggleMenu()">Від нас</a>
+            <a onclick="openModal('reqModal'); toggleMenu()">Вимоги</a>
+            <a href="https://ukraine-gta.com.ua/uk/" target="_blank" style="opacity: 0.5; font-size: 12px;">Сайт Проекту</a>
+            <a onclick="handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary); box-shadow: none;">Кабінет</a>
+            <a href="#join" class="btn-accent" onclick="toggleMenu()">Вступити</a>
         </div>
     </nav>
 
     <section class="section">
-        <h1 class="hero-title">Десантно Штурмові Війська</h1>
-        <p class="hero-sub">ДШВ — ЗАВЖДИ ПЕРШІ!</p>
+        <div style="border:1px solid var(--primary); padding:8px 25px; border-radius:30px; color:var(--primary-bright); font-size:12px; margin-bottom:25px; background:rgba(34,197,94,0.1); font-weight: 700; text-transform: uppercase;">🛡️ Елітний підрозділ ЗСУ</div>
+        <h1 data-aos="fade-up" style="font-size: clamp(34px, 8vw, 75px); margin: 0; font-weight: 800; line-height: 1.1;">Десантно Штурмові Війська</h1>
+        <p style="color:var(--primary-bright); font-weight: 900; letter-spacing: 5px; margin-top: 20px; font-size: 18px; margin-bottom: 30px;">ДШВ — ЗАВЖДИ ПЕРШІ!</p>
         
-        <div class="form-container">
-             <h2 style="margin-bottom: 25px;">Подати рапорт на вступ</h2>
-             <input type="text" class="form-input" placeholder="Ваш NickName">
-             <button class="btn-submit" onclick="alert('Рапорт надіслано до штабу!')">Відправити рапорт</button>
+        <p style="max-width: 850px; color: var(--text-gray); font-size: 18px; line-height: 1.8;" data-aos="fade-up">
+            Елітний підрозділ ЗСУ, що виконує найскладніші операції в повітрі та на землі. Наша місія - захищати мирних громадян та підтримувати правопорядок.
+        </p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; width:100%; max-width: 1100px; margin-top: 60px;">
+            <div class="card" style="text-align:center;"><p style="font-size:11px; color:var(--text-gray); font-weight:700;">АКТИВНИХ БІЙЦІВ</p><div style="width:30px;height:30px;border:3px solid rgba(255,255,255,0.1);border-left-color:var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin:25px auto 0;"></div></div>
+            <div class="card" style="text-align:center;"><p style="font-size:11px; color:var(--text-gray); font-weight:700;">РОКИ ДОСВІДУ</p><h2 style="font-size: 40px; margin:15px 0 0; color:white;">3</h2></div>
+            <div class="card" style="text-align:center;"><p style="font-size:11px; color:var(--text-gray); font-weight:700;">РІВЕНЬ</p><h2 style="font-size: 26px; color: var(--primary-bright); margin-top: 15px; font-weight: 800;">ЕЛІТНИЙ</h2></div>
         </div>
     </section>
 
-    <div class="modal-overlay" id="authModal">
+    <section class="section">
+        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 40px;">Чому обрати нас?</h2>
+        <div class="grid-container">
+            <div class="card" data-aos="fade-up"><h3>🎓 Професійна підготовка</h3><p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Курс військової та тактичної підготовки від досвідчених інструкторів.</p></div>
+            <div class="card" data-aos="fade-up" data-aos-delay="100"><h3>🛡️ Сучасне спорядження</h3><p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Доступ до найкращої зброї та винищувачів F-16.</p></div>
+            <div class="card" data-aos="fade-up" data-aos-delay="200"><h3>👥 Бойове братство</h3><p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Станьте частиною команди професіоналів.</p></div>
+            <div class="card" data-aos="fade-up"><h3>📈 Кар'єрний ріст</h3><p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Реальна можливість швидкого просування по службі.</p></div>
+            <div class="card" data-aos="fade-up" data-aos-delay="100"><h3>🎯 Реальні операції</h3><p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Участь у наймасштабніших спецзавданнях.</p></div>
+            <div class="card" data-aos="fade-up" data-aos-delay="200"><h3>💰 Гідна винагорода</h3><p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Високі виплати за успішне виконання місій.</p></div>
+        </div>
+    </section>
+
+    <section id="join" class="section">
+        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 50px;">Подати рапорт</h2>
+        <div class="form-container" data-aos="zoom-in">
+            <form>
+                <input type="text" class="form-input" placeholder="Ваш NickName">
+                <input type="text" class="form-input" placeholder="Ваш Discord">
+                <textarea class="form-input" rows="5" placeholder="Ваша мотивація..."></textarea>
+                <button type="button" class="btn-submit" onclick="alert('Рапорт надіслано!')">Відправити рапорт</button>
+            </form>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="aboutModal">
         <div class="modal-content">
-            <h2 id="authTitle" style="text-align:center; margin-bottom: 25px;">Авторизація</h2>
-            <form id="authForm">
+            <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
+            <h2 style="text-align:center; font-size: 32px; margin-bottom: 30px;">Завдання та можливості</h2>
+            <div class="inner-glass-block">
+                <h3 style="color:var(--primary-bright); margin-bottom: 20px;">🛡️ Завдання ДШВ:</h3>
+                <ul class="m-list">
+                    <li><b>1</b> Патруль всіх міст на автомобілі.</li>
+                    <li><b>2</b> Повітряний патруль на гвинтокрилі.</li>
+                    <li><b>3</b> Повітряний патруль на винищувачах.</li>
+                    <li><b>4</b> Протиповітряна оборона ВЧ.</li>
+                    <li><b>5</b> Десантування та штурм будівель.</li>
+                    <li><b>6</b> Розвідка та диверсії в тилу ворога.</li>
+                    <li><b>7</b> Боротьба з ворожим десантом.</li>
+                    <li><b>8</b> Спец.Операції в повітрі.</li>
+                    <li><b>9</b> Підтримка сухопутних військ.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reqModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal('reqModal')">&times;</span>
+            <h2 style="text-align:center; font-size: 32px; margin-bottom: 30px;">Вимоги до кандидатів</h2>
+            <div class="inner-glass-block">
+                <ul class="m-list" style="font-size: 18px; line-height: 2.2;">
+                    <li>🟢 <b>Вік від 12 років (є виключення)</b></li>
+                    <li>🟢 Наявність Discord</li>
+                    <li>🟢 <b>Наявність мікрофона не обов'язково</b></li>
+                    <li>🟢 Досвід гри на сервері від 50 годин</li>
+                    <li>🟢 Знання загальних правил сервера</li>
+                    <li>🟢 Висока дисципліна</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content" style="max-width: 450px;">
+            <span class="close-btn" onclick="closeModal('authModal')">&times;</span>
+            <h2 id="authTitle" style="text-align:center; color:white;">Вхід в Кабінет</h2>
+            <form id="authForm" style="margin-top: 30px;">
                 <input type="email" id="email" class="form-input" placeholder="Електронна пошта (@gmail.com)" required>
                 <input type="password" id="pass" class="form-input" placeholder="Пароль" required>
                 
-                <div id="regFields" style="display:none;">
-                    <input type="text" id="regName" class="form-input" placeholder="Ваш NickName (Приклад: Іван Мазепа)">
-                    <input type="text" id="regRank" class="form-input" placeholder="Ваше звання">
-                    <input type="number" id="regGameID" class="form-input" placeholder="Ваш ігровий ID">
-                    <input type="text" id="regDiscord" class="form-input" placeholder="Ваш Discord">
-                    <input type="text" id="regPassport" class="form-input" placeholder="Посилання на паспорт (Imgur)">
+                <div id="regFields">
+                    <input type="text" id="regName" class="form-input" placeholder="Ім'я та Прізвище (NickName)">
+                    <input type="text" id="regRank" class="form-input" placeholder="Ваше звання/посада">
+                    <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
+                    <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
+                    <input type="text" id="regPassport" class="form-input" placeholder="Посилання на паспорт (Imgur/PostImage)">
                 </div>
 
-                <button type="submit" class="btn-submit" id="submitBtn">Увійти</button>
-                <span class="switch-auth" onclick="toggleAuthMode()" id="switchBtn">Немає акаунту? Створити профіль бійця</span>
+                <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
+                <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none;"></p>
+                
+                <span class="switch-auth" id="switchAuthBtn" onclick="toggleAuthMode()">Ще не маєте акаунту? Реєстрація</span>
             </form>
-            <button onclick="document.getElementById('authModal').style.display='none'" style="background:none; border:none; color:white; width:100%; margin-top:15px; cursor:pointer; font-size:12px; opacity:0.5;">Закрити</button>
         </div>
     </div>
+
+    <footer style="padding:60px; text-align:center; opacity:0.4;">© 2025 ДШВ | UKRAINE GTA</footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init({ duration: 1000, once: true });
+        function toggleMenu() { 
+            document.getElementById('navLinks').classList.toggle('active'); 
+            document.getElementById('burgerBtn').classList.toggle('active');
+        }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+        function handleCabinetClick() {
+            const btn = document.getElementById('cabinetBtn');
+            if (btn.innerText === "КАБІНЕТ") {
+                openModal('authModal');
+            } else {
+                window.location.href = "cabinet.html";
+            }
+        }
+
+        let isLoginMode = true;
+        function toggleAuthMode() {
+            isLoginMode = !isLoginMode;
+            const regFields = document.getElementById('regFields');
+            const authTitle = document.getElementById('authTitle');
+            const loginBtn = document.getElementById('loginBtn');
+            const switchBtn = document.getElementById('switchAuthBtn');
+
+            if (isLoginMode) {
+                regFields.style.display = 'none';
+                authTitle.innerText = 'Вхід в Кабінет';
+                loginBtn.innerText = 'Увійти';
+                switchBtn.innerText = 'Ще не маєте акаунту? Реєстрація';
+            } else {
+                regFields.style.display = 'block';
+                authTitle.innerText = 'Реєстрація бійця';
+                loginBtn.innerText = 'Створити профіль';
+                switchBtn.innerText = 'Вже є акаунт? Увійти';
+            }
+        }
+    </script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -156,80 +327,88 @@
             projectId: "dsv-gta",
             storageBucket: "dsv-gta.firebasestorage.app",
             messagingSenderId: "661591588818",
-            appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+            appId: "1:661591588818:web:a8e8dca3d061447e24d20b",
+            measurementId: "G-0P1445ZT2M"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let isLoginMode = true;
-
-        // Перемикач Вхід / Реєстрація
-        window.toggleAuthMode = () => {
-            isLoginMode = !isLoginMode;
-            document.getElementById('regFields').style.display = isLoginMode ? 'none' : 'block';
-            document.getElementById('authTitle').innerText = isLoginMode ? 'Авторизація' : 'Реєстрація бійця';
-            document.getElementById('submitBtn').innerText = isLoginMode ? 'Увійти' : 'Зареєструватися';
-            document.getElementById('switchBtn').innerText = isLoginMode ? 'Немає акаунту? Створити профіль бійця' : 'Вже є акаунт? Увійти';
-        };
-
-        // Клік на Кабінет
-        window.handleCabinetClick = () => {
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    window.location.href = "cabinet.html";
-                } else {
-                    document.getElementById('authModal').style.display = 'flex';
+        onAuthStateChanged(auth, async (user) => {
+            const cabinetBtn = document.getElementById('cabinetBtn');
+            if (user) {
+                const docRef = doc(db, "users", user.uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    cabinetBtn.innerText = docSnap.data().name.toUpperCase();
                 }
-            });
-        };
+            } else {
+                cabinetBtn.innerText = "КАБІНЕТ";
+            }
+        });
 
-        // Обробка форми
-        document.getElementById('authForm').addEventListener('submit', async (e) => {
+        const authForm = document.getElementById('authForm');
+        authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
 
-            if(!email.endsWith("@gmail.com")) {
-                alert("Будь ласка, використовуйте тільки пошту @gmail.com");
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('pass').value.trim();
+            const errorElement = document.getElementById('authError');
+            const loginBtn = document.getElementById('loginBtn');
+
+            // ВАЛІДАЦІЯ GMAIL
+            if (!email.toLowerCase().endsWith("@gmail.com")) {
+                errorElement.innerText = "Помилка: Використовуйте тільки пошту @gmail.com";
+                errorElement.style.display = "block";
                 return;
             }
 
+            errorElement.style.display = "none";
+            loginBtn.disabled = true;
+
             try {
-                if(isLoginMode) {
-                    // ВХІД
+                if (isLoginMode) {
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
-                    // РЕЄСТРАЦІЯ
-                    const name = document.getElementById('regName').value;
-                    const rank = document.getElementById('regRank').value;
-                    const gameID = document.getElementById('regGameID').value;
-                    const discord = document.getElementById('regDiscord').value;
-                    const passport = document.getElementById('regPassport').value;
+                    const name = document.getElementById('regName').value.trim();
+                    const rank = document.getElementById('regRank').value.trim();
+                    const gameID = document.getElementById('regGameID').value.trim();
+                    const discord = document.getElementById('regDiscord').value.trim();
+                    const passport = document.getElementById('regPassport').value.trim();
 
-                    if(!name || !rank || !gameID) return alert("Заповніть основні поля!");
+                    if (!name || !rank || !gameID || !discord || !passport) {
+                        throw new Error("Будь ласка, заповніть всі поля реєстрації!");
+                    }
 
-                    const res = await createUserWithEmailAndPassword(auth, email, pass);
-                    
-                    // Створення запису в базі
-                    await setDoc(doc(db, "users", res.user.uid), {
+                    // ПЕРЕВІРКА ПОСИЛАННЯ
+                    const validLinks = ["imgur.com", "postimg.cc", "postimages.org"];
+                    const isLinkValid = validLinks.some(link => passport.includes(link));
+                    if (!isLinkValid) {
+                        throw new Error("Паспорт має бути посиланням на Imgur або PostImages!");
+                    }
+
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
+                    const user = userCredential.user;
+
+                    await setDoc(doc(db, "users", user.uid), {
                         name: name,
                         rank: rank,
-                        gameID: gameID,
+                        gameID: Number(gameID),
                         discord: discord,
                         passport: passport,
                         reprimands: 0,
                         warns: 0,
-                        role: "user" // за замовчуванням звичайний боєць
+                        role: "user"
                     });
 
-                    alert("Профіль успішно створено!");
                     window.location.href = "cabinet.html";
                 }
-            } catch(error) {
-                alert("Помилка: " + error.message);
+            } catch (error) {
+                errorElement.innerText = "Помилка: " + (error.message.includes('auth/') ? "Перевірте дані" : error.message);
+                errorElement.style.display = "block";
+                loginBtn.disabled = false;
             }
         });
     </script>
