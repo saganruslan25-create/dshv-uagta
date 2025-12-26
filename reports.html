@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | ЩОТИЖНЕВІ ЗВІТИ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #22c55e;
+            --bg: #020406;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(34, 197, 94, 0.2);
+            --text-gray: #94a3b8;
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: white; font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%), var(--bg);
+        }
+
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 8%; height: 70px; background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 1000;
+        }
+
+        .container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+
+        /* Форма подачі */
+        .report-form {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            padding: 30px; border-radius: 25px; margin-bottom: 50px;
+            backdrop-filter: blur(10px);
+        }
+
+        h2 { color: var(--primary); margin-top: 0; font-weight: 900; text-transform: uppercase; font-size: 20px; }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 5px; font-weight: 700; }
+        
+        .f-input {
+            width: 100%; padding: 14px; background: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
+            color: white; font-family: inherit; font-size: 14px;
+        }
+
+        .btn-send {
+            width: 100%; background: var(--primary); color: black; border: none;
+            padding: 16px; border-radius: 12px; font-weight: 900; cursor: pointer;
+            text-transform: uppercase; transition: 0.3s;
+        }
+        .btn-send:hover { box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); transform: translateY(-2px); }
+
+        /* Стрічка звітів (як у Discord) */
+        .report-card {
+            background: rgba(255,255,255,0.02); border-left: 4px solid var(--primary);
+            padding: 20px; border-radius: 15px; margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .report-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .user-info { font-weight: 800; color: var(--primary); }
+        .report-date { font-size: 12px; color: var(--text-gray); }
+        .report-content { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+        .report-links { margin-top: 10px; color: #3b82f6; word-break: break-all; text-decoration: none; display: block; }
+
+        .tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; background: rgba(34, 197, 94, 0.2); margin-left: 10px; }
+
+        /* Адаптація */
+        @media (max-width: 600px) {
+            .container { margin: 20px auto; }
+            .report-form { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html" style="color:white; text-decoration:none; font-weight:900;">ДШВ</a>
+    <a href="cabinet.html" style="color:var(--primary); text-decoration:none; font-size:14px; font-weight:700;">← В кабінет</a>
+</nav>
+
+<div class="container">
+    <div class="report-form" id="formContainer">
+        <h2>Створити щотижневий звіт</h2>
+        <div class="input-group">
+            <label>Період звіту (з якого по яке число)</label>
+            <input type="text" id="repPeriod" class="f-input" placeholder="Наприклад: 19.12.2025 - 21.12.2025">
+        </div>
+        <div class="input-group">
+            <label>Виконана робота (опис)</label>
+            <textarea id="repWork" class="f-input" rows="5" placeholder="1. Паливо (4 рази)&#10;2. Чищення озброєння..."></textarea>
+        </div>
+        <div class="input-group">
+            <label>Посилання на докази (Imgur / Postimages)</label>
+            <input type="text" id="repLinks" class="f-input" placeholder="https://postimg.cc/...">
+        </div>
+        <button class="btn-send" onclick="window.submitReport()">Надіслати звіт до штабу</button>
+    </div>
+
+    <h2 style="color: white; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">Архів звітів</h2>
+    <div id="reportsFeed">
+        </div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDoc, doc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUserData = null;
+
+    // Перевірка входу та завантаження даних користувача
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if (userSnap.exists()) {
+                currentUserData = userSnap.data();
+            }
+            loadReports();
+        } else {
+            window.location.href = "index.html";
+        }
+    });
+
+    // Відправка звіту
+    window.submitReport = async () => {
+        const period = document.getElementById('repPeriod').value;
+        const work = document.getElementById('repWork').value;
+        const links = document.getElementById('repLinks').value;
+
+        if (!period || !work || !links) return alert("Заповніть всі поля звіту!");
+
+        try {
+            await addDoc(collection(db, "reports"), {
+                name: currentUserData.name,
+                rank: currentUserData.rank,
+                period: period,
+                work: work,
+                links: links,
+                timestamp: new Date()
+            });
+            
+            alert("Звіт успішно опубліковано!");
+            // Очищення форми
+            document.getElementById('repPeriod').value = "";
+            document.getElementById('repWork').value = "";
+            document.getElementById('repLinks').value = "";
+        } catch (e) {
+            alert("Помилка при відправці: " + e.message);
+        }
+    };
+
+    // Завантаження стрічки звітів
+    function loadReports() {
+        const q = query(collection(db, "reports"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('reportsFeed');
+            feed.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleString() : "";
+                
+                feed.innerHTML += `
+                    <div class="report-card">
+                        <div class="report-header">
+                            <span class="user-info">${data.name} <span class="tag">${data.rank}</span></span>
+                            <span class="report-date">${date}</span>
+                        </div>
+                        <div style="font-size: 13px; color: var(--primary-bright); margin-bottom: 8px;">Період: ${data.period}</div>
+                        <div class="report-content">${data.work}</div>
+                        <a href="${data.links}" target="_blank" class="report-links">🔗 Посилання на докази</a>
+                    </div>
+                `;
+            });
+        });
+    }
+</script>
+</body>
+</html>
