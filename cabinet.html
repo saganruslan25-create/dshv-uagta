@@ -35,7 +35,7 @@
         
         .header-right { display: flex; align-items: center; gap: 20px; }
 
-        /* СПОВІЩЕННЯ (YouTube Style) */
+        /* СПОВІЩЕННЯ (ДЗВІНОЧОК) */
         .notif-wrapper { position: relative; cursor: pointer; z-index: 1001; }
         .bell-icon { font-size: 22px; transition: 0.3s; filter: drop-shadow(0 0 5px var(--primary)); color: #fbbf24; }
         .bell-dot { 
@@ -52,12 +52,11 @@
         /* --- LAYOUT СИСТЕМА --- */
         .main-container {
             display: grid;
-            /* Картка профілю широка згідно з твоїми правками на фото */
-            grid-template-columns: 280px 550px 1fr; 
+            grid-template-columns: 280px 550px 1fr; /* Велика центральна картка */
             gap: 20px; padding: 0 5% 50px 5%;
         }
 
-        /* ЛІВЕ МЕНЮ (Довге, як ти просив) */
+        /* ЛІВЕ МЕНЮ */
         .side-menu { 
             background: var(--card-bg); border: 1px solid var(--glass-border); 
             border-radius: 25px; padding: 25px 15px; min-height: 480px; 
@@ -72,21 +71,20 @@
         .menu-item:hover { background: rgba(34, 197, 94, 0.08); border-color: var(--glass-border); }
         .fire-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 10px var(--danger); display: none; }
 
-        /* ВЕЛИКА ЦЕНТРАЛЬНА КАРТКА */
+        /* ЦЕНТРАЛЬНА КАРТКА */
         .profile-card {
             background: var(--card-bg); border: 2px solid var(--primary);
             border-radius: 35px; padding: 60px 20px; text-align: center;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
         .avatar-circle { 
             width: 160px; height: 160px; border-radius: 50%; border: 3px solid var(--primary); 
             display: flex; align-items: center; justify-content: center; font-size: 70px;
-            margin-bottom: 30px; background: #111;
+            margin: 0 auto 30px auto; background: #111;
         }
         .user-name { font-size: 38px; font-weight: 900; margin-bottom: 10px; }
-        .id-badge { background: var(--primary); color: black; padding: 8px 30px; border-radius: 12px; font-weight: 900; font-size: 20px; }
+        .id-badge { background: var(--primary); color: black; padding: 8px 30px; border-radius: 12px; font-weight: 900; font-size: 20px; display: inline-block; }
 
-        /* ПРАВІ КАРТКИ (Компактні) */
+        /* ПРАВА СІТКА ІНФО */
         .info-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
         .info-box {
             background: var(--card-bg); border: 1px solid var(--glass-border);
@@ -96,11 +94,12 @@
         .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 10px; }
         .info-box h2 { margin: 0; font-size: 20px; font-weight: 900; }
         
-        .btn-mini-row { display: flex; justify-content: center; gap: 8px; margin-top: 10px; }
+        /* КНОПКИ КЕРУВАННЯ (З'являються тільки у адміна) */
+        .admin-controls { display: none; justify-content: center; gap: 8px; margin-top: 10px; }
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; }
         .btn-mini:hover { background: var(--primary); color: black; }
 
-        /* ОСОБОВИЙ СКЛАД */
+        /* СКЛАД (НИЖНІЙ БЛОК) */
         .staff-section { 
             grid-column: 1 / 4; margin-top: 30px; 
             background: var(--card-bg); border: 1px solid var(--glass-border); 
@@ -122,7 +121,6 @@
             padding: 12px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 14px;
         }
 
-        /* Кнопка повернення до свого профілю */
         #backToMe {
             display: none; width: 100%; background: #fbbf24; color: black;
             padding: 15px; border-radius: 15px; font-weight: 900; border: none;
@@ -179,7 +177,7 @@
         <div class="info-box">
             <span>ПОПЕРЕДЖЕННЯ</span>
             <h2 id="userRep">0</h2>
-            <div class="btn-mini-row">
+            <div class="admin-controls" id="repControls">
                 <button class="btn-mini" onclick="changeStat('reprimands', -1)">-</button>
                 <button class="btn-mini" onclick="changeStat('reprimands', 1)">+</button>
             </div>
@@ -187,7 +185,7 @@
         <div class="info-box">
             <span>ДОГАНИ</span>
             <h2 id="userWarns">0</h2>
-            <div class="btn-mini-row">
+            <div class="admin-controls" id="warnControls">
                 <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
                 <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
             </div>
@@ -230,14 +228,13 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUID = null; // ID авторизованого адміна
-    let editingUID = null; // ID гравця, якого ми зараз редагуємо
-    let myData = null;     // Дані адміна
-    let targetData = null; // Дані гравця, в якого ми "перевтілилися"
+    let currentUID = null;
+    let editingUID = null;
+    let myData = null;
+    let targetData = null;
 
     window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-    // Закриття сповіщень
     window.toggleNotifs = (e) => {
         e.stopPropagation();
         document.getElementById('notifBox').classList.toggle('active');
@@ -252,22 +249,25 @@
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUID = user.uid;
-            editingUID = user.uid; // Спочатку редагуємо себе
+            editingUID = user.uid;
             const snap = await getDoc(doc(db, "users", user.uid));
             if (snap.exists()) {
                 myData = snap.data();
-                updateUI(myData);
+                
+                // Вмикаємо відображення кнопок керування, якщо зайшов адмін
                 if (myData.role === 'admin') {
+                    document.querySelectorAll('.admin-controls').forEach(el => el.style.display = 'flex');
                     document.getElementById('adminSection').style.display = 'block';
                     document.getElementById('adminAppBtn').style.display = 'flex';
                     loadStaff();
                 }
+                
+                updateUI(myData);
                 initNotifications();
             }
         } else { window.location.href = "index.html"; }
     });
 
-    // Оновлення інтерфейсу
     function updateUI(data) {
         document.getElementById('userName').innerText = data.name;
         document.getElementById('userRank').innerText = data.rank;
@@ -275,33 +275,33 @@
         document.getElementById('userWarns').innerText = data.warns || 0;
         document.getElementById('userRep').innerText = data.reprimands || 0;
         document.getElementById('userDiscord').innerText = data.discord || "---";
-        // Завжди показуємо ім'я адміна в шапці, навіть якщо він керує кимось
         document.getElementById('topName').innerText = myData.name;
     }
 
-    // СИСТЕМА КЕРУВАННЯ (Зміна статів)
+    // СИСТЕМА КЕРУВАННЯ З ПЕРЕВІРКОЮ РОЛІ
     window.changeStat = async (field, val) => {
-        // Визначаємо, чиї дані ми зараз бачимо на екрані
+        // Захист: тільки адмін може змінювати дані
+        if (myData.role !== 'admin') {
+            alert("У вас немає прав для зміни цих даних!");
+            return;
+        }
+
         const activeData = (editingUID === currentUID) ? myData : targetData;
         const newVal = (activeData[field] || 0) + val;
         if (newVal < 0) return;
 
-        // Оновлюємо в базі того, хто на екрані
         await updateDoc(doc(db, "users", editingUID), { [field]: newVal });
         
-        // Оновлюємо локальну копію
         activeData[field] = newVal;
         updateUI(activeData);
     };
 
-    // ЗАВАНТАЖЕННЯ СКЛАДУ
     function loadStaff() {
         onSnapshot(collection(db, "users"), (snap) => {
             const list = document.getElementById('staffList');
             list.innerHTML = "";
             snap.forEach(s => {
                 const u = s.data();
-                if (s.id === currentUID) return; // Не показуємо себе у списку для керування (опціонально)
                 list.innerHTML += `
                     <div class="staff-item">
                         <div>
@@ -319,19 +319,17 @@
         });
     }
 
-    // --- ТА САМА СИСТЕМА ПЕРЕВТІЛЕННЯ ---
     window.enterManageMode = async (id) => {
         const snap = await getDoc(doc(db, "users", id));
         if (snap.exists()) {
             editingUID = id;
             targetData = snap.data();
-            updateUI(targetData); // Малюємо кабінет обраного гравця
-            document.getElementById('backToMe').style.display = 'block'; // Показуємо кнопку повернення
+            updateUI(targetData);
+            document.getElementById('backToMe').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    // Повернення до свого профілю
     window.resetView = () => {
         editingUID = currentUID;
         updateUI(myData);
@@ -342,7 +340,6 @@
         if(confirm("Видалити бійця з бази?")) await deleteDoc(doc(db, "users", id));
     };
 
-    // СИСТЕМА СПОВІЩЕНЬ
     function initNotifications() {
         const cols = ['reports', 'subotniks', 'applications'];
         const listUI = document.getElementById('notifList');
