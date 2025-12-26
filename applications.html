@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | РАПОРТИ НА ВСТУП</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-bright: #4ade80;
+            --bg: #020406;
+            --card-bg: rgba(255, 255, 255, 0.04);
+            --glass-border: rgba(34, 197, 94, 0.25);
+            --text-gray: #94a3b8;
+            --neon-glow: 0 0 25px rgba(34, 197, 94, 0.4);
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            color: white; font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%), var(--bg);
+            min-height: 100vh;
+        }
+
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 8%; height: 80px; background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .logo-box { 
+            background: var(--primary); color: black; padding: 6px 15px; 
+            border-radius: 8px; font-weight: 900; text-decoration: none; 
+            box-shadow: var(--neon-glow);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .btn-back {
+            color: white; text-decoration: none; font-weight: 600; font-size: 14px;
+            padding: 10px 20px; border-radius: 12px; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border); transition: 0.3s;
+        }
+        .btn-back:hover { background: rgba(34, 197, 94, 0.1); border-color: var(--primary); }
+
+        .app-card {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+            position: relative;
+        }
+        .app-card:hover { border-color: var(--primary); transform: translateY(-3px); }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .nickname { font-size: 20px; font-weight: 800; color: var(--primary-bright); }
+        .discord-tag { font-size: 14px; color: var(--text-gray); margin-top: 5px; }
+
+        .motivation-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 8px 15px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-delete:hover { background: #ef4444; color: white; }
+
+        .empty-state {
+            text-align: center;
+            padding: 100px 20px;
+            opacity: 0.5;
+        }
+
+        .loading-spinner {
+            width: 40px; height: 40px;
+            border: 3px solid rgba(34, 197, 94, 0.1);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 50px auto;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="index.html" class="logo-box">ДШВ</a>
+    <div style="font-size: 10px; font-weight: 900; color: var(--primary-bright);">ADMINISTRATION PANEL</div>
+</nav>
+
+<div class="container">
+    <div class="header-flex">
+        <h1 style="font-weight: 900; margin: 0;">Рапорти на вступ</h1>
+        <a href="cabinet.html" class="btn-back">← Назад в кабінет</a>
+    </div>
+
+    <div id="loader" class="loading-spinner"></div>
+    <div id="appsContainer"></div>
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Перевірка на адміна
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if (userSnap.exists() && userSnap.data().role === 'admin') {
+                loadApplications();
+            } else {
+                alert("Доступ заборонено!");
+                window.location.href = "cabinet.html";
+            }
+        } else {
+            window.location.href = "index.html";
+        }
+    });
+
+    function loadApplications() {
+        const q = query(collection(db, "applications"), orderBy("timestamp", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            document.getElementById('loader').style.display = 'none';
+            const container = document.getElementById('appsContainer');
+            
+            if (snapshot.empty) {
+                container.innerHTML = '<div class="empty-state"><h3>Нових рапортів поки немає</h3><p>Як тільки хтось заповнить форму на сайті, вона з’явиться тут.</p></div>';
+                return;
+            }
+
+            container.innerHTML = "";
+            snapshot.forEach((appDoc) => {
+                const data = appDoc.data();
+                const date = data.timestamp ? data.timestamp.toDate().toLocaleString('uk-UA') : 'Тільки що';
+                
+                container.innerHTML += `
+                    <div class="app-card" id="card-${appDoc.id}">
+                        <div class="app-header">
+                            <div>
+                                <div class="nickname">${data.name}</div>
+                                <div class="discord-tag">Discord: <b>${data.discord}</b></div>
+                                <div style="font-size: 11px; opacity: 0.5; margin-top: 5px;">Дата: ${date}</div>
+                            </div>
+                            <button class="btn-delete" onclick="window.deleteApp('${appDoc.id}')">Видалити рапорт</button>
+                        </div>
+                        <div style="font-size: 12px; text-transform: uppercase; color: var(--primary); font-weight: 800; margin-bottom: 8px;">Мотивація:</div>
+                        <div class="motivation-box">
+                            ${data.motivation}
+                        </div>
+                    </div>
+                `;
+            });
+        });
+    }
+
+    window.deleteApp = async (id) => {
+        if (confirm("Ви дійсно хочете видалити цей рапорт?")) {
+            try {
+                await deleteDoc(doc(db, "applications", id));
+            } catch (err) {
+                alert("Помилка при видаленні.");
+            }
+        }
+    };
+</script>
+</body>
+</html>
