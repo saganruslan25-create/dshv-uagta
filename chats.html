@@ -92,6 +92,9 @@
         .msg-content { line-height: 1.6; white-space: pre-wrap; color: #ddd; }
         .msg-content blockquote { border-left: 4px solid var(--primary); padding-left: 15px; margin: 8px 0; background: rgba(34, 197, 94, 0.03); }
         .msg-content strong { color: var(--primary-bright); }
+        /* Стиль для посилань */
+        .msg-content a { color: var(--primary-bright); text-decoration: underline; }
+        .msg-content a:hover { color: white; }
 
         /* ACTION BUTTONS (DSHV STYLE) */
         .msg-actions {
@@ -146,6 +149,7 @@
         <div class="chat-header">
             <span style="color:var(--primary)">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span>
         </div>
+        
         <div id="messages" class="messages-container"></div>
         
         <div id="inputArea" class="chat-input-area">
@@ -161,6 +165,7 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // Конфігурація Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -179,21 +184,24 @@
         let activeChannelId = null;
         let unsubMessages = null;
 
+        // Перевірка стану авторизації
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 user = u;
                 const snap = await getDoc(doc(db, "users", u.uid));
                 userData = snap.data();
+                
+                // Перевірка прав адміна
                 if (userData.role === 'admin') {
                     document.getElementById('adminCreateChannel').style.display = 'block';
                     document.getElementById('inputArea').style.display = 'block';
-                    initSortable();
+                    initSortable(); // Активуємо Drag & Drop для адміна
                 }
                 loadChannels();
             } else { window.location.href = "index.html"; }
         });
 
-        // LOAD CHANNELS WITH DELETE AND SORT
+        // Завантаження списку каналів з Firestore
         function loadChannels() {
             const q = query(collection(db, "channels"), orderBy("index", "asc"));
             onSnapshot(q, (snap) => {
@@ -222,11 +230,9 @@
             });
         }
 
-        // DELETE CHANNEL FUNCTION
+        // Функція видалення каналу
         window.deleteChannel = async (id, name) => {
             if (confirm(`Видалити канал #${name} та всі повідомлення в ньому?`)) {
-                // ВАЖЛИВО: Видалення підколекцій у Firebase краще робити вручну або через Cloud Functions, 
-                // але для простоти ми видалимо сам документ каналу. Повідомлення залишаться "сиротами", але не будуть заважати.
                 await deleteDoc(doc(db, "channels", id));
                 if (activeChannelId === id) {
                     activeChannelId = null;
@@ -236,6 +242,7 @@
             }
         };
 
+        // Сортування каналів (SortableJS)
         function initSortable() {
             const el = document.getElementById('channelList');
             Sortable.create(el, {
@@ -253,19 +260,44 @@
             });
         }
 
+        // Вибір активного каналу
         function selectChannel(id, name) {
             activeChannelId = id;
             document.getElementById('activeChannelName').innerText = name;
+            // Показуємо поле вводу для будь-якого користувача при виборі каналу (або тільки адміна за вашим бажанням)
+            if (userData.role === 'admin' || userData.role === 'user') {
+                document.getElementById('inputArea').style.display = 'block';
+            }
             loadMessages(id);
         }
 
+        /**
+         * Функція форматування тексту:
+         * 1. Робить посилання клікабельними
+         * 2. Обробляє **жирний текст**
+         * 3. Обробляє > цитати
+         * 4. Зберігає переноси рядків
+         */
         function formatMessage(text) {
-            return text
+            if (!text) return "";
+            
+            // 1. Регулярний вираз для пошуку URL (http, https, ftp)
+            const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
+            
+            let formatted = text
+                // Перетворення посилань на <a> теги
+                .replace(urlPattern, '<a href="$1" target="_blank">$1</a>')
+                // Жирний текст
                 .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Цитати
                 .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+                // Переноси рядків
                 .replace(/\n/g, '<br>');
+                
+            return formatted;
         }
 
+        // Завантаження повідомлень конкретного каналу
         function loadMessages(channelId) {
             if (unsubMessages) unsubMessages();
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -300,6 +332,7 @@
             });
         }
 
+        // Редактор повідомлень (для адміна)
         window.openEditor = (id, text) => {
             const contentBox = document.getElementById(`content-${id}`);
             contentBox.innerHTML = `
@@ -316,27 +349,34 @@
             };
         };
 
+        // Збереження редагування в Firebase
         window.saveEdit = async (id) => {
-            const newText = document.getElementById(`edit-input-${id}`).value;
+            const inputEl = document.getElementById(`edit-input-${id}`);
+            if (!inputEl) return;
+            const newText = inputEl.value;
             if (newText.trim()) {
                 await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: newText });
             }
         };
 
+        // Відправка нового повідомлення
         window.sendMessage = async () => {
-            const text = document.getElementById('msgInput').value;
+            const input = document.getElementById('msgInput');
+            const text = input.value;
             if (!text.trim() || !activeChannelId) return;
             await addDoc(collection(db, "channels", activeChannelId, "messages"), {
                 text: text, author: userData.name, createdAt: serverTimestamp()
             });
-            document.getElementById('msgInput').value = "";
+            input.value = "";
         };
 
+        // Видалення повідомлення
         window.deleteMessage = async (msgId) => { 
             if (confirm("Видалити повідомлення назавжди?")) 
                 await deleteDoc(doc(db, "channels", activeChannelId, "messages", msgId)); 
         };
 
+        // Створення нового каналу (для адміна)
         window.createChannel = async () => { 
             const name = prompt("Назва каналу:"); 
             if (name) {
