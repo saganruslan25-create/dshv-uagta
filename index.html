@@ -339,6 +339,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Система відправки рапорту
         const appForm = document.getElementById('applicationForm');
         if(appForm) {
             appForm.addEventListener('submit', async (e) => {
@@ -351,7 +352,7 @@
                         name: document.getElementById('appName').value,
                         discord: document.getElementById('appDiscord').value,
                         motivation: document.getElementById('appMotivation').value,
-                        status: 'pending', // СТАТУС ЗА ЗАМОВЧУВАННЯМ
+                        status: 'pending',
                         timestamp: serverTimestamp()
                     });
                     alert('Рапорт на вступ успішно надіслано! Очікуйте на перевірку.');
@@ -361,6 +362,7 @@
             });
         }
 
+        // Система авторизації та реєстрації з перевіркою
         const aForm = document.getElementById('authForm');
         aForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -377,12 +379,12 @@
                     const nick = document.getElementById('regName').value;
                     const secretInput = document.getElementById('secretCode').value;
 
-                    // 1. ПЕРЕВІРКА СЕКРЕТНОГО КОДУ
+                    // 1. Отримуємо секретний код з бази
                     const secretDoc = await getDoc(doc(db, "system", "secret"));
                     const activeSecret = secretDoc.exists() ? secretDoc.data().code : null;
 
+                    // 2. Якщо код не введений або невірний - перевіряємо рапорт
                     if (secretInput !== activeSecret) {
-                        // 2. ПЕРЕВІРКА РАПОРТУ, ЯКЩО КОД НЕВІРНИЙ
                         const q = query(collection(db, "applications"), where("name", "==", nick), where("status", "==", "approved"));
                         const querySnapshot = await getDocs(q);
 
@@ -393,7 +395,7 @@
                         }
                     }
 
-                    // 3. РЕЄСТРАЦІЯ
+                    // 3. Реєстрація користувача
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nick,
@@ -401,7 +403,9 @@
                         gameID: document.getElementById('regGameID').value,
                         discord: document.getElementById('regDiscord').value,
                         passport: document.getElementById('regPassport').value,
-                        role: 'user', warns: 0, reprimands: 0
+                        role: 'user', 
+                        warns: 0, 
+                        reprimands: 0
                     });
                     window.location.href = "cabinet.html";
                 }
@@ -411,6 +415,7 @@
             }
         });
 
+        // Стан авторизації для кнопки кабінету
         onAuthStateChanged(auth, user => {
             const btn = document.getElementById('cabinetBtn');
             if(user) {
@@ -421,4 +426,3 @@
     </script>
 </body>
 </html>
-
