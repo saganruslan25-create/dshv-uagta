@@ -56,7 +56,7 @@
             gap: 20px; padding: 0 5% 50px 5%;
         }
 
-        /* ЛІВЕ МЕНЮ (Тепер без кнопок виходу) */
+        /* ЛІВЕ МЕНЮ */
         .side-menu { 
             background: var(--card-bg); border: 1px solid var(--glass-border); 
             border-radius: 25px; padding: 25px 15px; min-height: 480px; 
@@ -94,6 +94,10 @@
         .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 10px; }
         .info-box h2 { margin: 0; font-size: 20px; font-weight: 900; }
         
+        /* Кнопка паспорта (Стилізація) */
+        .passport-link { color: #3b82f6; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.3s; }
+        .passport-link:hover { color: var(--primary-bright); text-shadow: 0 0 10px var(--primary); }
+
         /* КЕРУВАННЯ (Тільки для адміна) */
         .admin-controls { display: none; justify-content: center; gap: 8px; margin-top: 10px; }
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; }
@@ -160,7 +164,7 @@
         <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;" onclick="markRead('applications')">
             📝 Перегляд рапортів <div id="dot-applications" class="fire-dot"></div>
         </a>
-        </div>
+    </div>
 
     <div class="profile-card">
         <div class="avatar-circle">👤</div>
@@ -191,7 +195,7 @@
         </div>
         <div class="info-box">
             <span>ДОКУМЕНТИ</span>
-            <h2 style="font-size: 14px; color: #3b82f6; cursor: pointer;">ПАСПОРТ ↗</h2>
+            <h2 id="userPassport">---</h2>
         </div>
         <div class="info-box">
             <span>DISCORD</span>
@@ -272,14 +276,27 @@
         document.getElementById('userRep').innerText = data.reprimands || 0;
         document.getElementById('userDiscord').innerText = data.discord || "---";
         document.getElementById('topName').innerText = myData.name;
+
+        // ВІДОБРАЖЕННЯ ПАСПОРТА
+        const passEl = document.getElementById('userPassport');
+        if (data.passport && data.passport.includes('http')) {
+            passEl.innerHTML = `<a href="${data.passport}" target="_blank" class="passport-link">ПАСПОРТ ↗</a>`;
+        } else {
+            passEl.innerText = "НЕМАЄ";
+            passEl.style.color = "#555";
+        }
     }
 
     window.changeStat = async (field, val) => {
         if (myData.role !== 'admin') return;
-        const activeData = (editingUID === currentUID) ? myData : targetData;
+        const activeUID = editingUID;
+        const activeData = (activeUID === currentUID) ? myData : targetData;
+        
         const newVal = (activeData[field] || 0) + val;
         if (newVal < 0) return;
-        await updateDoc(doc(db, "users", editingUID), { [field]: newVal });
+        
+        await updateDoc(doc(db, "users", activeUID), { [field]: newVal });
+        
         activeData[field] = newVal;
         updateUI(activeData);
     };
@@ -339,7 +356,8 @@
                     const lastT = last.timestamp?.toMillis() || 0;
                     const savedT = parseInt(localStorage.getItem('last_view_' + col) || 0);
                     if (lastT > savedT) {
-                        document.getElementById('dot-' + col).style.display = 'block';
+                        const dot = document.getElementById('dot-' + col);
+                        if(dot) dot.style.display = 'block';
                         document.getElementById('bellDot').style.display = 'block';
                         if(listUI.innerText.includes("Немає")) listUI.innerHTML = "";
                         const div = document.createElement('div');
@@ -348,7 +366,8 @@
                         div.innerHTML = `Новий <b>${names[col]}</b> від <b>${last.name || 'Бійця'}</b>`;
                         listUI.prepend(div);
                     } else {
-                        document.getElementById('dot-' + col).style.display = 'none';
+                        const dot = document.getElementById('dot-' + col);
+                        if(dot) dot.style.display = 'none';
                     }
                 }
             });
