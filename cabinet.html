@@ -6,6 +6,7 @@
     <title>ДШВ | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* ОСНОВНІ КОЛЬОРИ ТА СТИЛІСТКА */
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
@@ -50,7 +51,7 @@
         }
         .notif-dropdown.active { display: block; }
 
-        /* --- ОСНОВНИЙ КОНТЕЙНЕР --- */
+        /* --- LAYOUT СИСТЕМА --- */
         .main-container {
             display: grid;
             grid-template-columns: 280px 550px 1fr; 
@@ -72,7 +73,7 @@
         .menu-item:hover { background: rgba(34, 197, 94, 0.08); border-color: var(--glass-border); }
         .fire-dot { width: 8px; height: 8px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 10px var(--danger); display: none; }
 
-        /* ЦЕНТРАЛЬНА КАРТКА ПРОФІЛЮ */
+        /* ВЕЛИКА ЦЕНТРАЛЬНА КАРТКА ПРОФІЛЮ */
         .profile-card {
             background: var(--card-bg); border: 2px solid var(--primary);
             border-radius: 35px; padding: 60px 20px; text-align: center;
@@ -102,7 +103,7 @@
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; }
         .btn-mini:hover { background: var(--primary); color: black; }
 
-        /* СЕКЦІЯ ОСОБОВОГО СКЛАДУ */
+        /* СЕКЦІЯ ОСОБОВОГО СКЛАДУ (СПИСОК) */
         .staff-section { 
             grid-column: 1 / 4; margin-top: 30px; 
             background: var(--card-bg); border: 1px solid var(--glass-border); 
@@ -115,7 +116,7 @@
         }
         .staff-item:hover { background: rgba(255,255,255,0.05); border-color: var(--glass-border); }
 
-        /* КНОПКИ ДІЙ В СПИСКУ */
+        /* КНОПКИ ДІЙ В СПИСКУ ОСОБОВОГО СКЛАДУ */
         .btn-action-green { 
             background: var(--primary); color: black; border: none; padding: 12px 25px; 
             border-radius: 12px; font-weight: 800; cursor: pointer; margin-right: 10px; font-size: 14px;
@@ -125,7 +126,7 @@
             padding: 12px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 14px;
         }
 
-        /* ЕКРАН ПЕРЕГЛЯДУ ЗВІТІВ (MODAL) */
+        /* МОДАЛЬНЕ ВІКНО АРХІВУ ЗВІТІВ */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: var(--overlay); backdrop-filter: blur(15px);
@@ -145,7 +146,7 @@
             padding: 25px; border-radius: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* КНОПКА ПОВЕРНЕННЯ ДО СЕБЕ */
+        /* КНОПКА ПОВЕРНЕННЯ ДО СВОГО ПРОФІЛЮ */
         #backToMe {
             display: none; width: 100%; background: #fbbf24; color: black;
             padding: 15px; border-radius: 15px; font-weight: 900; border: none;
@@ -238,18 +239,18 @@
         <span class="close-modal" onclick="closeReports()">&times;</span>
         <h2 id="modalTitle" style="margin-top:0; color: var(--primary-bright); font-weight: 900; text-transform: uppercase;">АРХІВ ЗВІТІВ</h2>
         <div id="modalReportsList">
-            <p style="color: #555;">Завантаження архівів...</p>
+            <p style="color: #555;">Завантаження звітів...</p>
         </div>
     </div>
 </div>
 
 <script type="module">
-    // ІМПОРТ FIREBASE МОДУЛІВ
+    // ІМПОРТ МОДУЛІВ FIREBASE
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, limit, deleteDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // КОНФІГУРАЦІЯ FIREBASE
+    // КОНФІГУРАЦІЯ FIREBASE (ТВОЇ ДАНІ)
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
         authDomain: "dsv-gta.firebaseapp.com",
@@ -265,10 +266,10 @@
 
     let currentUID = null, editingUID = null, myData = null, targetData = null;
 
-    // ВИХІД З АКАУНТУ
+    // ФУНКЦІЯ ВИХОДУ
     window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-    // ПЕРЕВІРКА АВТОРИЗАЦІЇ
+    // ПЕРЕВІРКА СТАНУ АВТОРИЗАЦІЇ
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             currentUID = user.uid; editingUID = user.uid;
@@ -287,10 +288,10 @@
         } else { window.location.href = "index.html"; }
     });
 
-    // ОНОВЛЕННЯ ІНТЕРФЕЙСУ ДАНИМИ
+    // ОНОВЛЕННЯ ІНТЕРФЕЙСУ ДАНИМИ КОРИСТУВАЧА
     function updateUI(data) {
-        document.getElementById('userName').innerText = data.name;
-        document.getElementById('userRank').innerText = data.rank;
+        document.getElementById('userName').innerText = data.name || "---";
+        document.getElementById('userRank').innerText = data.rank || "---";
         document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
         document.getElementById('userWarns').innerText = data.warns || 0;
         document.getElementById('userRep').innerText = data.reprimands || 0;
@@ -303,42 +304,49 @@
         } else { passEl.innerText = "НЕМАЄ"; }
     }
 
-    // --- СИСТЕМА ПЕРЕГЛЯДУ ЗВІТІВ (ПОШУК ПО ID) ---
+    // --- ФУНКЦІЯ ПЕРЕГЛЯДУ ВСІХ ЗВІТІВ БІЙЦЯ (ВИПРАВЛЕНО) ---
     window.openReports = async (gameID, name) => {
         document.getElementById('modalTitle').innerText = `ЗВІТИ БІЙЦЯ: ${name}`;
         document.getElementById('reportsModal').style.display = 'flex';
         const listUI = document.getElementById('modalReportsList');
-        listUI.innerHTML = "<p>Пошук звітів у базі даних...</p>";
+        listUI.innerHTML = "<p>Пошук звітів у базі...</p>";
 
         const cols = ['reports', 'subotniks'];
         let html = "";
         let found = false;
 
-        // Перетворюємо в текст для точного порівняння
-        const searchID = gameID.toString().trim();
+        // Очищаємо ID від пробілів та робимо його рядком
+        const searchID = String(gameID).trim();
 
         for (const col of cols) {
-            // Отримуємо ВСІ звіти цієї категорії (це надійніше, ніж складні query з типами даних)
-            const snap = await getDocs(collection(db, col));
-            
-            snap.forEach(dSnap => {
-                const d = dSnap.data();
-                // Порівнюємо gameID як рядки
-                if (d.gameID && d.gameID.toString().trim() === searchID) {
-                    found = true;
-                    const type = col === 'reports' ? "📌 ЩОТИЖНЕВИЙ ЗВІТ" : "🧹 СУБОТНИК";
-                    const date = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('uk-UA') : "Дата невідома";
-                    html += `
-                        <div class="report-card">
-                            <div style="font-weight:900; color:var(--primary-bright); margin-bottom:8px; font-size:16px;">${type}</div>
-                            <div style="font-size:13px; opacity:0.6; margin-bottom:12px;">Подано: ${date}</div>
-                            <a href="${d.proof}" target="_blank" style="display:inline-block; background:rgba(59, 130, 246, 0.2); color:#60a5fa; text-decoration:none; font-weight:800; padding:8px 15px; border-radius:8px; font-size:12px; border: 1px solid rgba(59, 130, 246, 0.3);">ПЕРЕГЛЯНУТИ ДОКАЗИ ↗</a>
-                        </div>
-                    `;
-                }
-            });
+            try {
+                // Отримуємо всі звіти цієї колекції
+                const snap = await getDocs(collection(db, col));
+                
+                snap.forEach(dSnap => {
+                    const d = dSnap.data();
+                    
+                    // Перевіряємо всі можливі назви полів ID у звіті (gameID, id, ID)
+                    const docID = String(d.gameID || d.id || d.ID || "").trim();
+
+                    if (docID === searchID) {
+                        found = true;
+                        const type = col === 'reports' ? "📌 ЩОТИЖНЕВИЙ ЗВІТ" : "🧹 СУБОТНИК";
+                        const date = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString('uk-UA') : "Дата невідома";
+                        html += `
+                            <div class="report-card">
+                                <div style="font-weight:900; color:var(--primary-bright); margin-bottom:8px; font-size:16px;">${type}</div>
+                                <div style="font-size:13px; opacity:0.6; margin-bottom:12px;">Дата подання: ${date}</div>
+                                <a href="${d.proof}" target="_blank" style="display:inline-block; background:rgba(34, 197, 94, 0.1); color:var(--primary-bright); text-decoration:none; font-weight:800; padding:10px 20px; border-radius:10px; font-size:12px; border: 1px solid var(--glass-border);">ВІДКРИТИ ДОКАЗИ ↗</a>
+                            </div>
+                        `;
+                    }
+                });
+            } catch (err) {
+                console.error("Помилка при завантаженні з " + col, err);
+            }
         }
-        listUI.innerHTML = found ? html : "<div style='text-align:center; padding:20px; color:#555;'>Жодних записів не знайдено для ID: " + searchID + "</div>";
+        listUI.innerHTML = found ? html : "<div style='text-align:center; padding:30px; color:#555;'>Жодних звітів не знайдено для ID: " + searchID + "</div>";
     }
 
     window.closeReports = () => document.getElementById('reportsModal').style.display = 'none';
@@ -355,7 +363,7 @@
         updateUI(activeData);
     };
 
-    // ЗАВАНТАЖЕННЯ СПИСКУ ОСОБОВОГО СКЛАДУ
+    // ЗАВАНТАЖЕННЯ СПИСКУ ОСОБОВОГО СКЛАДУ В РЕАЛЬНОМУ ЧАСІ
     function loadStaff() {
         onSnapshot(collection(db, "users"), (snap) => {
             const list = document.getElementById('staffList');
@@ -380,7 +388,7 @@
         });
     }
 
-    // РЕЖИМ КЕРУВАННЯ ІНШИМ БІЙЦЕМ
+    // РЕЖИМ ПЕРЕГЛЯДУ/РЕДАГУВАННЯ ІНШОГО БІЙЦЯ
     window.enterManageMode = async (id) => {
         const snap = await getDoc(doc(db, "users", id));
         if (snap.exists()) {
@@ -391,22 +399,24 @@
         }
     };
 
+    // ПОВЕРНЕННЯ ДО ВЛАСНОГО ПРОФІЛЮ
     window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
     
-    // ВИДАЛЕННЯ ПРОФІЛЮ
+    // ПОВНЕ ВИДАЛЕННЯ ПРОФІЛЮ БІЙЦЯ
     window.deleteUser = async (id) => { 
-        if(confirm("Ви впевнені, що хочете видалити профіль цього бійця з системи?")) {
+        if(confirm("Ви дійсно бажаєте ВИДАЛИТИ цей профіль бійця? Цю дію неможливо скасувати.")) {
             await deleteDoc(doc(db, "users", id));
         }
     };
 
-    // ЛОГІКА СПОВІЩЕНЬ
+    // ЛОГІКА СПОВІЩЕНЬ (BELL)
     window.toggleNotifs = (e) => { e.stopPropagation(); document.getElementById('notifBox').classList.toggle('active'); document.getElementById('bellDot').style.display = 'none'; };
     window.closeNotifs = () => {
         const box = document.getElementById('notifBox');
         if (box) box.classList.remove('active');
     }
 
+    // ІНІЦІАЛІЗАЦІЯ СПОВІЩЕНЬ ПРО НОВІ ЗВІТИ
     function initNotifications() {
         const sections = ['reports', 'subotniks', 'applications'];
         sections.forEach(col => {
@@ -424,6 +434,7 @@
             });
         });
     }
+    // ПОЗНАЧИТИ РОЗДІЛ ЯК ПРОЧИТАНИЙ ПРИ ПЕРЕХОДІ
     window.markRead = (col) => localStorage.setItem('last_view_' + col, Date.now());
 </script>
 </body>
