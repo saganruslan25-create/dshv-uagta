@@ -6,7 +6,7 @@
     <title>ДШВ | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        /* --- ГОЛОВНІ КОЛЬОРИ ТА ЕФЕКТИ --- */
+        /* --- ГЛОБАЛЬНІ НАЛАШТУВАННЯ ТА ЗМІННІ КОЛЬОРІВ --- */
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
@@ -17,240 +17,440 @@
             --overlay: rgba(0, 0, 0, 0.95);
         }
 
-        * { box-sizing: border-box; }
+        * { 
+            box-sizing: border-box; 
+            transition: all 0.2s ease-in-out;
+        }
 
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             background-color: var(--bg);
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
             background-attachment: fixed;
-            color: white; font-family: 'Inter', sans-serif;
+            color: white;
+            font-family: 'Inter', sans-serif;
             overflow-x: hidden;
         }
 
-        /* --- ВЕРХНЯ ЧАСТИНА (HEADER) --- */
+        /* --- ВЕРХНЯ ПАНЕЛЬ (HEADER) --- */
         header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 30px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 5%;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            background: rgba(3, 5, 7, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
+
         .logo-box { 
-            background: var(--primary); color: black; padding: 8px 20px; 
-            border-radius: 10px; font-weight: 900; box-shadow: 0 0 25px rgba(34, 197, 94, 0.4); 
-            text-decoration: none; text-transform: uppercase; letter-spacing: 1px;
+            background: var(--primary);
+            color: black;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 900;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
-        .header-right { display: flex; align-items: center; gap: 25px; }
+        .header-right { 
+            display: flex; 
+            align-items: center; 
+            gap: 25px; 
+        }
 
-        /* СИСТЕМА СПОВІЩЕНЬ */
-        .notif-wrapper { position: relative; cursor: pointer; z-index: 1001; }
-        .bell-icon { font-size: 24px; filter: drop-shadow(0 0 8px var(--primary)); color: #fbbf24; }
+        /* СИСТЕМА СПОВІЩЕНЬ (ДЗВІНОЧОК) */
+        .notif-wrapper { 
+            position: relative; 
+            cursor: pointer; 
+        }
+        .bell-icon { 
+            font-size: 24px; 
+            filter: drop-shadow(0 0 5px var(--primary)); 
+            color: #fbbf24; 
+        }
         .bell-dot { 
-            position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; 
-            background: var(--danger); border-radius: 50%; border: 2px solid var(--bg); display: none; 
+            position: absolute; 
+            top: -2px; 
+            right: -2px; 
+            width: 10px; 
+            height: 10px; 
+            background: var(--danger); 
+            border: 2px solid var(--bg); 
+            border-radius: 50%; 
+            display: none; 
         }
-        .notif-dropdown {
-            position: absolute; top: 50px; right: 0; width: 320px; background: #0c121d; 
-            border: 1px solid var(--glass-border); border-radius: 15px; padding: 20px; 
-            display: none; box-shadow: 0 15px 50px rgba(0,0,0,0.9);
-        }
-        .notif-dropdown.active { display: block; }
 
-        /* --- СІТКА РОЗМІЩЕННЯ (LAYOUT) --- */
+        /* --- ОСНОВНИЙ КОНТЕЙНЕР ІНТЕРФЕЙСУ --- */
         .main-container {
             display: grid;
-            grid-template-columns: 300px 1fr 450px; 
-            gap: 30px; padding: 0 5% 60px 5%;
+            grid-template-columns: 300px 1.1fr 0.9fr; 
+            gap: 25px;
+            padding: 30px 5% 60px 5%;
+            align-items: start;
         }
 
-        /* ЛІВЕ МЕНЮ */
+        /* --- БОКОВЕ МЕНЮ (ПОДОВЖЕНЕ ЯК НА МАЛЮНКУ) --- */
         .side-menu { 
-            background: var(--card-bg); border: 1px solid var(--glass-border); 
-            border-radius: 30px; padding: 30px 20px; height: fit-content;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 30px 20px;
+            min-height: 600px; /* Збільшена довжина як ти просив */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
+
         .menu-item {
-            display: flex; align-items: center; justify-content: space-between;
-            width: 100%; padding: 18px 25px; margin-bottom: 15px;
-            background: rgba(255,255,255,0.02); border: 1px solid transparent;
-            border-radius: 18px; color: white; text-decoration: none;
-            font-weight: 700; font-size: 15px; transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 18px 25px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid transparent;
+            border-radius: 18px;
+            color: white;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 15px;
         }
-        .menu-item:hover { background: rgba(34, 197, 94, 0.1); border-color: var(--glass-border); transform: translateX(5px); }
-        .fire-dot { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 12px var(--danger); display: none; }
 
-        /* ЦЕНТРАЛЬНА КАРТКА (ПРОФІЛЬ) */
+        .menu-item:hover {
+            background: rgba(34, 197, 94, 0.1);
+            border-color: var(--glass-border);
+            transform: translateX(5px);
+        }
+
+        .menu-item.logout-style {
+            margin-top: auto; /* Кнопка виходу в самому низу */
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+        }
+
+        .fire-dot { 
+            width: 10px; 
+            height: 10px; 
+            background: var(--danger); 
+            border-radius: 50%; 
+            box-shadow: 0 0 10px var(--danger); 
+            display: none; 
+        }
+
+        /* --- ЦЕНТРАЛЬНА КАРТКА ПРОФІЛЮ (РОЗШИРЕНА) --- */
         .profile-card {
-            background: var(--card-bg); border: 1px solid var(--glass-border);
-            border-radius: 40px; padding: 80px 40px; text-align: center;
-            box-shadow: inset 0 0 40px rgba(34, 197, 94, 0.05);
+            background: var(--card-bg);
+            border: 1px solid var(--primary);
+            border-radius: 40px;
+            padding: 80px 40px;
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
         }
+
         .avatar-circle { 
-            width: 180px; height: 180px; border-radius: 50%; border: 4px solid var(--primary); 
-            display: flex; align-items: center; justify-content: center; font-size: 80px;
-            margin: 0 auto 40px auto; background: #0a0a0a; box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+            width: 180px; 
+            height: 180px; 
+            border-radius: 50%; 
+            border: 4px solid var(--primary); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 80px;
+            margin: 0 auto 35px auto;
+            background: #0a0a0a;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
         }
-        .user-name { font-size: 42px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; }
-        .id-badge { background: var(--primary); color: black; padding: 10px 40px; border-radius: 15px; font-weight: 900; font-size: 22px; display: inline-block; }
 
-        /* КАРТКИ ІНФОРМАЦІЇ (ПРАВОРУЧ) */
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        
+        .user-name { 
+            font-size: 42px; 
+            font-weight: 900; 
+            margin-bottom: 20px; 
+            letter-spacing: -1px;
+        }
+
+        .id-badge { 
+            background: var(--primary);
+            color: black;
+            padding: 12px 45px;
+            border-radius: 15px;
+            font-weight: 900;
+            font-size: 22px;
+            display: inline-block;
+        }
+
+        .delete-btn-sub {
+            margin-top: 30px;
+            color: var(--danger);
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: underline;
+            opacity: 0.6;
+        }
+
+        /* --- ІНФОРМАЦІЙНА ПАНЕЛЬ ПРАВОРУЧ (2 СТОВПЦІ) --- */
+        .info-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+        }
+
         .info-box {
-            background: var(--card-bg); border: 1px solid var(--glass-border);
-            border-radius: 25px; padding: 25px; text-align: center;
-            transition: 0.3s; position: relative; overflow: hidden;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 25px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 120px;
         }
-        .info-box:hover { background: rgba(255,255,255,0.05); }
-        
-        .info-box.wide { grid-column: span 2; padding: 35px; }
-        
+
+        .info-box.wide { 
+            grid-column: span 2; 
+            min-height: 140px;
+        }
+
         .info-box span { 
-            font-size: 11px; font-weight: 900; color: var(--primary-bright); 
-            text-transform: uppercase; margin-bottom: 15px; display: block; letter-spacing: 2px;
+            font-size: 11px; 
+            font-weight: 900; 
+            color: var(--primary-bright); 
+            text-transform: uppercase; 
+            margin-bottom: 15px; 
+            display: block; 
+            letter-spacing: 1.5px;
         }
-        .info-box h2 { margin: 0; font-size: 24px; font-weight: 900; }
-        
-        /* КЕРУВАННЯ СТАТИСТИКОЮ */
-        .admin-controls { display: none; justify-content: center; gap: 15px; margin-top: 15px; }
+
+        .info-box h2 { 
+            margin: 0; 
+            font-size: 24px; 
+            font-weight: 900; 
+        }
+
+        /* Кнопки регулювання для адмінів */
+        .admin-controls { 
+            display: none; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-top: 15px; 
+        }
+
         .btn-mini { 
-            background: rgba(255,255,255,0.1); border: 1px solid #444; color: white; 
-            width: 35px; height: 35px; border-radius: 10px; cursor: pointer; font-weight: 900;
+            background: rgba(255,255,255,0.05); 
+            border: 1px solid #444; 
+            color: white; 
+            width: 32px; 
+            height: 32px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: 900;
         }
-        .btn-mini:hover { background: var(--primary); color: black; border-color: var(--primary); }
 
-        /* СПИСОК СКЛАДУ */
+        .btn-mini:hover { 
+            background: var(--primary); 
+            color: black; 
+        }
+
+        /* --- СПИСОК ОСОБОВОГО СКЛАДУ (АДМІН ПАНЕЛЬ) --- */
         .staff-section { 
-            grid-column: 1 / 4; margin-top: 40px; 
-            background: var(--card-bg); border: 1px solid var(--glass-border); 
-            border-radius: 35px; padding: 45px; 
+            grid-column: 1 / 4; 
+            margin-top: 40px; 
+            background: var(--card-bg); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 35px; 
+            padding: 40px; 
         }
+
+        .staff-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
         .staff-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.02); padding: 25px 40px; border-radius: 22px; 
-            margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.03);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255,255,255,0.02);
+            padding: 25px 40px;
+            border-radius: 25px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255,255,255,0.03);
         }
 
-        /* КНОПКИ В СПИСКУ */
-        .btn-action-green { 
-            background: var(--primary); color: black; border: none; padding: 14px 28px; 
-            border-radius: 14px; font-weight: 800; cursor: pointer; margin-right: 12px;
-        }
-        .btn-action-red { 
-            background: none; border: 1px solid var(--danger); color: var(--danger); 
-            padding: 14px 28px; border-radius: 14px; font-weight: 800; cursor: pointer;
+        .staff-info b { font-size: 18px; display: block; margin-bottom: 5px; }
+        .staff-info span { color: var(--primary-bright); font-size: 13px; font-weight: 600; }
+
+        .staff-actions { display: flex; gap: 12px; }
+
+        .btn-action { 
+            padding: 12px 25px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            border: none;
+            font-size: 14px;
         }
 
-        /* АРХІВ ЗВІТІВ (МОДАЛКА) */
+        .btn-manage { background: var(--primary); color: black; }
+        .btn-delete { background: none; border: 1px solid var(--danger); color: var(--danger); }
+
+        /* --- МОДАЛЬНЕ ВІКНО ЗВІТІВ --- */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--overlay); backdrop-filter: blur(20px);
-            display: none; justify-content: center; align-items: center; z-index: 2000;
-        }
-        .modal-content {
-            background: #0c121d; border: 1px solid var(--glass-border);
-            width: 90%; max-width: 850px; max-height: 85vh;
-            border-radius: 45px; padding: 50px; position: relative; overflow-y: auto;
-        }
-        .close-modal { position: absolute; top: 35px; right: 35px; font-size: 40px; cursor: pointer; color: #666; }
-        
-        .report-card {
-            background: rgba(255,255,255,0.02); border-left: 6px solid var(--primary);
-            padding: 30px; border-radius: 20px; margin-bottom: 25px;
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%;
+            background: var(--overlay); 
+            backdrop-filter: blur(15px);
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000;
         }
 
-        /* КНОПКА ПОВЕРНЕННЯ */
-        #backToMe {
-            display: none; width: 100%; background: #fbbf24; color: black;
-            padding: 18px; border-radius: 20px; font-weight: 900; border: none;
-            cursor: pointer; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 1px;
+        .modal-content {
+            background: #0c121d;
+            border: 1px solid var(--glass-border);
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            border-radius: 40px;
+            padding: 50px;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .report-card {
+            background: rgba(255,255,255,0.03);
+            border-left: 5px solid var(--primary);
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Кнопка повернення до себе (при керуванні іншим) */
+        #backToMeBtn {
+            display: none;
+            width: 100%;
+            background: #fbbf24;
+            color: black;
+            padding: 18px;
+            border-radius: 20px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            cursor: pointer;
+            border: none;
+            text-transform: uppercase;
         }
     </style>
 </head>
-<body onclick="closeNotifs(event)">
+<body onclick="closeDropdowns()">
 
 <header>
     <a href="index.html" class="logo-box">ДШВ</a>
     <div class="header-right">
-        <div class="notif-wrapper" onclick="toggleNotifs(event)">
+        <div class="notif-wrapper">
             <span class="bell-icon">🔔</span>
             <div id="bellDot" class="bell-dot"></div>
-            <div id="notifBox" class="notif-dropdown">
-                <h4 style="margin:0 0 10px 0; font-size: 12px; color: var(--primary-bright);">СПОВІЩЕННЯ СИСТЕМИ</h4>
-                <div id="notifList" style="font-size: 13px; color: #aaa;">Немає нових подій</div>
-            </div>
         </div>
-        <span id="topName" style="font-weight: 800; border-left: 2px solid #222; padding-left: 20px; font-size: 18px;">...</span>
-        <button onclick="window.logout()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer; font-size: 16px;">ВИЙТИ</button>
+        <span id="topUserName" style="font-weight: 800; font-size: 18px;">...</span>
+        <button onclick="window.handleLogout()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer; font-size: 16px;">ВИЙТИ</button>
     </div>
 </header>
 
 <div class="main-container">
     <div class="side-menu">
-        <button id="backToMe" onclick="resetView()">⬅ ПОВЕРНУТИСЯ ДО СЕБЕ</button>
+        <button id="backToMeBtn" onclick="resetToMyProfile()">⬅ ПОВЕРНУТИСЯ ДО СЕБЕ</button>
+        
         <a href="index.html" class="menu-item">🏠 Головна сторінка</a>
-        <a href="reports.html" class="menu-item" onclick="markRead('reports')">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
-        <a href="subotnik.html" class="menu-item" onclick="markRead('subotniks')">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
-        <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;" onclick="markRead('applications')">📝 Перегляд рапортів <div id="dot-applications" class="fire-dot"></div></a>
+        <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
+        <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
+        <a href="applications.html" class="menu-item" id="adminReportsBtn" style="display:none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
+        
+        <a href="#" onclick="window.handleLogout()" class="menu-item logout-style">🚪 Вийти з системи</a>
     </div>
 
     <div class="profile-card">
         <div class="avatar-circle">👤</div>
-        <div class="user-name" id="userName">...</div>
-        <div class="id-badge" id="userID">ID: ...</div>
+        <div class="user-name" id="displayUserName">...</div>
+        <div class="id-badge" id="displayUserID">ID: ...</div>
+        
+        <div class="delete-btn-sub" onclick="deleteTargetProfile()">Видалити цей профіль</div>
     </div>
 
     <div class="info-grid">
         <div class="info-box wide">
-            <span>ПОТОЧНА ПОСАДА / ЗВАННЯ</span>
-            <h2 id="userRank" style="color: var(--primary-bright); font-size: 28px;">...</h2>
+            <span>ЗВАННЯ / ПОСАДА</span>
+            <h2 id="displayUserRank" style="color: var(--primary-bright); font-size: 28px;">...</h2>
         </div>
-        
+
         <div class="info-box">
             <span>ПОПЕРЕДЖЕННЯ</span>
-            <h2 id="userRep" style="font-size: 32px;">0</h2>
+            <h2 id="displayRep">0</h2>
             <div class="admin-controls">
-                <button class="btn-mini" onclick="changeStat('reprimands', -1)">-</button>
-                <button class="btn-mini" onclick="changeStat('reprimands', 1)">+</button>
+                <button class="btn-mini" onclick="updateStat('reprimands', -1)">-</button>
+                <button class="btn-mini" onclick="updateStat('reprimands', 1)">+</button>
             </div>
         </div>
 
         <div class="info-box">
             <span>ДОГАНИ</span>
-            <h2 id="userWarns" style="font-size: 32px; color: var(--danger);">0</h2>
+            <h2 id="displayWarns" style="color: var(--danger);">0</h2>
             <div class="admin-controls">
-                <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
-                <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
+                <button class="btn-mini" onclick="updateStat('warns', -1)">-</button>
+                <button class="btn-mini" onclick="updateStat('warns', 1)">+</button>
             </div>
         </div>
 
         <div class="info-box">
             <span>ДОКУМЕНТИ</span>
-            <h2 id="userPassport">---</h2>
+            <h2 id="displayPassport" style="font-size: 16px;">НЕМАЄ</h2>
         </div>
 
         <div class="info-box">
-            <span>DISCORD АКАУНТ</span>
-            <h2 id="userDiscord" style="font-size: 18px; color: #7289da;">---</h2>
+            <span>DISCORD</span>
+            <h2 id="displayDiscord" style="font-size: 16px; color: #7289da;">---</h2>
+        </div>
+
+        <div class="info-box wide" style="background: rgba(34, 197, 94, 0.05); border-color: var(--primary);">
+            <span>СЛУЖБА</span>
+            <h2 style="color: var(--primary-bright);">АКТИВНА</h2>
         </div>
     </div>
 
-    <div class="staff-section" id="adminSection" style="display:none;">
-        <h3 style="margin-bottom: 35px; font-weight: 900; color: var(--primary-bright); font-size: 24px;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ</h3>
-        <div id="staffList"></div>
+    <div class="staff-section" id="adminStaffPanel" style="display:none;">
+        <div class="staff-header">
+            <h3 style="margin:0; font-weight: 900; font-size: 24px; color: var(--primary-bright);">📋 ОСОБОВИЙ СКЛАД ДШВ</h3>
+        </div>
+        <div id="staffListItems"></div>
     </div>
 </div>
 
-<div id="reportsModal" class="modal-overlay">
+<div id="archiveModal" class="modal-overlay">
     <div class="modal-content">
-        <span class="close-modal" onclick="closeReports()">&times;</span>
-        <h2 id="modalTitle" style="color: var(--primary-bright); font-weight: 900;">АРХІВ ЗВІТІВ</h2>
-        <div id="modalReportsList"></div>
+        <span onclick="document.getElementById('archiveModal').style.display='none'" style="position:absolute; top:25px; right:35px; font-size:40px; cursor:pointer;">&times;</span>
+        <h2 id="archiveTitle" style="margin-top:0; color:var(--primary-bright); font-weight:900;">АРХІВ ЗВІТІВ</h2>
+        <div id="archiveList"></div>
     </div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, orderBy, limit, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -265,158 +465,158 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    let currentUID = null, editingUID = null, myData = null, targetData = null;
+    let myUID = null;
+    let currentViewingUID = null;
+    let myData = null;
+    let targetData = null;
 
-    window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+    // ВИХІД
+    window.handleLogout = () => signOut(auth).then(() => window.location.href = "index.html");
 
+    // ПЕРЕВІРКА АВТОРИЗАЦІЇ
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            currentUID = user.uid; editingUID = user.uid;
-            const snap = await getDoc(doc(db, "users", user.uid));
-            if (snap.exists()) {
-                myData = snap.data();
+            myUID = user.uid;
+            currentViewingUID = user.uid;
+            
+            const userSnap = await getDoc(doc(db, "users", user.uid));
+            if (userSnap.exists()) {
+                myData = userSnap.data();
                 if (myData.role === 'admin') {
-                    document.querySelectorAll('.admin-controls').forEach(el => el.style.display = 'flex');
-                    document.getElementById('adminSection').style.display = 'block';
-                    document.getElementById('adminAppBtn').style.display = 'flex';
-                    loadStaff();
+                    document.querySelectorAll('.admin-controls').forEach(e => e.style.display = 'flex');
+                    document.getElementById('adminStaffPanel').style.display = 'block';
+                    document.getElementById('adminReportsBtn').style.display = 'flex';
+                    setupStaffObserver();
                 }
-                updateUI(myData);
-                initNotifications();
+                renderUserUI(myData);
             }
-        } else { window.location.href = "index.html"; }
+        } else {
+            window.location.href = "index.html";
+        }
     });
 
-    function updateUI(data) {
-        document.getElementById('userName').innerText = data.name || "---";
-        document.getElementById('userRank').innerText = data.rank || "---";
-        document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
-        document.getElementById('userWarns').innerText = data.warns || 0;
-        document.getElementById('userRep').innerText = data.reprimands || 0;
-        document.getElementById('userDiscord').innerText = data.discord || "---";
-        document.getElementById('topName').innerText = myData.name;
-        
-        const passEl = document.getElementById('userPassport');
-        if (data.passport?.includes('http')) {
-            passEl.innerHTML = `<a href="${data.passport}" target="_blank" style="color:var(--primary-bright); text-decoration:none;">ПЕРЕГЛЯНУТИ ↗</a>`;
+    // ОНОВЛЕННЯ ІНТЕРФЕЙСУ
+    function renderUserUI(data) {
+        document.getElementById('displayUserName').innerText = data.name || "---";
+        document.getElementById('displayUserRank').innerText = data.rank || "---";
+        document.getElementById('displayUserID').innerText = "ID: " + (data.gameID || "---");
+        document.getElementById('displayWarns').innerText = data.warns || 0;
+        document.getElementById('displayRep').innerText = data.reprimands || 0;
+        document.getElementById('displayDiscord').innerText = data.discord || "---";
+        document.getElementById('topUserName').innerText = myData.name;
+
+        const passportBox = document.getElementById('displayPassport');
+        if (data.passport && data.passport.includes('http')) {
+            passportBox.innerHTML = `<a href="${data.passport}" target="_blank" style="color:var(--primary-bright); text-decoration:none; font-weight:800;">ПЕРЕГЛЯНУТИ ↗</a>`;
         } else {
-            passEl.innerText = "НЕМАЄ";
+            passportBox.innerText = "НЕМАЄ";
         }
     }
 
-    // ПОШУК ЗВІТІВ ЗА UID
-    window.openReports = async (userUID, userName) => {
-        document.getElementById('modalTitle').innerText = `АРХІВ: ${userName}`;
-        document.getElementById('reportsModal').style.display = 'flex';
-        const listUI = document.getElementById('modalReportsList');
-        listUI.innerHTML = "<p>Отримання даних з серверу...</p>";
+    // КЕРУВАННЯ СТАТИСТИКОЮ (ДОГАНИ)
+    window.updateStat = async (field, amount) => {
+        const uid = currentViewingUID;
+        const activeData = (uid === myUID) ? myData : targetData;
+        
+        const newValue = (activeData[field] || 0) + amount;
+        if (newValue < 0) return;
 
-        let html = "";
-        let found = false;
-
-        for (const colName of ['reports', 'subotniks']) {
-            try {
-                const q = query(collection(db, colName), where("uid", "==", userUID));
-                const snap = await getDocs(q);
-                
-                snap.forEach(dSnap => {
-                    const d = dSnap.data();
-                    found = true;
-                    const date = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleString('uk-UA') : "---";
-                    
-                    html += `
-                        <div class="report-card">
-                            <div style="font-weight:900; color:var(--primary-bright); margin-bottom:8px;">${colName.toUpperCase()}</div>
-                            <div style="font-size:12px; opacity:0.6; margin-bottom:15px;">Зафіксовано: ${date}</div>
-                            <div style="font-size:15px; margin-bottom:15px; background:rgba(255,255,255,0.03); padding:15px; border-radius:12px; line-height:1.5;">
-                                ${d.content || d.message || "Текст не вказано"}
-                            </div>
-                            ${d.proof || d.link ? `<a href="${d.proof || d.link}" target="_blank" style="display:inline-block; background:var(--primary); color:black; padding:10px 20px; border-radius:10px; text-decoration:none; font-weight:800; font-size:13px;">ФОТО/ВІДЕО ДОКАЗИ ↗</a>` : ''}
-                        </div>
-                    `;
-                });
-            } catch(e) { console.error(e); }
-        }
-
-        listUI.innerHTML = found ? html : "<p style='text-align:center; padding:40px; opacity:0.4;'>Записи за даним користувачем відсутні.</p>";
-    }
-
-    window.closeReports = () => document.getElementById('reportsModal').style.display = 'none';
-
-    window.changeStat = async (field, val) => {
-        const uid = editingUID;
-        const activeData = (uid === currentUID) ? myData : targetData;
-        const newVal = (activeData[field] || 0) + val;
-        if (newVal < 0) return;
-        await updateDoc(doc(db, "users", uid), { [field]: newVal });
-        activeData[field] = newVal;
-        updateUI(activeData);
+        await updateDoc(doc(db, "users", uid), { [field]: newValue });
+        
+        activeData[field] = newValue;
+        renderUserUI(activeData);
     };
 
-    function loadStaff() {
-        onSnapshot(collection(db, "users"), (snap) => {
-            const list = document.getElementById('staffList');
-            list.innerHTML = "";
-            snap.forEach(s => {
-                const u = s.data();
-                const userId = s.id;
-                list.innerHTML += `
-                    <div class="staff-item">
-                        <div>
-                            <div style="font-weight:900; font-size:18px;">${u.name}</div>
-                            <div style="font-size:13px; color:var(--primary-bright); margin-top:5px;">ID: ${u.gameID} | ${u.rank}</div>
-                        </div>
-                        <div style="display:flex; gap:12px;">
-                            <button class="btn-action-green" onclick="window.openReports('${userId}', '${u.name}')">ЗВІТИ</button>
-                            <button class="btn-action-green" onclick="window.enterManageMode('${userId}')">КЕРУВАТИ</button>
-                            <button class="btn-action-red" onclick="window.deleteUser('${userId}')">ВИДАЛИТИ</button>
-                        </div>
+    // СПИСОК СКЛАДУ
+    function setupStaffObserver() {
+        onSnapshot(collection(db, "users"), (snapshot) => {
+            const listContainer = document.getElementById('staffListItems');
+            listContainer.innerHTML = "";
+            
+            snapshot.forEach(docSnap => {
+                const u = docSnap.data();
+                const uID = docSnap.id;
+                
+                const item = document.createElement('div');
+                item.className = 'staff-item';
+                item.innerHTML = `
+                    <div class="staff-info">
+                        <b>${u.name}</b>
+                        <span>${u.rank} | ID: ${u.gameID}</span>
+                    </div>
+                    <div class="staff-actions">
+                        <button class="btn-action btn-manage" onclick="loadArchive('${uID}', '${u.name}')">ЗВІТИ</button>
+                        <button class="btn-action btn-manage" onclick="manageMember('${uID}')">КЕРУВАТИ</button>
+                        <button class="btn-action btn-delete" onclick="confirmDeleteUser('${uID}')">ВИДАЛИТИ</button>
                     </div>
                 `;
+                listContainer.appendChild(item);
             });
         });
     }
 
-    window.enterManageMode = async (id) => {
-        const snap = await getDoc(doc(db, "users", id));
+    // ПЕРЕГЛЯД ЗВІТІВ (ПОШУК ЗА UID ЯК НА СКРІНШОТІ)
+    window.loadArchive = async (uid, name) => {
+        document.getElementById('archiveTitle').innerText = "ЗВІТИ: " + name;
+        document.getElementById('archiveModal').style.display = 'flex';
+        const list = document.getElementById('archiveList');
+        list.innerHTML = "Завантаження...";
+
+        let finalHTML = "";
+        
+        // Шукаємо в обох колекціях за UID
+        for (const colName of ['reports', 'subotniks']) {
+            const q = query(collection(db, colName), where("uid", "==", uid));
+            const snap = await getDocs(q);
+            
+            snap.forEach(d => {
+                const item = d.data();
+                const date = item.timestamp ? new Date(item.timestamp.toMillis()).toLocaleDateString() : "---";
+                finalHTML += `
+                    <div class="report-card">
+                        <div style="color:var(--primary-bright); font-size:12px; font-weight:900; margin-bottom:10px;">ДЖЕРЕЛО: ${colName.toUpperCase()}</div>
+                        <div style="font-size:11px; opacity:0.5; margin-bottom:5px;">Дата: ${date} | Період: ${item.period || '---'}</div>
+                        <p style="margin:10px 0; line-height:1.4;">${item.content || item.text || "Текст відсутній"}</p>
+                        ${item.proof ? `<a href="${item.proof}" target="_blank" style="color:var(--primary-bright); font-weight:800; text-decoration:none;">Докази ↗</a>` : ''}
+                    </div>
+                `;
+            });
+        }
+        list.innerHTML = finalHTML || "<p style='text-align:center; opacity:0.5;'>Звітів не знайдено.</p>";
+    };
+
+    // КЕРУВАННЯ ІНШИМ КОРИСТУВАЧЕМ
+    window.manageMember = async (uid) => {
+        const snap = await getDoc(doc(db, "users", uid));
         if (snap.exists()) {
-            editingUID = id; targetData = snap.data();
-            updateUI(targetData);
-            document.getElementById('backToMe').style.display = 'block';
+            targetData = snap.data();
+            currentViewingUID = uid;
+            renderUserUI(targetData);
+            document.getElementById('backToMeBtn').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
-    
-    window.deleteUser = async (id) => { 
-        if(confirm("ВИДАЛИТИ БІЙЦЯ З РЕЄСТРУ?")) { await deleteDoc(doc(db, "users", id)); }
+    window.resetToMyProfile = () => {
+        currentViewingUID = myUID;
+        renderUserUI(myData);
+        document.getElementById('backToMeBtn').style.display = 'none';
     };
 
-    window.toggleNotifs = (e) => { 
-        e.stopPropagation(); 
-        document.getElementById('notifBox').classList.toggle('active'); 
-        document.getElementById('bellDot').style.display = 'none'; 
+    window.confirmDeleteUser = async (id) => {
+        if (confirm("Видалити цього бійця з бази даних назавжди?")) {
+            await deleteDoc(doc(db, "users", id));
+        }
     };
-    window.closeNotifs = () => document.getElementById('notifBox')?.classList.remove('active');
 
-    function initNotifications() {
-        ['reports', 'subotniks', 'applications'].forEach(col => {
-            const q = query(collection(db, col), orderBy("timestamp", "desc"), limit(1));
-            onSnapshot(q, (snap) => {
-                if (!snap.empty) {
-                    const last = snap.docs[0].data();
-                    const savedT = parseInt(localStorage.getItem('last_view_' + col) || 0);
-                    if ((last.timestamp?.toMillis() || 0) > savedT) {
-                        document.getElementById('bellDot').style.display = 'block';
-                        const dot = document.getElementById('dot-' + col);
-                        if(dot) dot.style.display = 'block';
-                    }
-                }
+    window.deleteTargetProfile = () => {
+        if (confirm("Ви впевнені, що хочете видалити цей профіль?")) {
+            window.confirmDeleteUser(currentViewingUID).then(() => {
+                if (currentViewingUID === myUID) window.handleLogout();
+                else resetToMyProfile();
             });
-        });
-    }
-    window.markRead = (col) => localStorage.setItem('last_view_' + col, Date.now());
+        }
+    };
 </script>
 </body>
 </html>
