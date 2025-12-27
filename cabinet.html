@@ -94,14 +94,26 @@
         .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 10px; }
         .info-box h2 { margin: 0; font-size: 20px; font-weight: 900; }
         
-        /* Кнопка паспорта (Стилізація) */
         .passport-link { color: #3b82f6; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.3s; }
         .passport-link:hover { color: var(--primary-bright); text-shadow: 0 0 10px var(--primary); }
 
-        /* КЕРУВАННЯ (Тільки для адміна) */
+        /* КЕРУВАННЯ АДМІНА */
         .admin-controls { display: none; justify-content: center; gap: 8px; margin-top: 10px; }
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; }
         .btn-mini:hover { background: var(--primary); color: black; }
+
+        /* ІСТОРІЯ ЗВІТІВ */
+        .history-section {
+            grid-column: 1 / 4; margin-top: 20px;
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 25px; padding: 25px;
+        }
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
+        .history-item { 
+            background: rgba(255,255,255,0.02); border-left: 4px solid var(--primary);
+            padding: 15px; border-radius: 10px; font-size: 13px;
+        }
+        .history-item b { color: var(--primary-bright); display: block; margin-bottom: 5px; }
 
         /* ОСОБОВИЙ СКЛАД */
         .staff-section { 
@@ -125,7 +137,6 @@
             padding: 12px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; font-size: 14px;
         }
 
-        /* Кнопка повернення */
         #backToMe {
             display: none; width: 100%; background: #fbbf24; color: black;
             padding: 15px; border-radius: 15px; font-weight: 900; border: none;
@@ -207,6 +218,13 @@
         </div>
     </div>
 
+    <div class="history-section">
+        <h3 style="margin: 0; font-size: 14px; color: var(--primary-bright); text-transform: uppercase;">📊 Історія активності бійця</h3>
+        <div id="userHistory" class="history-grid">
+            <div style="color: #555; font-size: 12px;">Завантаження звітів...</div>
+        </div>
+    </div>
+
     <div class="staff-section" id="adminSection" style="display:none;">
         <h3 style="margin-bottom: 25px; font-weight: 900; color: var(--primary-bright);">📋 ОСОБОВИЙ СКЛАД</h3>
         <div id="staffList"></div>
@@ -216,7 +234,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, limit, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, limit, deleteDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -268,7 +286,7 @@
         } else { window.location.href = "index.html"; }
     });
 
-    function updateUI(data) {
+    async function updateUI(data) {
         document.getElementById('userName').innerText = data.name;
         document.getElementById('userRank').innerText = data.rank;
         document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
@@ -277,7 +295,7 @@
         document.getElementById('userDiscord').innerText = data.discord || "---";
         document.getElementById('topName').innerText = myData.name;
 
-        // ВІДОБРАЖЕННЯ ПАСПОРТА
+        // ПАСПОРТ
         const passEl = document.getElementById('userPassport');
         if (data.passport && data.passport.includes('http')) {
             passEl.innerHTML = `<a href="${data.passport}" target="_blank" class="passport-link">ПАСПОРТ ↗</a>`;
@@ -285,18 +303,54 @@
             passEl.innerText = "НЕМАЄ";
             passEl.style.color = "#555";
         }
+
+        // ЗАВАНТАЖЕННЯ ІСТОРІЇ ЗВІТІВ
+        loadUserActivity(data.gameID);
+    }
+
+    // НОВА ФУНКЦІЯ: ПОШУК ЗВІТІВ ЗА ID
+    async function loadUserActivity(gameID) {
+        const historyUI = document.getElementById('userHistory');
+        historyUI.innerHTML = "";
+        
+        if (!gameID) {
+            historyUI.innerHTML = "<div style='color:#555'>ID не вказано</div>";
+            return;
+        }
+
+        const collections = ['reports', 'subotniks'];
+        let hasData = false;
+
+        for (const colName of collections) {
+            const q = query(collection(db, colName), where("gameID", "==", gameID.toString()));
+            const snap = await getDocs(q);
+            
+            snap.forEach(docSnap => {
+                hasData = true;
+                const d = docSnap.data();
+                const date = d.timestamp ? new Date(d.timestamp.toMillis()).toLocaleDateString() : "Невідома дата";
+                const type = colName === 'reports' ? "ЩОТИЖНЕВИЙ ЗВІТ" : "СУБОТНИК";
+                
+                historyUI.innerHTML += `
+                    <div class="history-item">
+                        <b>${type}</b>
+                        Дата: ${date}<br>
+                        <a href="${d.proof || '#'}" target="_blank" style="color:var(--primary); text-decoration:none; font-size:11px;">[ ПЕРЕГЛЯНУТИ ДОКАЗИ ]</a>
+                    </div>
+                `;
+            });
+        }
+
+        if (!hasData) historyUI.innerHTML = "<div style='color:#555'>Звітів поки немає</div>";
     }
 
     window.changeStat = async (field, val) => {
         if (myData.role !== 'admin') return;
         const activeUID = editingUID;
         const activeData = (activeUID === currentUID) ? myData : targetData;
-        
         const newVal = (activeData[field] || 0) + val;
         if (newVal < 0) return;
-        
         await updateDoc(doc(db, "users", activeUID), { [field]: newVal });
-        
         activeData[field] = newVal;
         updateUI(activeData);
     };
