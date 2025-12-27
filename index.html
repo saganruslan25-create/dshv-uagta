@@ -199,6 +199,7 @@
         <div class="form-container" data-aos="zoom-in">
             <form id="applicationForm">
                 <input type="text" id="appName" class="form-input" placeholder="Ваш NickName" required>
+                <input type="text" id="appRank" class="form-input" placeholder="Яке ваше звання?" required>
                 <input type="text" id="appDiscord" class="form-input" placeholder="Ваш Discord" required>
                 <textarea id="appMotivation" class="form-input" rows="5" placeholder="Ваша мотивація (чому ви хочете до ДШВ)..." required></textarea>
                 <button type="submit" id="appSubmitBtn" class="btn-submit">Відправити рапорт</button>
@@ -286,18 +287,25 @@
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
+        // Ініціалізація анімацій
         AOS.init({ duration: 1000, once: true });
+
+        // Перемикач мобільного меню
         function toggleMenu() { 
             document.getElementById('navLinks').classList.toggle('active'); 
             document.getElementById('burgerBtn').classList.toggle('active');
         }
+
+        // Відкриття та закриття модалок
         function openModal(id) { document.getElementById(id).style.display = 'flex'; document.body.style.overflow = 'hidden'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; document.body.style.overflow = 'auto'; }
 
+        // Обробка натискання на кабінет
         function handleCabinetClick() {
             openModal('authModal');
         }
 
+        // Перемикач Вхід / Реєстрація
         let isLoginMode = true;
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
@@ -347,8 +355,10 @@
                 btn.disabled = true; btn.innerText = "Відправка...";
 
                 try {
+                    // ЗБЕРІГАЄМО ЗВАННЯ В БАЗУ ДАНИХ (field: rank)
                     await addDoc(collection(db, "applications"), {
                         name: document.getElementById('appName').value,
+                        rank: document.getElementById('appRank').value,
                         discord: document.getElementById('appDiscord').value,
                         motivation: document.getElementById('appMotivation').value,
                         status: 'pending',
@@ -361,7 +371,7 @@
             });
         }
 
-        // Система авторизації та реєстрації з перевіркою
+        // Система авторизації та реєстрації
         const aForm = document.getElementById('authForm');
         aForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -378,11 +388,9 @@
                     const nick = document.getElementById('regName').value;
                     const secretInput = document.getElementById('secretCode').value;
 
-                    // 1. Отримуємо секретний код з бази
                     const secretDoc = await getDoc(doc(db, "system", "secret"));
                     const activeSecret = secretDoc.exists() ? secretDoc.data().code : null;
 
-                    // 2. Якщо код не введений або невірний - перевіряємо рапорт
                     if (secretInput !== activeSecret) {
                         const q = query(collection(db, "applications"), where("name", "==", nick), where("status", "==", "approved"));
                         const querySnapshot = await getDocs(q);
@@ -394,7 +402,6 @@
                         }
                     }
 
-                    // 3. Реєстрація користувача
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nick,
@@ -414,7 +421,7 @@
             }
         });
 
-        // Стан авторизації для кнопки кабінету
+        // Стан авторизації для кнопки
         onAuthStateChanged(auth, user => {
             const btn = document.getElementById('cabinetBtn');
             if(user) {
@@ -425,4 +432,3 @@
     </script>
 </body>
 </html>
-
