@@ -44,7 +44,6 @@
             padding: 0 20px;
         }
 
-        /* СЕКЦІЯ СЕКРЕТНОГО КОДУ */
         .secret-container {
             background: rgba(34, 197, 94, 0.05);
             border: 2px dashed var(--glass-border);
@@ -168,7 +167,7 @@
 <div class="container">
     <div class="secret-container">
         <div class="secret-label">Секретний код (Оновлюється кожні 2 хв)</div>
-        <div class="secret-code" id="secretDisplay">ЗАВАНТАЖЕННЯ...</div>
+        <div class="secret-code" id="secretDisplay">...</div>
         <button class="btn-copy" onclick="copySecret()">Скопіювати та надати бійцю</button>
     </div>
 
@@ -184,7 +183,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -199,21 +198,37 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- ЛОГІКА СЕКРЕТНОГО КОДУ ---
-    async function generateSecret() {
-        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-        document.getElementById('secretDisplay').innerText = code;
-        try {
-            await setDoc(doc(db, "system", "secret"), { 
-                code: code, 
-                lastUpdate: new Date() 
+    // Логіка оновлення секретного коду кожні 2 хвилини
+    async function checkAndRefreshSecret() {
+        const secretRef = doc(db, "system", "secret");
+        const snap = await getDoc(secretRef);
+        
+        let shouldRefresh = true;
+        
+        if (snap.exists()) {
+            const data = snap.data();
+            const lastUpdate = data.lastUpdate ? data.lastUpdate.toDate() : 0;
+            const now = new Date();
+            // Перевірка: чи пройшло 120 секунд (2 хвилини)
+            if (now - lastUpdate < 120000) {
+                shouldRefresh = false;
+                document.getElementById('secretDisplay').innerText = data.code;
+            }
+        }
+
+        if (shouldRefresh) {
+            const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            document.getElementById('secretDisplay').innerText = newCode;
+            await setDoc(secretRef, {
+                code: newCode,
+                lastUpdate: serverTimestamp()
             });
-        } catch (e) { console.error("Помилка оновлення коду:", e); }
+        }
     }
 
-    // Запуск таймера оновлення коду
-    generateSecret();
-    setInterval(generateSecret, 120000);
+    // Перевіряємо при завантаженні та ставимо таймер
+    checkAndRefreshSecret();
+    setInterval(checkAndRefreshSecret, 30000); // Перевірка кожні 30 сек
 
     window.copySecret = () => {
         const code = document.getElementById('secretDisplay').innerText;
@@ -221,7 +236,6 @@
         alert("Код " + code + " скопійовано!");
     };
 
-    // Перевірка на адміна
     onAuthStateChanged(auth, async (user) => {
         if (user) {
             const userSnap = await getDoc(doc(db, "users", user.uid));
@@ -238,43 +252,33 @@
 
     function loadApplications() {
         const q = query(collection(db, "applications"), orderBy("timestamp", "desc"));
-        
         onSnapshot(q, (snapshot) => {
             document.getElementById('loader').style.display = 'none';
             const container = document.getElementById('appsContainer');
-            
             if (snapshot.empty) {
-                container.innerHTML = '<div class="empty-state"><h3>Нових рапортів поки немає</h3><p>Як тільки хтось заповнить форму на сайті, вона з’явиться тут.</p></div>';
+                container.innerHTML = '<div class="empty-state"><h3>Нових рапортів поки немає</h3></div>';
                 return;
             }
-
             container.innerHTML = "";
             snapshot.forEach((appDoc) => {
                 const data = appDoc.data();
                 const id = appDoc.id;
-                const date = data.timestamp ? data.timestamp.toDate().toLocaleString('uk-UA') : 'Тільки що';
-                
                 const statusClass = `status-${data.status || 'pending'}`;
                 const statusText = data.status === 'approved' ? 'Прийнято' : (data.status === 'rejected' ? 'Відхилено' : 'Очікує');
-
                 container.innerHTML += `
-                    <div class="app-card" id="card-${id}">
+                    <div class="app-card">
                         <div class="app-header">
                             <div>
                                 <div class="nickname">${data.name}</div>
                                 <div class="discord-tag">Discord: <b>${data.discord}</b></div>
                                 <span class="status-badge ${statusClass}">${statusText}</span>
-                                <div style="font-size: 11px; opacity: 0.5; margin-top: 10px;">Дата: ${date}</div>
                             </div>
                             <button class="btn-delete" onclick="window.deleteApp('${id}')">Видалити</button>
                         </div>
-                        
-                        <div style="font-size: 12px; text-transform: uppercase; color: var(--primary); font-weight: 800; margin-bottom: 8px;">Мотивація:</div>
                         <div class="motivation-box">${data.motivation}</div>
-
                         ${(!data.status || data.status === 'pending') ? `
                             <div class="action-group">
-                                <button class="btn-action btn-approve" onclick="window.updateStatus('${id}', 'approved')">Прийняти рапорт</button>
+                                <button class="btn-action btn-approve" onclick="window.updateStatus('${id}', 'approved')">Прийняти</button>
                                 <button class="btn-action btn-reject" onclick="window.updateStatus('${id}', 'rejected')">Відхилити</button>
                             </div>
                         ` : ''}
@@ -284,23 +288,12 @@
         });
     }
 
-    // Оновлення статусу (Прийняти/Відхилити)
     window.updateStatus = async (id, newStatus) => {
-        try {
-            await updateDoc(doc(db, "applications", id), { status: newStatus });
-        } catch (err) {
-            alert("Помилка зміни статусу.");
-        }
+        await updateDoc(doc(db, "applications", id), { status: newStatus });
     };
 
     window.deleteApp = async (id) => {
-        if (confirm("Ви дійсно хочете видалити цей рапорт з бази?")) {
-            try {
-                await deleteDoc(doc(db, "applications", id));
-            } catch (err) {
-                alert("Помилка при видаленні.");
-            }
-        }
+        if (confirm("Видалити рапорт?")) await deleteDoc(doc(db, "applications", id));
     };
 </script>
 </body>
