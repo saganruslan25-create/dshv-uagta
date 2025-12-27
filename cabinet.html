@@ -141,14 +141,21 @@
             width: 90%; max-width: 650px; max-height: 85vh; border-radius: 30px; padding: 35px; position: relative; overflow-y: auto;
         }
 
-        /* СТИЛЬ ДЛЯ ПОСИЛАНЬ У ЗВІТАХ (НОВЕ) */
-        .report-link-btn {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: #1a2332; border: 1px solid var(--glass-border); color: var(--primary-bright);
-            padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 800;
-            margin: 5px 5px 0 0; text-transform: uppercase;
+        /* ПРАВКА ТУТ: Стиль для блоку тексту у звітах */
+        .report-content-text {
+            margin-top: 10px; 
+            font-size: 14px; 
+            line-height: 1.6;
+            white-space: pre-wrap; /* ЗБЕРІГАЄ ПЕРЕНОСИ РЯДКІВ ЯК НА ФОТО З СУБОТНИКА */
+            word-wrap: break-word;
         }
-        .report-link-btn:hover { background: var(--primary); color: black; }
+
+        /* ПРАВКА ТУТ: Стиль для клікабельних посилань */
+        .report-content-text a {
+            color: #3498db; 
+            text-decoration: underline;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -242,6 +249,7 @@
     </div>
 
     <script type="module">
+        // ПІДКЛЮЧЕННЯ FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -264,43 +272,39 @@
         let targetData = null;
         let editingUID = null;
 
-        // ВИХІД
+        // ЛОГІКА ВИХОДУ
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-        // ПРОЧИТАННЯ ПОВІДОМЛЕНЬ (ВОРНІНГИ)
+        // КЕРУВАННЯ МІТКАМИ (НОВІ ЗАПИСИ)
         window.markAsRead = (type) => {
             localStorage.setItem(`read_${type}`, 'true');
             if(document.getElementById(`dot-${type}`)) document.getElementById(`dot-${type}`).style.display = 'none';
             updateBell();
         };
 
-        // ПЕРЕТВОРЕННЯ ТЕКСТУ З ПОСИЛАННЯМИ НА КНОПКИ (НОВЕ)
+        // ПРАВКА ТУТ: ФУНКЦІЯ ДЛЯ ПЕРЕТВОРЕННЯ URL В КЛІКАБЕЛЬНІ ПОСИЛАННЯ (БЕЗ СКОРОЧЕНЬ)
         function linkify(text) {
             if (!text) return "---";
+            // Регулярний вираз для пошуку посилань http/https
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, (url) => {
-                return `<a href="${url}" target="_blank" class="report-link-btn">🔗 ВІДКРИТИ ДОКАЗ</a>`;
+                return `<a href="${url}" target="_blank">${url}</a>`;
             });
         }
 
-        // СЛІДКУВАННЯ ЗА НОВИМИ ЗАПИСАМИ (ДЛЯ ДЗВІНОЧКА)
+        // МОНІТОРИНГ СПОВІЩЕНЬ
         function watchNotifications() {
             if (myData?.role !== 'admin') return;
-            const nl = document.getElementById('notifList');
-            nl.innerHTML = "";
-
             onSnapshot(collection(db, "applications"), (snap) => {
                 const hasNew = snap.size > 0 && !localStorage.getItem('read_apps');
                 if(document.getElementById('dot-apps')) document.getElementById('dot-apps').style.display = hasNew ? 'block' : 'none';
                 updateBell();
             });
-
             onSnapshot(collection(db, "reports"), (snap) => {
                 const hasNew = snap.size > 0 && !localStorage.getItem('read_reports');
                 if(document.getElementById('dot-reports')) document.getElementById('dot-reports').style.display = hasNew ? 'block' : 'none';
                 updateBell();
             });
-
             onSnapshot(collection(db, "subotniks"), (snap) => {
                 const hasNew = snap.size > 0 && !localStorage.getItem('read_subotniks');
                 if(document.getElementById('dot-subotniks')) document.getElementById('dot-subotniks').style.display = hasNew ? 'block' : 'none';
@@ -317,7 +321,7 @@
 
         window.toggleNotifs = () => document.getElementById('notifDropdown').classList.toggle('active');
 
-        // ПЕРЕВІРКА ВХОДУ ТА ЗАВАНТАЖЕННЯ ДАНИХ
+        // ПЕРЕВІРКА АВТОРИЗАЦІЇ
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUID = user.uid;
@@ -337,7 +341,7 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // ОНОВЛЕННЯ ІНТЕРФЕЙСУ ДАНИМИ БІЙЦЯ
+        // ОНОВЛЕННЯ ДАНИХ У ПРОФІЛІ
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "---";
             document.getElementById('userRank').innerText = data.rank || "---";
@@ -352,7 +356,7 @@
             } else { passEl.innerText = "НЕМАЄ"; }
         }
 
-        // ЗМІНА СТАТИСТИКИ (АДМІН)
+        // АДМІН-ФУНКЦІЯ: ЗМІНА СТАТИСТИКИ
         window.changeStat = async (field, val) => {
             const uid = editingUID;
             const activeData = (uid === currentUID) ? myData : targetData;
@@ -363,7 +367,7 @@
             updateUI(activeData);
         };
 
-        // ЗАВАНТАЖЕННЯ СПИСКУ СКЛАДУ
+        // ЗАВАНТАЖЕННЯ СПИСКУ БІЙЦІВ
         function loadStaff() {
             onSnapshot(collection(db, "users"), (snap) => {
                 const list = document.getElementById('staffList');
@@ -384,7 +388,7 @@
             });
         }
 
-        // ВІДКРИТТЯ АРХІВУ ЗВІТІВ БІЙЦЯ (З ВИПРАВЛЕНИМИ ПОСИЛАННЯМИ)
+        // ВІДКРИТТЯ АРХІВУ ЗВІТІВ (З ВИПРАВЛЕНИМ ФОРМАТУВАННЯМ)
         window.openReports = async (uid, name) => {
             document.getElementById('modalTitle').innerText = `ЗВІТИ: ${name}`;
             document.getElementById('reportsModal').style.display = 'flex';
@@ -392,32 +396,32 @@
             listUI.innerHTML = "Завантаження...";
             let html = "";
             
-            // Завантаження щотижневих звітів
+            // Щотижневі звіти
             const qRep = query(collection(db, "reports"), where("uid", "==", uid));
             const snapRep = await getDocs(qRep);
             snapRep.forEach(d => {
                 const data = d.data();
                 html += `<div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:12px; border-left:4px solid var(--primary);">
                     <small style="color:var(--primary-bright); font-weight:900;">📅 ПЕРІОД: ${data.period || "Не вказано"}</small><br>
-                    <p style="margin-top:5px; font-size: 14px; line-height: 1.5;">${linkify(data.content || data.message)}</p>
+                    <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
 
-            // Завантаження суботників
+            // Суботники
             const qSub = query(collection(db, "subotniks"), where("ownerId", "==", uid));
             const snapSub = await getDocs(qSub);
             snapSub.forEach(d => {
                 const data = d.data();
                 html += `<div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:12px; border-left:4px solid var(--warning);">
                     <small style="color:var(--warning); font-weight:900;">🧹 СУБОТНИК ВІД: ${data.date || "Не вказано"}</small><br>
-                    <p style="margin-top:5px; font-size: 14px; line-height: 1.5;">${linkify(data.content || data.message)}</p>
+                    <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
 
             listUI.innerHTML = html || "Архів порожній.";
         };
 
-        // РЕЖИМ КЕРУВАННЯ ІНШИМ БІЙЦЕМ
+        // КЕРУВАННЯ ІНШИМ ПРОФІЛЕМ
         window.enterManageMode = async (id) => {
             const snap = await getDoc(doc(db, "users", id));
             if (snap.exists()) {
@@ -429,6 +433,8 @@
         };
 
         window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
+        
+        // ВИДАЛЕННЯ БІЙЦЯ
         window.deleteUser = async (id) => { if(confirm("Видалити бійця з бази?")) await deleteDoc(doc(db, "users", id)); };
     </script>
 </body>
