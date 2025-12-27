@@ -6,6 +6,7 @@
     <title>ДШВ | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
+        /* ОСНОВНІ ПАРАМЕТРИ КОЛЬОРІВ */
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
@@ -16,7 +17,7 @@
             --warning: #fbbf24;
         }
 
-        /* ОСНОВНІ СТИЛІ ТА АНІМАЦІЇ */
+        /* ЗАГАЛЬНІ СТИЛІ ТА АНІМАЦІЇ */
         * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
 
         body {
@@ -41,7 +42,7 @@
 
         .header-right { display: flex; align-items: center; gap: 20px; }
 
-        /* СПОВІЩЕННЯ */
+        /* СИСТЕМА СПОВІЩЕНЬ (ДЗВІНОЧОК) */
         .notif-wrapper { position: relative; cursor: pointer; }
         .bell-icon { font-size: 22px; color: var(--warning); filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.4)); }
         .bell-dot { 
@@ -59,7 +60,7 @@
 
         .top-name { font-weight: 700; font-size: 14px; border-left: 2px solid #222; padding-left: 15px; }
 
-        /* КОНТЕЙНЕР ОСНОВНОГО КОНТЕНТУ */
+        /* МАКЕТ КАБІНЕТУ */
         .main-wrapper { display: flex; justify-content: center; padding: 30px 5%; }
         .main-container {
             display: grid; grid-template-columns: 280px 420px 1fr; gap: 20px;
@@ -71,7 +72,7 @@
             border-radius: 20px;
         }
 
-        /* ЕФЕКТИ ПРИ НАВЕДЕННІ */
+        /* ЕФЕКТИ ПРИ НАВЕДЕННІ (ЯК ТИ ПРОСИВ) */
         .info-box:hover, .profile-card:hover, .menu-item:hover, .btn-action-g:hover, .btn-action-r:hover {
             transform: translateY(-5px) scale(1.03);
             box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
@@ -106,7 +107,7 @@
         .user-name { font-size: 32px; font-weight: 900; margin-bottom: 15px; }
         .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; }
 
-        /* ПАНЕЛЬ ІНФОРМАЦІЇ */
+        /* ПАНЕЛЬ СТАТИСТИКИ */
         .info-panel { display: flex; flex-direction: column; gap: 15px; }
         .info-box { padding: 20px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 8px; display: block; }
@@ -114,7 +115,7 @@
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-        /* АДМІН КНОПКИ (+/-) */
+        /* АДМІН КНОПКИ КЕРУВАННЯ (+/-) */
         .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
 
@@ -126,11 +127,11 @@
             background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
         }
 
-        /* КНОПКИ ДІЙ */
+        /* КНОПКИ ДІЙ В РЕЄСТРІ */
         .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
-        /* МОДАЛЬНЕ ВІКНО */
+        /* МОДАЛЬНЕ ВІКНО АРХІВУ */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); backdrop-filter: blur(20px);
@@ -141,16 +142,16 @@
             width: 90%; max-width: 650px; max-height: 85vh; border-radius: 30px; padding: 35px; position: relative; overflow-y: auto;
         }
 
-        /* ПРАВКА ТУТ: Стиль для блоку тексту у звітах */
+        /* ТЕКСТ ЗВІТІВ В МОДАЛЦІ (З ПЕРЕНОСАМИ ТА ПОСИЛАННЯМИ) */
         .report-content-text {
             margin-top: 10px; 
             font-size: 14px; 
             line-height: 1.6;
-            white-space: pre-wrap; /* ЗБЕРІГАЄ ПЕРЕНОСИ РЯДКІВ ЯК НА ФОТО З СУБОТНИКА */
+            white-space: pre-wrap; 
             word-wrap: break-word;
+            color: #ccc;
         }
 
-        /* ПРАВКА ТУТ: Стиль для клікабельних посилань */
         .report-content-text a {
             color: #3498db; 
             text-decoration: underline;
@@ -217,7 +218,7 @@
                         </div>
                     </div>
                     <div class="info-box">
-                        <span>ДОКУМЕНТИ</span>
+                        <span>ДОКУМЕНТИ (ПАСПОРТ)</span>
                         <h2 id="userPassport" style="font-size: 12px;">НЕМАЄ</h2>
                     </div>
                     <div class="info-box">
@@ -249,11 +250,11 @@
     </div>
 
     <script type="module">
-        // ПІДКЛЮЧЕННЯ FIREBASE
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // КОНФІГУРАЦІЯ
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -275,6 +276,15 @@
         // ЛОГІКА ВИХОДУ
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
+        // ПЕРЕТВОРЕННЯ ПОСИЛАНЬ В ТЕКСТІ
+        function linkify(text) {
+            if (!text) return "---";
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, (url) => {
+                return `<a href="${url}" target="_blank">${url}</a>`;
+            });
+        }
+
         // КЕРУВАННЯ МІТКАМИ (НОВІ ЗАПИСИ)
         window.markAsRead = (type) => {
             localStorage.setItem(`read_${type}`, 'true');
@@ -282,17 +292,7 @@
             updateBell();
         };
 
-        // ПРАВКА ТУТ: ФУНКЦІЯ ДЛЯ ПЕРЕТВОРЕННЯ URL В КЛІКАБЕЛЬНІ ПОСИЛАННЯ (БЕЗ СКОРОЧЕНЬ)
-        function linkify(text) {
-            if (!text) return "---";
-            // Регулярний вираз для пошуку посилань http/https
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, (url) => {
-                return `<a href="${url}" target="_blank">${url}</a>`;
-            });
-        }
-
-        // МОНІТОРИНГ СПОВІЩЕНЬ
+        // МОНІТОРИНГ СПОВІЩЕНЬ ДЛЯ АДМІНА
         function watchNotifications() {
             if (myData?.role !== 'admin') return;
             onSnapshot(collection(db, "applications"), (snap) => {
@@ -321,7 +321,7 @@
 
         window.toggleNotifs = () => document.getElementById('notifDropdown').classList.toggle('active');
 
-        // ПЕРЕВІРКА АВТОРИЗАЦІЇ
+        // ВХІД ТА ПЕРЕВІРКА РОЛІ
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 currentUID = user.uid;
@@ -341,7 +341,7 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // ОНОВЛЕННЯ ДАНИХ У ПРОФІЛІ
+        // ОНОВЛЕННЯ ІНТЕРФЕЙСУ
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "---";
             document.getElementById('userRank').innerText = data.rank || "---";
@@ -356,18 +356,24 @@
             } else { passEl.innerText = "НЕМАЄ"; }
         }
 
-        // АДМІН-ФУНКЦІЯ: ЗМІНА СТАТИСТИКИ
+        // АДМІН: ЗМІНА СТАТИСТИКИ (+/-)
         window.changeStat = async (field, val) => {
             const uid = editingUID;
-            const activeData = (uid === currentUID) ? myData : targetData;
-            const newVal = (activeData[field] || 0) + val;
-            if (newVal < 0) return;
-            await updateDoc(doc(db, "users", uid), { [field]: newVal });
-            activeData[field] = newVal;
-            updateUI(activeData);
+            const docRef = doc(db, "users", uid);
+            const snap = await getDoc(docRef);
+            if(snap.exists()){
+                const curData = snap.data();
+                const newVal = (curData[field] || 0) + val;
+                if (newVal < 0) return;
+                await updateDoc(docRef, { [field]: newVal });
+                
+                // Оновлюємо UI миттєво
+                if(uid === currentUID) { myData[field] = newVal; updateUI(myData); }
+                else { targetData[field] = newVal; updateUI(targetData); }
+            }
         };
 
-        // ЗАВАНТАЖЕННЯ СПИСКУ БІЙЦІВ
+        // АДМІН: ЗАВАНТАЖЕННЯ ВСІХ БІЙЦІВ
         function loadStaff() {
             onSnapshot(collection(db, "users"), (snap) => {
                 const list = document.getElementById('staffList');
@@ -388,15 +394,15 @@
             });
         }
 
-        // ВІДКРИТТЯ АРХІВУ ЗВІТІВ (З ВИПРАВЛЕНИМ ФОРМАТУВАННЯМ)
+        // АДМІН: ПЕРЕГЛЯД АРХІВУ БІЙЦЯ
         window.openReports = async (uid, name) => {
-            document.getElementById('modalTitle').innerText = `ЗВІТИ: ${name}`;
+            document.getElementById('modalTitle').innerText = `АРХІВ: ${name}`;
             document.getElementById('reportsModal').style.display = 'flex';
             const listUI = document.getElementById('modalReportsList');
             listUI.innerHTML = "Завантаження...";
             let html = "";
             
-            // Щотижневі звіти
+            // Щотижневі
             const qRep = query(collection(db, "reports"), where("uid", "==", uid));
             const snapRep = await getDocs(qRep);
             snapRep.forEach(d => {
@@ -413,29 +419,38 @@
             snapSub.forEach(d => {
                 const data = d.data();
                 html += `<div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:12px; border-left:4px solid var(--warning);">
-                    <small style="color:var(--warning); font-weight:900;">🧹 СУБОТНИК ВІД: ${data.date || "Не вказано"}</small><br>
+                    <small style="color:var(--warning); font-weight:900;">🧹 СУБОТНИК: ${data.date || "Не вказано"}</small><br>
                     <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
 
-            listUI.innerHTML = html || "Архів порожній.";
+            listUI.innerHTML = html || "Цей боєць ще не надсилав звітів.";
         };
 
-        // КЕРУВАННЯ ІНШИМ ПРОФІЛЕМ
+        // АДМІН: РЕЖИМ КЕРУВАННЯ ІНШИМ ПРОФІЛЕМ
         window.enterManageMode = async (id) => {
             const snap = await getDoc(doc(db, "users", id));
             if (snap.exists()) {
-                editingUID = id; targetData = snap.data();
+                editingUID = id; 
+                targetData = snap.data();
                 updateUI(targetData);
                 document.getElementById('backToMe').style.display = 'block';
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         };
 
-        window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
+        window.resetView = () => { 
+            editingUID = currentUID; 
+            updateUI(myData); 
+            document.getElementById('backToMe').style.display = 'none'; 
+        };
         
-        // ВИДАЛЕННЯ БІЙЦЯ
-        window.deleteUser = async (id) => { if(confirm("Видалити бійця з бази?")) await deleteDoc(doc(db, "users", id)); };
+        // АДМІН: ВИДАЛЕННЯ (ПРОЧИТАЙ КОМЕНТАР)
+        window.deleteUser = async (id) => { 
+            if(confirm("ВИДАЛИТИ БІЙЦЯ?\n\nУвага: Це видалить дані з бази, але пошта залишиться в системі Firebase Auth. Щоб видалити пошту, зайдіть в Firebase Console -> Authentication.")) {
+                await deleteDoc(doc(db, "users", id)); 
+            }
+        };
     </script>
 </body>
 </html>
