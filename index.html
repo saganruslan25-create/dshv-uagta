@@ -84,7 +84,7 @@
             box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
         }
 
-        /* Мобільне меню */
+        /* Мобільне меню (Бургер) */
         .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; z-index: 2001; }
         .burger span { display: block; width: 28px; height: 3px; background: var(--primary); border-radius: 2px; transition: 0.3s; }
         .burger.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
@@ -156,7 +156,7 @@
         .close-btn { position: absolute; top: 35px; right: 40px; font-size: 40px; cursor: pointer; color: var(--primary); }
         .modal-content h3 { color: var(--primary-bright); margin-top: 30px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Відображення полей реєстрації */
+        /* Контейнер реєстраційних полів */
         #regFields { display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
         .switch-auth { color: var(--text-gray); font-size: 13px; cursor: pointer; display: block; margin-top: 20px; text-align: center; text-decoration: underline; }
 
@@ -282,10 +282,9 @@
                 <div id="regFields">
                     <input type="text" id="regName" class="form-input" placeholder="Ваш NickName">
                     <input type="text" id="regRank" class="form-input" placeholder="Ваше звання">
-                    <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
+                    <input type="text" id="regPos" class="form-input" placeholder="Ваша посада"> <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
                     <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
-                    <input type="text" id="regSecretCode" class="form-input" style="border: 1px solid var(--primary);" placeholder="СЕКРЕТНИЙ КОД">
-                </div>
+                    <input type="text" id="regSecretCode" class="form-input" style="border: 1px solid var(--primary);" placeholder="СЕКРЕТНИЙ КОД"> </div>
 
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
                 <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none;"></p>
@@ -295,8 +294,6 @@
     </div>
 
     <footer style="padding:60px; text-align:center; opacity:0.4;">© 2025 ДШВ | UKRAINE GTA</footer>
-
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -318,9 +315,10 @@
         const db = getFirestore(app);
 
         // Ініціалізація AOS
+        import AOS from "https://cdn.skypack.dev/aos";
         AOS.init({ duration: 1000, once: true });
 
-        // Експорт функцій у глобальну область видимості
+        // Експорт функцій у вікно
         window.toggleMenu = () => { 
             document.getElementById('navLinks').classList.toggle('active'); 
             document.getElementById('burgerBtn').classList.toggle('active');
@@ -338,7 +336,7 @@
 
         window.handleCabinetClick = () => { window.openModal('authModal'); };
 
-        // Логіка перемикання авторизації
+        // Логіка перемикання між Входом та Реєстрацією
         let isLoginMode = true;
         window.toggleAuthMode = () => {
             isLoginMode = !isLoginMode;
@@ -360,10 +358,10 @@
             }
         };
 
-        // Лічильник бійців онлайн
+        // Лічильник бійців онлайн через Firebase
         onSnapshot(collection(db, "users"), (snap) => {
-            const circle = document.getElementById('loadingCircle');
-            if(circle) circle.style.display = 'none';
+            const loader = document.getElementById('loadingCircle');
+            if(loader) loader.style.display = 'none';
             const text = document.getElementById('fightersCount');
             if(text) {
                 text.style.display = 'block';
@@ -371,7 +369,7 @@
             }
         });
 
-        // Форма вступу (рапорт)
+        // Відправка Рапорту
         const appForm = document.getElementById('applicationForm');
         if(appForm) {
             appForm.addEventListener('submit', async (e) => {
@@ -385,7 +383,7 @@
                         rank: document.getElementById('appRank').value,
                         discord: document.getElementById('appDiscord').value,
                         motivation: document.getElementById('appMotivation').value,
-                        status: 'pending',
+                        status: 'pending', // Початковий статус
                         timestamp: serverTimestamp()
                     });
                     alert('Рапорт надіслано успішно!');
@@ -395,7 +393,7 @@
             });
         }
 
-        // Обробка авторизації та реєстрації
+        // Обробка Авторизації / Реєстрації
         const aForm = document.getElementById('authForm');
         aForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -409,7 +407,7 @@
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
-                    // ПЕРЕВІРКА СЕКРЕТНОГО КОДУ (з бази даних)
+                    // 1. ПЕРЕВІРКА СЕКРЕТНОГО КОДУ (з динамічного документу в Firebase)
                     const enteredCode = document.getElementById('regSecretCode').value;
                     const codeSnap = await getDoc(doc(db, "system", "secret_code"));
                     
@@ -419,10 +417,14 @@
                         return;
                     }
 
+                    // 2. Створення користувача
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    
+                    // 3. Збереження профілю з ПОСАДОЮ та ЗВАННЯМ
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: document.getElementById('regName').value,
                         rank: document.getElementById('regRank').value,
+                        position: document.getElementById('regPos').value, // Збереження посади
                         gameID: document.getElementById('regGameID').value,
                         discord: document.getElementById('regDiscord').value,
                         role: 'user',
@@ -442,7 +444,7 @@
             }
         });
 
-        // Перевірка стану авторизації для кнопки в навігації
+        // Зміна стану кнопки Кабінету при вході
         onAuthStateChanged(auth, user => {
             if(user) {
                 const btn = document.getElementById('cabinetBtn');
@@ -457,7 +459,7 @@
             // Блокуємо F12, Ctrl+Shift+I/J/C, Ctrl+U
             if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
-        // Постійне очищення консолі
+        // Постійне очищення консолі для захисту від перегляду коду
         setInterval(() => console.clear(), 500);
     </script>
 
