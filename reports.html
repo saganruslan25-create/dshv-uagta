@@ -111,8 +111,6 @@
         .ctrl-btn:hover { background: rgba(255,255,255,0.05); color: white; border-color: white; }
         .btn-del:hover { color: #ef4444; border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
 
-        .btn-pts { background: #3b82f6; color: white; border: none; }
-
         @media (max-width: 768px) { .container { padding: 10px; } .report-form { padding: 25px; } .report-header { flex-direction: column; gap: 10px; } }
     </style>
 </head>
@@ -172,7 +170,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDoc, doc, query, orderBy, onSnapshot, updateDoc, deleteDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDoc, doc, query, orderBy, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -191,6 +189,7 @@
     let editId = null;
 
     function linkify(text) {
+        if (!text) return "";
         const urlPattern = /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig;
         return text.replace(urlPattern, '<a href="$1" target="_blank">$1</a>');
     }
@@ -206,7 +205,7 @@
     window.submitReport = async () => {
         const period = document.getElementById('repPeriod').value;
         const content = document.getElementById('repContent').value;
-        if (!period || !content) return alert("Заповніть поля!");
+        if (!period || !content) return alert("Заповніть всі поля!");
 
         if (editId) {
             await updateDoc(doc(db, "reports", editId), { period, content });
@@ -245,7 +244,6 @@
                         <div class="date-badge">📅 ДАТА: ${data.period}</div>
                         <div class="work-content">${linkify(data.content)}</div>
                         <div class="controls">
-                            ${isAdmin ? `<button class="ctrl-btn btn-pts" onclick="window.givePoints('${data.ownerId}')">+10 БАЛІВ</button>` : ''}
                             ${isOwner ? `<button class="ctrl-btn" onclick="window.startEdit('${s.id}', '${data.period}', \`${data.content.replace(/`/g, "\\`").replace(/\${/g, "\\${")}\`)">РЕДАГУВАТИ</button>` : ''}
                             ${(isOwner || isAdmin) ? `<button class="ctrl-btn btn-del" onclick="window.deleteReport('${s.id}')">ВИДАЛИТИ</button>` : ''}
                         </div>
@@ -254,11 +252,6 @@
             });
         });
     }
-
-    window.givePoints = async (uid) => {
-        await updateDoc(doc(db, "users", uid), { points: increment(10) });
-        alert("Бали нараховано!");
-    };
 
     window.startEdit = (id, period, content) => {
         editId = id;
