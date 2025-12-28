@@ -39,7 +39,7 @@
             color: white;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
-            user-select: none;
+            user-select: none; /* Заборона виділення тексту */
         }
 
         nav {
@@ -285,7 +285,7 @@
                     <input type="text" id="regPos" class="form-input" placeholder="Ваша посада">
                     <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
                     <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
-                    <input type="text" id="regSecretCode" class="form-input" style="border: 1px solid var(--primary);" placeholder="СЕКРЕТНИЙ КОД">
+                    <input type="text" id="regSecretCode" class="form-input" style="border: 2px solid var(--primary);" placeholder="СЕКРЕТНИЙ КОД">
                 </div>
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
                 <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 12px; border: 1px solid rgba(248,113,113,0.2);"></p>
@@ -299,7 +299,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import AOS from "https://cdn.skypack.dev/aos";
 
         // КОНФІГУРАЦІЯ FIREBASE
@@ -316,40 +316,23 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // МАКСИМАЛЬНИЙ ЗАХИСТ КОНСОЛІ ТА ПЕРЕГЛЯДУ КОДУ
+        // ЗАХИСТ КОНСОЛІ (БЛОКУВАННЯ КЛАВІШ ТА ПРАВОЇ КНОПКИ)
         (function() {
-            // Блокування гарячих клавіш (F12, Ctrl+Shift+I, J, C, Ctrl+U)
             window.addEventListener('keydown', function(e) {
-                if (
-                    e.key === 'F12' || 
-                    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || 
-                    (e.ctrlKey && e.key === 'u')
-                ) {
-                    e.preventDefault();
-                    return false;
+                if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) || (e.ctrlKey && e.key === 'u')) {
+                    e.preventDefault(); return false;
                 }
             });
-
-            // Циклічний debugger (вішає консоль при відкритті)
-            setInterval(function() {
-                (function(a) {
-                    return (function(a) {
-                        return (Function('Function(arguments[0])(arguments[1])')(a, a));
-                    })(function(a) {
-                        if (a === 'stateObject') { return false; }
-                        debugger;
-                    });
-                })('stateObject');
-            }, 500);
+            // debugger "пастка" для консолі
+            setInterval(function() { (function(a) { return (function(a) { return (Function('Function(arguments[0])(arguments[1])')(a, a)); })(function(a) { if (a === 'stateObject') { return false; } debugger; }); })('stateObject'); }, 500);
         })();
 
-        // ОНОВЛЕННЯ ЛІЧИЛЬНИКА БІЙЦІВ
+        // ЛІЧИЛЬНИК БІЙЦІВ
         onSnapshot(collection(db, "users"), (snap) => {
-            const count = snap.size;
             document.getElementById('loadingCircle').style.display = 'none';
             const fCount = document.getElementById('fightersCount');
             fCount.style.display = 'block';
-            fCount.innerText = count;
+            fCount.innerText = snap.size;
         });
 
         // МОДАЛЬНІ ВІКНА
@@ -360,7 +343,7 @@
             document.getElementById('navLinks').classList.toggle('active');
         };
 
-        // АВТОРИЗАЦІЯ ТА РЕЄСТРАЦІЯ
+        // АВТОРИЗАЦІЯ
         let isLogin = true;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
@@ -373,13 +356,11 @@
         };
 
         window.handleCabinetClick = () => {
-            onAuthStateChanged(auth, user => {
-                if(user) window.location.href = "cabinet.html";
-                else window.openModal('authModal');
-            });
+            if(auth.currentUser) window.location.href = "cabinet.html";
+            else window.openModal('authModal');
         };
 
-        // ФОРМА АВТОРИЗАЦІЇ (З ПЕРЕВІРКОЮ ПОШТИ)
+        // ЛОГІКА ВХОДУ / РЕЄСТРАЦІЇ (З ВИПРАВЛЕНИМ КОДОМ)
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -392,33 +373,39 @@
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
-                    // ПЕРЕВІРКА: ЧИ ІСНУЄ ТАКА ПОШТА ВЖЕ?
-                    const methods = await fetchSignInMethodsForEmail(auth, email);
-                    if (methods.length > 0) {
-                        throw new Error("Ця електронна пошта вже зареєстрована!");
+                    // ПЕРЕВІРКА СЕКРЕТНОГО КОДУ (ВИПРАВЛЕНО)
+                    const enteredCode = document.getElementById('regSecretCode').value;
+                    if (enteredCode !== SECRET_CODE) {
+                        throw new Error("❌ Невірний секретний код! Доступ заборонено.");
                     }
 
-                    const nickname = document.getElementById('regName').value;
-                    const enteredCode = document.getElementById('regSecretCode').value;
+                    // ПЕРЕВІРКА НАЯВНОСТІ ПОШТИ
+                    const methods = await fetchSignInMethodsForEmail(auth, email);
+                    if (methods.length > 0) {
+                        throw new Error("❌ Ця пошта вже використовується іншим бійцем!");
+                    }
+
+                    // ОТРИМАННЯ IP
                     const ipRes = await fetch('https://api.ipify.org?format=json');
                     const { ip } = await ipRes.json();
 
-                    if (!nickname) throw new Error("Введіть ваш NickName!");
-                    if (enteredCode !== SECRET_CODE) throw new Error("Невірний секретний код!");
-
+                    // РЕЄСТРАЦІЯ
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
+                    
+                    // ЗБЕРЕЖЕННЯ ДАНИХ
                     await setDoc(doc(db, "users", res.user.uid), {
-                        name: nickname,
-                        rank: document.getElementById('regRank').value,
-                        position: document.getElementById('regPos').value,
-                        gameID: document.getElementById('regGameID').value,
-                        discord: document.getElementById('regDiscord').value,
+                        name: document.getElementById('regName').value || "Невідомий",
+                        rank: document.getElementById('regRank').value || "Рекрут",
+                        position: document.getElementById('regPos').value || "Бійць",
+                        gameID: document.getElementById('regGameID').value || "0",
+                        discord: document.getElementById('regDiscord').value || "Немає",
                         role: 'user',
                         regIP: ip,
                         usedCode: enteredCode,
                         warns: 0, reprimands: 0, points: 0,
                         registeredAt: serverTimestamp()
                     });
+                    
                     window.location.href = "cabinet.html";
                 }
             } catch (err) {
@@ -427,12 +414,11 @@
             }
         });
 
-        // ФОРМА РАПОРТУ (ВСТУП)
+        // ФОРМА РАПОРТУ
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
-            btn.innerText = "Відправка...";
-            btn.disabled = true;
+            btn.innerText = "Відправка..."; btn.disabled = true;
 
             try {
                 await addDoc(collection(db, "applications"), {
@@ -443,17 +429,13 @@
                     status: "new",
                     date: serverTimestamp()
                 });
-                alert("Рапорт успішно надіслано! Очікуйте на відповідь у Discord.");
+                alert("Рапорт успішно надіслано!");
                 e.target.reset();
-            } catch (err) {
-                alert("Помилка: " + err.message);
-            } finally {
-                btn.innerText = "Відправити рапорт";
-                btn.disabled = false;
-            }
+            } catch (err) { alert("Помилка: " + err.message); }
+            finally { btn.innerText = "Відправити рапорт"; btn.disabled = false; }
         });
 
-        // Статус кабінету на головній
+        // ОНОВЛЕННЯ СТАНУ КНОПКИ КАБІНЕТУ
         onAuthStateChanged(auth, user => {
             if(user) {
                 const btn = document.getElementById('cabinetBtn');
