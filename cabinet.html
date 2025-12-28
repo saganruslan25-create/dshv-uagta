@@ -25,6 +25,7 @@
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
             color: white; font-family: 'Inter', sans-serif;
             min-height: 100vh; overflow-x: hidden;
+            user-select: none; /* Заборона виділення тексту для захисту даних */
         }
 
         /* ЕКРАН БЛОКУВАННЯ (ДЛЯ БІЙЦІВ) */
@@ -168,12 +169,10 @@
         .report-content-text a { color: #3498db; text-decoration: underline; font-weight: 600; }
     </style>
 </head>
-<body>
-
-    <div id="lockScreen">
+<body oncontextmenu="return false;"> <div id="lockScreen">
         <h1>ДОСТУП ОБМЕЖЕНО</h1>
-        <p>Наразі кабінет недоступний. Начальство обмежило доступ для бійців переглядайте новини підлозділу</p>
-        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АККАУНТУ</button>
+        <p>Наразі кабінет недоступний. Начальство обмежило доступ для бійців переглядайте новини підрозділу</p>
+        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АКАУНТУ</button>
     </div>
 
     <header id="mainHeader">
@@ -291,6 +290,13 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&"; // Ваш секретний код
 
+        // --- ЗАХИСТ ВІД F12 ---
+        document.onkeydown = function(e) {
+            if(event.keyCode == 123) return false;
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        };
+
         // ЛОГІКА ВИХОДУ
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
@@ -313,7 +319,6 @@
                     const mainContent = document.getElementById('mainContent');
                     const adminSection = document.getElementById('adminSection');
 
-                    // Якщо система заблокована і користувач НЕ адмін - ховаємо інтерфейс
                     if (isLocked && userRole !== 'admin') {
                         lockScreen.style.display = 'flex';
                         mainHeader.style.display = 'none';
@@ -326,7 +331,6 @@
                         if(userRole === 'admin') adminSection.style.display = 'block';
                     }
 
-                    // Оновлення стилю кнопки для адміна
                     if (userRole === 'admin') {
                         const btn = document.getElementById('lockBtn');
                         btn.innerHTML = isLocked ? "🔓 ВІДКРИТИ ДОСТУП" : "🔒 ЗАБЛОКУВАТИ ДОСТУП";
@@ -334,7 +338,6 @@
                         btn.style.color = isLocked ? "var(--primary)" : "var(--danger)";
                     }
                 } else {
-                    // Створення документу статусу за замовчуванням
                     setDoc(doc(db, "settings", "systemStatus"), { isLocked: false });
                 }
             });
@@ -342,15 +345,15 @@
 
         // ПЕРЕМИКАННЯ ДОСТУПУ (АДМІН)
         window.toggleSystemAccess = async () => {
-            const code = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            const code = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД АДМІНІСТРАТОРА:");
             if (code === SECRET_CODE) {
                 const docRef = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(docRef);
                 const current = snap.data().isLocked;
                 await updateDoc(docRef, { isLocked: !current });
-                alert(!current ? "СИСТЕМУ ЗАБЛОКОВАНО" : "ДОСТУП ВІДНОВЛЕНО");
+                alert(!current ? "СИСТЕМУ ЗАБЛОКОВАНО ДЛЯ БІЙЦІВ" : "ДОСТУП ДЛЯ БІЙЦІВ ВІДНОВЛЕНО");
             } else if (code !== null) {
-                alert("НЕВІРНИЙ КОД!");
+                alert("КРИТИЧНА ПОМИЛКА: НЕВІРНИЙ КОД ДОСТУПУ!");
             }
         };
 
@@ -429,6 +432,7 @@
 
         // АДМІН: ЗМІНА СТАТИСТИКИ
         window.changeStat = async (field, val) => {
+            if (myData.role !== 'admin') return; // Захист логіки
             const uid = editingUID;
             const docRef = doc(db, "users", uid);
             const snap = await getDoc(docRef);
@@ -509,9 +513,18 @@
             document.getElementById('backToMe').style.display = 'none'; 
         };
         
+        // --- ЗАХИЩЕНЕ ВИДАЛЕННЯ ---
         window.deleteUser = async (id) => { 
-            if(confirm("ВИДАЛИТИ БІЙЦЯ?")) {
-                await deleteDoc(doc(db, "users", id)); 
+            if (myData.role !== 'admin') return; // Захист від підміни коду
+            
+            const code = prompt("УВАГА! ДЛЯ ВИДАЛЕННЯ БІЙЦЯ ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            if (code === SECRET_CODE) {
+                if(confirm("ВИ ПІДТВЕРДЖУЄТЕ ПОВНЕ ВИДАЛЕННЯ БІЙЦЯ З БАЗИ ДАНИХ?")) {
+                    await deleteDoc(doc(db, "users", id)); 
+                    alert("Бійця видалено успішно.");
+                }
+            } else if (code !== null) {
+                alert("НЕВІРНИЙ СЕКРЕТНИЙ КОД! ВИДАЛЕННЯ ЗАБЛОКОВАНО.");
             }
         };
     </script>
