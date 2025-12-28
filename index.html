@@ -42,6 +42,7 @@
             color: white;
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
+            user-select: none; /* ЗАХИСТ: Заборона виділення тексту */
         }
 
         /* Навігаційна панель */
@@ -55,7 +56,7 @@
             border-bottom: 1px solid rgba(34, 197, 94, 0.1);
         }
 
-        .logo { display: flex; align-items: center; gap: 10px; z-index: 1001; }
+        .logo { display: flex; align-items: center; gap: 10px; z-index: 1001; text-decoration: none; color: white; }
         .logo-box { 
             background: var(--primary); color: black; padding: 4px 10px; 
             border-radius: 6px; font-weight: 800; box-shadow: 0 0 15px var(--primary);
@@ -162,17 +163,17 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body oncontextmenu="return false;">
 
     <nav>
-        <div class="logo"><div class="logo-box">ДШВ</div><strong>UKRAINE GTA</strong></div>
-        <div class="burger" id="burgerBtn" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+        <a href="index.html" class="logo"><div class="logo-box">ДШВ</div><strong>UKRAINE GTA</strong></a>
+        <div class="burger" id="burgerBtn" onclick="window.toggleMenu()"><span></span><span></span><span></span></div>
         <div class="nav-links" id="navLinks">
-            <a onclick="openModal('aboutModal'); toggleMenu()">Від нас</a>
-            <a onclick="openModal('reqModal'); toggleMenu()">Вимоги</a>
+            <a onclick="window.openModal('aboutModal'); window.toggleMenu()">Від нас</a>
+            <a onclick="window.openModal('reqModal'); window.toggleMenu()">Вимоги</a>
             <a href="https://ukraine-gta.com.ua/uk/" target="_blank" style="opacity: 0.5; font-size: 12px;">Сайт Проекту</a>
-            <a onclick="handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary); box-shadow: none;">Кабінет</a>
-            <a href="#join" class="btn-accent" onclick="toggleMenu()">Вступити</a>
+            <a onclick="window.handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary); box-shadow: none;">Кабінет</a>
+            <a href="#join" class="btn-accent" onclick="window.toggleMenu()">Вступити</a>
         </div>
     </nav>
 
@@ -223,7 +224,7 @@
 
     <div class="modal-overlay" id="aboutModal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('aboutModal')">&times;</span>
+            <span class="close-btn" onclick="window.closeModal('aboutModal')">&times;</span>
             <h2 style="text-align:center; font-size: 32px; margin-bottom: 30px;">Завдання та можливості</h2>
             <div class="inner-glass-block">
                 <h3>🛡️ Завдання ДШВ:</h3>
@@ -256,7 +257,7 @@
 
     <div class="modal-overlay" id="reqModal">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeModal('reqModal')">&times;</span>
+            <span class="close-btn" onclick="window.closeModal('reqModal')">&times;</span>
             <h2 style="text-align:center; font-size: 32px; margin-bottom: 30px;">Вимоги до кандидатів</h2>
             <div class="inner-glass-block">
                 <ul class="m-list" style="font-size: 18px; line-height: 2.2;">
@@ -272,7 +273,7 @@
 
     <div class="modal-overlay" id="authModal">
         <div class="modal-content" style="max-width: 450px;">
-            <span class="close-btn" onclick="closeModal('authModal')">&times;</span>
+            <span class="close-btn" onclick="window.closeModal('authModal')">&times;</span>
             <h2 id="authTitle" style="text-align:center; color:white;">Вхід в Кабінет</h2>
             <form id="authForm" style="margin-top: 30px;">
                 <input type="email" id="email" class="form-input" placeholder="Електронна пошта" required>
@@ -288,7 +289,7 @@
 
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
                 <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none;"></p>
-                <span class="switch-auth" id="switchAuthBtn" onclick="toggleAuthMode()">Ще не маєте акаунту? Реєстрація</span>
+                <span class="switch-auth" id="switchAuthBtn" onclick="window.toggleAuthMode()">Ще не маєте акаунту? Реєстрація</span>
             </form>
         </div>
     </div>
@@ -296,25 +297,50 @@
     <footer style="padding:60px; text-align:center; opacity:0.4;">© 2025 ДШВ | UKRAINE GTA</footer>
 
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        // Ініціалізація анімацій AOS
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Твоя конфігурація Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+            authDomain: "dsv-gta.firebaseapp.com",
+            projectId: "dsv-gta",
+            storageBucket: "dsv-gta.firebasestorage.app",
+            messagingSenderId: "661591588818",
+            appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Ініціалізація AOS
         AOS.init({ duration: 1000, once: true });
 
-        // Управління меню
-        function toggleMenu() { 
+        // Експорт функцій у глобальну область видимості (window) для роботи onclick в HTML
+        window.toggleMenu = () => { 
             document.getElementById('navLinks').classList.toggle('active'); 
             document.getElementById('burgerBtn').classList.toggle('active');
-        }
+        };
 
-        // Управління модалками
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; document.body.style.overflow = 'hidden'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; document.body.style.overflow = 'auto'; }
+        window.openModal = (id) => { 
+            document.getElementById(id).style.display = 'flex'; 
+            document.body.style.overflow = 'hidden'; 
+        };
 
-        function handleCabinetClick() { openModal('authModal'); }
+        window.closeModal = (id) => { 
+            document.getElementById(id).style.display = 'none'; 
+            document.body.style.overflow = 'auto'; 
+        };
 
-        // Перемикання Вхід / Реєстрація
+        window.handleCabinetClick = () => { window.openModal('authModal'); };
+
+        // Логіка перемикання авторизації
         let isLoginMode = true;
-        function toggleAuthMode() {
+        window.toggleAuthMode = () => {
             isLoginMode = !isLoginMode;
             const regFields = document.getElementById('regFields');
             const authTitle = document.getElementById('authTitle');
@@ -332,28 +358,9 @@
                 loginBtn.innerText = 'Створити профіль';
                 switchBtn.innerText = 'Вже є акаунт? Увійти';
             }
-        }
-    </script>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, addDoc, getDocs, query, where, serverTimestamp, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
-            authDomain: "dsv-gta.firebaseapp.com",
-            projectId: "dsv-gta",
-            storageBucket: "dsv-gta.firebasestorage.app",
-            messagingSenderId: "661591588818",
-            appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Лічильник бійців онлайн (з бази)
+        // Лічильник бійців онлайн
         onSnapshot(collection(db, "users"), (snap) => {
             document.getElementById('loadingCircle').style.display = 'none';
             const text = document.getElementById('fightersCount');
@@ -361,7 +368,7 @@
             text.innerText = snap.size;
         });
 
-        // Обробка форми рапорту
+        // Форма вступу (рапорт)
         const appForm = document.getElementById('applicationForm');
         if(appForm) {
             appForm.addEventListener('submit', async (e) => {
@@ -385,7 +392,7 @@
             });
         }
 
-        // Авторизація та вільна реєстрація
+        // Обробка авторизації та реєстрації
         const aForm = document.getElementById('authForm');
         aForm.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -396,14 +403,10 @@
 
             try {
                 if(isLoginMode) {
-                    // Вхід
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
-                    // РЕЄСТРАЦІЯ (ПОВНІСТЮ ВІЛЬНА БЕЗ ПЕРЕВІРОК)
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
-                    
-                    // Зберігаємо дані користувача в Firestore
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: document.getElementById('regName').value,
                         rank: document.getElementById('regRank').value,
@@ -415,11 +418,9 @@
                         reprimands: 0,
                         regDate: serverTimestamp()
                     });
-                    
                     window.location.href = "cabinet.html";
                 }
             } catch (err) {
-                // Вивід помилок
                 let msg = "Помилка: " + err.message;
                 if(err.code === 'auth/email-already-in-use') msg = "Ця пошта вже зареєстрована.";
                 if(err.code === 'auth/weak-password') msg = "Пароль надто короткий (мін. 6 симв.).";
@@ -428,7 +429,7 @@
             }
         });
 
-        // Перевірка чи залогінений користувач
+        // Перевірка стану авторизації для кнопки в навігації
         onAuthStateChanged(auth, user => {
             if(user) {
                 const btn = document.getElementById('cabinetBtn');
@@ -437,5 +438,15 @@
             }
         });
     </script>
+
+    <script>
+        document.onkeydown = function(e) {
+            // Блокуємо F12, Ctrl+Shift+I/J/C, Ctrl+U
+            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
+        };
+        // Постійне очищення консолі
+        setInterval(() => console.clear(), 500);
+    </script>
+
 </body>
 </html>
