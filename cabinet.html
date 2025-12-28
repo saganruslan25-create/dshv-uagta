@@ -38,6 +38,14 @@
         #lockScreen h1 { color: var(--danger); font-size: 48px; font-weight: 900; margin-bottom: 20px; }
         #lockScreen p { font-size: 18px; color: #ccc; max-width: 600px; line-height: 1.6; }
 
+        /* ЕКРАН БАНУ ПО IP */
+        #banScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 10000; display: none;
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+            color: var(--danger);
+        }
+
         /* ШАПКА САЙТУ */
         header {
             display: flex; justify-content: space-between; align-items: center;
@@ -148,6 +156,7 @@
         /* КНОПКИ ДІЙ В РЕЄСТРІ */
         .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        .btn-ban-ip { background: #440000; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
         /* МОДАЛЬНЕ ВІКНО АРХІВУ */
         .modal-overlay {
@@ -169,7 +178,14 @@
         .report-content-text a { color: #3498db; text-decoration: underline; font-weight: 600; }
     </style>
 </head>
-<body oncontextmenu="return false;"> <div id="lockScreen">
+<body oncontextmenu="return false;">
+
+    <div id="banScreen">
+        <h1 style="font-size: 60px; font-weight: 900;">ДОСТУП ЗАБЛОКОВАНО</h1>
+        <p style="font-size: 20px; margin-top: 20px;">Вашу IP-адресу внесено до чорного списку підрозділу.</p>
+    </div>
+
+    <div id="lockScreen">
         <h1>ДОСТУП ОБМЕЖЕНО</h1>
         <p>Наразі кабінет недоступний. Начальство обмежило доступ для бійців переглядайте новини підрозділу</p>
         <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АКАУНТУ</button>
@@ -288,28 +304,45 @@
         let myData = null;
         let targetData = null;
         let editingUID = null;
-        const SECRET_CODE = "g%!V4/(&BMwnmT&"; // Ваш секретний код
+        const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // --- ЗАХИСТ ВІД F12 ---
+        // --- НОВИЙ ЗАХИСТ ВІД КОНСОЛІ ТА ГАРЯЧИХ КЛАВІШ ---
         document.onkeydown = function(e) {
-            if(event.keyCode == 123) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+            // F12
+            if(e.keyCode == 123) return false;
+            // Ctrl+Shift+I (Інспектор)
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 73) return false;
+            // Ctrl+Shift+J (Консоль)
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 74) return false;
+            // Ctrl+U (Вихідний код)
+            if(e.ctrlKey && e.keyCode == 85) return false;
         };
 
-        // ЛОГІКА ВИХОДУ
+        // --- ПЕРЕВІРКА IP ТА БАНУ ---
+        async function checkIPAndBan() {
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const data = await res.json();
+                const userIP = data.ip;
+
+                const banSnap = await getDoc(doc(db, "bannedIPs", userIP));
+                if (banSnap.exists()) {
+                    document.getElementById('banScreen').style.display = 'flex';
+                    document.body.innerHTML = document.getElementById('banScreen').outerHTML;
+                    return null;
+                }
+                return userIP;
+            } catch (e) { return null; }
+        }
+
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-        // ПЕРЕТВОРЕННЯ ПОСИЛАНЬ В ТЕКСТІ
         function linkify(text) {
             if (!text) return "---";
             const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, (url) => {
-                return `<a href="${url}" target="_blank">${url}</a>`;
-            });
+            return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank">${url}</a>`);
         }
 
-        // МОНІТОРИНГ СТАТУСУ СИСТЕМИ (LOCKDOWN)
         function listenToSystemStatus(userRole) {
             onSnapshot(doc(db, "settings", "systemStatus"), (docSnap) => {
                 if (docSnap.exists()) {
@@ -343,7 +376,6 @@
             });
         }
 
-        // ПЕРЕМИКАННЯ ДОСТУПУ (АДМІН)
         window.toggleSystemAccess = async () => {
             const code = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД АДМІНІСТРАТОРА:");
             if (code === SECRET_CODE) {
@@ -351,20 +383,15 @@
                 const snap = await getDoc(docRef);
                 const current = snap.data().isLocked;
                 await updateDoc(docRef, { isLocked: !current });
-                alert(!current ? "СИСТЕМУ ЗАБЛОКОВАНО ДЛЯ БІЙЦІВ" : "ДОСТУП ДЛЯ БІЙЦІВ ВІДНОВЛЕНО");
-            } else if (code !== null) {
-                alert("КРИТИЧНА ПОМИЛКА: НЕВІРНИЙ КОД ДОСТУПУ!");
-            }
+            } else if (code !== null) alert("КРИТИЧНА ПОМИЛКА: НЕВІРНИЙ КОД!");
         };
 
-        // КЕРУВАННЯ МІТКАМИ
         window.markAsRead = (type) => {
             localStorage.setItem(`read_${type}`, 'true');
             if(document.getElementById(`dot-${type}`)) document.getElementById(`dot-${type}`).style.display = 'none';
             updateBell();
         };
 
-        // МОНІТОРИНГ СПОВІЩЕНЬ
         function watchNotifications() {
             if (myData?.role !== 'admin') return;
             onSnapshot(collection(db, "applications"), (snap) => {
@@ -393,14 +420,19 @@
 
         window.toggleNotifs = () => document.getElementById('notifDropdown').classList.toggle('active');
 
-        // ВХІД ТА ПЕРЕВІРКА РОЛІ
         onAuthStateChanged(auth, async (user) => {
+            const userIP = await checkIPAndBan();
             if (user) {
                 currentUID = user.uid;
                 editingUID = user.uid;
-                const snap = await getDoc(doc(db, "users", user.uid));
+                const userRef = doc(db, "users", user.uid);
+                const snap = await getDoc(userRef);
                 if (snap.exists()) {
                     myData = snap.data();
+                    
+                    // Зберігаємо IP в базу
+                    if(userIP) await updateDoc(userRef, { lastIP: userIP });
+
                     if (myData.role === 'admin') {
                         document.querySelectorAll('.admin-controls').forEach(el => el.style.display = 'flex');
                         document.getElementById('adminSection').style.display = 'block';
@@ -415,7 +447,6 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // ОНОВЛЕННЯ ІНТЕРФЕЙСУ
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "---";
             document.getElementById('userRank').innerText = data.rank || "---";
@@ -430,15 +461,13 @@
             } else { passEl.innerText = "НЕМАЄ"; }
         }
 
-        // АДМІН: ЗМІНА СТАТИСТИКИ
         window.changeStat = async (field, val) => {
-            if (myData.role !== 'admin') return; // Захист логіки
+            if (myData.role !== 'admin') return;
             const uid = editingUID;
             const docRef = doc(db, "users", uid);
             const snap = await getDoc(docRef);
             if(snap.exists()){
-                const curData = snap.data();
-                const newVal = (curData[field] || 0) + val;
+                const newVal = (snap.data()[field] || 0) + val;
                 if (newVal < 0) return;
                 await updateDoc(docRef, { [field]: newVal });
                 if(uid === currentUID) { myData[field] = newVal; updateUI(myData); }
@@ -446,7 +475,6 @@
             }
         };
 
-        // АДМІН: ЗАВАНТАЖЕННЯ ВСІХ БІЙЦІВ
         function loadStaff() {
             onSnapshot(collection(db, "users"), (snap) => {
                 const list = document.getElementById('staffList');
@@ -455,19 +483,28 @@
                     const u = s.data();
                     list.innerHTML += `
                         <div class="staff-item">
-                            <div><b>${u.name}</b><br><small>ID: ${u.gameID} | ${u.rank}</small></div>
+                            <div><b>${u.name}</b><br><small>ID: ${u.gameID} | ${u.rank} | IP: ${u.lastIP || '???'}</small></div>
                             <div style="display:flex; gap:10px;">
                                 <button class="btn-action-g" onclick="openReports('${s.id}', '${u.name}')">ЗВІТИ</button>
                                 <button class="btn-action-g" onclick="enterManageMode('${s.id}')">КЕРУВАТИ</button>
+                                <button class="btn-ban-ip" onclick="banUserIP('${u.lastIP}', '${u.name}')">БАН IP</button>
                                 <button class="btn-action-r" onclick="deleteUser('${s.id}')">ВИДАЛИТИ</button>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 });
             });
         }
 
-        // АДМІН: ПЕРЕГЛЯД АРХІВУ БІЙЦЯ
+        // --- ФУНКЦІЯ БАНУ ПО IP ---
+        window.banUserIP = async (ip, name) => {
+            if(!ip || ip === '???') return alert("IP адреса не зафіксована!");
+            const code = prompt(`ВВЕДІТЬ СЕКРЕТНИЙ КОД ДЛЯ БАНУ ${name} (IP: ${ip}):`);
+            if (code === SECRET_CODE) {
+                await setDoc(doc(db, "bannedIPs", ip), { bannedAt: new Date(), name: name });
+                alert("IP ЗАБЛОКОВАНО УСПІШНО!");
+            }
+        };
+
         window.openReports = async (uid, name) => {
             document.getElementById('modalTitle').innerText = `АРХІВ: ${name}`;
             document.getElementById('reportsModal').style.display = 'flex';
@@ -479,7 +516,7 @@
             snapRep.forEach(d => {
                 const data = d.data();
                 html += `<div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:12px; border-left:4px solid var(--primary);">
-                    <small style="color:var(--primary-bright); font-weight:900;">📅 ПЕРІОД: ${data.period || "Не вказано"}</small><br>
+                    <small style="color:var(--primary-bright); font-weight:900;">📅 ПЕРІОД: ${data.period || "---"}</small><br>
                     <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
@@ -488,14 +525,13 @@
             snapSub.forEach(d => {
                 const data = d.data();
                 html += `<div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:12px; border-left:4px solid var(--warning);">
-                    <small style="color:var(--warning); font-weight:900;">🧹 СУБОТНИК: ${data.date || "Не вказано"}</small><br>
+                    <small style="color:var(--warning); font-weight:900;">🧹 СУБОТНИК: ${data.date || "---"}</small><br>
                     <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
             listUI.innerHTML = html || "Цей боєць ще не надсилав звітів.";
         };
 
-        // АДМІН: РЕЖИМ КЕРУВАННЯ ІНШИМ ПРОФІЛЕМ
         window.enterManageMode = async (id) => {
             const snap = await getDoc(doc(db, "users", id));
             if (snap.exists()) {
@@ -513,18 +549,14 @@
             document.getElementById('backToMe').style.display = 'none'; 
         };
         
-        // --- ЗАХИЩЕНЕ ВИДАЛЕННЯ ---
         window.deleteUser = async (id) => { 
-            if (myData.role !== 'admin') return; // Захист від підміни коду
-            
-            const code = prompt("УВАГА! ДЛЯ ВИДАЛЕННЯ БІЙЦЯ ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            if (myData.role !== 'admin') return;
+            const code = prompt("УВАГА! ВВЕДІТЬ СЕКРЕТНИЙ КОД ДЛЯ ВИДАЛЕННЯ:");
             if (code === SECRET_CODE) {
-                if(confirm("ВИ ПІДТВЕРДЖУЄТЕ ПОВНЕ ВИДАЛЕННЯ БІЙЦЯ З БАЗИ ДАНИХ?")) {
+                if(confirm("ВИДАЛИТИ БІЙЦЯ НАЗАВЖДИ?")) {
                     await deleteDoc(doc(db, "users", id)); 
-                    alert("Бійця видалено успішно.");
+                    alert("Успішно видалено.");
                 }
-            } else if (code !== null) {
-                alert("НЕВІРНИЙ СЕКРЕТНИЙ КОД! ВИДАЛЕННЯ ЗАБЛОКОВАНО.");
             }
         };
     </script>
