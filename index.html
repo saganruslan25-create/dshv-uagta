@@ -284,7 +284,7 @@
                     <input type="text" id="regRank" class="form-input" placeholder="Ваше звання">
                     <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
                     <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
-                    <input type="text" id="regPassport" class="form-input" placeholder="Посилання на паспорт">
+                    <input type="text" id="regSecretCode" class="form-input" style="border: 1px solid var(--primary);" placeholder="СЕКРЕТНИЙ КОД">
                 </div>
 
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
@@ -301,7 +301,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // Твоя конфігурація Firebase
         const firebaseConfig = {
@@ -320,7 +320,7 @@
         // Ініціалізація AOS
         AOS.init({ duration: 1000, once: true });
 
-        // Експорт функцій у глобальну область видимості (window) для роботи onclick в HTML
+        // Експорт функцій у глобальну область видимості
         window.toggleMenu = () => { 
             document.getElementById('navLinks').classList.toggle('active'); 
             document.getElementById('burgerBtn').classList.toggle('active');
@@ -362,10 +362,13 @@
 
         // Лічильник бійців онлайн
         onSnapshot(collection(db, "users"), (snap) => {
-            document.getElementById('loadingCircle').style.display = 'none';
+            const circle = document.getElementById('loadingCircle');
+            if(circle) circle.style.display = 'none';
             const text = document.getElementById('fightersCount');
-            text.style.display = 'block';
-            text.innerText = snap.size;
+            if(text) {
+                text.style.display = 'block';
+                text.innerText = snap.size;
+            }
         });
 
         // Форма вступу (рапорт)
@@ -406,16 +409,26 @@
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
+                    // ПЕРЕВІРКА СЕКРЕТНОГО КОДУ (з бази даних)
+                    const enteredCode = document.getElementById('regSecretCode').value;
+                    const codeSnap = await getDoc(doc(db, "system", "secret_code"));
+                    
+                    if (!codeSnap.exists() || enteredCode !== codeSnap.data().value) {
+                        errEl.innerText = "Невірний або застарілий секретний код!";
+                        errEl.style.display = 'block';
+                        return;
+                    }
+
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: document.getElementById('regName').value,
                         rank: document.getElementById('regRank').value,
                         gameID: document.getElementById('regGameID').value,
                         discord: document.getElementById('regDiscord').value,
-                        passport: document.getElementById('regPassport').value,
                         role: 'user',
                         warns: 0,
                         reprimands: 0,
+                        points: 0,
                         regDate: serverTimestamp()
                     });
                     window.location.href = "cabinet.html";
