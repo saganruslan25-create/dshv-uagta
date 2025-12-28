@@ -145,6 +145,10 @@
             background: rgba(255,255,255,0.02); padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
         }
 
+        /* Кнопка шестерні (технічні дані) */
+        .btn-tech { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; margin-left: 8px; vertical-align: middle; }
+        .btn-tech:hover { color: var(--primary-bright); }
+
         /* КНОПКИ ДІЙ */
         .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
@@ -276,6 +280,7 @@
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // КОНФІГУРАЦІЯ FIREBASE (ВАШІ ДАНІ)
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -295,7 +300,15 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // --- ПЕРЕВІРКА IP ТА БАНУ ---
+        // ЗАХИСТ ВІД F12 ТА ПЕРЕГЛЯДУ КОДУ
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false;
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        };
+
+        // ПЕРЕВІРКА IP ТА БАНУ
         async function checkIPAndBan() {
             try {
                 const res = await fetch('https://api.ipify.org?format=json');
@@ -313,13 +326,14 @@
 
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
+        // ПЕРЕТВОРЕННЯ ПОСИЛАНЬ У ТЕКСТІ НА КЛІКАБЕЛЬНІ
         function linkify(text) {
             if (!text) return "---";
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank">${url}</a>`);
         }
 
-        // --- СИСТЕМА КЕРУВАННЯ ДОСТУПОМ ---
+        // СИСТЕМА КЕРУВАННЯ ДОСТУПОМ (LOCK SYSTEM)
         function listenToSystemStatus(userRole) {
             onSnapshot(doc(db, "settings", "systemStatus"), (docSnap) => {
                 if (docSnap.exists()) {
@@ -358,7 +372,7 @@
             }
         };
 
-        // --- СИСТЕМА ПОВІДОМЛЕНЬ ---
+        // СИСТЕМА СПОВІЩЕНЬ (ЧЕРВОНІ КРАПКИ)
         window.markAsRead = (type) => {
             localStorage.setItem(`read_${type}`, 'true');
             if(document.getElementById(`dot-${type}`)) document.getElementById(`dot-${type}`).style.display = 'none';
@@ -387,7 +401,7 @@
 
         window.toggleNotifs = () => document.getElementById('notifDropdown').classList.toggle('active');
 
-        // --- ЗАВАНТАЖЕННЯ ДАНИХ ЮЗЕРА ---
+        // ЗАВАНТАЖЕННЯ ДАНИХ КОРИСТУВАЧА ПРИ ВХОДІ
         onAuthStateChanged(auth, async (user) => {
             const userIP = await checkIPAndBan();
             if (user) {
@@ -439,17 +453,19 @@
             }
         };
 
-        // --- ЗАВАНТАЖЕННЯ СКЛАДУ ---
+        // ЗАВАНТАЖЕННЯ СКЛАДУ ДЛЯ АДМІНІСТРАТОРА
         function loadStaff() {
             onSnapshot(collection(db, "users"), (snap) => {
                 const list = document.getElementById('staffList');
                 list.innerHTML = "";
                 snap.forEach(s => {
                     const u = s.data();
+                    const regDate = u.registeredAt ? new Date(u.registeredAt.seconds * 1000).toLocaleDateString() : "невідомо";
                     list.innerHTML += `
                         <div class="staff-item">
                             <div>
                                 <b>${u.name}</b>
+                                <button class="btn-tech" title="Технічні дані" onclick="alert('ТЕХНІЧНІ ДАНІ:\\nIP: ${u.lastIP || 'немає'}\\nРеєстрація: ${regDate}\\nRole: ${u.role}')">⚙</button>
                                 <br><small>ID: ${u.gameID} | ${u.rank}</small>
                             </div>
                             <div style="display:flex; gap:10px;">
@@ -471,8 +487,7 @@
             }
         };
 
-        // --- [ВИПРАВЛЕНО] ФУНКЦІЯ ПЕРЕГЛЯДУ ЗВІТІВ ---
-        // Тепер вона шукає звіти в "reports" за обома можливими полями: uid та ownerId
+        // [ВИПРАВЛЕНО] ФУНКЦІЯ ПЕРЕГЛЯДУ АРХІВУ ЗВІТІВ
         window.openReports = async (uid, name) => {
             document.getElementById('modalTitle').innerText = `АРХІВ: ${name}`;
             document.getElementById('reportsModal').style.display = 'flex';
@@ -481,13 +496,11 @@
             let html = "";
 
             try {
-                // 1. Шукаємо Щотижневі звіти (використовуємо UID та OWNERID одночасно)
+                // ПОШУК ЩОТИЖНЕВИХ ЗВІТІВ (ПО UID ТА OWNERID)
                 const qRep1 = query(collection(db, "reports"), where("uid", "==", uid));
                 const qRep2 = query(collection(db, "reports"), where("ownerId", "==", uid));
                 
                 const [snap1, snap2] = await Promise.all([getDocs(qRep1), getDocs(qRep2)]);
-                
-                // Об'єднуємо результати пошуку щотижневих звітів
                 const combinedReports = [...snap1.docs, ...snap2.docs];
                 
                 combinedReports.forEach(d => {
@@ -499,7 +512,7 @@
                         </div>`;
                 });
 
-                // 2. Шукаємо Суботники
+                // ПОШУК СУБОТНИКІВ
                 const qSub = query(collection(db, "subotniks"), where("ownerId", "==", uid));
                 const snapSub = await getDocs(qSub);
                 snapSub.forEach(d => {
