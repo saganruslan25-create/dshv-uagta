@@ -75,7 +75,10 @@
             font-size: 12px;
             display: inline-block;
         }
-        .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+        .btn-accent:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
 
         .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; z-index: 2001; }
         .burger span { display: block; width: 28px; height: 3px; background: var(--primary); border-radius: 2px; transition: 0.3s; }
@@ -142,7 +145,8 @@
         .m-list li { margin-bottom: 12px; font-size: 15px; color: #cbd5e1; display: flex; gap: 15px; line-height: 1.6; text-align: left; }
         .m-list li b { color: var(--primary-bright); min-width: 25px; }
         .close-btn { position: absolute; top: 35px; right: 40px; font-size: 40px; cursor: pointer; color: var(--primary); }
-        
+        .modal-content h3 { color: var(--primary-bright); margin-top: 30px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; }
+
         #regFields { display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
         .switch-auth { color: var(--text-gray); font-size: 13px; cursor: pointer; display: block; margin-top: 20px; text-align: center; text-decoration: underline; }
 
@@ -222,6 +226,20 @@
                     <li><b>5</b> Десантування та штурм будівель.</li>
                     <li><b>6</b> Розвідка та диверсії в тилу ворога.</li>
                     <li><b>7</b> Боротьба з ворожим десантом та угруповуваннями.</li>
+                    <li><b>8</b> Проведення спеціальних операцій у повітрі.</li>
+                    <li><b>9</b> Підтримка сухопутних військ.</li>
+                </ul>
+
+                <h3>⚡ Від нас ви отримаєте:</h3>
+                <ul class="m-list">
+                    <li><b>1</b> Патрулі на винищувачах F-16 та МіГ-29.</li>
+                    <li><b>2</b> Патрулі на гвинтокрилах Мі-8 та Мі-24.</li>
+                    <li><b>3</b> Реальний кар’єрний зріст.</li>
+                    <li><b>4</b> Цікаві та тактичні тренування.</li>
+                    <li><b>5</b> Прозору систему підвищення.</li>
+                    <li><b>6</b> Розіграші, конкурси та заходи.</li>
+                    <li><b>7</b> Грошові винагороди за службу.</li>
+                    <li><b>8</b> До 1 850 000 за вищий пілотаж.</li>
                 </ul>
             </div>
         </div>
@@ -237,6 +255,7 @@
                     <li>🟢 Discord обов'язково (мікрофон бажано)</li>
                     <li>🟢 Знання правил сервера</li>
                     <li>🟢 Дисципліна та відповідальність</li>
+                    <li>🟢 Готовність до регулярних тренувань</li>
                 </ul>
             </div>
         </div>
@@ -260,7 +279,7 @@
                 </div>
 
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
-                <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 10px; border: 1px solid rgba(248,113,113,0.2);"></p>
+                <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 12px; border: 1px solid rgba(248,113,113,0.2);"></p>
                 <span class="switch-auth" id="switchAuthBtn" onclick="window.toggleAuthMode()">Ще не маєте акаунту? Реєстрація</span>
             </form>
         </div>
@@ -274,6 +293,7 @@
         import { getFirestore, doc, setDoc, getDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import AOS from "https://cdn.skypack.dev/aos";
 
+        // КОНФІГУРАЦІЯ
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -287,25 +307,25 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Ініціалізація AOS анімацій
         AOS.init({ duration: 1000, once: true });
 
+        // ФУНКЦІЇ ВІКНА
         window.toggleMenu = () => { 
             document.getElementById('navLinks').classList.toggle('active'); 
             document.getElementById('burgerBtn').classList.toggle('active');
         };
-
         window.openModal = (id) => { 
             document.getElementById(id).style.display = 'flex'; 
             document.body.style.overflow = 'hidden'; 
         };
-
         window.closeModal = (id) => { 
             document.getElementById(id).style.display = 'none'; 
             document.body.style.overflow = 'auto'; 
         };
-
         window.handleCabinetClick = () => { window.openModal('authModal'); };
 
+        // ПЕРЕМИКАННЯ РЕЖИМІВ ВХОДУ
         let isLoginMode = true;
         window.toggleAuthMode = () => {
             isLoginMode = !isLoginMode;
@@ -316,15 +336,15 @@
             document.getElementById('authError').style.display = 'none';
         };
 
+        // ЛІЧИЛЬНИК БІЙЦІВ
         onSnapshot(collection(db, "users"), (snap) => {
-            if(document.getElementById('loadingCircle')) document.getElementById('loadingCircle').style.display = 'none';
-            if(document.getElementById('fightersCount')) {
-                document.getElementById('fightersCount').style.display = 'block';
-                document.getElementById('fightersCount').innerText = snap.size;
-            }
+            const loader = document.getElementById('loadingCircle');
+            if(loader) loader.style.display = 'none';
+            const text = document.getElementById('fightersCount');
+            if(text) { text.style.display = 'block'; text.innerText = snap.size; }
         });
 
-        // Подача рапорту
+        // ВІДПРАВКА РАПОРТУ
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
@@ -344,7 +364,7 @@
             finally { btn.disabled = false; btn.innerText = "Відправити рапорт"; }
         });
 
-        // ОБРОБКА ВХОДУ ТА РЕЄСТРАЦІЇ З РОЗШИРЕНИМИ ПОМИЛКАМИ
+        // ОБРОБКА АВТОРИЗАЦІЇ ТА РЕЄСТРАЦІЇ (З ПОМИЛКАМИ)
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -360,25 +380,23 @@
                     const nickname = document.getElementById('regName').value;
                     const enteredCode = document.getElementById('regSecretCode').value;
 
-                    if(!nickname) throw new Error("Введіть ваш NickName!");
-
-                    // 1. ПЕРЕВІРКА РАПОРТУ
+                    // ПЕРЕВІРКА РАПОРТУ БІЙЦЯ
                     const qApp = query(collection(db, "applications"), where("name", "==", nickname));
                     const appSnap = await getDocs(qApp);
 
                     if (appSnap.empty) {
-                        throw new Error("Ваш рапорт не знайдено! Подайте рапорт та зачекайте схвалення.");
+                        throw new Error("Ваш рапорт не знайдено! Подайте рапорт на вступ.");
                     }
                     
                     const appData = appSnap.docs[0].data();
                     if (appData.status === 'rejected') {
-                        throw new Error("Вам було ВІДМОВЛЕНО у вступі. Реєстрація заблокована.");
+                        throw new Error("Вам було ВІДМОВЛЕНО у вступі. Реєстрація неможлива.");
                     }
                     if (appData.status === 'pending') {
-                        throw new Error("Ваш рапорт ще ОЧІКУЄ на розгляд. Спробуйте пізніше.");
+                        throw new Error("Ваш рапорт ще ОЧІКУЄ на розгляд. Дочекайтеся схвалення.");
                     }
 
-                    // 2. ПЕРЕВІРКА КОДІВ (Основний або Спец)
+                    // ПЕРЕВІРКА КОДІВ
                     let codeValid = false;
                     const mainCodeSnap = await getDoc(doc(db, "system", "secret_code"));
                     if (mainCodeSnap.exists() && enteredCode === mainCodeSnap.data().value) {
@@ -390,19 +408,14 @@
                         const specSnap = await getDocs(qSpec);
                         if (!specSnap.empty) {
                             const specData = specSnap.docs[0].data();
-                            if (specData.expiresAt > Date.now()) {
-                                codeValid = true;
-                            } else {
-                                throw new Error("Цей спец-код вже прострочений (48г минуло)!");
-                            }
+                            if (specData.expiresAt > Date.now()) { codeValid = true; } 
+                            else { throw new Error("Цей спец-код застарів (48г минуло)!"); }
                         }
                     }
 
-                    if (!codeValid) {
-                        throw new Error("Невірний секретний код! Зверніться до Керівництва.");
-                    }
+                    if (!codeValid) { throw new Error("Невірний секретний код!"); }
 
-                    // 3. РЕЄСТРАЦІЯ
+                    // СТВОРЕННЯ АКАУНТУ
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nickname,
@@ -418,13 +431,15 @@
                 }
             } catch (err) {
                 errEl.style.display = 'block';
-                if(err.code === 'auth/email-already-in-use') errEl.innerText = "Ця пошта вже зареєстрована!";
-                else if(err.code === 'auth/weak-password') errEl.innerText = "Пароль надто короткий (мін. 6 симв.)!";
+                if(err.code === 'auth/email-already-in-use') errEl.innerText = "Ця пошта вже зайнята!";
+                else if(err.code === 'auth/weak-password') errEl.innerText = "Пароль має бути мін. 6 симв.!";
                 else if(err.code === 'auth/wrong-password') errEl.innerText = "Невірний пароль!";
+                else if(err.code === 'auth/user-not-found') errEl.innerText = "Користувача не знайдено!";
                 else errEl.innerText = err.message;
             }
         });
 
+        // СТАН КНОПКИ КАБІНЕТУ
         onAuthStateChanged(auth, user => {
             if(user) {
                 const btn = document.getElementById('cabinetBtn');
@@ -440,6 +455,5 @@
         };
         setInterval(() => console.clear(), 500);
     </script>
-
 </body>
 </html>
