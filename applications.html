@@ -198,13 +198,10 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Логіка оновлення секретного коду
     async function checkAndRefreshSecret() {
         const secretRef = doc(db, "system", "secret");
         const snap = await getDoc(secretRef);
-        
         let shouldRefresh = true;
-        
         if (snap.exists()) {
             const data = snap.data();
             const lastUpdate = data.lastUpdate ? data.lastUpdate.toDate() : 0;
@@ -214,7 +211,6 @@
                 document.getElementById('secretDisplay').innerText = data.code;
             }
         }
-
         if (shouldRefresh) {
             const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             document.getElementById('secretDisplay').innerText = newCode;
@@ -263,9 +259,7 @@
                 const id = appDoc.id;
                 const statusClass = `status-${data.status || 'pending'}`;
                 const statusText = data.status === 'approved' ? 'Прийнято' : (data.status === 'rejected' ? 'Відхилено' : 'Очікує');
-                
                 const rankDisplay = data.rank ? `<span class="rank-tag">${data.rank}</span>` : '';
-
                 container.innerHTML += `
                     <div class="app-card">
                         <div class="app-header">
@@ -299,29 +293,17 @@
 </script>
 
 <script>
-    // Блокування клавіш розробника
     document.onkeydown = function(e) {
-        if(e.keyCode == 123) return false; // F12
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
-        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U (код сторінки)
+        if(e.keyCode == 123) return false; 
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
     };
 
-    // Очищення консолі
     setInterval(function() {
         console.clear();
-    }, 100);
-
-    // Детектор відкриття консолі (перезавантаження при спробі зламу)
-    (function() {
-        var devtools = function() {};
-        devtools.toString = function() {
-            window.location.reload();
-            return '';
-        }
-        console.log('%c', devtools);
-    })();
+    }, 500);
 </script>
 
 </body>
