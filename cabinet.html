@@ -27,6 +27,14 @@
             min-height: 100vh; overflow-x: hidden;
         }
 
+        /* ЕКРАН БЛОКУВАННЯ (ДЛЯ БІЙЦІВ) */
+        #lockScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg); z-index: 9999; display: none;
+            flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        #lockScreen h1 { color: var(--danger); font-size: 48px; font-weight: 900; margin-bottom: 20px; }
+
         /* ШАПКА САЙТУ */
         header {
             display: flex; justify-content: space-between; align-items: center;
@@ -72,8 +80,8 @@
             border-radius: 20px;
         }
 
-        /* ЕФЕКТИ ПРИ НАВЕДЕННІ (ЯК ТИ ПРОСИВ) */
-        .info-box:hover, .profile-card:hover, .menu-item:hover, .btn-action-g:hover, .btn-action-r:hover {
+        /* ЕФЕКТИ ПРИ НАВЕДЕННІ */
+        .info-box:hover, .profile-card:hover, .menu-item:hover, .btn-action-g:hover, .btn-action-r:hover, .btn-lock-menu:hover {
             transform: translateY(-5px) scale(1.03);
             box-shadow: 0 10px 25px rgba(34, 197, 94, 0.2);
             border-color: var(--primary-bright);
@@ -85,6 +93,13 @@
             display: flex; align-items: center; justify-content: space-between;
             padding: 14px 18px; background: rgba(255,255,255,0.03); border-radius: 12px;
             color: white; text-decoration: none; font-size: 14px; font-weight: 600; position: relative;
+        }
+
+        /* СПЕЦІАЛЬНА КНОПКА БЛОКУВАННЯ В МЕНЮ */
+        .btn-lock-menu {
+            margin-top: auto; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 12px;
+            text-transform: uppercase; cursor: pointer; border: 1px solid var(--glass-border);
+            background: rgba(239, 68, 68, 0.1); color: var(--danger); display: none; text-align: center;
         }
 
         .fire-dot { 
@@ -142,26 +157,24 @@
             width: 90%; max-width: 650px; max-height: 85vh; border-radius: 30px; padding: 35px; position: relative; overflow-y: auto;
         }
 
-        /* ТЕКСТ ЗВІТІВ В МОДАЛЦІ (З ПЕРЕНОСАМИ ТА ПОСИЛАННЯМИ) */
+        /* ТЕКСТ ЗВІТІВ В МОДАЛЦІ */
         .report-content-text {
-            margin-top: 10px; 
-            font-size: 14px; 
-            line-height: 1.6;
-            white-space: pre-wrap; 
-            word-wrap: break-word;
-            color: #ccc;
+            margin-top: 10px; font-size: 14px; line-height: 1.6;
+            white-space: pre-wrap; word-wrap: break-word; color: #ccc;
         }
 
-        .report-content-text a {
-            color: #3498db; 
-            text-decoration: underline;
-            font-weight: 600;
-        }
+        .report-content-text a { color: #3498db; text-decoration: underline; font-weight: 600; }
     </style>
 </head>
 <body>
 
-    <header>
+    <div id="lockScreen">
+        <h1>ДОСТУП ОБМЕЖЕНО</h1>
+        <p>Наразі кабінет недоступний. Зверніться до командування.</p>
+        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АККАУНТУ</button>
+    </div>
+
+    <header id="mainHeader">
         <a href="index.html" class="logo-box">ДШВ</a>
         <div class="header-right">
             <div class="notif-wrapper" onclick="toggleNotifs()">
@@ -177,7 +190,7 @@
         </div>
     </header>
 
-    <div class="main-wrapper">
+    <div class="main-wrapper" id="mainContent">
         <div class="main-container">
             <div class="side-menu">
                 <button id="backToMe" onclick="resetView()" style="display:none; width:100%; background:var(--warning); color:black; padding:14px; border-radius:12px; font-weight:900; border:none; cursor:pointer; margin-bottom:15px;">⬅ МІЙ ПРОФІЛЬ</button>
@@ -186,6 +199,8 @@
                 <a href="subotnik.html" class="menu-item" onclick="markAsRead('subotniks')">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
                 <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;" onclick="markAsRead('apps')">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
                 <a href="chats.html" class="menu-item" id="chatBtn">💬 Чати / Оголошення <div id="dot-chats" class="fire-dot"></div></a>
+                
+                <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
             </div>
 
             <div class="profile-card">
@@ -252,7 +267,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // КОНФІГУРАЦІЯ
         const firebaseConfig = {
@@ -272,6 +287,7 @@
         let myData = null;
         let targetData = null;
         let editingUID = null;
+        const SECRET_CODE = "g%!V4/(&BMwnmT&"; // Ваш секретний код
 
         // ЛОГІКА ВИХОДУ
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
@@ -285,14 +301,62 @@
             });
         }
 
-        // КЕРУВАННЯ МІТКАМИ (НОВІ ЗАПИСИ)
+        // МОНІТОРИНГ СТАТУСУ СИСТЕМИ (LOCKDOWN)
+        function listenToSystemStatus(userRole) {
+            onSnapshot(doc(db, "settings", "systemStatus"), (docSnap) => {
+                if (docSnap.exists()) {
+                    const isLocked = docSnap.data().isLocked;
+                    const lockScreen = document.getElementById('lockScreen');
+                    const mainHeader = document.getElementById('mainHeader');
+                    const mainContent = document.getElementById('mainContent');
+                    const adminSection = document.getElementById('adminSection');
+
+                    if (isLocked && userRole !== 'admin') {
+                        lockScreen.style.display = 'flex';
+                        mainHeader.style.display = 'none';
+                        mainContent.style.display = 'none';
+                        if(adminSection) adminSection.style.display = 'none';
+                    } else {
+                        lockScreen.style.display = 'none';
+                        mainHeader.style.display = 'flex';
+                        mainContent.style.display = 'flex';
+                        if(userRole === 'admin') adminSection.style.display = 'block';
+                    }
+
+                    if (userRole === 'admin') {
+                        const btn = document.getElementById('lockBtn');
+                        btn.innerHTML = isLocked ? "🔓 ВІДКРИТИ ДОСТУП" : "🔒 ЗАБЛОКУВАТИ ДОСТУП";
+                        btn.style.borderColor = isLocked ? "var(--primary)" : "var(--danger)";
+                        btn.style.color = isLocked ? "var(--primary)" : "var(--danger)";
+                    }
+                } else {
+                    setDoc(doc(db, "settings", "systemStatus"), { isLocked: false });
+                }
+            });
+        }
+
+        // ПЕРЕМИКАННЯ ДОСТУПУ (АДМІН)
+        window.toggleSystemAccess = async () => {
+            const code = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            if (code === SECRET_CODE) {
+                const docRef = doc(db, "settings", "systemStatus");
+                const snap = await getDoc(docRef);
+                const current = snap.data().isLocked;
+                await updateDoc(docRef, { isLocked: !current });
+                alert(!current ? "СИСТЕМУ ЗАБЛОКОВАНО" : "ДОСТУП ВІДНОВЛЕНО");
+            } else if (code !== null) {
+                alert("НЕВІРНИЙ КОД!");
+            }
+        };
+
+        // КЕРУВАННЯ МІТКАМИ
         window.markAsRead = (type) => {
             localStorage.setItem(`read_${type}`, 'true');
             if(document.getElementById(`dot-${type}`)) document.getElementById(`dot-${type}`).style.display = 'none';
             updateBell();
         };
 
-        // МОНІТОРИНГ СПОВІЩЕНЬ ДЛЯ АДМІНА
+        // МОНІТОРИНГ СПОВІЩЕНЬ
         function watchNotifications() {
             if (myData?.role !== 'admin') return;
             onSnapshot(collection(db, "applications"), (snap) => {
@@ -333,10 +397,12 @@
                         document.querySelectorAll('.admin-controls').forEach(el => el.style.display = 'flex');
                         document.getElementById('adminSection').style.display = 'block';
                         document.getElementById('adminAppBtn').style.display = 'flex';
+                        document.getElementById('lockBtn').style.display = 'block';
                         loadStaff();
                         watchNotifications();
                     }
                     updateUI(myData);
+                    listenToSystemStatus(myData.role);
                 }
             } else { window.location.href = "index.html"; }
         });
@@ -356,7 +422,7 @@
             } else { passEl.innerText = "НЕМАЄ"; }
         }
 
-        // АДМІН: ЗМІНА СТАТИСТИКИ (+/-)
+        // АДМІН: ЗМІНА СТАТИСТИКИ
         window.changeStat = async (field, val) => {
             const uid = editingUID;
             const docRef = doc(db, "users", uid);
@@ -366,8 +432,6 @@
                 const newVal = (curData[field] || 0) + val;
                 if (newVal < 0) return;
                 await updateDoc(docRef, { [field]: newVal });
-                
-                // Оновлюємо UI миттєво
                 if(uid === currentUID) { myData[field] = newVal; updateUI(myData); }
                 else { targetData[field] = newVal; updateUI(targetData); }
             }
@@ -401,8 +465,6 @@
             const listUI = document.getElementById('modalReportsList');
             listUI.innerHTML = "Завантаження...";
             let html = "";
-            
-            // Щотижневі
             const qRep = query(collection(db, "reports"), where("uid", "==", uid));
             const snapRep = await getDocs(qRep);
             snapRep.forEach(d => {
@@ -412,8 +474,6 @@
                     <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
-
-            // Суботники
             const qSub = query(collection(db, "subotniks"), where("ownerId", "==", uid));
             const snapSub = await getDocs(qSub);
             snapSub.forEach(d => {
@@ -423,7 +483,6 @@
                     <div class="report-content-text">${linkify(data.content || data.message)}</div>
                 </div>`;
             });
-
             listUI.innerHTML = html || "Цей боєць ще не надсилав звітів.";
         };
 
@@ -445,9 +504,8 @@
             document.getElementById('backToMe').style.display = 'none'; 
         };
         
-        // АДМІН: ВИДАЛЕННЯ (ПРОЧИТАЙ КОМЕНТАР)
         window.deleteUser = async (id) => { 
-            if(confirm("ВИДАЛИТИ БІЙЦЯ?\n\nУвага: Це видалить дані з бази, але пошта залишиться в системі Firebase Auth. Щоб видалити пошту, зайдіть в Firebase Console -> Authentication.")) {
+            if(confirm("ВИДАЛИТИ БІЙЦЯ?")) {
                 await deleteDoc(doc(db, "users", id)); 
             }
         };
