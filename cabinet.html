@@ -157,6 +157,10 @@
         .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-ban-ip { background: #440000; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        
+        /* МАЛЕНЬКА ШЕСТЕРНЯ ТЕХ.ДАННИХ */
+        .btn-tech { background: none; border: none; color: #555; cursor: pointer; font-size: 16px; margin-left: 5px; }
+        .btn-tech:hover { color: var(--primary); }
 
         /* МОДАЛЬНЕ ВІКНО АРХІВУ */
         .modal-overlay {
@@ -284,7 +288,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         // КОНФІГУРАЦІЯ
         const firebaseConfig = {
@@ -306,16 +310,9 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // --- НОВИЙ ЗАХИСТ ВІД КОНСОЛІ ТА ГАРЯЧИХ КЛАВІШ ---
+        // --- ЗАХИСТ ВІД КОНСОЛІ ---
         document.onkeydown = function(e) {
-            // F12
-            if(e.keyCode == 123) return false;
-            // Ctrl+Shift+I (Інспектор)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 73) return false;
-            // Ctrl+Shift+J (Консоль)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 74) return false;
-            // Ctrl+U (Вихідний код)
-            if(e.ctrlKey && e.keyCode == 85) return false;
+            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
 
         // --- ПЕРЕВІРКА IP ТА БАНУ ---
@@ -324,7 +321,6 @@
                 const res = await fetch('https://api.ipify.org?format=json');
                 const data = await res.json();
                 const userIP = data.ip;
-
                 const banSnap = await getDoc(doc(db, "bannedIPs", userIP));
                 if (banSnap.exists()) {
                     document.getElementById('banScreen').style.display = 'flex';
@@ -356,7 +352,6 @@
                         lockScreen.style.display = 'flex';
                         mainHeader.style.display = 'none';
                         mainContent.style.display = 'none';
-                        if(adminSection) adminSection.style.display = 'none';
                     } else {
                         lockScreen.style.display = 'none';
                         mainHeader.style.display = 'flex';
@@ -370,8 +365,6 @@
                         btn.style.borderColor = isLocked ? "var(--primary)" : "var(--danger)";
                         btn.style.color = isLocked ? "var(--primary)" : "var(--danger)";
                     }
-                } else {
-                    setDoc(doc(db, "settings", "systemStatus"), { isLocked: false });
                 }
             });
         }
@@ -381,9 +374,8 @@
             if (code === SECRET_CODE) {
                 const docRef = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(docRef);
-                const current = snap.data().isLocked;
-                await updateDoc(docRef, { isLocked: !current });
-            } else if (code !== null) alert("КРИТИЧНА ПОМИЛКА: НЕВІРНИЙ КОД!");
+                await updateDoc(docRef, { isLocked: !snap.data().isLocked });
+            }
         };
 
         window.markAsRead = (type) => {
@@ -394,32 +386,25 @@
 
         function watchNotifications() {
             if (myData?.role !== 'admin') return;
-            onSnapshot(collection(db, "applications"), (snap) => {
-                const hasNew = snap.size > 0 && !localStorage.getItem('read_apps');
-                if(document.getElementById('dot-apps')) document.getElementById('dot-apps').style.display = hasNew ? 'block' : 'none';
-                updateBell();
-            });
-            onSnapshot(collection(db, "reports"), (snap) => {
-                const hasNew = snap.size > 0 && !localStorage.getItem('read_reports');
-                if(document.getElementById('dot-reports')) document.getElementById('dot-reports').style.display = hasNew ? 'block' : 'none';
-                updateBell();
-            });
-            onSnapshot(collection(db, "subotniks"), (snap) => {
-                const hasNew = snap.size > 0 && !localStorage.getItem('read_subotniks');
-                if(document.getElementById('dot-subotniks')) document.getElementById('dot-subotniks').style.display = hasNew ? 'block' : 'none';
-                updateBell();
+            const collections = ["applications", "reports", "subotniks"];
+            collections.forEach(col => {
+                onSnapshot(collection(db, col), (snap) => {
+                    const hasNew = snap.size > 0 && !localStorage.getItem(`read_${col === 'applications' ? 'apps' : col}`);
+                    const dot = document.getElementById(`dot-${col === 'applications' ? 'apps' : col}`);
+                    if(dot) dot.style.display = hasNew ? 'block' : 'none';
+                    updateBell();
+                });
             });
         }
 
         function updateBell() {
-            const dots = document.querySelectorAll('.fire-dot');
-            let any = false;
-            dots.forEach(d => { if(d.style.display === 'block') any = true; });
+            const any = Array.from(document.querySelectorAll('.fire-dot')).some(d => d.style.display === 'block');
             document.getElementById('bellDot').style.display = any ? 'block' : 'none';
         }
 
         window.toggleNotifs = () => document.getElementById('notifDropdown').classList.toggle('active');
 
+        // --- ОСНОВНА ЛОГІКА ВХОДУ ---
         onAuthStateChanged(auth, async (user) => {
             const userIP = await checkIPAndBan();
             if (user) {
@@ -430,8 +415,11 @@
                 if (snap.exists()) {
                     myData = snap.data();
                     
-                    // Зберігаємо IP в базу
-                    if(userIP) await updateDoc(userRef, { lastIP: userIP });
+                    // ЛОГУВАННЯ ВХОДУ (Оновлення останнього IP та часу)
+                    await updateDoc(userRef, { 
+                        lastIP: userIP || "unknown",
+                        lastLogin: serverTimestamp()
+                    });
 
                     if (myData.role === 'admin') {
                         document.querySelectorAll('.admin-controls').forEach(el => el.style.display = 'flex');
@@ -463,27 +451,33 @@
 
         window.changeStat = async (field, val) => {
             if (myData.role !== 'admin') return;
-            const uid = editingUID;
-            const docRef = doc(db, "users", uid);
+            const docRef = doc(db, "users", editingUID);
             const snap = await getDoc(docRef);
             if(snap.exists()){
                 const newVal = (snap.data()[field] || 0) + val;
                 if (newVal < 0) return;
                 await updateDoc(docRef, { [field]: newVal });
-                if(uid === currentUID) { myData[field] = newVal; updateUI(myData); }
+                if(editingUID === currentUID) { myData[field] = newVal; updateUI(myData); }
                 else { targetData[field] = newVal; updateUI(targetData); }
             }
         };
 
+        // --- ЗАВАНТАЖЕННЯ СПИСКУ З ТЕХ.ДАННИМИ ---
         function loadStaff() {
             onSnapshot(collection(db, "users"), (snap) => {
                 const list = document.getElementById('staffList');
                 list.innerHTML = "";
                 snap.forEach(s => {
                     const u = s.data();
+                    const regDate = u.registeredAt ? new Date(u.registeredAt.seconds * 1000).toLocaleDateString() : "невідомо";
+                    
                     list.innerHTML += `
                         <div class="staff-item">
-                            <div><b>${u.name}</b><br><small>ID: ${u.gameID} | ${u.rank} | IP: ${u.lastIP || '???'}</small></div>
+                            <div>
+                                <b>${u.name}</b> 
+                                <button class="btn-tech" title="Тех. дані" onclick="showTechInfo('${u.name}', '${u.lastIP}', '${u.usedSecretCode || 'немає'}', '${regDate}')">⚙</button>
+                                <br><small>ID: ${u.gameID} | ${u.rank}</small>
+                            </div>
                             <div style="display:flex; gap:10px;">
                                 <button class="btn-action-g" onclick="openReports('${s.id}', '${u.name}')">ЗВІТИ</button>
                                 <button class="btn-action-g" onclick="enterManageMode('${s.id}')">КЕРУВАТИ</button>
@@ -495,13 +489,16 @@
             });
         }
 
-        // --- ФУНКЦІЯ БАНУ ПО IP ---
+        // --- ВІКНО ТЕХНІЧНОЇ ІНФОРМАЦІЇ ---
+        window.showTechInfo = (name, ip, code, date) => {
+            alert(`ТЕХНІЧНИЙ ЗВІТ: ${name}\n\nIP при вході: ${ip}\nВикористаний код реєстрації: ${code}\nДата реєстрації: ${date}`);
+        };
+
         window.banUserIP = async (ip, name) => {
             if(!ip || ip === '???') return alert("IP адреса не зафіксована!");
-            const code = prompt(`ВВЕДІТЬ СЕКРЕТНИЙ КОД ДЛЯ БАНУ ${name} (IP: ${ip}):`);
-            if (code === SECRET_CODE) {
-                await setDoc(doc(db, "bannedIPs", ip), { bannedAt: new Date(), name: name });
-                alert("IP ЗАБЛОКОВАНО УСПІШНО!");
+            if (prompt(`ВВЕДІТЬ СЕКРЕТНИЙ КОД ДЛЯ БАНУ ${name}:`) === SECRET_CODE) {
+                await setDoc(doc(db, "bannedIPs", ip), { bannedAt: serverTimestamp(), name: name });
+                alert("IP ЗАБЛОКОВАНО!");
             }
         };
 
@@ -551,11 +548,10 @@
         
         window.deleteUser = async (id) => { 
             if (myData.role !== 'admin') return;
-            const code = prompt("УВАГА! ВВЕДІТЬ СЕКРЕТНИЙ КОД ДЛЯ ВИДАЛЕННЯ:");
-            if (code === SECRET_CODE) {
+            if (prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД ДЛЯ ВИДАЛЕННЯ:") === SECRET_CODE) {
                 if(confirm("ВИДАЛИТИ БІЙЦЯ НАЗАВЖДИ?")) {
                     await deleteDoc(doc(db, "users", id)); 
-                    alert("Успішно видалено.");
+                    alert("Видалено.");
                 }
             }
         };
