@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ДШВ | РАПОРТИ НА ВСТУП</title>
+    <title>ДШВ | РАПОРТИ ТА КОДИ</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -23,6 +23,7 @@
             color: white; font-family: 'Inter', sans-serif;
             background: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.1) 0%, transparent 50%), var(--bg);
             min-height: 100vh;
+            user-select: none;
         }
 
         nav {
@@ -44,6 +45,7 @@
             padding: 0 20px;
         }
 
+        /* Стилі блоку секретного коду */
         .secret-container {
             background: rgba(34, 197, 94, 0.05);
             border: 2px dashed var(--glass-border);
@@ -52,14 +54,36 @@
             text-align: center;
             margin-bottom: 40px;
             backdrop-filter: blur(10px);
+            position: relative;
         }
         .secret-label { font-size: 12px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; letter-spacing: 2px; }
         .secret-code { font-size: 42px; font-weight: 900; color: white; margin: 15px 0; letter-spacing: 8px; text-shadow: var(--neon-glow); }
+        
+        .btn-group-mini { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+        
         .btn-copy { 
             background: var(--primary); color: black; border: none; padding: 10px 25px; 
             border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s;
         }
         .btn-copy:hover { transform: scale(1.05); background: var(--primary-bright); }
+
+        .btn-mini {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: white; padding: 8px 15px; border-radius: 10px; font-size: 11px;
+            font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .btn-mini:hover { background: var(--primary); color: black; }
+
+        /* Модальне вікно спец-кодів */
+        .modal-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.9); backdrop-filter: blur(10px);
+            display: none; justify-content: center; align-items: center; z-index: 2000;
+        }
+        .modal-content {
+            background: #0a0f1a; border: 1px solid var(--primary);
+            padding: 30px; border-radius: 30px; width: 90%; max-width: 500px;
+        }
 
         .header-flex {
             display: flex;
@@ -75,6 +99,7 @@
         }
         .btn-back:hover { background: rgba(34, 197, 94, 0.1); border-color: var(--primary); }
 
+        /* Картки рапортів */
         .app-card {
             background: var(--card-bg);
             border: 1px solid var(--glass-border);
@@ -84,6 +109,7 @@
             backdrop-filter: blur(10px);
             transition: 0.3s;
             position: relative;
+            text-align: left;
         }
         .app-card:hover { border-color: var(--primary); transform: translateY(-3px); }
 
@@ -97,8 +123,7 @@
         }
 
         .nickname { font-size: 20px; font-weight: 800; color: var(--primary-bright); }
-        .rank-tag { font-size: 12px; background: rgba(34, 197, 94, 0.1); color: var(--primary-bright); padding: 3px 10px; border-radius: 5px; margin-left: 10px; font-weight: 600; }
-        
+        .rank-tag { font-size: 12px; background: var(--primary); color: black; padding: 3px 10px; border-radius: 5px; margin-left: 10px; font-weight: 800; text-transform: uppercase; }
         .discord-tag { font-size: 14px; color: var(--text-gray); margin-top: 5px; }
 
         .status-badge {
@@ -115,6 +140,7 @@
             font-size: 14px;
             line-height: 1.6;
             color: #cbd5e1;
+            margin-top: 10px;
         }
 
         .action-group {
@@ -126,49 +152,47 @@
         }
         .btn-approve { background: var(--primary); color: black; }
         .btn-reject { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-        .btn-approve:hover { background: var(--primary-bright); box-shadow: var(--neon-glow); }
-        .btn-reject:hover { background: #ef4444; color: white; }
 
         .btn-delete {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text-gray);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 8px 15px;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 11px;
-            cursor: pointer;
-            transition: 0.3s;
+            background: rgba(255, 255, 255, 0.05); color: var(--text-gray);
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 15px;
+            border-radius: 10px; font-weight: 700; font-size: 11px; cursor: pointer; transition: 0.3s;
         }
         .btn-delete:hover { border-color: var(--error); color: var(--error); }
 
-        .empty-state {
-            text-align: center;
-            padding: 100px 20px;
-            opacity: 0.5;
-        }
-
         .loading-spinner {
-            width: 40px; height: 40px;
-            border: 3px solid rgba(34, 197, 94, 0.1);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 50px auto;
+            width: 40px; height: 40px; border: 3px solid rgba(34, 197, 94, 0.1);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 50px auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Стилі списку спец-кодів у модалці */
+        .special-code-item {
+            background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px;
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+            border: 1px solid rgba(34,197,94,0.1);
+        }
     </style>
 </head>
-<body oncontextmenu="return false;"> <nav>
+<body oncontextmenu="return false;">
+
+<nav>
     <a href="index.html" class="logo-box">ДШВ</a>
     <div style="font-size: 10px; font-weight: 900; color: var(--primary-bright);">ADMINISTRATION PANEL</div>
 </nav>
 
 <div class="container">
     <div class="secret-container">
-        <div class="secret-label">Секретний код (Оновлюється кожні 2 хв)</div>
+        <div class="secret-label">Основний код (авто-оновлення 2 хв)</div>
         <div class="secret-code" id="secretDisplay">...</div>
-        <button class="btn-copy" onclick="copySecret()">Скопіювати та надати бійцю</button>
+        
+        <button class="btn-copy" onclick="copySecret()">Скопіювати</button>
+        
+        <div class="btn-group-mini">
+            <button class="btn-mini" onclick="window.refreshSecretNow()">🔄 Оновити зараз</button>
+            <button class="btn-mini" onclick="window.toggleSpecialModal(true)">⏳ Спец-коди (48г)</button>
+        </div>
     </div>
 
     <div class="header-flex">
@@ -180,10 +204,24 @@
     <div id="appsContainer"></div>
 </div>
 
+<div class="modal-overlay" id="specialModal">
+    <div class="modal-content">
+        <h2 style="margin-top:0;">Спец-коди (48 годин)</h2>
+        <p style="font-size:12px; color:var(--text-gray);">Ці коди працюють довше для особливих випадків.</p>
+        
+        <button class="btn-action btn-approve" style="width:100%; margin-bottom:20px;" onclick="window.createSpecialCode()">+ Створити новий код</button>
+        
+        <div id="specialCodesList" style="max-height: 300px; overflow-y: auto;">
+            </div>
+        
+        <button class="btn-mini" style="width:100%; margin-top:20px;" onclick="window.toggleSpecialModal(false)">Закрити</button>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, setDoc, updateDoc, serverTimestamp, addDoc, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -198,36 +236,95 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    async function checkAndRefreshSecret() {
-        const secretRef = doc(db, "system", "secret");
+    // --- СИСТЕМА ОСНОВНОГО КОДУ ---
+    async function checkAndRefreshSecret(force = false) {
+        const secretRef = doc(db, "system", "secret_code");
         const snap = await getDoc(secretRef);
-        let shouldRefresh = true;
-        if (snap.exists()) {
+        let shouldRefresh = force;
+
+        if (!force && snap.exists()) {
             const data = snap.data();
             const lastUpdate = data.lastUpdate ? data.lastUpdate.toDate() : 0;
             const now = new Date();
             if (now - lastUpdate < 120000) {
                 shouldRefresh = false;
-                document.getElementById('secretDisplay').innerText = data.code;
-            }
+                document.getElementById('secretDisplay').innerText = data.value;
+            } else { shouldRefresh = true; }
         }
-        if (shouldRefresh) {
+
+        if (shouldRefresh || !snap.exists()) {
             const newCode = Math.random().toString(36).substring(2, 8).toUpperCase();
             document.getElementById('secretDisplay').innerText = newCode;
             await setDoc(secretRef, {
-                code: newCode,
+                value: newCode,
                 lastUpdate: serverTimestamp()
             });
         }
     }
 
-    checkAndRefreshSecret();
-    setInterval(checkAndRefreshSecret, 30000);
+    window.refreshSecretNow = () => {
+        if(confirm("Оновити основний код негайно?")) checkAndRefreshSecret(true);
+    };
 
+    checkAndRefreshSecret();
+    setInterval(() => checkAndRefreshSecret(false), 30000);
+
+    // --- СИСТЕМА СПЕЦ-КОДІВ (48 ГОДИН) ---
+    window.toggleSpecialModal = (show) => {
+        document.getElementById('specialModal').style.display = show ? 'flex' : 'none';
+        if(show) loadSpecialCodes();
+    };
+
+    window.createSpecialCode = async () => {
+        const code = "SPEC-" + Math.random().toString(36).substring(2, 6).toUpperCase();
+        await addDoc(collection(db, "special_codes"), {
+            value: code,
+            createdAt: serverTimestamp(),
+            expiresAt: Date.now() + (48 * 60 * 60 * 1000) // +48 годин
+        });
+        loadSpecialCodes();
+    };
+
+    async function loadSpecialCodes() {
+        const list = document.getElementById('specialCodesList');
+        const snap = await getDocs(collection(db, "special_codes"));
+        list.innerHTML = "";
+        
+        if(snap.empty) list.innerHTML = "<p style='text-align:center; opacity:0.5;'>Немає активних кодів</p>";
+
+        snap.forEach(d => {
+            const data = d.data();
+            const timeLeft = Math.round((data.expiresAt - Date.now()) / (1000 * 60 * 60));
+            
+            if(timeLeft <= 0) { // Авто-видалення прострочених
+                deleteDoc(doc(db, "special_codes", d.id));
+                return;
+            }
+
+            list.innerHTML += `
+                <div class="special-code-item">
+                    <div>
+                        <b style="color:var(--primary-bright); font-size:18px;">${data.value}</b>
+                        <div style="font-size:10px; color:var(--text-gray);">Залишилось: ~${timeLeft} год.</div>
+                    </div>
+                    <button class="btn-delete" onclick="window.deleteSpecialCode('${d.id}')">Видалити</button>
+                </div>
+            `;
+        });
+    }
+
+    window.deleteSpecialCode = async (id) => {
+        if(confirm("Видалити цей спец-код?")) {
+            await deleteDoc(doc(db, "special_codes", id));
+            loadSpecialCodes();
+        }
+    };
+
+    // --- ОСНОВНА ЛОГІКА РАПОРТІВ ---
     window.copySecret = () => {
         const code = document.getElementById('secretDisplay').innerText;
         navigator.clipboard.writeText(code);
-        alert("Код " + code + " скопійовано!");
+        alert("Код скопійовано!");
     };
 
     onAuthStateChanged(auth, async (user) => {
@@ -293,17 +390,11 @@
 </script>
 
 <script>
+    // Захист від копіювання коду
     document.onkeydown = function(e) {
-        if(e.keyCode == 123) return false; 
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
-        if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-        if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
     };
-
-    setInterval(function() {
-        console.clear();
-    }, 500);
+    setInterval(() => console.clear(), 500);
 </script>
 
 </body>
