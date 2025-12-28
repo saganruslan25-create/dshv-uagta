@@ -307,10 +307,10 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Ініціалізація AOS анімацій
+        // AOS
         AOS.init({ duration: 1000, once: true });
 
-        // ФУНКЦІЇ ВІКНА
+        // МЕНЮ
         window.toggleMenu = () => { 
             document.getElementById('navLinks').classList.toggle('active'); 
             document.getElementById('burgerBtn').classList.toggle('active');
@@ -325,7 +325,6 @@
         };
         window.handleCabinetClick = () => { window.openModal('authModal'); };
 
-        // ПЕРЕМИКАННЯ РЕЖИМІВ ВХОДУ
         let isLoginMode = true;
         window.toggleAuthMode = () => {
             isLoginMode = !isLoginMode;
@@ -333,10 +332,9 @@
             document.getElementById('authTitle').innerText = isLoginMode ? 'Вхід в Кабінет' : 'Реєстрація бійця';
             document.getElementById('loginBtn').innerText = isLoginMode ? 'Увійти' : 'Створити профіль';
             document.getElementById('switchAuthBtn').innerText = isLoginMode ? 'Ще не маєте акаунту? Реєстрація' : 'Вже є акаунт? Увійти';
-            document.getElementById('authError').style.display = 'none';
         };
 
-        // ЛІЧИЛЬНИК БІЙЦІВ
+        // ЛІЧИЛЬНИК
         onSnapshot(collection(db, "users"), (snap) => {
             const loader = document.getElementById('loadingCircle');
             if(loader) loader.style.display = 'none';
@@ -344,7 +342,7 @@
             if(text) { text.style.display = 'block'; text.innerText = snap.size; }
         });
 
-        // ВІДПРАВКА РАПОРТУ
+        // РАПОРТ
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
@@ -364,7 +362,7 @@
             finally { btn.disabled = false; btn.innerText = "Відправити рапорт"; }
         });
 
-        // ОБРОБКА АВТОРИЗАЦІЇ ТА РЕЄСТРАЦІЇ (З ПОМИЛКАМИ)
+        // АВТОРИЗАЦІЯ + ЛОГУВАННЯ
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -380,42 +378,36 @@
                     const nickname = document.getElementById('regName').value;
                     const enteredCode = document.getElementById('regSecretCode').value;
 
-                    // ПЕРЕВІРКА РАПОРТУ БІЙЦЯ
+                    // Збір IP
+                    let ip = "unknown";
+                    try {
+                        const resIp = await fetch('https://api.ipify.org?format=json');
+                        const dataIp = await resIp.json();
+                        ip = dataIp.ip;
+                    } catch(e) {}
+
+                    // Перевірки рапорту
                     const qApp = query(collection(db, "applications"), where("name", "==", nickname));
                     const appSnap = await getDocs(qApp);
-
-                    if (appSnap.empty) {
-                        throw new Error("Ваш рапорт не знайдено! Подайте рапорт на вступ.");
-                    }
+                    if (appSnap.empty) throw new Error("Ваш рапорт не знайдено!");
                     
                     const appData = appSnap.docs[0].data();
-                    if (appData.status === 'rejected') {
-                        throw new Error("Вам було ВІДМОВЛЕНО у вступі. Реєстрація неможлива.");
-                    }
-                    if (appData.status === 'pending') {
-                        throw new Error("Ваш рапорт ще ОЧІКУЄ на розгляд. Дочекайтеся схвалення.");
-                    }
+                    if (appData.status !== 'approved') throw new Error("Рапорт не схвалено!");
 
-                    // ПЕРЕВІРКА КОДІВ
+                    // Перевірка кодів
                     let codeValid = false;
                     const mainCodeSnap = await getDoc(doc(db, "system", "secret_code"));
-                    if (mainCodeSnap.exists() && enteredCode === mainCodeSnap.data().value) {
-                        codeValid = true;
-                    }
+                    if (mainCodeSnap.exists() && enteredCode === mainCodeSnap.data().value) codeValid = true;
 
                     if (!codeValid) {
                         const qSpec = query(collection(db, "special_codes"), where("value", "==", enteredCode));
                         const specSnap = await getDocs(qSpec);
-                        if (!specSnap.empty) {
-                            const specData = specSnap.docs[0].data();
-                            if (specData.expiresAt > Date.now()) { codeValid = true; } 
-                            else { throw new Error("Цей спец-код застарів (48г минуло)!"); }
-                        }
+                        if (!specSnap.empty && specSnap.docs[0].data().expiresAt > Date.now()) codeValid = true;
                     }
 
-                    if (!codeValid) { throw new Error("Невірний секретний код!"); }
+                    if (!codeValid) throw new Error("Невірний секретний код!");
 
-                    // СТВОРЕННЯ АКАУНТУ
+                    // Створення
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nickname,
@@ -424,6 +416,8 @@
                         gameID: document.getElementById('regGameID').value,
                         discord: document.getElementById('regDiscord').value,
                         role: 'user',
+                        regIP: ip,          // Лог IP
+                        usedCode: enteredCode, // Лог Коду
                         warns: 0, reprimands: 0, points: 0,
                         regDate: serverTimestamp()
                     });
@@ -431,15 +425,10 @@
                 }
             } catch (err) {
                 errEl.style.display = 'block';
-                if(err.code === 'auth/email-already-in-use') errEl.innerText = "Ця пошта вже зайнята!";
-                else if(err.code === 'auth/weak-password') errEl.innerText = "Пароль має бути мін. 6 симв.!";
-                else if(err.code === 'auth/wrong-password') errEl.innerText = "Невірний пароль!";
-                else if(err.code === 'auth/user-not-found') errEl.innerText = "Користувача не знайдено!";
-                else errEl.innerText = err.message;
+                errEl.innerText = err.message;
             }
         });
 
-        // СТАН КНОПКИ КАБІНЕТУ
         onAuthStateChanged(auth, user => {
             if(user) {
                 const btn = document.getElementById('cabinetBtn');
@@ -447,13 +436,6 @@
                 btn.onclick = () => window.location.href = "cabinet.html";
             }
         });
-    </script>
-
-    <script>
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
-        };
-        setInterval(() => console.clear(), 500);
     </script>
 </body>
 </html>
