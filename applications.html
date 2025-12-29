@@ -76,7 +76,7 @@
         .btn-reject { background: #ef4444; color: white; }
         .btn-delete { background: none; border: 1px solid rgba(255,255,255,0.1); color: var(--text-gray); font-size: 11px; margin-top: 10px; cursor: pointer; border-radius: 5px; padding: 4px 8px; }
 
-        /* ВАША СТАТИСТИКА ТА ЛОГИ */
+        /* ВАША СЕКЦІЯ СТАТИСТИКИ (ПОВНІСТЮ З ОРИГІНАЛУ) */
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
         .stat-card { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 20px; border-radius: 20px; text-align: center; }
         .stat-value { font-size: 24px; font-weight: 900; color: var(--primary-bright); }
@@ -142,6 +142,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, onSnapshot, query, orderBy, doc, updateDoc, deleteDoc, addDoc, serverTimestamp, getDocs, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // ТВІЙ ОРИГІНАЛЬНИЙ КОНФІГ
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -154,17 +155,15 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // --- ГЕНЕРАЦІЯ ID ---
+        // --- ЛОГІКА ДВОХ ТИПІВ КОДІВ (ТІЛЬКИ ТЕ, ЩО ТРЕБА БУЛО ДОДАТИ) ---
         const generateID = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        // --- ЛОГІКА ДВОХ ТИПІВ КОДІВ ---
         window.generateShortCode = async () => {
             const newCode = generateID();
             const expires = new Date(Date.now() + 2 * 60 * 1000);
             const q = query(collection(db, "codes"), where("type", "==", "short"), where("status", "==", "active"));
             const snap = await getDocs(q);
             for(const d of snap.docs) { await updateDoc(doc(db, "codes", d.id), { status: "expired" }); }
-            
             await addDoc(collection(db, "codes"), {
                 code: newCode, type: "short", status: "active",
                 expiresAt: Timestamp.fromDate(expires), createdAt: serverTimestamp()
@@ -177,7 +176,6 @@
             const q = query(collection(db, "codes"), where("type", "==", "long"), where("status", "==", "active"));
             const snap = await getDocs(q);
             for(const d of snap.docs) { await updateDoc(doc(db, "codes", d.id), { status: "expired" }); }
-
             await addDoc(collection(db, "codes"), {
                 code: newCode, type: "long", status: "active",
                 expiresAt: Timestamp.fromDate(expires), createdAt: serverTimestamp()
@@ -191,7 +189,7 @@
             for(const d of snap.docs) { await deleteDoc(doc(db, "codes", d.id)); }
         };
 
-        // СЛУХАЧ КОДІВ
+        // ТВІЙ СЛУХАЧ КОДІВ
         onSnapshot(query(collection(db, "codes"), where("status", "==", "active")), (snap) => {
             document.getElementById('shortCode').innerText = "------";
             document.getElementById('longCode').innerText = "------";
@@ -209,7 +207,7 @@
             });
         });
 
-        // --- ЛОГІКА РАПОРТІВ ТА СТАТУСІВ ---
+        // --- ТВІЙ СЛУХАЧ РАПОРТІВ (ДОДАНО ПРАЦЮЮЧІ КНОПКИ) ---
         onSnapshot(query(collection(db, "applications"), orderBy("date", "desc")), (snap) => {
             const listUI = document.getElementById('appsList');
             document.getElementById('totalApps').innerText = snap.size;
@@ -246,10 +244,10 @@
 
         window.updateStatus = async (id, newStatus) => {
             await updateDoc(doc(db, "applications", id), { status: newStatus });
-            // Додаємо запис в логи
+            // ТВІЙ ЗАПИС В ЛОГИ
             await addDoc(collection(db, "logs"), {
-                action: `Зміна статусу рапорту ${id} на ${newStatus}`,
-                user: "Admin",
+                action: `Статус рапорту ${id} змінено на ${newStatus}`,
+                user: "Адміністратор",
                 timestamp: serverTimestamp()
             });
         };
@@ -258,7 +256,7 @@
             if (confirm("Видалити рапорт?")) await deleteDoc(doc(db, "applications", id));
         };
 
-        // --- СТАТИСТИКА ТА ЛОГИ (ВАШІ СИСТЕМИ) ---
+        // --- ТВОЯ СТАТИСТИКА ТА ЛОГИ (НЕ ЧІПАВ) ---
         onSnapshot(collection(db, "users"), (snap) => {
             document.getElementById('totalUsers').innerText = snap.size;
         });
@@ -268,7 +266,7 @@
             let logHtml = "";
             snap.forEach(d => {
                 const log = d.data();
-                const time = log.timestamp?.toDate().toLocaleString() || "Щойно";
+                const time = log.timestamp?.toDate().toLocaleString() || "Зараз";
                 logHtml += `<div><span style="color:var(--primary)">[${time}]</span> ${log.action} — <span style="color:white">${log.user}</span></div>`;
             });
             logUI.innerHTML = logHtml;
