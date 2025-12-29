@@ -42,6 +42,14 @@
             -webkit-user-select: text !important;
         }
 
+        /* ЕФЕКТ ЗБІЛЬШЕННЯ ДЛЯ КНОПОК ТА КАРТОК */
+        .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
+        .btn-action-g:hover, .btn-action-r:hover, .logo-box:hover, .btn-lock-menu:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            z-index: 2;
+        }
+
         /* ЕКРАН БЛОКУВАННЯ */
         #lockScreen {
             position: fixed;
@@ -148,7 +156,11 @@
         }
 
         .btn-tech { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; margin-left: 8px; }
+        /* Кнопка Зелена */
         .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        /* Кнопка Керувати (такий же дизайн, але інший колір) */
+        .btn-manage { background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-ban-ip { background: #440000; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
@@ -163,6 +175,9 @@
             width: 90%; max-width: 650px; max-height: 85vh; border-radius: 30px; padding: 35px; position: relative; overflow-y: auto;
         }
         .report-content-text { margin-top: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #ccc; }
+        .report-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        .badge-weekly { background: var(--primary); color: black; }
+        .badge-sub { background: var(--warning); color: black; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -340,7 +355,6 @@
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             
-            // Перевірка бану
             const res = await fetch('https://api.ipify.org?format=json');
             const ipData = await res.json();
             const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
@@ -367,7 +381,8 @@
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "Невідомо";
             document.getElementById('topName').innerText = data.name || "Користувач";
-            document.getElementById('userID').innerText = "ID: " + data.id;
+            // Повертаємо gameID для відображення в профілі
+            document.getElementById('userID').innerText = "ID: " + (data.gameID || data.id || "---");
             document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
@@ -398,12 +413,12 @@
                     item.innerHTML = `
                         <div>
                             <b>${d.name}</b><br>
-                            <small style="color:var(--text-gray)">[${d.rank}] • ID: ${d.id}</small>
-                            <button class="btn-tech" onclick="alert('UID: ${s.id}\\nIP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
+                            <small style="color:var(--text-gray)">[${d.rank}] • ID: ${d.gameID || d.id}</small>
+                            <button class="btn-tech" onclick="alert('UID (База): ${s.id}\\nGameID: ${d.gameID || '---'}\\nОстанній IP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
                         </div>
                         <div style="display:flex; gap:10px;">
                             <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}')">ЗВІТИ</button>
-                            <button class="btn-action-g" style="background:#333; color:white;" onclick="window.enterManageMode('${s.id}')">КЕРУВАТИ</button>
+                            <button class="btn-manage" onclick="window.enterManageMode('${s.id}')">КЕРУВАТИ</button>
                             <button class="btn-ban-ip" onclick="window.banByIP('${d.lastIP}', '${s.id}')">BAN IP</button>
                             <button class="btn-action-r" onclick="window.deleteUser('${s.id}')">ВИДАЛИТИ</button>
                         </div>
@@ -443,17 +458,46 @@
             document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
             modal.style.display = 'flex';
             list.innerHTML = "Завантаження...";
-            const q = query(collection(db, "reports"), where("authorUID", "==", uid));
-            const snap = await getDocs(q);
-            list.innerHTML = "";
-            snap.forEach(docSnap => {
-                const data = docSnap.data();
-                list.innerHTML += `<div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:3px solid var(--primary);">
-                    <small style="color:var(--primary-bright)">ПЕРІОД: ${data.period}</small>
-                    <div class="report-content-text">${linkify(data.content || data.message)}</div>
-                </div>`;
-            });
-            if(list.innerHTML === "") list.innerHTML = "Звітів немає.";
+            
+            try {
+                // Отримуємо звичайні звіти
+                const qRep = query(collection(db, "reports"), where("authorUID", "==", uid));
+                const snapRep = await getDocs(qRep);
+                
+                // Отримуємо звіти з суботників
+                const qSub = query(collection(db, "subotniks"), where("authorUID", "==", uid));
+                const snapSub = await getDocs(qSub);
+                
+                list.innerHTML = "";
+                let count = 0;
+
+                snapRep.forEach(docSnap => {
+                    const data = docSnap.data();
+                    list.innerHTML += `
+                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:3px solid var(--primary);">
+                            <div class="report-badge badge-weekly">ЩОТИЖНЕВИЙ</div>
+                            <small style="color:var(--primary-bright)"> ПЕРІОД: ${data.period || '---'}</small>
+                            <div class="report-content-text">${linkify(data.content || data.message)}</div>
+                        </div>`;
+                    count++;
+                });
+
+                snapSub.forEach(docSnap => {
+                    const data = docSnap.data();
+                    list.innerHTML += `
+                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:3px solid var(--warning);">
+                            <div class="report-badge badge-sub">СУБОТНИК</div>
+                            <small style="color:var(--warning)"> ДАТА: ${data.date || '---'}</small>
+                            <div class="report-content-text">${linkify(data.content)}</div>
+                        </div>`;
+                    count++;
+                });
+
+                if(count === 0) list.innerHTML = "Звітів не знайдено.";
+            } catch (e) {
+                list.innerHTML = "Помилка завантаження.";
+                console.error(e);
+            }
         };
 
         function listenToSystemStatus(role) {
