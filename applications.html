@@ -106,19 +106,19 @@
                 <div class="panel-title">🔑 Секретні коди</div>
                 
                 <div class="code-box">
-                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px;">КОД НА 2 ХВИЛИНИ (АВТО)</p>
-                    <div id="shortCode" class="current-code">------</div>
-                    <div id="shortTimer" class="code-timer">Оновлення...</div>
+                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px;">ДИНАМІЧНИЙ КОД (2 ХВИЛИНИ)</p>
+                    <div id="shortCodeDisplay" class="current-code">------</div>
+                    <div id="shortTimerDisplay" class="code-timer">Оновлення...</div>
                 </div>
 
                 <div class="code-box">
-                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px;">ПОСТІЙНИЙ КОД (48 ГОД)</p>
-                    <div id="longCode" class="current-code">------</div>
-                    <div id="longTimer" class="code-timer">Діє до: --:--</div>
+                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px;">ПОСТІЙНИЙ КОД (48 ГОДИН)</p>
+                    <div id="longCodeDisplay" class="current-code">------</div>
+                    <div id="longTimerDisplay" class="code-timer">Діє до: --:--</div>
                 </div>
 
                 <button class="btn btn-primary" onclick="window.generateLongCode()">Згенерувати код на 48 год</button>
-                <button class="btn btn-primary" style="background: var(--error); color: white;" onclick="window.clearUsedCodes()">Очистити неактивні коди</button>
+                <button class="btn btn-primary" style="background: var(--error); color: white;" onclick="window.clearUsedCodes()">Очистити використані коди</button>
             </div>
 
             <div class="glass-panel">
@@ -152,11 +152,12 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        const genID = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+        // Генератор випадкового ID
+        const makeID = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        // СИСТЕМА КОДУ НА 2 ХВИЛИНИ (АВТОМАТИЧНА)
-        const updateShortCode = async () => {
-            const newCode = genID();
+        // АВТОМАТИЧНЕ ОНОВЛЕННЯ КОДУ (2 ХВИЛИНИ)
+        const refreshShortCode = async () => {
+            const newCode = makeID();
             const expires = new Date(Date.now() + 2 * 60 * 1000);
             
             const q = query(collection(db, "codes"), where("type", "==", "short"), where("status", "==", "active"));
@@ -169,12 +170,15 @@
             });
         };
 
-        // Запуск таймера оновлення 2хв коду
-        setInterval(updateShortCode, 120000); 
+        // Запускаємо цикл оновлення раз на 2 хвилини
+        setInterval(refreshShortCode, 120000);
+        // Перший запуск при завантаженні сторінки, якщо кодів немає
+        const checkShort = await getDocs(query(collection(db, "codes"), where("type", "==", "short"), where("status", "==", "active")));
+        if(checkShort.empty) refreshShortCode();
 
-        // ГЕНЕРАЦІЯ КОДУ НА 48 ГОДИН (РУЧНА)
+        // ГЕНЕРАЦІЯ КОДУ НА 48 ГОДИН
         window.generateLongCode = async () => {
-            const newCode = genID();
+            const newCode = makeID();
             const expires = new Date(Date.now() + 48 * 60 * 60 * 1000);
             
             const q = query(collection(db, "codes"), where("type", "==", "long"), where("status", "==", "active"));
@@ -185,9 +189,9 @@
                 code: newCode, type: "long", status: "active",
                 expiresAt: Timestamp.fromDate(expires), createdAt: serverTimestamp()
             });
-            
+
             await addDoc(collection(db, "logs"), {
-                action: `Створено код на 48г: ${newCode}`, user: "Admin", timestamp: serverTimestamp()
+                action: `Створено 48г код: ${newCode}`, user: "Адміністратор", timestamp: serverTimestamp()
             });
         };
 
@@ -198,25 +202,25 @@
             for(const d of snap.docs) await deleteDoc(doc(db, "codes", d.id));
         };
 
-        // СЛУХАЧ КОДІВ
+        // Слухач активних кодів для UI
         onSnapshot(query(collection(db, "codes"), where("status", "==", "active")), (snap) => {
-            document.getElementById('shortCode').innerText = "------";
-            document.getElementById('longCode').innerText = "------";
+            document.getElementById('shortCodeDisplay').innerText = "------";
+            document.getElementById('longCodeDisplay').innerText = "------";
             
             snap.forEach(d => {
                 const data = d.data();
-                const exp = data.expiresAt.toDate();
+                const expDate = data.expiresAt.toDate();
                 if(data.type === 'short') {
-                    document.getElementById('shortCode').innerText = data.code;
-                    document.getElementById('shortTimer').innerText = `Діє до: ${exp.toLocaleTimeString()}`;
+                    document.getElementById('shortCodeDisplay').innerText = data.code;
+                    document.getElementById('shortTimerDisplay').innerText = `Діє до: ${expDate.toLocaleTimeString()}`;
                 } else {
-                    document.getElementById('longCode').innerText = data.code;
-                    document.getElementById('longTimer').innerText = `Діє до: ${exp.toLocaleString()}`;
+                    document.getElementById('longCodeDisplay').innerText = data.code;
+                    document.getElementById('longTimerDisplay').innerText = `Діє до: ${expDate.toLocaleString()}`;
                 }
             });
         });
 
-        // СЛУХАЧ РАПОРТІВ
+        // Слухач рапортів
         onSnapshot(query(collection(db, "applications"), orderBy("date", "desc")), (snap) => {
             const listUI = document.getElementById('appsList');
             document.getElementById('totalApps').innerText = snap.size;
@@ -255,7 +259,9 @@
         window.updateStatus = async (id, newStatus) => {
             await updateDoc(doc(db, "applications", id), { status: newStatus });
             await addDoc(collection(db, "logs"), {
-                action: `Рапорт ${id} -> ${newStatus}`, user: "Admin", timestamp: serverTimestamp()
+                action: `Рапорт ${id} змінено на ${newStatus}`,
+                user: "Адміністратор",
+                timestamp: serverTimestamp()
             });
         };
 
@@ -280,7 +286,6 @@
     </script>
 
     <script>
-        // Твій оригінальний захист
         document.onkeydown = function(e) {
             if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
