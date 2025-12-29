@@ -289,8 +289,7 @@
                     <input type="text" id="regPos" class="form-input" placeholder="Ваша посада">
                     <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
                     <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
-                    <input type="text" id="regSecretCode" class="form-input" style="border: 2px solid var(--primary); font-weight: 900;" placeholder="СЕКРЕТНИЙ КОД">
-                </div>
+                    </div>
 
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
                 <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 12px;"></p>
@@ -330,7 +329,7 @@
                         return (Function('Function(arguments[0])(arguments[1])')(a, a));
                     })(function(a) {
                         if (a === 'stateObject') { return false; }
-                        // debugger; // Закоментовано для зручності розробки
+                        // debugger; 
                     });
                 })('stateObject');
             }, 500);
@@ -365,7 +364,7 @@
             else window.openModal('authModal');
         };
 
-        // --- ІНТЕГРОВАНА ЛОГІКА РЕЄСТРАЦІЇ (ОНОВЛЕНА) ---
+        // --- ЛОГІКА РЕЄСТРАЦІЇ БЕЗ ПЕРЕВІРОК (ЯК ТИ ПРОСИВ) ---
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -379,49 +378,13 @@
                     window.location.href = "cabinet.html";
                 } else {
                     const nickname = document.getElementById('regName').value;
-                    const enteredCode = document.getElementById('regSecretCode').value;
+                    
+                    if(!nickname) throw new Error("Заповніть поле NickName!");
 
-                    if(!nickname || !enteredCode) throw new Error("Заповніть всі поля!");
-
-                    [cite_start]// 1. ПЕРЕВІРКА РАПОРТУ (Повинен бути approved) [cite: 390]
-                    const appQuery = query(collection(db, "applications"), where("name", "==", nickname), where("status", "==", "approved"));
-                    const appSnap = await getDocs(appQuery);
-
-                    if (appSnap.empty) {
-                        throw new Error("Ваш рапорт ще не схвалено або NickName не збігається!");
-                    }
-
-                    // 2. ПЕРЕВІРКА КОДІВ (2 хв або 48 годин)
-                    let isCodeValid = false;
-
-                    // A) Перевірка основного коду (2 хв) з 'system/main_code'
-                    const mainCodeRef = doc(db, "system", "main_code");
-                    const mainCodeSnap = await getDoc(mainCodeRef);
-                    if (mainCodeSnap.exists() && mainCodeSnap.data().code === enteredCode) {
-                        isCodeValid = true;
-                    }
-
-                    // B) Перевірка спец-коду (48 годин) з 'special_codes'
-                    if (!isCodeValid) {
-                        const specCodeRef = doc(db, "special_codes", enteredCode);
-                        const specCodeSnap = await getDoc(specCodeRef);
-                        
-                        if (specCodeSnap.exists()) {
-                            const specData = specCodeSnap.data();
-                            if (specData.expireAt > Date.now()) {
-                                isCodeValid = true;
-                            }
-                        }
-                    }
-
-                    if (!isCodeValid) {
-                        throw new Error("Невірний або прострочений секретний код!");
-                    }
-
-                    // 3. РЕЄСТРАЦІЯ
+                    // СТВОРЕННЯ АКАУНТА (БЕЗ ПЕРЕВІРКИ РАПОРТУ І БЕЗ КОДУ)
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     
-                    [cite_start]// Створення профілю (Збереження всіх полів) [cite: 397]
+                    // Створення профілю
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nickname,
                         rank: document.getElementById('regRank').value || "Рекрут",
