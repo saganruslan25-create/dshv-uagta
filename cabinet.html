@@ -301,13 +301,38 @@
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
         // ЗАХИСТ ВІД F12 ТА ПЕРЕГЛЯДУ КОДУ
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+<script>
+    // 1. Блокування клавіш: F12, Ctrl+U (код), Ctrl+S (зберегти), Ctrl+Shift+I/J/C (консоль)
+    document.onkeydown = function(e) {
+        if (e.keyCode == 123 || 
+            (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || 
+            (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83))) {
+            return false;
+        }
+    };
+
+    // 2. Блокування правої кнопки миші (контекстне меню)
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+    });
+
+    // 3. Блокування перетягування картинок/елементів
+    document.ondragstart = function() {
+        return false;
+    };
+
+    // 4. Debugger-пастка (якщо відкриють консоль через браузер - вона буде зависати)
+    (function() {
+        var devtools = function() {};
+        devtools.toString = function() {
+            return 'tst';
         };
+        setInterval(function() {
+            // Цей рядок викликає зупинку виконання, якщо консоль відкрита
+            debugger;
+        }, 100);
+    })();
+</script>
 
         // ПЕРЕВІРКА IP ТА БАНУ
         async function checkIPAndBan() {
