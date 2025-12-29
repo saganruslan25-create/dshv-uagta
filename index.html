@@ -322,8 +322,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import AOS from "https://cdn.skypack.dev/aos";
 
         const firebaseConfig = {
@@ -339,7 +339,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ЗАХИСТ КОНСОЛІ ТА ПРАВОЇ КНОПКИ
+        // ЗАХИСТ КОНСОЛІ
         (function() {
             window.addEventListener('keydown', function(e) {
                 if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) {
@@ -358,6 +358,7 @@
             }, 500);
         })();
 
+        // ОНОВЛЕННЯ ЛІЧИЛЬНИКА БІЙЦІВ
         onSnapshot(collection(db, "users"), (snap) => {
             document.getElementById('loadingCircle').style.display = 'none';
             const fCount = document.getElementById('fightersCount');
@@ -387,7 +388,7 @@
             else window.openModal('authModal');
         };
 
-        // ЛОГІКА АВТОРИЗАЦІЇ ТА РЕЄСТРАЦІЇ З НОВИМИ ФУНКЦІЯМИ
+        // ЛОГІКА АВТОРИЗАЦІЇ З ДИНАМІЧНИМ КОДОМ
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -403,9 +404,9 @@
                     const nickname = document.getElementById('regName').value;
                     const enteredCode = document.getElementById('regSecretCode').value;
 
-                    if(!nickname || !enteredCode) throw new Error("Будь ласка, заповніть всі поля реєстрації!");
+                    if(!nickname || !enteredCode) throw new Error("Заповніть всі поля!");
 
-                    // 1. Перевірка коду в базі даних (НОВА ФУНКЦІЯ)
+                    // Перевірка коду в базі
                     const q = query(collection(db, "codes"), where("code", "==", enteredCode), where("status", "==", "active"));
                     const querySnap = await getDocs(q);
 
@@ -415,14 +416,10 @@
 
                     const codeDoc = querySnap.docs[0];
 
-                    // 2. Перевірка чи пошта вільна
-                    const methods = await fetchSignInMethodsForEmail(auth, email);
-                    if(methods.length > 0) throw new Error("Ця пошта вже використовується іншим бійцем!");
-
-                    // 3. Реєстрація користувача
+                    // Реєстрація користувача
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
 
-                    // 4. Створення профілю (Всі ваші оригінальні поля)
+                    // Створення профілю
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nickname,
                         rank: document.getElementById('regRank').value || "Рекрут",
@@ -434,7 +431,7 @@
                         registeredAt: serverTimestamp()
                     });
 
-                    // 5. Оновлення статусу коду (Маркуємо як використаний)
+                    // Оновлення коду
                     await updateDoc(doc(db, "codes", codeDoc.id), {
                         status: "used",
                         usedBy: nickname,
@@ -449,7 +446,7 @@
             }
         });
 
-        // ФОРМА РАПОРТУ (БЕЗ ЗМІН)
+        // ФОРМА РАПОРТУ
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
@@ -464,7 +461,7 @@
                     status: "new",
                     date: serverTimestamp()
                 });
-                alert("Рапорт успішно надіслано! Очікуйте на відповідь у Discord.");
+                alert("Рапорт успішно надіслано!");
                 e.target.reset();
             } catch (err) { alert("Помилка: " + err.message); }
             finally { btn.innerText = "Відправити рапорт"; btn.disabled = false; }
