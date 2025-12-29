@@ -323,7 +323,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, updateDoc, collection, addDoc, serverTimestamp, onSnapshot, query, where, getDocs, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import AOS from "https://cdn.skypack.dev/aos";
 
         const firebaseConfig = {
@@ -339,7 +339,7 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // ЗАХИСТ КОНСОЛІ
+        // Захист консолі
         (function() {
             window.addEventListener('keydown', function(e) {
                 if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) {
@@ -358,7 +358,7 @@
             }, 500);
         })();
 
-        // ОНОВЛЕННЯ ЛІЧИЛЬНИКА БІЙЦІВ
+        // Оновлення лічильника бійців
         onSnapshot(collection(db, "users"), (snap) => {
             document.getElementById('loadingCircle').style.display = 'none';
             const fCount = document.getElementById('fightersCount');
@@ -388,7 +388,7 @@
             else window.openModal('authModal');
         };
 
-        // ЛОГІКА АВТОРИЗАЦІЇ З ДИНАМІЧНИМ КОДОМ
+        // --- ІНТЕГРОВАНА ЛОГІКА РЕЄСТРАЦІЇ ---
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -406,20 +406,37 @@
 
                     if(!nickname || !enteredCode) throw new Error("Заповніть всі поля!");
 
-                    // Перевірка коду в базі
-                    const q = query(collection(db, "codes"), where("code", "==", enteredCode), where("status", "==", "active"));
-                    const querySnap = await getDocs(q);
+                    // 1. ПЕРЕВІРКА РАПОРТУ (Пункт 3: Дозволено тільки якщо прийнято)
+                    const appQuery = query(collection(db, "applications"), where("name", "==", nickname), where("status", "==", "approved"));
+                    const appSnap = await getDocs(appQuery);
 
-                    if (querySnap.empty) {
-                        throw new Error("Невірний або використаний секретний код!");
+                    if (appSnap.empty) {
+                        throw new Error("Ваш рапорт ще не схвалено або NickName не збігається!");
                     }
 
-                    const codeDoc = querySnap.docs[0];
+                    // 2. ПЕРЕВІРКА КОДУ (Пункт 2: 48 годин або 2 хвилини)
+                    const codeQuery = query(collection(db, "codes"), where("code", "==", enteredCode), where("status", "==", "active"));
+                    const codeSnap = await getDocs(codeQuery);
 
-                    // Реєстрація користувача
+                    if (codeSnap.empty) {
+                        throw new Error("Невірний, використаний або прострочений код!");
+                    }
+
+                    const codeDoc = codeSnap.docs[0];
+                    const codeData = codeDoc.data();
+                    const now = Date.now();
+
+                    // Перевірка часу життя (якщо є поле expiresAt)
+                    if (codeData.expiresAt && codeData.expiresAt.toMillis() < now) {
+                        // Позначаємо код як прострочений
+                        await updateDoc(doc(db, "codes", codeDoc.id), { status: "expired" });
+                        throw new Error("Час дії коду вичерпано!");
+                    }
+
+                    // 3. РЕЄСТРАЦІЯ (Пункт 5: Без зайвих перевірок після коду)
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
 
-                    // Створення профілю
+                    // Створення профілю (Пункт 6: Збереження всіх полів)
                     await setDoc(doc(db, "users", res.user.uid), {
                         name: nickname,
                         rank: document.getElementById('regRank').value || "Рекрут",
@@ -431,7 +448,7 @@
                         registeredAt: serverTimestamp()
                     });
 
-                    // Оновлення коду
+                    // Позначення коду як використаного
                     await updateDoc(doc(db, "codes", codeDoc.id), {
                         status: "used",
                         usedBy: nickname,
@@ -446,7 +463,7 @@
             }
         });
 
-        // ФОРМА РАПОРТУ
+        // Форма рапорту
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
