@@ -60,35 +60,21 @@
         .btn-approve { background: var(--primary); color: black; }
         .btn-reject { background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
 
-        /* СПЕЦ-КОДИ */
         .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .modal-content { background: #0a0f1a; border: 1px solid var(--primary); padding: 35px; border-radius: 32px; width: 90%; max-width: 500px; text-align: center; }
-
-        /* ЕКРАН ПЕРЕВІРКИ */
-        #checkerOverlay { position: fixed; top:0; left:0; width:100%; height:100%; background: #020406; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .loader { width: 40px; height: 40px; border: 3px solid rgba(34,197,94,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
-
-    <div id="checkerOverlay">
-        <div class="loader"></div>
-        <p id="checkText" style="margin-top: 20px; font-weight: 800; color: var(--primary); letter-spacing: 1px;">ПЕРЕВІРКА ДОСТУПУ...</p>
-        <div id="errorActions" style="display: none; margin-top: 20px;">
-            <a href="cabinet.html" style="color: white; text-decoration: none; padding: 10px 20px; border: 1px solid var(--primary); border-radius: 10px;">ПОВЕРНУТИСЬ В КАБІНЕТ</a>
-        </div>
-    </div>
 
     <nav>
         <a href="index.html" class="logo-box">ДШВ</a>
         <div style="font-size: 10px; font-weight: 900; color: var(--primary-bright);">ADMIN PANEL</div>
     </nav>
 
-    <div class="container" id="adminMain" style="display: none;">
+    <div class="container">
         <div class="secret-container">
             <div style="font-size: 12px; color: var(--primary-bright); font-weight: 800;">КОД ДОСТУПУ (2 ХВ)</div>
-            <div class="secret-code" id="mainCodeDisplay">------</div>
+            <div class="secret-code" id="mainCodeDisplay">ЗАВАНТАЖЕННЯ...</div>
             <button class="btn-copy" onclick="window.copyText(document.getElementById('mainCodeDisplay').innerText)">СКОПІЮВАТИ</button>
             <div style="margin-top: 20px;">
                 <button onclick="window.toggleModal(true)" style="background: none; border: 1px solid var(--glass-border); color: white; padding: 8px 15px; border-radius: 8px; cursor: pointer;">Спец-коди (48г)</button>
@@ -117,8 +103,9 @@
         import { getFirestore, collection, doc, onSnapshot, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
 
+        // ТВОЯ КОНФІГУРАЦІЯ FIREBASE
         const firebaseConfig = {
-            apiKey: "AIzaSy...", // ТВОЯ КОНФІГА
+            apiKey: "AIzaSy...", 
             authDomain: "...",
             projectId: "...",
             storageBucket: "...",
@@ -130,93 +117,67 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // --- САМА НАДІЙНА ПЕРЕВІРКА ---
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = "index.html";
-                return;
+        // --- ЛОГІКА ПАНЕЛІ (БЕЗ ПЕРЕВІРКИ РОЛІ) ---
+        
+        // 1. Основний код (2 хв)
+        const syncCode = async () => {
+            const ref = doc(db, "system", "main_code");
+            const snap = await getDoc(ref);
+            const now = Date.now();
+            if (!snap.exists() || (now - snap.data().updatedAt > 120000)) {
+                const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+                await setDoc(ref, { code, updatedAt: now });
+                document.getElementById('mainCodeDisplay').innerText = code;
+            } else {
+                document.getElementById('mainCodeDisplay').innerText = snap.data().code;
             }
+        };
+        syncCode(); 
+        setInterval(syncCode, 30000);
 
-            console.log("Авторизовано як:", user.uid);
-
-            try {
-                const userSnap = await getDoc(doc(db, "users", user.uid));
-                const userData = userSnap.data();
-
-                if (userSnap.exists() && userData.role === 'admin') {
-                    // ЯКЩО АДМІН - ВІДКРИВАЄМО
-                    document.getElementById('checkerOverlay').style.display = 'none';
-                    document.getElementById('adminMain').style.display = 'block';
-                    startAdminLogic();
-                } else {
-                    // ЯКЩО НЕ АДМІН - ВИВОДИМО ПОМИЛКУ НА ЕКРАН БЕЗ ПЕРЕКИДАННЯ
-                    document.getElementById('checkText').innerText = "ДОСТУП ЗАБОРОНЕНО: ВИ НЕ АДМІН";
-                    document.getElementById('checkText').style.color = "#ef4444";
-                    document.getElementById('errorActions').style.display = 'block';
-                    console.log("Відмова. Роль у базі:", userData?.role);
-                }
-            } catch (err) {
-                document.getElementById('checkText').innerText = "ПОМИЛКА БАЗИ ДАНИХ";
-                console.error(err);
-            }
+        // 2. Рапорти (Слухаємо базу в реальному часі)
+        onSnapshot(query(collection(db, "applications"), orderBy("date", "desc")), (snap) => {
+            const list = document.getElementById('appsList');
+            list.innerHTML = "";
+            snap.forEach(s => {
+                const d = s.data();
+                const stClass = d.status === 'approved' ? 'status-approved' : (d.status === 'rejected' ? 'status-rejected' : 'status-pending');
+                list.innerHTML += `
+                    <div class="app-card">
+                        <div style="display:flex; justify-content:space-between;">
+                            <span class="nickname">${d.name}</span>
+                            <span class="status-badge ${stClass}">${d.status || 'new'}</span>
+                        </div>
+                        <div style="font-size:12px; color:grey; margin:5px 0;">Discord: ${d.discord} | Звання: ${d.rank}</div>
+                        <div class="motivation-box">${d.motivation}</div>
+                        ${(!d.status || d.status === 'new' || d.status === 'pending') ? `
+                            <div class="action-group">
+                                <button class="btn-action btn-approve" onclick="window.updStatus('${s.id}', 'approved')">ПРИЙНЯТИ</button>
+                                <button class="btn-action btn-reject" onclick="window.updStatus('${s.id}', 'rejected')">ВІДХИЛИТИ</button>
+                            </div>
+                        ` : ''}
+                        <button onclick="window.delApp('${s.id}')" style="background:none; border:none; color: #444; font-size:10px; margin-top:10px; cursor:pointer;">Видалити рапорт</button>
+                    </div>`;
+            });
         });
 
-        function startAdminLogic() {
-            // 1. Основний код
-            const sync = async () => {
-                const ref = doc(db, "system", "main_code");
-                const snap = await getDoc(ref);
-                const now = Date.now();
-                if (!snap.exists() || (now - snap.data().updatedAt > 120000)) {
-                    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-                    await setDoc(ref, { code, updatedAt: now });
-                    document.getElementById('mainCodeDisplay').innerText = code;
-                } else {
-                    document.getElementById('mainCodeDisplay').innerText = snap.data().code;
-                }
-            };
-            sync(); setInterval(sync, 30000);
-
-            // 2. Рапорти
-            onSnapshot(query(collection(db, "applications"), orderBy("date", "desc")), (snap) => {
-                const list = document.getElementById('appsList');
-                list.innerHTML = "";
-                snap.forEach(s => {
-                    const d = s.data();
-                    const stClass = d.status === 'approved' ? 'status-approved' : (d.status === 'rejected' ? 'status-rejected' : 'status-pending');
-                    list.innerHTML += `
-                        <div class="app-card">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span class="nickname">${d.name}</span>
-                                <span class="status-badge ${stClass}">${d.status || 'new'}</span>
-                            </div>
-                            <div style="font-size:12px; color:grey; margin:5px 0;">Discord: ${d.discord} | Звання: ${d.rank}</div>
-                            <div class="motivation-box">${d.motivation}</div>
-                            ${(!d.status || d.status === 'new' || d.status === 'pending') ? `
-                                <div class="action-group">
-                                    <button class="btn-action btn-approve" onclick="window.updStatus('${s.id}', 'approved')">ПРИЙНЯТИ</button>
-                                    <button class="btn-action btn-reject" onclick="window.updStatus('${s.id}', 'rejected')">ВІДХИЛИТИ</button>
-                                </div>
-                            ` : ''}
-                        </div>`;
-                });
+        // 3. Спец коди (48 годин)
+        onSnapshot(collection(db, "special_codes"), (snap) => {
+            const slist = document.getElementById('specList');
+            slist.innerHTML = "";
+            snap.forEach(s => {
+                const d = s.data();
+                if (d.expireAt < Date.now()) { deleteDoc(doc(db, "special_codes", s.id)); return; }
+                slist.innerHTML += `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;">
+                    <b style="font-family: monospace;">${d.code}</b> 
+                    <button class="btn-copy" style="padding:5px 10px; font-size:10px;" onclick="window.copyText('${d.code}')">📋</button>
+                </div>`;
             });
+        });
 
-            // 3. Спец коди
-            onSnapshot(collection(db, "special_codes"), (snap) => {
-                const slist = document.getElementById('specList');
-                slist.innerHTML = "";
-                snap.forEach(s => {
-                    const d = s.data();
-                    if (d.expireAt < Date.now()) { deleteDoc(doc(db, "special_codes", s.id)); return; }
-                    slist.innerHTML += `<div style="padding:10px; border-bottom:1px solid #222; display:flex; justify-content:space-between;">
-                        <b>${d.code}</b> <button onclick="window.copyText('${d.code}')">📋</button>
-                    </div>`;
-                });
-            });
-        }
-
+        // Глобальні функції
         window.updStatus = async (id, s) => updateDoc(doc(db, "applications", id), { status: s });
+        window.delApp = async (id) => { if(confirm("Видалити?")) await deleteDoc(doc(db, "applications", id)); };
         window.genSpec = async () => {
             const code = "DSHV-" + Math.random().toString(36).substring(2,6).toUpperCase();
             await setDoc(doc(db, "special_codes", code), { code, expireAt: Date.now() + 172800000 });
