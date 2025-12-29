@@ -106,19 +106,19 @@
                 <div class="panel-title">🔑 Секретні коди</div>
                 
                 <div class="code-box">
-                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px;">ДИНАМІЧНИЙ КОД (2 ХВИЛИНИ)</p>
-                    <div id="shortCodeDisplay" class="current-code">------</div>
-                    <div id="shortTimerDisplay" class="code-timer">Оновлення...</div>
+                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 5px;">АВТО-КОД (2 ХВИЛИНИ)</p>
+                    <div id="shortCode" class="current-code">------</div>
+                    <div id="shortTimer" class="code-timer">Оновлення...</div>
                 </div>
 
                 <div class="code-box">
-                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px;">ПОСТІЙНИЙ КОД (48 ГОДИН)</p>
-                    <div id="longCodeDisplay" class="current-code">------</div>
-                    <div id="longTimerDisplay" class="code-timer">Діє до: --:--</div>
+                    <p style="font-size: 11px; color: var(--text-gray); margin-bottom: 5px;">ПОСТІЙНИЙ КОД (48 ГОДИН)</p>
+                    <div id="longCode" class="current-code">------</div>
+                    <div id="longTimer" class="code-timer">Діє до: --:--</div>
                 </div>
 
                 <button class="btn btn-primary" onclick="window.generateLongCode()">Згенерувати код на 48 год</button>
-                <button class="btn btn-primary" style="background: var(--error); color: white;" onclick="window.clearUsedCodes()">Очистити використані коди</button>
+                <button class="btn btn-primary" style="background: var(--error); color: white;" onclick="window.clearUsedCodes()">Очистити неактивні коди</button>
             </div>
 
             <div class="glass-panel">
@@ -152,33 +152,32 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Генератор випадкового ID
-        const makeID = () => Math.random().toString(36).substring(2, 8).toUpperCase();
+        // Допоміжна функція генерації
+        const createRandomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
 
-        // АВТОМАТИЧНЕ ОНОВЛЕННЯ КОДУ (2 ХВИЛИНИ)
+        // --- ЛОГІКА КОДУ НА 2 ХВИЛИНИ (АВТОМАТИЧНА) ---
         const refreshShortCode = async () => {
-            const newCode = makeID();
+            const newCode = createRandomCode();
             const expires = new Date(Date.now() + 2 * 60 * 1000);
             
+            // Робимо старі короткі коди неактивними
             const q = query(collection(db, "codes"), where("type", "==", "short"), where("status", "==", "active"));
             const snap = await getDocs(q);
             for(const d of snap.docs) await updateDoc(doc(db, "codes", d.id), { status: "expired" });
 
+            // Додаємо новий
             await addDoc(collection(db, "codes"), {
                 code: newCode, type: "short", status: "active",
                 expiresAt: Timestamp.fromDate(expires), createdAt: serverTimestamp()
             });
         };
 
-        // Запускаємо цикл оновлення раз на 2 хвилини
+        // Запуск таймера кожні 2 хвилини
         setInterval(refreshShortCode, 120000);
-        // Перший запуск при завантаженні сторінки, якщо кодів немає
-        const checkShort = await getDocs(query(collection(db, "codes"), where("type", "==", "short"), where("status", "==", "active")));
-        if(checkShort.empty) refreshShortCode();
 
-        // ГЕНЕРАЦІЯ КОДУ НА 48 ГОДИН
+        // --- ЛОГІКА КОДУ НА 48 ГОДИН (РУЧНА) ---
         window.generateLongCode = async () => {
-            const newCode = makeID();
+            const newCode = createRandomCode();
             const expires = new Date(Date.now() + 48 * 60 * 60 * 1000);
             
             const q = query(collection(db, "codes"), where("type", "==", "long"), where("status", "==", "active"));
@@ -189,38 +188,36 @@
                 code: newCode, type: "long", status: "active",
                 expiresAt: Timestamp.fromDate(expires), createdAt: serverTimestamp()
             });
-
+            
             await addDoc(collection(db, "logs"), {
-                action: `Створено 48г код: ${newCode}`, user: "Адміністратор", timestamp: serverTimestamp()
+                action: `Згенеровано код 48г: ${newCode}`, user: "Admin", timestamp: serverTimestamp()
             });
         };
 
         window.clearUsedCodes = async () => {
-            if(!confirm("Видалити всі неактивні коди?")) return;
+            if(!confirm("Видалити неактивні коди з бази?")) return;
             const q = query(collection(db, "codes"), where("status", "==", "expired"));
             const snap = await getDocs(q);
             for(const d of snap.docs) await deleteDoc(doc(db, "codes", d.id));
         };
 
-        // Слухач активних кодів для UI
+        // Відображення кодів
         onSnapshot(query(collection(db, "codes"), where("status", "==", "active")), (snap) => {
-            document.getElementById('shortCodeDisplay').innerText = "------";
-            document.getElementById('longCodeDisplay').innerText = "------";
-            
+            document.getElementById('shortCode').innerText = "------";
+            document.getElementById('longCode').innerText = "------";
             snap.forEach(d => {
                 const data = d.data();
-                const expDate = data.expiresAt.toDate();
                 if(data.type === 'short') {
-                    document.getElementById('shortCodeDisplay').innerText = data.code;
-                    document.getElementById('shortTimerDisplay').innerText = `Діє до: ${expDate.toLocaleTimeString()}`;
+                    document.getElementById('shortCode').innerText = data.code;
+                    document.getElementById('shortTimer').innerText = `До: ${data.expiresAt.toDate().toLocaleTimeString()}`;
                 } else {
-                    document.getElementById('longCodeDisplay').innerText = data.code;
-                    document.getElementById('longTimerDisplay').innerText = `Діє до: ${expDate.toLocaleString()}`;
+                    document.getElementById('longCode').innerText = data.code;
+                    document.getElementById('longTimer').innerText = `До: ${data.expiresAt.toDate().toLocaleString()}`;
                 }
             });
         });
 
-        // Слухач рапортів
+        // --- ЛОГІКА РАПОРТІВ ---
         onSnapshot(query(collection(db, "applications"), orderBy("date", "desc")), (snap) => {
             const listUI = document.getElementById('appsList');
             document.getElementById('totalApps').innerText = snap.size;
@@ -244,7 +241,7 @@
                             <button class="btn-delete" onclick="window.deleteApp('${id}')">Видалити</button>
                         </div>
                         <div class="motivation-box">${data.motivation}</div>
-                        ${(status === 'new') ? `
+                        ${(status === 'new' || status === 'pending') ? `
                             <div class="action-group">
                                 <button class="btn-action btn-approve" onclick="window.updateStatus('${id}', 'approved')">Прийняти</button>
                                 <button class="btn-action btn-reject" onclick="window.updateStatus('${id}', 'rejected')">Відхилити</button>
@@ -258,34 +255,28 @@
 
         window.updateStatus = async (id, newStatus) => {
             await updateDoc(doc(db, "applications", id), { status: newStatus });
-            await addDoc(collection(db, "logs"), {
-                action: `Рапорт ${id} змінено на ${newStatus}`,
-                user: "Адміністратор",
-                timestamp: serverTimestamp()
-            });
         };
 
         window.deleteApp = async (id) => {
             if (confirm("Видалити рапорт?")) await deleteDoc(doc(db, "applications", id));
         };
 
-        onSnapshot(collection(db, "users"), (snap) => {
-            document.getElementById('totalUsers').innerText = snap.size;
-        });
-
+        // Статистика та Логи
+        onSnapshot(collection(db, "users"), (snap) => { document.getElementById('totalUsers').innerText = snap.size; });
         onSnapshot(query(collection(db, "logs"), orderBy("timestamp", "desc")), (snap) => {
             const logUI = document.getElementById('systemLogs');
             let logHtml = "";
             snap.forEach(d => {
                 const log = d.data();
                 const time = log.timestamp?.toDate().toLocaleString() || "Зараз";
-                logHtml += `<div><span style="color:var(--primary)">[${time}]</span> ${log.action} — ${log.user}</div>`;
+                logHtml += `<div><span style="color:var(--primary)">[${time}]</span> ${log.action}</div>`;
             });
             logUI.innerHTML = logHtml;
         });
     </script>
 
     <script>
+        // Твій оригінальний захист без змін
         document.onkeydown = function(e) {
             if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
