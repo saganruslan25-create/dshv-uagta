@@ -28,6 +28,13 @@
             user-select: none;
         }
 
+        /* --- АНІМАЦІЯ ПІДСВІЧУВАННЯ --- */
+        @keyframes highlightMsg {
+            0% { background: rgba(34, 197, 94, 0.4); border-left: 3px solid var(--primary-bright); }
+            100% { background: transparent; border-left: 3px solid transparent; }
+        }
+        .msg-highlighted { animation: highlightMsg 2s ease-out; }
+
         .sidebar {
             width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
             display: flex; flex-direction: column; padding: 25px; z-index: 10;
@@ -85,9 +92,8 @@
 
         .messages-container { flex-grow: 1; overflow-y: auto; padding: 30px 40px; display: flex; flex-direction: column; gap: 2px; scroll-behavior: smooth; }
         
-        /* ПУНКТ 7: Виділення повідомлення */
-        .msg { position: relative; padding: 8px 25px; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s; }
-        .msg:hover { background: rgba(255, 255, 255, 0.04); border-left: 3px solid var(--primary); }
+        .msg { position: relative; padding: 8px 25px; border-radius: 8px; border-left: 3px solid transparent; transition: background 0.2s; }
+        .msg:hover { background: rgba(255, 255, 255, 0.04); }
         .msg.grouped { padding-top: 2px; padding-bottom: 2px; }
 
         .msg-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; margin-top: 10px; }
@@ -100,7 +106,6 @@
             line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; color: #ddd; font-size: 15px;
         }
 
-        /* ПУНКТ 4: Відповідь тепер клікабельна */
         .reply-block {
             border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
             padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; color: #aaa;
@@ -130,20 +135,17 @@
         .action-btn:hover { color: var(--primary); background: rgba(255,255,255,0.05); }
         .del-btn:hover { color: var(--danger); }
 
-        /* ПУНКТ 3: Корекція редагування */
         .edit-box {
             width: 100%; background: #000; border: 1px solid var(--primary);
             border-radius: 8px; padding: 10px; margin-top: 5px;
         }
         .edit-input {
             background: transparent; border: none; color: white; outline: none; font-family: inherit;
-            resize: none; width: 100%; font-size: 15px;
+            resize: none; width: 100%; font-size: 15px; min-height: 40px;
         }
 
-        /* ПУНКТ 5: Індикатор набору тексту */
         .typing-indicator { padding: 5px 40px; font-size: 12px; color: #777; font-style: italic; min-height: 22px; }
 
-        /* ПУНКТ 2: Вікно вибору тегів */
         #mentionBox {
             position: absolute; bottom: 85px; left: 40px; background: #0a0c10; border: 1px solid var(--glass-border);
             border-radius: 10px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
@@ -325,7 +327,6 @@
             await updateDoc(doc(db, "channels", activeChannelId), { isHidden: newState });
         };
 
-        // ПУНКТ 5: Система "Пише..."
         function listenTyping(chid) {
             if (unsubTyping) unsubTyping();
             unsubTyping = onSnapshot(doc(db, "typing", chid), (d) => {
@@ -335,26 +336,11 @@
             });
         }
 
-        // Покращений обробник вводу
-        let typingTimer;
-        document.getElementById('msgInput').addEventListener('input', function(e) {
+        document.getElementById('msgInput').addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
-            
-            // Статус набору
             setDoc(doc(db, "typing", activeChannelId), { [user.uid]: userData.name }, { merge: true });
-            clearTimeout(typingTimer);
-            typingTimer = setTimeout(() => {
-                updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
-            }, 3000);
-
-            // ПУНКТ 2: Пошук @
-            const val = this.value;
-            if (val.endsWith('@')) {
-                showMentionBox();
-            } else if (!val.includes('@')) {
-                document.getElementById('mentionBox').style.display = 'none';
-            }
+            if (this.value.endsWith('@')) showMentionBox();
         });
 
         function showMentionBox() {
@@ -387,7 +373,6 @@
                     const m = d.data();
                     const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
                     const isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
-                    // ПУНКТ 6: Тільки автор або адмін може видаляти, але редагувати - тільки автор
                     const isOwner = m.uid === user.uid;
 
                     const msgDiv = document.createElement('div');
@@ -408,36 +393,46 @@
                     container.appendChild(msgDiv);
                     lastAuth = m.author; lastTime = msgTime;
                 });
-                // ПУНКТ 1: Скрол в кінець
                 container.scrollTop = container.scrollHeight;
             });
         }
 
-        // ПУНКТ 4: Скрол до повідомлення
+        // --- ПУНКТ 1: Підсвічування при переході ---
         window.scrollToMsg = (id) => {
             const el = document.getElementById(`msg-${id}`);
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.remove('msg-highlighted');
+                void el.offsetWidth; // Тригер перерисовки
+                el.classList.add('msg-highlighted');
+            }
         };
 
-        // ПУНКТ 3: Виправлене редагування
+        // --- ПУНКТ 2 та 3: Виправлене редагування ---
         window.editMessage = (id, oldText) => {
             const textDiv = document.getElementById(`text-${id}`);
             textDiv.innerHTML = `<div class="edit-box"><textarea class="edit-input" id="edit-input-${id}">${oldText}</textarea></div>`;
             const area = document.getElementById(`edit-input-${id}`);
-            // ПУНКТ 1 (для тексту): Фокус в кінець
+            
+            // Автовисота для редагування
+            area.style.height = area.scrollHeight + 'px';
             area.focus();
             area.setSelectionRange(area.value.length, area.value.length);
             
             area.onkeydown = async (e) => {
+                // ПУНКТ 2: Ентер зберігає завжди
                 if (e.key === 'Enter' && !e.shiftKey) { 
                     e.preventDefault(); 
-                    await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: area.value }); 
+                    const newText = area.value.trim();
+                    // Навіть якщо текст такий самий, ми дозволяємо збереження (Пункт 3)
+                    await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: newText }); 
+                    loadMessages(activeChannelId); // Оновлення інтерфейсу
                 }
                 if (e.key === 'Escape') loadMessages(activeChannelId);
             };
         };
 
-        // --- ФУНКЦІЇ ФОТО ---
+        // --- ІНШЕ ---
         function processImage(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -467,12 +462,7 @@
         });
 
         window.handleImageSelect = (input) => { if (input.files[0]) processImage(input.files[0]); };
-        window.cancelImage = () => { 
-            currentBase64Img = null; 
-            document.getElementById('imageInfo').style.display = 'none'; 
-            checkPreviewBar(); 
-        };
-
+        window.cancelImage = () => { currentBase64Img = null; document.getElementById('imageInfo').style.display = 'none'; checkPreviewBar(); };
         window.replyToMessage = (id, author, text) => {
             replyTo = { id, author, text };
             document.getElementById('previewBar').style.display = 'flex';
@@ -480,7 +470,6 @@
             document.getElementById('replyText').innerText = `Відповідь для ${author}`;
             document.getElementById('msgInput').focus();
         };
-
         window.cancelReply = () => { replyTo = null; document.getElementById('replyInfo').style.display = 'none'; checkPreviewBar(); };
         function checkPreviewBar() { if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none'; }
 
@@ -520,7 +509,7 @@
         function initSortable() {
             Sortable.create(document.getElementById('channelList'), {
                 handle: '.drag-handle', animation: 250,
-                onEnd: async (evt) => {
+                onEnd: async () => {
                     const batch = writeBatch(db);
                     document.querySelectorAll('.channel-item').forEach((item, idx) => {
                         batch.update(doc(db, "channels", item.dataset.id), { index: idx });
