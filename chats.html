@@ -6,6 +6,7 @@
     <title>ДШВ | ТАКТИЧНИЙ ЗВ'ЯЗОК</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
     <style>
         :root {
             --primary: #22c55e;
@@ -19,8 +20,8 @@
             --mention-text: #fbbf24;
         }
 
+        /* Загальні стилі та відключення виділення тексту для імерсивності */
         * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
-
         body { 
             background-color: var(--bg);
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
@@ -28,7 +29,7 @@
             user-select: none;
         }
 
-        /* SIDEBAR */
+        /* Бокова панель (Список каналів) */
         .sidebar {
             width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
             display: flex; flex-direction: column; padding: 25px; z-index: 10;
@@ -60,6 +61,7 @@
         }
         .channel-item.hidden-channel { opacity: 0.5; border: 1px dashed #444; }
 
+        /* Елементи керування адміна (сортування та видалення) */
         .channel-controls { display: flex; align-items: center; gap: 10px; }
         .drag-handle { cursor: grab; opacity: 0.3; font-size: 18px; padding: 5px; }
         .chan-del-btn { color: #444; font-size: 14px; cursor: pointer; transition: 0.2s; }
@@ -70,7 +72,7 @@
             border-radius: 12px; font-weight: 900; cursor: pointer; margin-top: 20px; text-transform: uppercase;
         }
 
-        /* CHAT AREA */
+        /* Основна зона чату */
         .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: transparent; }
         
         .chat-header {
@@ -83,15 +85,12 @@
             font-size: 12px; background: rgba(255,255,255,0.1); padding: 8px 15px; 
             border-radius: 8px; cursor: pointer; display: none; font-weight: 700; transition: 0.3s;
         }
-        .visibility-toggle:hover { background: rgba(255,255,255,0.2); }
         .visibility-toggle.hidden-mode { background: var(--danger); color: white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
 
+        /* Повідомлення */
         .messages-container { flex-grow: 1; overflow-y: auto; padding: 30px 40px; display: flex; flex-direction: column; gap: 2px; }
         
-        .msg { 
-            position: relative; padding: 5px 25px; border-radius: 5px;
-            border: 1px solid transparent; transition: all 0.2s;
-        }
+        .msg { position: relative; padding: 5px 25px; border-radius: 5px; border: 1px solid transparent; transition: all 0.2s; }
         .msg:hover { background: rgba(255, 255, 255, 0.02); }
         .msg.grouped { padding-top: 2px; padding-bottom: 2px; }
 
@@ -101,10 +100,10 @@
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        /* ГОЛОВНЕ РІШЕННЯ ВІД "КАШІ" */
+        /* FIX: Вирішення проблеми "каші" тексу */
         .msg-content { 
             line-height: 1.6; 
-            white-space: pre-wrap; /* Зберігає всі Enter та пробіли */
+            white-space: pre-wrap; /* Зберігає Enter та пробіли */
             word-wrap: break-word; 
             color: #ddd; 
             font-size: 15px;
@@ -124,6 +123,7 @@
         
         .mention { background: var(--mention-bg); color: var(--mention-text); padding: 0 4px; border-radius: 4px; font-weight: bold; }
 
+        /* Кнопки дій (відповідь, ред, вид) */
         .msg-actions {
             position: absolute; right: 20px; top: -15px;
             display: none; gap: 5px; z-index: 100; background: var(--card-bg);
@@ -138,12 +138,7 @@
         .action-btn:hover { color: var(--primary); background: rgba(255,255,255,0.05); }
         .del-btn:hover { color: var(--danger); }
 
-        .edit-area { margin-top: 5px; }
-        .edit-input { 
-            width: 100%; background: #111; border: 1px solid var(--primary); color: white; 
-            padding: 10px; border-radius: 8px; resize: vertical; font-family: inherit;
-        }
-
+        /* Зона вводу */
         .chat-input-area { padding: 20px 40px; background: rgba(3, 5, 7, 0.9); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
         
         .preview-bar {
@@ -174,6 +169,7 @@
         .send-btn { background: var(--primary); color: black; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; }
         .send-btn:hover { background: var(--primary-bright); }
 
+        /* Lightbox (перегляд фото) */
         #lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;
@@ -220,7 +216,7 @@
                 <div id="imageInfo" class="image-preview-line" style="display:none;">
                     <div style="display:flex; align-items:center; gap:10px;">
                         <img id="imgPreviewThumb" class="preview-thumb" src="">
-                        <span id="imgSizeLabel">Зображення оптимізовано</span>
+                        <span id="imgSizeLabel">Зображення готове</span>
                     </div>
                     <span class="close-preview" onclick="cancelImage()">✕</span>
                 </div>
@@ -230,7 +226,7 @@
                 <label for="imgUpload" class="upload-btn" id="uploadBtnIcon">📷</label>
                 <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
                 
-                <textarea id="msgInput" placeholder="Напишіть повідомлення... (Shift+Enter для нового рядка)" rows="1"></textarea>
+                <textarea id="msgInput" placeholder="Напишіть повідомлення... (Shift+Enter - рядок, Ctrl+V - фото)" rows="1"></textarea>
                 <button class="send-btn" onclick="sendMessage()">➤</button>
             </div>
         </div>
@@ -262,13 +258,14 @@
         let replyTo = null; 
         let currentBase64Img = null;
 
-        // --- ЗАХИСТ ---
+        // Блокування F12 та правої кнопки миші
         window.addEventListener('keydown', function(e) {
             if (e.keyCode == 123) { e.preventDefault(); return false; }
             if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) { e.preventDefault(); return false; }
             if (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83)) { e.preventDefault(); return false; }
         });
 
+        // Перевірка авторизації
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 user = u;
@@ -283,6 +280,7 @@
             } else { window.location.href = "index.html"; }
         });
 
+        // Завантаження каналів
         function loadChannels() {
             const q = query(collection(db, "channels"), orderBy("index", "asc"));
             onSnapshot(q, (snap) => {
@@ -309,10 +307,11 @@
             });
         }
 
+        // Вибір каналу + збереження в пам'ять браузера
         function selectChannel(id, chData) {
             activeChannelId = id;
             activeChannelData = chData;
-            localStorage.setItem('lastChatID', id); // ЗБЕРІГАЄМО ТУТ
+            localStorage.setItem('lastChatID', id); 
 
             document.getElementById('activeChannelName').innerText = chData.name;
             document.getElementById('inputArea').style.display = 'flex';
@@ -325,6 +324,7 @@
             loadMessages(id);
         }
 
+        // Керування видимістю каналу (Адмін)
         function updateVisibilityButtonUI(isHidden) {
             if (userData.role !== 'admin') return;
             const btn = document.getElementById('visibilityToggle');
@@ -345,17 +345,10 @@
             updateVisibilityButtonUI(newState);
         };
 
-        // --- LIGHTBOX ---
-        window.openLightbox = (src) => {
-            document.getElementById('lightbox-img').src = src;
-            document.getElementById('lightbox').style.display = 'flex';
-        };
-        window.closeLightbox = () => { document.getElementById('lightbox').style.display = 'none'; };
+        // --- РОБОТА З ФОТО (ВИБІР, CTRL+V, СТИСКАННЯ) ---
 
-        // --- ФОТО ---
-        window.handleImageSelect = (input) => {
-            const file = input.files[0];
-            if (!file) return;
+        // Універсальна функція обробки картинки
+        function processImage(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
@@ -376,6 +369,26 @@
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        }
+
+        // Обробка вставки через CTRL+V
+        document.addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file') {
+                    const blob = item.getAsFile();
+                    if (blob.type.indexOf("image") !== -1) {
+                        processImage(blob);
+                    }
+                }
+            }
+        });
+
+        // Обробка вибору через кнопку
+        window.handleImageSelect = (input) => {
+            const file = input.files[0];
+            if (file) processImage(file);
         };
 
         window.cancelImage = () => {
@@ -386,6 +399,7 @@
             checkPreviewBar();
         };
 
+        // --- ВІДПОВІДІ ТА МЕНШНИ ---
         window.replyToMessage = (id, author, text) => {
             replyTo = { id, author, text };
             document.getElementById('previewBar').style.display = 'flex';
@@ -404,29 +418,20 @@
             if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none';
         }
 
-        // --- ФУНКЦІЯ ФОРМАТУВАННЯ (DISCORD STYLE) ---
+        // --- MARKDOWN (DISCORD STYLE) ---
         function formatMarkdown(text) {
             if (!text) return "";
-            
-            // Екрануємо HTML, щоб ніхто не зламав чат через <script>
             let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-
-            // Жирний **текст**
-            safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            // Курсив *текст*
-            safeText = safeText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            // Підкреслений __текст__
-            safeText = safeText.replace(/__(.*?)__/g, '<u>$1</u>');
-            // Закреслений ~~текст~~
-            safeText = safeText.replace(/~~(.*?)~~/g, '<del>$1</del>');
-            // Посилання
+            safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Жирний
+            safeText = safeText.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Курсив
+            safeText = safeText.replace(/__(.*?)__/g, '<u>$1</u>'); // Підкреслений
+            safeText = safeText.replace(/~~(.*?)~~/g, '<del>$1</del>'); // Закреслений
             safeText = safeText.replace(/(\b(https?):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
-            // Меншн @user
-            safeText = safeText.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>');
-
+            safeText = safeText.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>'); // Тег юзера
             return safeText;
         }
 
+        // --- ЛОГІКА ПОВІДОМЛЕНЬ ---
         function loadMessages(channelId) {
             if (unsubMessages) unsubMessages();
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -439,16 +444,16 @@
                     const m = d.data();
                     const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
                     const timeStr = m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
+                    
+                    // Групування повідомлень, якщо вони від одного автора протягом 5 хв
                     let isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
                     const canEdit = (m.uid === user.uid) || (userData.role === 'admin');
                     
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`;
                     
-                    // Обробка тексту через наш Markdown + безпечне відображення
                     let formattedContent = formatMarkdown(m.text);
-
-                    let contentHtml = (m.replyTo ? `<div class="reply-block"><span class="reply-author">↩ ${m.replyTo.author}:</span> ${m.replyTo.text.substring(0, 40)}...</div>` : "") + 
+                    let contentHtml = (m.replyTo ? `<div class="reply-block">↩ ${m.replyTo.author}: ${m.replyTo.text.substring(0, 40)}...</div>` : "") + 
                                      `<div class="msg-content" id="text-${d.id}">${formattedContent}</div>` + 
                                      (m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : "");
                     
@@ -495,11 +500,12 @@
             input.style.height = 'auto';
         };
 
+        // --- ІНШІ ФУНКЦІЇ ---
         window.mentionUser = (name) => { const i = document.getElementById('msgInput'); i.value += `@${name} `; i.focus(); };
-        window.deleteMessage = async (id) => { if(confirm("Видалити?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
+        window.deleteMessage = async (id) => { if(confirm("Видалити повідомлення?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
         
         window.createChannel = async () => {
-            const name = prompt("Назва:");
+            const name = prompt("Назва каналу:");
             if (name) {
                 const s = await getDocs(collection(db, "channels"));
                 await addDoc(collection(db, "channels"), { name: name.toUpperCase(), index: s.size, isHidden: false });
@@ -507,6 +513,7 @@
         };
         window.deleteChannel = async (id, name) => { if (confirm(`Видалити канал ${name}?`)) await deleteDoc(doc(db, "channels", id)); };
 
+        // Ініціалізація перетягування (для Адміна)
         function initSortable() {
             const el = document.getElementById('channelList');
             Sortable.create(el, {
@@ -520,14 +527,22 @@
             });
         }
 
-        // Автовисота для поля вводу та відправка
-        const input = document.getElementById('msgInput');
-        input.addEventListener('input', function() {
+        // Повноекранний перегляд фото
+        window.openLightbox = (src) => {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').style.display = 'flex';
+        };
+        window.closeLightbox = () => { document.getElementById('lightbox').style.display = 'none'; };
+
+        // Автовисота поля вводу
+        const msgInput = document.getElementById('msgInput');
+        msgInput.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = (this.scrollHeight) + 'px';
         });
 
-        input.addEventListener('keydown', (e) => {
+        // Відправка по Enter
+        msgInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
     </script>
