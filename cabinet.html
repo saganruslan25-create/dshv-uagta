@@ -42,7 +42,7 @@
             -webkit-user-select: text !important;
         }
 
-        /* ПУНКТ 3 ТА 1: ПОМІТНЕ АНІМОВАНЕ ЗБІЛЬШЕННЯ ОБ'ЄКТІВ */
+        /* 1 & 3: ПОМІТНЕ АНІМОВАНЕ ЗБІЛЬШЕННЯ */
         .menu-item:hover, 
         .info-box:hover, 
         .profile-card:hover, 
@@ -52,9 +52,9 @@
         .btn-manage:hover,
         .logo-box:hover, 
         .btn-lock-menu:hover {
-            transform: scale(1.05); /* Збільшено для кращого ефекту */
-            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.15);
-            z-index: 5;
+            transform: scale(1.08); /* Ще трохи збільшено */
+            box-shadow: 0 15px 35px rgba(34, 197, 94, 0.2);
+            z-index: 10;
         }
 
         /* ЕКРАН БЛОКУВАННЯ */
@@ -164,11 +164,9 @@
 
         .btn-tech { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; margin-left: 8px; }
         
-        /* Кнопка Звіти (Зелена) */
+        /* 2: Дизайн Керувати як Звіти */
         .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
-        
-        /* ПУНКТ 2: Кнопка Керувати (Такий же стиль як Звіти, але колір фону темніший) */
-        .btn-manage { background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        .btn-manage { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-ban-ip { background: #440000; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
@@ -185,9 +183,9 @@
         }
         .report-content-text { margin-top: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #ccc; }
         
-        /* БЕДЖІ ДЛЯ ЗВІТІВ */
-        .report-badge { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; }
-        .badge-weekly { background: var(--primary); color: black; }
+        /* БЕДЖІ ТИПУ ЗВІТУ */
+        .badge-type { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; }
+        .badge-rep { background: var(--primary); color: black; }
         .badge-sub { background: var(--warning); color: black; }
     </style>
 </head>
@@ -292,7 +290,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -354,8 +352,8 @@
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "Невідомо";
             document.getElementById('topName').innerText = data.name || "Користувач";
-            // ПУНКТ 5: Відображення gameID
-            document.getElementById('userID').innerText = "ID: " + (data.gameID || data.id || "---");
+            // 5: Беремо gameID з бази
+            document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
             document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
@@ -375,8 +373,8 @@
                     item.innerHTML = `
                         <div>
                             <b>${d.name}</b><br>
-                            <small style="color:var(--text-gray)">[${d.rank}] • ID: ${d.gameID || d.id}</small>
-                            <button class="btn-tech" onclick="alert('UID (Системний): ${s.id}\\nGameID (Ігровий): ${d.gameID || '---'}\\nОстанній зафіксований IP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
+                            <small style="color:var(--text-gray)">[${d.rank}] • ID: ${d.gameID || '---'}</small>
+                            <button class="btn-tech" onclick="alert('UID: ${s.id}\\nGameID: ${d.gameID || '---'}\\nОстанній IP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
                         </div>
                         <div style="display:flex; gap:10px;">
                             <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}')">ЗВІТИ</button>
@@ -390,51 +388,49 @@
             });
         }
 
-        // ПУНКТ 4: Кнопка звіти тепер показує Щотижневі та Суботники
+        // 4: Кнопка звіти з Щотижневих і Суботників (Покращена логіка пошуку)
         window.viewReports = async (uid, name) => {
             const modal = document.getElementById('reportsModal');
             const listUI = document.getElementById('modalReportsList');
             document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
             modal.style.display = 'flex';
-            listUI.innerHTML = "Завантаження звітів...";
+            listUI.innerHTML = "Пошук звітів...";
 
             try {
-                // 1. Отримуємо Щотижневі звіти
-                const qReports = query(collection(db, "reports"), where("authorUID", "==", uid));
-                const snapReports = await getDocs(qReports);
-                
-                // 2. Отримуємо Суботники
-                const qSubotniks = query(collection(db, "subotniks"), where("authorUID", "==", uid));
-                const snapSubotniks = await getDocs(qSubotniks);
-                
-                let htmlContent = "";
+                let allItems = [];
 
-                // Обробка Щотижневих
-                snapReports.forEach(docSnap => {
-                    const data = docSnap.data();
-                    htmlContent += `
-                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:4px solid var(--primary);">
-                            <div class="report-badge badge-weekly">Щотижневий</div>
-                            <small style="color:var(--primary-bright)"> ПЕРІОД: ${data.period || '---'}</small>
-                            <div class="report-content-text">${linkify(data.content || data.message)}</div>
+                // Шукаємо в обох колекціях з перевіркою різних можливих імен полів ID автора
+                const collections = ['reports', 'subotniks'];
+                for (const colName of collections) {
+                    const snap = await getDocs(collection(db, colName));
+                    snap.forEach(docSnap => {
+                        const data = docSnap.data();
+                        // Перевіряємо всі варіанти ID (автор міг бути записаний по-різному)
+                        if (data.authorUID === uid || data.uid === uid || data.authorId === uid) {
+                            allItems.push({ ...data, colType: colName });
+                        }
+                    });
+                }
+
+                if (allItems.length === 0) {
+                    listUI.innerHTML = "Звітів не знайдено.";
+                    return;
+                }
+
+                listUI.innerHTML = "";
+                allItems.forEach(item => {
+                    const isSub = item.colType === 'subotniks';
+                    listUI.innerHTML += `
+                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:4px solid ${isSub ? 'var(--warning)' : 'var(--primary)'};">
+                            <span class="badge-type ${isSub ? 'badge-sub' : 'badge-rep'}">${isSub ? 'Суботник' : 'Щотижневий'}</span>
+                            <small style="color:var(--text-gray); display:block; margin-bottom:5px;">Дата/Період: ${item.period || item.date || '---'}</small>
+                            <div class="report-content-text">${linkify(item.content || item.message)}</div>
                         </div>`;
                 });
 
-                // Обробка Суботників
-                snapSubotniks.forEach(docSnap => {
-                    const data = docSnap.data();
-                    htmlContent += `
-                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:4px solid var(--warning);">
-                            <div class="report-badge badge-sub">Суботник</div>
-                            <small style="color:var(--warning)"> ДАТА: ${data.date || '---'}</small>
-                            <div class="report-content-text">${linkify(data.content)}</div>
-                        </div>`;
-                });
-
-                listUI.innerHTML = htmlContent || "У цього бійця ще немає поданих звітів.";
             } catch (err) {
-                console.error(err);
-                listUI.innerHTML = "Помилка при отриманні даних.";
+                console.error("Помилка звітів:", err);
+                listUI.innerHTML = "Сталася помилка при завантаженні.";
             }
         };
 
@@ -477,7 +473,7 @@
                 await updateDoc(ref, { isLocked: !snap.data().isLocked });
             }
         };
-        
+
         window.changeStat = async (field, val) => {
             const docRef = doc(db, "users", editingUID);
             const snap = await getDoc(docRef);
