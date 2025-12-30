@@ -111,7 +111,7 @@
         
         .msg-image {
             max-width: 400px; max-height: 400px; border-radius: 12px; 
-            margin-top: 10px; cursor: pointer; border: 1px solid var(--glass-border);
+            margin-top: 10px; cursor: zoom-in; border: 1px solid var(--glass-border);
             display: block; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
         
@@ -167,11 +167,26 @@
         .send-btn { background: var(--primary); color: black; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; }
         .send-btn:hover { background: var(--primary-bright); }
 
+        /* LIGHTBOX SYSTEM */
+        #lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;
+            z-index: 10000; cursor: zoom-out; backdrop-filter: blur(10px);
+        }
+        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
+        #lightbox-close { position: absolute; top: 30px; right: 40px; font-size: 40px; color: white; font-weight: 100; cursor: pointer; opacity: 0.5; }
+        #lightbox-close:hover { opacity: 1; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     </style>
 </head>
 <body oncontextmenu="return false;">
+
+    <div id="lightbox" onclick="closeLightbox()">
+        <span id="lightbox-close">✕</span>
+        <img id="lightbox-img" src="">
+    </div>
 
     <div class="sidebar">
         <div class="dsw-title">ДШВ КОМУНІКАЦІЯ</div>
@@ -242,11 +257,15 @@
         let replyTo = null; 
         let currentBase64Img = null;
 
-        // ЗАХИСТ
-        document.onkeydown = function(e) {
-            if(e.keyCode == 123) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-        }
+        // --- ПОСИЛЕНИЙ ЗАХИСТ ---
+        window.addEventListener('keydown', function(e) {
+            // F12
+            if (e.keyCode == 123) { e.preventDefault(); return false; }
+            // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) { e.preventDefault(); return false; }
+            // Ctrl+U (Source), Ctrl+S (Save)
+            if (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83)) { e.preventDefault(); return false; }
+        });
 
         onAuthStateChanged(auth, async (u) => {
             if (u) {
@@ -308,11 +327,20 @@
             if (!activeChannelId || userData.role !== 'admin') return;
             const newState = !activeChannelData.isHidden;
             await updateDoc(doc(db, "channels", activeChannelId), { isHidden: newState });
-            activeChannelData.isHidden = newState; // Оновлюємо локально для миттєвого відгуку
+            activeChannelData.isHidden = newState; 
             updateVisibilityButtonUI(newState);
         };
 
-        // СИСТЕМА ФОТО ЗІ СТИСНЕННЯМ
+        // --- СИСТЕМА LIGHTBOX ---
+        window.openLightbox = (src) => {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox').style.display = 'flex';
+        };
+        window.closeLightbox = () => {
+            document.getElementById('lightbox').style.display = 'none';
+        };
+
+        // --- СИСТЕМА ФОТО ЗІ СТИСНЕННЯМ ---
         window.handleImageSelect = (input) => {
             const file = input.files[0];
             if (!file) return;
@@ -324,23 +352,17 @@
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    
-                    // Максимальна ширина 1280px для збереження якості
                     const max_size = 1280;
                     if (width > height) {
                         if (width > max_size) { height *= max_size / width; width = max_size; }
                     } else {
                         if (height > max_size) { width *= max_size / height; height = max_size; }
                     }
-                    
                     canvas.width = width;
                     canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
-                    
-                    // Стискаємо до JPEG з якістю 0.6 (достатньо для чату і влізе в 1МБ)
                     currentBase64Img = canvas.toDataURL('image/jpeg', 0.6);
-                    
                     document.getElementById('previewBar').style.display = 'flex';
                     document.getElementById('imageInfo').style.display = 'flex';
                     document.getElementById('imgPreviewThumb').src = currentBase64Img;
@@ -389,10 +411,25 @@
                     const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
                     const timeStr = m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
                     let isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
+                    
+                    // ПРАВА: Тільки власник повідомлення (uid) або адмін можуть бачити кнопку редагування
+                    const canEdit = (m.uid === user.uid) || (userData.role === 'admin');
+                    
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`;
-                    let content = (m.replyTo ? `<div class="reply-block"><span class="reply-author">↩ ${m.replyTo.author}:</span> ${m.replyTo.text.substring(0, 40)}...</div>` : "") + `<div class="msg-content" id="text-${d.id}">${formatMessage(m.text)}</div>` + (m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="window.open('${m.imageUrl}')">` : "");
-                    msgDiv.innerHTML = `${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${timeStr}</span></div>` : ''}${content}<div class="msg-actions"><button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>${userData.role === 'admin' ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button><button class="action-btn del-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}</div>`;
+                    let content = (m.replyTo ? `<div class="reply-block"><span class="reply-author">↩ ${m.replyTo.author}:</span> ${m.replyTo.text.substring(0, 40)}...</div>` : "") + 
+                                  `<div class="msg-content" id="text-${d.id}">${formatMessage(m.text)}</div>` + 
+                                  (m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : "");
+                    
+                    msgDiv.innerHTML = `
+                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${timeStr}</span></div>` : ''}
+                        ${content}
+                        <div class="msg-actions">
+                            <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
+                            ${canEdit ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
+                            ${userData.role === 'admin' ? `<button class="action-btn del-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
+                        </div>`;
+                    
                     container.appendChild(msgDiv);
                     lastAuth = m.author; lastTime = msgTime;
                 });
@@ -406,7 +443,11 @@
             const area = document.getElementById(`edit-input-${id}`);
             area.focus();
             area.onkeydown = async (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: area.value }); loadMessages(activeChannelId); }
+                if (e.key === 'Enter' && !e.shiftKey) { 
+                    e.preventDefault(); 
+                    await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: area.value }); 
+                    loadMessages(activeChannelId); 
+                }
                 if (e.key === 'Escape') loadMessages(activeChannelId);
             };
         };
