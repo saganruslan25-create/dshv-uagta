@@ -42,7 +42,7 @@
             -webkit-user-select: text !important;
         }
 
-        /* 1 & 3: ПОМІТНЕ АНІМОВАНЕ ЗБІЛЬШЕННЯ */
+        /* ПОМІТНЕ АНІМОВАНЕ ЗБІЛЬШЕННЯ (1.08) */
         .menu-item:hover, 
         .info-box:hover, 
         .profile-card:hover, 
@@ -52,9 +52,9 @@
         .btn-manage:hover,
         .logo-box:hover, 
         .btn-lock-menu:hover {
-            transform: scale(1.08); /* Ще трохи збільшено */
+            transform: scale(1.08) translateY(-5px); /* Збільшення + легке підняття */
             box-shadow: 0 15px 35px rgba(34, 197, 94, 0.2);
-            z-index: 10;
+            z-index: 100;
         }
 
         /* ЕКРАН БЛОКУВАННЯ */
@@ -91,11 +91,27 @@
 
         .header-right { display: flex; align-items: center; gap: 20px; }
 
-        .notif-wrapper { position: relative; cursor: pointer; }
-        .bell-icon { font-size: 22px; color: var(--warning); filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.4)); }
+        /* СТИЛЬ КОЛОКОЛЬЧИКА */
+        .notif-wrapper { position: relative; cursor: pointer; padding: 5px; }
+        .bell-icon { font-size: 24px; color: var(--warning); filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.4)); }
         .bell-dot { 
-            position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; 
+            position: absolute; top: 0; right: 0; width: 12px; height: 12px; 
             background: var(--danger); border-radius: 50%; border: 2px solid var(--bg); display: none;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); }
+        }
+
+        /* ВИПАДАЮЧЕ ВІКНО ПОВІДОМЛЕНЬ */
+        #notifDropdown {
+            position: absolute; top: 70px; right: 5%; width: 320px; 
+            background: #0c121d; border: 1px solid var(--glass-border); border-radius: 15px;
+            display: none; flex-direction: column; padding: 15px; z-index: 2000; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
 
         .top-name { font-weight: 700; font-size: 14px; border-left: 2px solid #222; padding-left: 15px; }
@@ -118,6 +134,7 @@
             color: white; text-decoration: none; font-size: 14px; font-weight: 600; position: relative;
         }
 
+        /* ЧЕРВОНІ ВОГНИКИ В МЕНЮ */
         .fire-dot { 
             width: 10px; height: 10px; background: var(--danger); border-radius: 50%; 
             box-shadow: 0 0 10px var(--danger); display: none;
@@ -164,9 +181,14 @@
 
         .btn-tech { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; margin-left: 8px; }
         
-        /* 2: Дизайн Керувати як Звіти */
-        .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
-        .btn-manage { background: #1e293b; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        /* КНОПКИ ДІЙ */
+        .btn-action-g, .btn-manage { 
+            padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; 
+            border: none; text-transform: uppercase; font-size: 12px;
+        }
+        .btn-action-g { background: var(--primary); color: black; }
+        /* ДИЗАЙН КЕРУВАТИ (ЯК ЗВІТИ, АЛЕ ТЕМНА) */
+        .btn-manage { background: #1e293b; color: white; border: 1px solid var(--glass-border); }
 
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-ban-ip { background: #440000; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
@@ -183,7 +205,6 @@
         }
         .report-content-text { margin-top: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #ccc; }
         
-        /* БЕДЖІ ТИПУ ЗВІТУ */
         .badge-type { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; }
         .badge-rep { background: var(--primary); color: black; }
         .badge-sub { background: var(--warning); color: black; }
@@ -205,9 +226,15 @@
     <header id="mainHeader">
         <a href="index.html" class="logo-box">ДШВ</a>
         <div class="header-right">
-            <div class="notif-wrapper">
+            <div class="notif-wrapper" onclick="toggleNotifs()">
                 <span class="bell-icon">🔔</span>
                 <div id="bellDot" class="bell-dot"></div>
+            </div>
+            <div id="notifDropdown">
+                <h4 style="margin-bottom: 10px; color: var(--primary-bright); border-bottom: 1px solid #222; padding-bottom: 5px;">ЦЕНТР ПОВІДОМЛЕНЬ</h4>
+                <div id="notifList" style="font-size: 13px; max-height: 250px; overflow-y: auto;">
+                    <div style="color:var(--text-gray); text-align:center; padding: 10px;">Немає нових подій</div>
+                </div>
             </div>
             <span id="topName" class="top-name">...</span>
             <button onclick="window.logout()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer;">ВИЙТИ</button>
@@ -219,9 +246,9 @@
             <div class="side-menu">
                 <button id="backToMe" onclick="resetView()" style="display:none; width:100%; background:var(--warning); color:black; padding:14px; border-radius:12px; font-weight:900; border:none; cursor:pointer; margin-bottom:15px;">⬅ МІЙ ПРОФІЛЬ</button>
                 <a href="index.html" class="menu-item">🏠 Головна сторінка</a>
-                <a href="reports.html" class="menu-item" onclick="markAsRead('reports')">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
-                <a href="subotnik.html" class="menu-item" onclick="markAsRead('subotniks')">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
-                <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;" onclick="markAsRead('apps')">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
+                <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
+                <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
+                <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
                 <a href="chats.html" class="menu-item" id="chatBtn">💬 Чати / Оголошення <div id="dot-chats" class="fire-dot"></div></a>
                 
                 <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
@@ -310,7 +337,7 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // ЗАХИСТ
+        // ЗАХИСТ ВІД КОНСОЛІ
         document.onkeydown = function(e) {
             if(e.keyCode == 123 || (e.ctrlKey && e.keyCode == 85) || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67))) return false;
         };
@@ -323,7 +350,7 @@
             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:#3498db;">${url}</a>`);
         }
 
-        // АВТОРИЗАЦІЯ
+        // АВТОРИЗАЦІЯ ТА ПЕРЕВІРКА БАНУ
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             
@@ -346,13 +373,13 @@
                     document.getElementById('lockBtn').style.display = 'block';
                     loadStaffList();
                 }
+                initNotifications(); // Запуск системи сповіщень
             }
         });
 
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "Невідомо";
             document.getElementById('topName').innerText = data.name || "Користувач";
-            // 5: Беремо gameID з бази
             document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
             document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
@@ -362,6 +389,7 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
+        // СПИСОК БІЙЦІВ
         async function loadStaffList() {
             onSnapshot(collection(db, "users"), (snap) => {
                 const list = document.getElementById('staffList');
@@ -377,7 +405,7 @@
                             <button class="btn-tech" onclick="alert('UID: ${s.id}\\nGameID: ${d.gameID || '---'}\\nОстанній IP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
                         </div>
                         <div style="display:flex; gap:10px;">
-                            <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}')">ЗВІТИ</button>
+                            <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}', '${d.gameID}')">ЗВІТИ</button>
                             <button class="btn-manage" onclick="window.enterManageMode('${s.id}')">КЕРУВАТИ</button>
                             <button class="btn-ban-ip" onclick="window.banByIP('${d.lastIP}', '${s.id}')">BAN IP</button>
                             <button class="btn-action-r" onclick="window.deleteUser('${s.id}')">ВИДАЛИТИ</button>
@@ -388,52 +416,81 @@
             });
         }
 
-        // 4: Кнопка звіти з Щотижневих і Суботників (Покращена логіка пошуку)
-        window.viewReports = async (uid, name) => {
-            const modal = document.getElementById('reportsModal');
+        // СИСТЕМА ПОШУКУ ЗВІТІВ (ГЛОБАЛЬНА)
+        window.viewReports = async (uid, name, gameID) => {
             const listUI = document.getElementById('modalReportsList');
             document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
-            modal.style.display = 'flex';
-            listUI.innerHTML = "Пошук звітів...";
+            document.getElementById('reportsModal').style.display = 'flex';
+            listUI.innerHTML = "<p style='text-align:center;'>Сканування бази даних...</p>";
 
-            try {
-                let allItems = [];
+            let found = [];
+            const cols = ['reports', 'subotniks'];
 
-                // Шукаємо в обох колекціях з перевіркою різних можливих імен полів ID автора
-                const collections = ['reports', 'subotniks'];
-                for (const colName of collections) {
-                    const snap = await getDocs(collection(db, colName));
-                    snap.forEach(docSnap => {
-                        const data = docSnap.data();
-                        // Перевіряємо всі варіанти ID (автор міг бути записаний по-різному)
-                        if (data.authorUID === uid || data.uid === uid || data.authorId === uid) {
-                            allItems.push({ ...data, colType: colName });
-                        }
-                    });
-                }
-
-                if (allItems.length === 0) {
-                    listUI.innerHTML = "Звітів не знайдено.";
-                    return;
-                }
-
-                listUI.innerHTML = "";
-                allItems.forEach(item => {
-                    const isSub = item.colType === 'subotniks';
-                    listUI.innerHTML += `
-                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:4px solid ${isSub ? 'var(--warning)' : 'var(--primary)'};">
-                            <span class="badge-type ${isSub ? 'badge-sub' : 'badge-rep'}">${isSub ? 'Суботник' : 'Щотижневий'}</span>
-                            <small style="color:var(--text-gray); display:block; margin-bottom:5px;">Дата/Період: ${item.period || item.date || '---'}</small>
-                            <div class="report-content-text">${linkify(item.content || item.message)}</div>
-                        </div>`;
+            for (const c of cols) {
+                const snap = await getDocs(collection(db, c));
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const raw = JSON.stringify(data).toLowerCase();
+                    // Шукаємо по UID, Імені або GameID в усьому тексті документа
+                    if (raw.includes(uid.toLowerCase()) || raw.includes(name.toLowerCase()) || (gameID && raw.includes(gameID.toLowerCase()))) {
+                        found.push({ ...data, colType: c === 'reports' ? 'Щотижневий' : 'Суботник' });
+                    }
                 });
+            }
 
-            } catch (err) {
-                console.error("Помилка звітів:", err);
-                listUI.innerHTML = "Сталася помилка при завантаженні.";
+            listUI.innerHTML = found.map(f => `
+                <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:12px; border-left:4px solid ${f.colType === 'Суботник' ? 'var(--warning)' : 'var(--primary)'}">
+                    <div class="badge-type ${f.colType === 'Суботник' ? 'badge-sub' : 'badge-rep'}">${f.colType}</div>
+                    <div class="report-content-text">${linkify(f.content || f.message || 'Текст відсутній')}</div>
+                    <div style="margin-top:8px; font-size:11px; color:var(--primary-bright); font-weight:700;">${f.period || f.date || ''}</div>
+                </div>
+            `).join('') || "<p style='text-align:center; color:var(--text-gray);'>Звітів не знайдено.</p>";
+        };
+
+        // СИСТЕМА ВОГНИКІВ ТА КОЛОКОЛЬЧИКА
+        function initNotifications() {
+            const targets = [
+                { id: 'reports', dot: 'dot-reports', label: 'Звіт' },
+                { id: 'subotniks', dot: 'dot-subotniks', label: 'Суботник' },
+                { id: 'applications', dot: 'dot-apps', label: 'Рапорт' }
+            ];
+
+            targets.forEach(t => {
+                onSnapshot(collection(db, t.id), (snap) => {
+                    const savedCount = localStorage.getItem('count_' + t.id) || 0;
+                    if (snap.size > savedCount) {
+                        const dot = document.getElementById(t.dot);
+                        if(dot) dot.style.display = 'block'; // Вогник в меню
+                        document.getElementById('bellDot').style.display = 'block'; // Точка на колокольчику
+                        
+                        const list = document.getElementById('notifList');
+                        if(list.innerText.includes("Немає")) list.innerHTML = "";
+                        list.innerHTML = `<div style="padding:10px; border-bottom:1px solid #1a1a1a; background:rgba(34,197,94,0.05);">🚀 Новий <b>${t.label}</b> надійшов у систему!</div>` + list.innerHTML;
+                    }
+                });
+            });
+        }
+
+        // ВІДКРИТТЯ СПИСКУ ПОВІДОМЛЕНЬ
+        window.toggleNotifs = async () => {
+            const drop = document.getElementById('notifDropdown');
+            const isOpen = drop.style.display === 'flex';
+            drop.style.display = isOpen ? 'none' : 'flex';
+            
+            if(!isOpen) {
+                document.getElementById('bellDot').style.display = 'none';
+                document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
+                
+                // Зберігаємо кількість як "прочитану"
+                const cols = ['reports', 'subotniks', 'applications'];
+                for (const c of cols) {
+                    const s = await getDocs(collection(db, c));
+                    localStorage.setItem('count_' + c, s.size);
+                }
             }
         };
 
+        // КЕРУВАННЯ КОРИСТУВАЧЕМ
         window.enterManageMode = async (id) => {
             const snap = await getDoc(doc(db, "users", id));
             editingUID = id;
@@ -444,6 +501,7 @@
 
         window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
 
+        // ВИДАЛЕННЯ ТА БАН
         window.deleteUser = async (id) => {
             if (prompt("ПАРОЛЬ ВИДАЛЕННЯ:") === SECRET_CODE) {
                 if(confirm("ВИДАЛИТИ БІЙЦЯ НАЗАВЖДИ?")) await deleteDoc(doc(db, "users", id));
@@ -458,6 +516,7 @@
             }
         };
 
+        // КЕРУВАННЯ ДОСТУПОМ ДО СИСТЕМИ
         function listenToSystemStatus(role) {
             onSnapshot(doc(db, "settings", "systemStatus"), (snap) => {
                 const locked = snap.data()?.isLocked;
@@ -467,13 +526,14 @@
         }
 
         window.toggleSystemAccess = async () => {
-            if(prompt("КОД:") === SECRET_CODE) {
+            if(prompt("КОД АДМІНІСТРАТОРА:") === SECRET_CODE) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { isLocked: !snap.data().isLocked });
             }
         };
 
+        // ЗМІНА СТАТИСТИКИ (ДОГАНИ/ПОПЕРЕДЖЕННЯ)
         window.changeStat = async (field, val) => {
             const docRef = doc(db, "users", editingUID);
             const snap = await getDoc(docRef);
