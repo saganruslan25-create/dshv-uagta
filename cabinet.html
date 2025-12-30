@@ -42,12 +42,19 @@
             -webkit-user-select: text !important;
         }
 
-        /* ЕФЕКТ ЗБІЛЬШЕННЯ ДЛЯ КНОПОК ТА КАРТОК */
-        .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
-        .btn-action-g:hover, .btn-action-r:hover, .logo-box:hover, .btn-lock-menu:hover {
-            transform: scale(1.02);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-            z-index: 2;
+        /* ПУНКТ 3 ТА 1: ПОМІТНЕ АНІМОВАНЕ ЗБІЛЬШЕННЯ ОБ'ЄКТІВ */
+        .menu-item:hover, 
+        .info-box:hover, 
+        .profile-card:hover, 
+        .staff-item:hover, 
+        .btn-action-g:hover, 
+        .btn-action-r:hover, 
+        .btn-manage:hover,
+        .logo-box:hover, 
+        .btn-lock-menu:hover {
+            transform: scale(1.05); /* Збільшено для кращого ефекту */
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.15);
+            z-index: 5;
         }
 
         /* ЕКРАН БЛОКУВАННЯ */
@@ -156,11 +163,13 @@
         }
 
         .btn-tech { background: none; border: none; color: #444; cursor: pointer; font-size: 16px; margin-left: 8px; }
-        /* Кнопка Зелена */
-        .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
-        /* Кнопка Керувати (такий же дизайн, але інший колір) */
-        .btn-manage { background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         
+        /* Кнопка Звіти (Зелена) */
+        .btn-action-g { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        
+        /* ПУНКТ 2: Кнопка Керувати (Такий же стиль як Звіти, але колір фону темніший) */
+        .btn-manage { background: #334155; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
         .btn-ban-ip { background: #440000; color: #ff4444; border: 1px solid #ff4444; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
@@ -175,7 +184,9 @@
             width: 90%; max-width: 650px; max-height: 85vh; border-radius: 30px; padding: 35px; position: relative; overflow-y: auto;
         }
         .report-content-text { margin-top: 10px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: #ccc; }
-        .report-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; }
+        
+        /* БЕДЖІ ДЛЯ ЗВІТІВ */
+        .report-badge { display: inline-block; padding: 3px 10px; border-radius: 5px; font-size: 10px; font-weight: 900; margin-bottom: 8px; text-transform: uppercase; }
         .badge-weekly { background: var(--primary); color: black; }
         .badge-sub { background: var(--warning); color: black; }
     </style>
@@ -306,11 +317,6 @@
             if(e.keyCode == 123 || (e.ctrlKey && e.keyCode == 85) || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67))) return false;
         };
 
-        setInterval(() => {
-            const s = new Date(); debugger;
-            if (new Date() - s > 100) window.location.reload();
-        }, 100);
-
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
         function linkify(text) {
@@ -318,38 +324,6 @@
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:#3498db;">${url}</a>`);
         }
-
-        // СИСТЕМА СПОВІЩЕНЬ
-        function watchNotifications() {
-            if (myData?.role !== 'admin') return;
-            const collections = [
-                { id: 'applications', dot: 'dot-apps', key: 'read_apps' },
-                { id: 'reports', dot: 'dot-reports', key: 'read_reports' },
-                { id: 'subotniks', dot: 'dot-subotniks', key: 'read_subotniks' }
-            ];
-
-            collections.forEach(col => {
-                onSnapshot(collection(db, col.id), (snap) => {
-                    const hasNew = snap.size > 0 && !localStorage.getItem(col.key);
-                    const el = document.getElementById(col.dot);
-                    if(el) el.style.display = hasNew ? 'block' : 'none';
-                    updateBell();
-                });
-            });
-        }
-
-        function updateBell() {
-            const dots = document.querySelectorAll('.fire-dot');
-            let any = false;
-            dots.forEach(d => { if(d.style.display === 'block') any = true; });
-            document.getElementById('bellDot').style.display = any ? 'block' : 'none';
-        }
-
-        window.markAsRead = (type) => {
-            const key = type === 'apps' ? 'read_apps' : `read_${type}`;
-            localStorage.setItem(key, 'true');
-            updateBell();
-        };
 
         // АВТОРИЗАЦІЯ
         onAuthStateChanged(auth, async (user) => {
@@ -368,7 +342,6 @@
                 myData = userDoc.data();
                 updateUI(myData);
                 listenToSystemStatus(myData.role);
-                watchNotifications();
                 if (myData.role === 'admin') {
                     document.getElementById('adminSection').style.display = 'block';
                     document.getElementById('adminAppBtn').style.display = 'flex';
@@ -381,7 +354,7 @@
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "Невідомо";
             document.getElementById('topName').innerText = data.name || "Користувач";
-            // Повертаємо gameID для відображення в профілі
+            // ПУНКТ 5: Відображення gameID
             document.getElementById('userID').innerText = "ID: " + (data.gameID || data.id || "---");
             document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
@@ -390,17 +363,6 @@
             document.getElementById('userDiscord').innerText = data.discord || "---";
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
-
-        // АДМІНКА
-        window.changeStat = async (field, val) => {
-            const docRef = doc(db, "users", editingUID);
-            const snap = await getDoc(docRef);
-            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
-            await updateDoc(docRef, { [field]: newVal });
-            if(editingUID === currentUID) myData[field] = newVal;
-            const updated = await getDoc(docRef);
-            updateUI(updated.data());
-        };
 
         async function loadStaffList() {
             onSnapshot(collection(db, "users"), (snap) => {
@@ -414,7 +376,7 @@
                         <div>
                             <b>${d.name}</b><br>
                             <small style="color:var(--text-gray)">[${d.rank}] • ID: ${d.gameID || d.id}</small>
-                            <button class="btn-tech" onclick="alert('UID (База): ${s.id}\\nGameID: ${d.gameID || '---'}\\nОстанній IP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
+                            <button class="btn-tech" onclick="alert('UID (Системний): ${s.id}\\nGameID (Ігровий): ${d.gameID || '---'}\\nОстанній зафіксований IP: ${d.lastIP || 'Невідомо'}')">⚙️</button>
                         </div>
                         <div style="display:flex; gap:10px;">
                             <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}')">ЗВІТИ</button>
@@ -427,6 +389,54 @@
                 });
             });
         }
+
+        // ПУНКТ 4: Кнопка звіти тепер показує Щотижневі та Суботники
+        window.viewReports = async (uid, name) => {
+            const modal = document.getElementById('reportsModal');
+            const listUI = document.getElementById('modalReportsList');
+            document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
+            modal.style.display = 'flex';
+            listUI.innerHTML = "Завантаження звітів...";
+
+            try {
+                // 1. Отримуємо Щотижневі звіти
+                const qReports = query(collection(db, "reports"), where("authorUID", "==", uid));
+                const snapReports = await getDocs(qReports);
+                
+                // 2. Отримуємо Суботники
+                const qSubotniks = query(collection(db, "subotniks"), where("authorUID", "==", uid));
+                const snapSubotniks = await getDocs(qSubotniks);
+                
+                let htmlContent = "";
+
+                // Обробка Щотижневих
+                snapReports.forEach(docSnap => {
+                    const data = docSnap.data();
+                    htmlContent += `
+                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:4px solid var(--primary);">
+                            <div class="report-badge badge-weekly">Щотижневий</div>
+                            <small style="color:var(--primary-bright)"> ПЕРІОД: ${data.period || '---'}</small>
+                            <div class="report-content-text">${linkify(data.content || data.message)}</div>
+                        </div>`;
+                });
+
+                // Обробка Суботників
+                snapSubotniks.forEach(docSnap => {
+                    const data = docSnap.data();
+                    htmlContent += `
+                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:4px solid var(--warning);">
+                            <div class="report-badge badge-sub">Суботник</div>
+                            <small style="color:var(--warning)"> ДАТА: ${data.date || '---'}</small>
+                            <div class="report-content-text">${linkify(data.content)}</div>
+                        </div>`;
+                });
+
+                listUI.innerHTML = htmlContent || "У цього бійця ще немає поданих звітів.";
+            } catch (err) {
+                console.error(err);
+                listUI.innerHTML = "Помилка при отриманні даних.";
+            }
+        };
 
         window.enterManageMode = async (id) => {
             const snap = await getDoc(doc(db, "users", id));
@@ -452,54 +462,6 @@
             }
         };
 
-        window.viewReports = async (uid, name) => {
-            const modal = document.getElementById('reportsModal');
-            const list = document.getElementById('modalReportsList');
-            document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
-            modal.style.display = 'flex';
-            list.innerHTML = "Завантаження...";
-            
-            try {
-                // Отримуємо звичайні звіти
-                const qRep = query(collection(db, "reports"), where("authorUID", "==", uid));
-                const snapRep = await getDocs(qRep);
-                
-                // Отримуємо звіти з суботників
-                const qSub = query(collection(db, "subotniks"), where("authorUID", "==", uid));
-                const snapSub = await getDocs(qSub);
-                
-                list.innerHTML = "";
-                let count = 0;
-
-                snapRep.forEach(docSnap => {
-                    const data = docSnap.data();
-                    list.innerHTML += `
-                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:3px solid var(--primary);">
-                            <div class="report-badge badge-weekly">ЩОТИЖНЕВИЙ</div>
-                            <small style="color:var(--primary-bright)"> ПЕРІОД: ${data.period || '---'}</small>
-                            <div class="report-content-text">${linkify(data.content || data.message)}</div>
-                        </div>`;
-                    count++;
-                });
-
-                snapSub.forEach(docSnap => {
-                    const data = docSnap.data();
-                    list.innerHTML += `
-                        <div style="background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; margin-bottom:15px; border-left:3px solid var(--warning);">
-                            <div class="report-badge badge-sub">СУБОТНИК</div>
-                            <small style="color:var(--warning)"> ДАТА: ${data.date || '---'}</small>
-                            <div class="report-content-text">${linkify(data.content)}</div>
-                        </div>`;
-                    count++;
-                });
-
-                if(count === 0) list.innerHTML = "Звітів не знайдено.";
-            } catch (e) {
-                list.innerHTML = "Помилка завантаження.";
-                console.error(e);
-            }
-        };
-
         function listenToSystemStatus(role) {
             onSnapshot(doc(db, "settings", "systemStatus"), (snap) => {
                 const locked = snap.data()?.isLocked;
@@ -514,6 +476,16 @@
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { isLocked: !snap.data().isLocked });
             }
+        };
+        
+        window.changeStat = async (field, val) => {
+            const docRef = doc(db, "users", editingUID);
+            const snap = await getDoc(docRef);
+            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
+            await updateDoc(docRef, { [field]: newVal });
+            if(editingUID === currentUID) myData[field] = newVal;
+            const updated = await getDoc(docRef);
+            updateUI(updated.data());
         };
     </script>
 </body>
