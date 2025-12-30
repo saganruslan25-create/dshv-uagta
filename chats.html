@@ -101,7 +101,8 @@
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        .msg-content { line-height: 1.5; white-space: pre-wrap; color: #ddd; }
+        /* ВИПРАВЛЕННЯ КАШІ: white-space: pre-wrap зберігає переноси */
+        .msg-content { line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; color: #ddd; }
 
         .reply-block {
             border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
@@ -167,7 +168,6 @@
         .send-btn { background: var(--primary); color: black; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; }
         .send-btn:hover { background: var(--primary-bright); }
 
-        /* LIGHTBOX SYSTEM */
         #lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;
@@ -250,20 +250,18 @@
 
         let user = null;
         let userData = null;
-        let activeChannelId = null;
+        // ВИПРАВЛЕННЯ: Отримуємо збережений ID з пам'яті браузера
+        let activeChannelId = localStorage.getItem('activeChatId') || null; 
         let activeChannelData = null;
         let unsubMessages = null;
         
         let replyTo = null; 
         let currentBase64Img = null;
 
-        // --- ПОСИЛЕНИЙ ЗАХИСТ ---
+        // --- ЗАХИСТ ---
         window.addEventListener('keydown', function(e) {
-            // F12
             if (e.keyCode == 123) { e.preventDefault(); return false; }
-            // Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+Shift+C
             if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) { e.preventDefault(); return false; }
-            // Ctrl+U (Source), Ctrl+S (Save)
             if (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83)) { e.preventDefault(); return false; }
         });
 
@@ -299,14 +297,29 @@
                     };
                     list.appendChild(item);
                 });
+
+                // ВИПРАВЛЕННЯ: Якщо сторінка оновилась і є збережений ID, відкриваємо його
+                if (activeChannelId) {
+                    const activeDoc = snap.docs.find(doc => doc.id === activeChannelId);
+                    if (activeDoc) selectChannel(activeDoc.id, activeDoc.data());
+                }
             });
         }
 
         function selectChannel(id, chData) {
             activeChannelId = id;
             activeChannelData = chData;
+            // ВИПРАВЛЕННЯ: Зберігаємо ID в localStorage
+            localStorage.setItem('activeChatId', id); 
+
             document.getElementById('activeChannelName').innerText = chData.name;
             document.getElementById('inputArea').style.display = 'flex';
+            
+            // Оновлення візуального вибору в списку
+            document.querySelectorAll('.channel-item').forEach(el => {
+                el.classList.toggle('active', el.dataset.id === id);
+            });
+
             updateVisibilityButtonUI(chData.isHidden);
             loadMessages(id);
         }
@@ -331,7 +344,7 @@
             updateVisibilityButtonUI(newState);
         };
 
-        // --- СИСТЕМА LIGHTBOX ---
+        // --- LIGHTBOX ---
         window.openLightbox = (src) => {
             document.getElementById('lightbox-img').src = src;
             document.getElementById('lightbox').style.display = 'flex';
@@ -340,26 +353,19 @@
             document.getElementById('lightbox').style.display = 'none';
         };
 
-        // --- СИСТЕМА ФОТО ЗІ СТИСНЕННЯМ ---
+        // --- ФОТО ЗІ СТИСНЕННЯМ ---
         window.handleImageSelect = (input) => {
             const file = input.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const max_size = 1280;
-                    if (width > height) {
-                        if (width > max_size) { height *= max_size / width; width = max_size; }
-                    } else {
-                        if (height > max_size) { width *= max_size / height; height = max_size; }
-                    }
-                    canvas.width = width;
-                    canvas.height = height;
+                    let width = img.width, height = img.height, max_size = 1280;
+                    if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
+                    else { if (height > max_size) { width *= max_size / height; height = max_size; } }
+                    canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     currentBase64Img = canvas.toDataURL('image/jpeg', 0.6);
@@ -411,8 +417,6 @@
                     const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
                     const timeStr = m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
                     let isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
-                    
-                    // ПРАВА: Тільки власник повідомлення (uid) або адмін можуть бачити кнопку редагування
                     const canEdit = (m.uid === user.uid) || (userData.role === 'admin');
                     
                     const msgDiv = document.createElement('div');
