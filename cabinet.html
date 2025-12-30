@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ДШВ | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <style>
         /* ОСНОВНІ ПАРАМЕТРИ КОЛЬОРІВ */
         :root {
@@ -148,14 +149,18 @@
         .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
 
-        /* РЕЄСТР */
+        /* РЕЄСТР ТА ПЕРЕТЯГУВАННЯ */
         .staff-section-container { width: 100%; display: flex; justify-content: center; padding: 20px 5% 50px; }
         .staff-section { width: 100%; max-width: 1520px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 25px; padding: 30px; }
+        
         .staff-item {
             display: flex; justify-content: space-between; align-items: center;
             background: #0c121d; padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
             position: relative; z-index: 1; border: 1px solid rgba(255,255,255,0.05);
+            cursor: grab; /* Курсор перетягування */
         }
+        .staff-item:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.3; background: var(--primary); }
 
         /* КНОПКИ */
         .btn-action-g, .btn-manage, .btn-verify, .btn-ban { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
@@ -287,7 +292,7 @@
 
     <div class="staff-section-container" id="adminSection" style="display:none;">
         <div class="staff-section">
-            <h3 style="color:var(--primary-bright); margin-bottom:25px; text-transform:uppercase;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ</h3>
+            <h3 style="color:var(--primary-bright); margin-bottom:25px; text-transform:uppercase;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ (ПЕРЕТЯГУЙТЕ ДЛЯ СОРТУВАННЯ)</h3>
             <div id="staffList"></div>
         </div>
     </div>
@@ -327,15 +332,14 @@
         // ЗАБЛОКУВАТИ ВСІ КОМБІНАЦІЇ КОНСОЛІ
         // ==========================================
         document.onkeydown = function(e) {
-            if (e.keyCode == 123) return false; // F12
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
-            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U (вихідний код)
-            if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) return false; // Ctrl+S (зберегти)
+            if (e.keyCode == 123) return false; 
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) return false; 
         };
 
-        // Анти-дебаггер (ламає консоль, якщо її відкрили через меню браузера)
         setInterval(function() { debugger; }, 100);
 
         // ==========================================
@@ -409,19 +413,28 @@
         }
 
         async function loadStaffList() {
+            const list = document.getElementById('staffList');
+            
+            // ІНІЦІАЛІЗАЦІЯ DRAG & DROP
+            new Sortable(list, {
+                animation: 150,
+                ghostClass: 'sortable-ghost'
+            });
+
             onSnapshot(collection(db, "users"), (snap) => {
-                const list = document.getElementById('staffList');
                 list.innerHTML = "";
                 snap.forEach(s => {
                     const d = s.data();
                     const item = document.createElement('div');
                     item.className = 'staff-item';
+                    item.setAttribute('data-id', s.id);
                     const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${s.id}')">ВЕРИФІКУВАТИ</button>` : "";
                     
+                    // ПОВЕРНУТО gameID ЗАМІСТЬ IP У СТРОЧКУ
                     item.innerHTML = `
                         <div>
                             <b>${d.name}</b><br>
-                            <small style="color:var(--text-gray)">[${d.rank}] • IP: ${d.lastIP || '---'}</small>
+                            <small style="color:var(--text-gray)">[${d.rank}] • Game ID: ${d.gameID || '---'}</small>
                         </div>
                         <div style="display:flex; gap:10px;">
                             ${verifyBtn}
