@@ -101,8 +101,14 @@
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        /* ВИПРАВЛЕННЯ КАШІ: white-space: pre-wrap зберігає переноси */
-        .msg-content { line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; color: #ddd; }
+        /* ГОЛОВНЕ РІШЕННЯ ВІД "КАШІ" */
+        .msg-content { 
+            line-height: 1.6; 
+            white-space: pre-wrap; /* Зберігає всі Enter та пробіли */
+            word-wrap: break-word; 
+            color: #ddd; 
+            font-size: 15px;
+        }
 
         .reply-block {
             border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
@@ -159,7 +165,7 @@
         }
         .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 15px rgba(34, 197, 94, 0.1); }
         
-        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 100px; overflow-y: auto; }
+        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 200px; overflow-y: auto; }
         
         .upload-btn { cursor: pointer; font-size: 20px; color: #666; padding: 5px; transition: 0.3s; }
         .upload-btn:hover { color: var(--primary); transform: scale(1.1); }
@@ -224,7 +230,7 @@
                 <label for="imgUpload" class="upload-btn" id="uploadBtnIcon">📷</label>
                 <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
                 
-                <textarea id="msgInput" placeholder="Напишіть повідомлення..." rows="1"></textarea>
+                <textarea id="msgInput" placeholder="Напишіть повідомлення... (Shift+Enter для нового рядка)" rows="1"></textarea>
                 <button class="send-btn" onclick="sendMessage()">➤</button>
             </div>
         </div>
@@ -250,11 +256,9 @@
 
         let user = null;
         let userData = null;
-        // ВИПРАВЛЕННЯ: Отримуємо збережений ID з пам'яті браузера
-        let activeChannelId = localStorage.getItem('activeChatId') || null; 
+        let activeChannelId = localStorage.getItem('lastChatID') || null; 
         let activeChannelData = null;
         let unsubMessages = null;
-        
         let replyTo = null; 
         let currentBase64Img = null;
 
@@ -298,10 +302,9 @@
                     list.appendChild(item);
                 });
 
-                // ВИПРАВЛЕННЯ: Якщо сторінка оновилась і є збережений ID, відкриваємо його
                 if (activeChannelId) {
-                    const activeDoc = snap.docs.find(doc => doc.id === activeChannelId);
-                    if (activeDoc) selectChannel(activeDoc.id, activeDoc.data());
+                    const found = snap.docs.find(doc => doc.id === activeChannelId);
+                    if (found) selectChannel(found.id, found.data());
                 }
             });
         }
@@ -309,13 +312,11 @@
         function selectChannel(id, chData) {
             activeChannelId = id;
             activeChannelData = chData;
-            // ВИПРАВЛЕННЯ: Зберігаємо ID в localStorage
-            localStorage.setItem('activeChatId', id); 
+            localStorage.setItem('lastChatID', id); // ЗБЕРІГАЄМО ТУТ
 
             document.getElementById('activeChannelName').innerText = chData.name;
             document.getElementById('inputArea').style.display = 'flex';
             
-            // Оновлення візуального вибору в списку
             document.querySelectorAll('.channel-item').forEach(el => {
                 el.classList.toggle('active', el.dataset.id === id);
             });
@@ -349,11 +350,9 @@
             document.getElementById('lightbox-img').src = src;
             document.getElementById('lightbox').style.display = 'flex';
         };
-        window.closeLightbox = () => {
-            document.getElementById('lightbox').style.display = 'none';
-        };
+        window.closeLightbox = () => { document.getElementById('lightbox').style.display = 'none'; };
 
-        // --- ФОТО ЗІ СТИСНЕННЯМ ---
+        // --- ФОТО ---
         window.handleImageSelect = (input) => {
             const file = input.files[0];
             if (!file) return;
@@ -405,6 +404,29 @@
             if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none';
         }
 
+        // --- ФУНКЦІЯ ФОРМАТУВАННЯ (DISCORD STYLE) ---
+        function formatMarkdown(text) {
+            if (!text) return "";
+            
+            // Екрануємо HTML, щоб ніхто не зламав чат через <script>
+            let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+            // Жирний **текст**
+            safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Курсив *текст*
+            safeText = safeText.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Підкреслений __текст__
+            safeText = safeText.replace(/__(.*?)__/g, '<u>$1</u>');
+            // Закреслений ~~текст~~
+            safeText = safeText.replace(/~~(.*?)~~/g, '<del>$1</del>');
+            // Посилання
+            safeText = safeText.replace(/(\b(https?):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
+            // Меншн @user
+            safeText = safeText.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>');
+
+            return safeText;
+        }
+
         function loadMessages(channelId) {
             if (unsubMessages) unsubMessages();
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -412,6 +434,7 @@
                 const container = document.getElementById('messages');
                 container.innerHTML = "";
                 let lastAuth = null, lastTime = 0;
+                
                 snap.forEach(d => {
                     const m = d.data();
                     const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
@@ -421,13 +444,17 @@
                     
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`;
-                    let content = (m.replyTo ? `<div class="reply-block"><span class="reply-author">↩ ${m.replyTo.author}:</span> ${m.replyTo.text.substring(0, 40)}...</div>` : "") + 
-                                  `<div class="msg-content" id="text-${d.id}">${formatMessage(m.text)}</div>` + 
-                                  (m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : "");
+                    
+                    // Обробка тексту через наш Markdown + безпечне відображення
+                    let formattedContent = formatMarkdown(m.text);
+
+                    let contentHtml = (m.replyTo ? `<div class="reply-block"><span class="reply-author">↩ ${m.replyTo.author}:</span> ${m.replyTo.text.substring(0, 40)}...</div>` : "") + 
+                                     `<div class="msg-content" id="text-${d.id}">${formattedContent}</div>` + 
+                                     (m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : "");
                     
                     msgDiv.innerHTML = `
                         ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${timeStr}</span></div>` : ''}
-                        ${content}
+                        ${contentHtml}
                         <div class="msg-actions">
                             <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
                             ${canEdit ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
@@ -465,17 +492,12 @@
             if (currentBase64Img) msgData.imageUrl = currentBase64Img;
             await addDoc(collection(db, "channels", activeChannelId, "messages"), msgData);
             input.value = ""; cancelReply(); cancelImage();
+            input.style.height = 'auto';
         };
-
-        function formatMessage(text) {
-            if (!text) return "";
-            let f = text.replace(/(\b(https?):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
-            f = f.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>');
-            return f;
-        }
 
         window.mentionUser = (name) => { const i = document.getElementById('msgInput'); i.value += `@${name} `; i.focus(); };
         window.deleteMessage = async (id) => { if(confirm("Видалити?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
+        
         window.createChannel = async () => {
             const name = prompt("Назва:");
             if (name) {
@@ -498,7 +520,14 @@
             });
         }
 
-        document.getElementById('msgInput').addEventListener('keydown', (e) => {
+        // Автовисота для поля вводу та відправка
+        const input = document.getElementById('msgInput');
+        input.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
     </script>
