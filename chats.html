@@ -25,7 +25,7 @@
             background-color: var(--bg);
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
             color: white; font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; 
-            user-select: none; /* Частина захисту */
+            user-select: none;
         }
 
         /* SIDEBAR */
@@ -58,10 +58,11 @@
             background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); 
             border-color: var(--glass-border); 
         }
+        /* Стиль для прихованих каналів (бачить тільки адмін) */
+        .channel-item.hidden-channel { opacity: 0.5; border: 1px dashed #444; }
 
         .channel-controls { display: flex; align-items: center; gap: 10px; }
         .drag-handle { cursor: grab; opacity: 0.3; font-size: 18px; padding: 5px; }
-        .drag-handle:active { cursor: grabbing; }
         .chan-del-btn { color: #444; font-size: 14px; cursor: pointer; transition: 0.2s; }
         .chan-del-btn:hover { color: var(--danger); transform: scale(1.2); }
 
@@ -79,14 +80,14 @@
             display: flex; align-items: center; justify-content: space-between;
         }
         
-        /* Перемикач видимості чату (для адміна) */
         .visibility-toggle {
-            font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 10px; 
-            border-radius: 5px; cursor: pointer; display: none; /* За замовчуванням приховано */
+            font-size: 12px; background: rgba(255,255,255,0.1); padding: 8px 15px; 
+            border-radius: 8px; cursor: pointer; display: none; font-weight: 700; transition: 0.3s;
         }
-        .visibility-toggle.active { background: var(--primary); color: black; }
+        .visibility-toggle:hover { background: rgba(255,255,255,0.2); }
+        .visibility-toggle.hidden-mode { background: var(--danger); color: white; } /* Червоний коли приховано */
 
-        .messages-container { flex-grow: 1; overflow-y: auto; padding: 30px 40px; display: flex; flex-direction: column; gap: 2px; /* Менший відступ для групи */ }
+        .messages-container { flex-grow: 1; overflow-y: auto; padding: 30px 40px; display: flex; flex-direction: column; gap: 2px; }
         
         /* MESSAGES STYLE */
         .msg { 
@@ -94,61 +95,68 @@
             border: 1px solid transparent; transition: all 0.2s;
         }
         .msg:hover { background: rgba(255, 255, 255, 0.02); }
-        .msg.grouped { padding-top: 2px; padding-bottom: 2px; } /* Для згрупованих */
+        .msg.grouped { padding-top: 2px; padding-bottom: 2px; }
 
         .msg-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; margin-top: 10px; }
-        .msg.grouped .msg-header { display: none; } /* Ховаємо заголовок, якщо група */
+        .msg.grouped .msg-header { display: none; }
         
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        .msg-content { line-height: 1.5; white-space: pre-wrap; color: #ddd; padding-left: 0; }
-        .msg.grouped .msg-content { padding-left: 0; } /* Відступ не потрібен, якщо немає аватара зліва */
+        .msg-content { line-height: 1.5; white-space: pre-wrap; color: #ddd; }
 
-        /* Стилі для цитат (відповідей) */
         .reply-block {
             border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
             padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; color: #aaa;
             cursor: pointer;
         }
-        .reply-author { color: var(--warning); font-weight: 700; margin-right: 5px; }
-
-        /* Стилі для зображень */
+        
         .msg-image {
-            max-width: 300px; max-height: 300px; border-radius: 10px; 
-            margin-top: 5px; cursor: pointer; border: 1px solid var(--glass-border);
+            max-width: 350px; max-height: 350px; border-radius: 12px; 
+            margin-top: 10px; cursor: pointer; border: 1px solid var(--glass-border);
+            display: block;
         }
         
-        /* Стилі для згадувань (@) */
         .mention { background: var(--mention-bg); color: var(--mention-text); padding: 0 4px; border-radius: 4px; font-weight: bold; }
 
         /* ACTION BUTTONS */
         .msg-actions {
-            position: absolute; right: 20px; top: -10px; /* Трохи вище */
+            position: absolute; right: 20px; top: -15px;
             display: none; gap: 5px; z-index: 100; background: var(--card-bg);
             padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);
         }
-        .msg:hover .msg-actions { display: flex; top: -15px; } /* Спливає при наведенні */
+        .msg:hover .msg-actions { display: flex; }
         
         .action-btn {
             background: transparent; border: none; color: #888;
-            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 14px;
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700;
         }
         .action-btn:hover { color: var(--primary); background: rgba(255,255,255,0.05); }
         .del-btn:hover { color: var(--danger); }
 
+        /* EDIT AREA */
+        .edit-area { margin-top: 5px; }
+        .edit-input { 
+            width: 100%; background: #111; border: 1px solid var(--primary); color: white; 
+            padding: 10px; border-radius: 8px; resize: vertical; font-family: inherit;
+        }
+
         /* INPUT AREA */
         .chat-input-area { padding: 20px 40px; background: rgba(3, 5, 7, 0.9); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
         
-        /* Блок попереднього перегляду відповіді */
-        #replyPreview {
-            display: none; background: rgba(34, 197, 94, 0.1); padding: 8px 15px; 
-            border-left: 3px solid var(--primary); border-radius: 5px 5px 0 0;
-            font-size: 12px; color: #ccc; justify-content: space-between; align-items: center;
+        /* ПРЕВ'Ю (Відповідь + Фото) */
+        .preview-bar {
+            display: none; background: rgba(34, 197, 94, 0.05); padding: 10px 15px; 
+            border-radius: 10px 10px 0 0; border: 1px solid var(--glass-border); border-bottom: none;
+            flex-direction: column; gap: 5px;
         }
-        #replyPreview span { font-weight: bold; color: var(--primary-bright); }
-        .close-reply { cursor: pointer; color: #666; font-weight: bold; }
-        .close-reply:hover { color: white; }
+        
+        .reply-preview-line, .image-preview-line {
+            display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #ccc;
+        }
+        .preview-thumb { height: 40px; border-radius: 5px; border: 1px solid #555; }
+        .close-preview { cursor: pointer; color: #666; font-weight: 900; }
+        .close-preview:hover { color: white; }
 
         .input-wrapper {
             background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 15px; 
@@ -158,17 +166,15 @@
         
         textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 100px; overflow-y: auto; }
         
-        /* Кнопки вводу */
-        .upload-btn { cursor: pointer; font-size: 20px; color: #666; padding: 5px; }
-        .upload-btn:hover { color: var(--primary); }
+        .upload-btn { cursor: pointer; font-size: 20px; color: #666; padding: 5px; transition: 0.3s; }
+        .upload-btn:hover { color: var(--primary); transform: scale(1.1); }
+        .upload-btn.active { color: var(--primary-bright); text-shadow: 0 0 10px var(--primary); }
         
         .send-btn { background: var(--primary); color: black; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; }
         .send-btn:hover { background: var(--primary-bright); }
 
-        /* Скролбар */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -185,20 +191,29 @@
     <div class="chat-main">
         <div class="chat-header">
             <div><span style="color:var(--primary)">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span></div>
-            <div id="visibilityToggle" class="visibility-toggle" onclick="toggleChatVisibility()">👁️ ВИДИМІСТЬ ДЛЯ БІЙЦІВ</div>
+            <div id="visibilityToggle" class="visibility-toggle" onclick="toggleChannelVisibility()">👁️ ВСІМ ВИДНО</div>
         </div>
         
         <div id="messages" class="messages-container"></div>
         
         <div id="inputArea" class="chat-input-area">
-            <div id="replyPreview">
-                <div id="replyText">Відповідь для: <span>User</span></div>
-                <div class="close-reply" onclick="cancelReply()">✕</div>
+            <div id="previewBar" class="preview-bar">
+                <div id="replyInfo" class="reply-preview-line" style="display:none;">
+                    <span id="replyText">Відповідь...</span>
+                    <span class="close-preview" onclick="cancelReply()">✕</span>
+                </div>
+                <div id="imageInfo" class="image-preview-line" style="display:none;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img id="imgPreviewThumb" class="preview-thumb" src="">
+                        <span>Зображення готове до відправки</span>
+                    </div>
+                    <span class="close-preview" onclick="cancelImage()">✕</span>
+                </div>
             </div>
-            
+
             <div class="input-wrapper">
-                <label for="imgUpload" class="upload-btn">📷</label>
-                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageUpload(this)">
+                <label for="imgUpload" class="upload-btn" id="uploadBtnIcon">📷</label>
+                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
                 
                 <textarea id="msgInput" placeholder="Напишіть повідомлення... (@ для згадування)" rows="1"></textarea>
                 <button class="send-btn" onclick="sendMessage()">➤</button>
@@ -211,7 +226,6 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Конфігурація Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -228,11 +242,13 @@
         let user = null;
         let userData = null;
         let activeChannelId = null;
+        let activeChannelData = null; // Дані про канал (hidden чи ні)
         let unsubMessages = null;
-        let replyTo = null; // Збереження ID повідомлення, на яке відповідаємо
-        let uploadedImageBase64 = null; // Для зберігання фото перед відправкою
+        
+        let replyTo = null; 
+        let currentBase64Img = null;
 
-        // --- 1. ЗАХИСТ ВІД КОНСОЛІ ---
+        // 1. ЗАХИСТ ВІД КОНСОЛІ
         document.onkeydown = function(e) {
             if(e.keyCode == 123) return false;
             if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
@@ -240,25 +256,22 @@
             if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
         }
 
-        // Авторизація
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 user = u;
                 const snap = await getDoc(doc(db, "users", u.uid));
                 userData = snap.data();
                 
-                // Якщо адмін
                 if (userData.role === 'admin') {
                     document.getElementById('adminCreateChannel').style.display = 'block';
-                    document.getElementById('visibilityToggle').style.display = 'block'; // Перемикач видимості
+                    document.getElementById('visibilityToggle').style.display = 'block';
                     initSortable();
                 }
-                
                 loadChannels();
             } else { window.location.href = "index.html"; }
         });
 
-        // Завантаження каналів
+        // 2. ЗАВАНТАЖЕННЯ ТА ФІЛЬТРАЦІЯ КАНАЛІВ
         function loadChannels() {
             const q = query(collection(db, "channels"), orderBy("index", "asc"));
             onSnapshot(q, (snap) => {
@@ -267,14 +280,17 @@
                 snap.forEach(d => {
                     const ch = d.data();
                     
-                    // Перевірка видимості каналу (можна додати поле visibility в БД, тут спрощено)
-                    // Якщо канал "прихований", показуємо тільки адміну (логіку можна розширити)
+                    // ЛОГІКА ПРИХОВУВАННЯ: Якщо канал прихований (isHidden) і юзер НЕ адмін - не показуємо
+                    if (ch.isHidden && userData.role !== 'admin') {
+                        return; 
+                    }
 
                     const item = document.createElement('div');
-                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''}`;
+                    // Додаємо клас hidden-channel для адміна, щоб бачив що канал прихований
+                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.isHidden ? 'hidden-channel' : ''}`;
                     item.dataset.id = d.id;
                     item.innerHTML = `
-                        <span># ${ch.name}</span>
+                        <span>${ch.isHidden ? '🔒' : '#'} ${ch.name}</span>
                         <div class="channel-controls">
                             ${userData?.role === 'admin' ? `
                                 <span class="chan-del-btn" onclick="deleteChannel('${d.id}', '${ch.name}')">✕</span>
@@ -284,70 +300,45 @@
                     `;
                     item.onclick = (e) => {
                         if (e.target.classList.contains('drag-handle') || e.target.classList.contains('chan-del-btn')) return;
-                        selectChannel(d.id, ch.name, ch.readOnly); // readOnly - параметр для скриття чату
+                        selectChannel(d.id, ch);
                     };
                     list.appendChild(item);
                 });
             });
         }
 
-        // --- 2. СКРИТТЯ ЧАТУ ВІД ЗВИЧАЙНИХ БІЙЦІВ ---
-        // Вибір каналу
-        function selectChannel(id, name, isReadOnly) {
+        // 3. ВИБІР КАНАЛУ ТА НАЛАШТУВАННЯ КНОПКИ ВИДИМОСТІ
+        function selectChannel(id, chData) {
             activeChannelId = id;
-            document.getElementById('activeChannelName').innerText = name;
+            activeChannelData = chData;
+            document.getElementById('activeChannelName').innerText = chData.name;
+            document.getElementById('inputArea').style.display = 'flex'; // Відкриваємо чат
             
-            // Якщо адмін або канал не тільки для читання - показуємо ввід
-            // АБО: За умовою - скриття від звичайних бійців.
-            // Реалізація: Якщо не адмін - ховаємо інпут (тільки читання).
-            
+            // Оновлюємо кнопку видимості (для адміна)
             if (userData.role === 'admin') {
-                document.getElementById('inputArea').style.display = 'flex';
-                // Оновлюємо стан кнопки перемикача (якщо б вона зберігалась в БД)
-            } else {
-                // Звичайний боєць
-                // Тут можна додати перевірку спеціального прапорця в каналі, 
-                // але за замовчуванням зробимо доступним для спілкування, 
-                // а адмін може "закрити" чат (readOnly).
-                // Для прикладу: якщо isReadOnly == true, ховаємо.
-                // Якщо треба глобально сховати можливість писати звичайним:
-                // document.getElementById('inputArea').style.display = 'none'; 
-                
-                // В коді нижче реалізовано так: якщо isReadOnly (встановлюється адміном), то інпут ховається.
-                // Якщо поле не задано, вважаємо відкритим.
-                if (isReadOnly) {
-                    document.getElementById('inputArea').style.display = 'none';
+                const btn = document.getElementById('visibilityToggle');
+                if (chData.isHidden) {
+                    btn.classList.add('hidden-mode');
+                    btn.innerText = "🔒 ПРИХОВАНО ВІД БІЙЦІВ";
                 } else {
-                    document.getElementById('inputArea').style.display = 'flex';
+                    btn.classList.remove('hidden-mode');
+                    btn.innerText = "👁️ ВСІМ ВИДНО";
                 }
             }
             
             loadMessages(id);
         }
 
-        // Функція для адміна: перемкнути режим "Тільки читання" для каналу
-        window.toggleChatVisibility = async () => {
+        // 4. ПЕРЕМИКАЧ ВИДИМОСТІ (ПРАЦЮЄ ЧЕРЕЗ БАЗУ)
+        window.toggleChannelVisibility = async () => {
             if (!activeChannelId || userData.role !== 'admin') return;
             
-            // Отримуємо поточний стан
-            const chanRef = doc(db, "channels", activeChannelId);
-            const snap = await getDoc(chanRef);
-            const currentStatus = snap.data().readOnly || false;
-            
-            await updateDoc(chanRef, { readOnly: !currentStatus });
-            
-            const btn = document.getElementById('visibilityToggle');
-            if (!currentStatus) {
-                btn.classList.add('active');
-                btn.innerText = "🔒 ЧАТ ЗАКРИТО (ТІЛЬКИ ЧИТАННЯ)";
-            } else {
-                btn.classList.remove('active');
-                btn.innerText = "👁️ ЧАТ ВІДКРИТО";
-            }
+            const newState = !activeChannelData.isHidden;
+            await updateDoc(doc(db, "channels", activeChannelId), { isHidden: newState });
+            // Оновлення інтерфейсу відбудеться автоматично через onSnapshot
         };
 
-
-        // --- 5. СИСТЕМА ГРУПУВАННЯ ПОВІДОМЛЕНЬ ---
+        // 5. ЗАВАНТАЖЕННЯ ПОВІДОМЛЕНЬ (ГРУПУВАННЯ)
         function loadMessages(channelId) {
             if (unsubMessages) unsubMessages();
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -355,7 +346,6 @@
             unsubMessages = onSnapshot(q, (snap) => {
                 const container = document.getElementById('messages');
                 container.innerHTML = "";
-                
                 let lastAuth = null;
                 let lastTime = 0;
 
@@ -364,33 +354,19 @@
                     const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
                     const timeStr = m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
                     
-                    // Перевірка на групування (той самий автор і різниця < 5 хв)
+                    // Групування
                     let isGrouped = false;
-                    if (lastAuth === m.author && (msgTime - lastTime) < 300000) {
-                        isGrouped = true;
-                    }
+                    if (lastAuth === m.author && (msgTime - lastTime) < 300000) isGrouped = true;
 
                     const msgDiv = document.createElement('div');
                     msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`;
                     msgDiv.id = `msg-${d.id}`;
                     
-                    // Обробка вмісту (текст + відповідь + картинка)
                     let contentHtml = "";
-                    
-                    // Якщо це відповідь
                     if (m.replyTo) {
-                        contentHtml += `
-                            <div class="reply-block">
-                                <span class="reply-author">↩ ${m.replyTo.author}:</span> 
-                                ${m.replyTo.text ? m.replyTo.text.substring(0, 50) + "..." : "Фото"}
-                            </div>
-                        `;
+                        contentHtml += `<div class="reply-block"><span class="reply-author">↩ ${m.replyTo.author}:</span> ${m.replyTo.text.substring(0, 40)}...</div>`;
                     }
-                    
-                    // Текст повідомлення з форматуванням
-                    contentHtml += `<div class="msg-content">${formatMessage(m.text)}</div>`;
-                    
-                    // Якщо є картинка
+                    contentHtml += `<div class="msg-content" id="text-${d.id}">${formatMessage(m.text)}</div>`;
                     if (m.imageUrl) {
                         contentHtml += `<img src="${m.imageUrl}" class="msg-image" onclick="window.open('${m.imageUrl}')">`;
                     }
@@ -402,19 +378,16 @@
                                 <span class="msg-time">${timeStr}</span>
                             </div>
                         ` : ''}
-                        
                         ${contentHtml}
-                        
                         <div class="msg-actions">
-                            <button class="action-btn" title="Відповісти" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text}\`)">↩</button>
-                            ${(userData.role === 'admin' || m.uid === user.uid) ? `
-                                <button class="action-btn del-btn" title="Видалити" onclick="deleteMessage('${d.id}')">✕</button>
+                            <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text}\`)">↩</button>
+                            ${userData.role === 'admin' ? `
+                                <button class="action-btn" onclick="editMessage('${d.id}', \`${m.text}\`)">✎</button>
+                                <button class="action-btn del-btn" onclick="deleteMessage('${d.id}')">✕</button>
                             ` : ''}
                         </div>
                     `;
-                    
                     container.appendChild(msgDiv);
-                    
                     lastAuth = m.author;
                     lastTime = msgTime;
                 });
@@ -422,74 +395,84 @@
             });
         }
 
-        // --- 6. СИСТЕМА ЗГАДУВАНЬ (@) ---
-        function formatMessage(text) {
-            if (!text) return "";
-            // URL
-            let formatted = text.replace(/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
-            // Згадування (@Name)
-            formatted = formatted.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>');
-            return formatted;
-        }
+        // 6. СИСТЕМА ФОТО (DISCORD-STYLE PREVIEW)
+        window.handleImageSelect = (input) => {
+            const file = input.files[0];
+            if (!file) return;
+            if (file.size > 1048576) { alert("Максимум 1MB!"); return; } // Ліміт 1MB
 
-        window.mentionUser = (name) => {
-            const input = document.getElementById('msgInput');
-            input.value += `@${name} `;
-            input.focus();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentBase64Img = e.target.result;
+                // Показуємо прев'ю
+                document.getElementById('previewBar').style.display = 'flex';
+                document.getElementById('imageInfo').style.display = 'flex';
+                document.getElementById('imgPreviewThumb').src = currentBase64Img;
+                document.getElementById('uploadBtnIcon').classList.add('active');
+            };
+            reader.readAsDataURL(file);
         };
 
-        // --- 4. СИСТЕМА ВІДПОВІДІ ---
+        window.cancelImage = () => {
+            currentBase64Img = null;
+            document.getElementById('imageInfo').style.display = 'none';
+            document.getElementById('imgUpload').value = "";
+            document.getElementById('uploadBtnIcon').classList.remove('active');
+            checkPreviewBar();
+        };
+
+        // 7. СИСТЕМА ВІДПОВІДІ
         window.replyToMessage = (id, author, text) => {
             replyTo = { id, author, text };
-            const preview = document.getElementById('replyPreview');
-            preview.style.display = 'flex';
-            document.getElementById('replyText').innerHTML = `Відповідь для <span>${author}</span>: ${text.substring(0, 30)}...`;
+            document.getElementById('previewBar').style.display = 'flex';
+            document.getElementById('replyInfo').style.display = 'flex';
+            document.getElementById('replyText').innerHTML = `Відповідь для <span>${author}</span>`;
             document.getElementById('msgInput').focus();
         };
 
         window.cancelReply = () => {
             replyTo = null;
-            document.getElementById('replyPreview').style.display = 'none';
+            document.getElementById('replyInfo').style.display = 'none';
+            checkPreviewBar();
         };
 
-        // --- 7. ЗАВАНТАЖЕННЯ ФОТО ---
-        window.handleImageUpload = (input) => {
-            const file = input.files[0];
-            if (!file) return;
-            
-            // Обмеження розміру (1.5 MB для Firestore Base64)
-            if (file.size > 1500000) {
-                alert("Файл занадто великий! Максимум 1.5MB.");
-                input.value = "";
-                return;
+        function checkPreviewBar() {
+            if (!replyTo && !currentBase64Img) {
+                document.getElementById('previewBar').style.display = 'none';
             }
+        }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                uploadedImageBase64 = e.target.result;
-                // Показуємо прев'ю в полі вводу або змінюємо іконку
-                document.querySelector('.upload-btn').style.color = 'var(--primary)';
-                document.getElementById('msgInput').placeholder = "📷 Фото прикріплено. Додайте підпис...";
+        // 8. РЕДАГУВАННЯ (ПОВЕРНУТО)
+        window.editMessage = (id, oldText) => {
+            const textDiv = document.getElementById(`text-${id}`);
+            textDiv.innerHTML = `
+                <div class="edit-area">
+                    <textarea class="edit-input" id="edit-input-${id}">${oldText}</textarea>
+                    <div style="font-size:11px; margin-top:5px; color:#777;">ENTER = Зберегти, ESC = Скасувати</div>
+                </div>
+            `;
+            const area = document.getElementById(`edit-input-${id}`);
+            area.focus();
+            area.onkeydown = async (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (area.value.trim()) await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: area.value });
+                }
+                if (e.key === 'Escape') loadMessages(activeChannelId); // Перезавантажити список, щоб скасувати
             };
-            reader.readAsDataURL(file);
         };
 
-        // --- 3. ВІДПРАВКА НА ENTER ---
-        // Додаємо обробник подій на поле вводу
-        document.getElementById('msgInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Запобігаємо переносу рядка
-                sendMessage();
-            }
+        // 9. ВІДПРАВКА
+        document.getElementById('msgInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
 
         window.sendMessage = async () => {
             const input = document.getElementById('msgInput');
             const text = input.value.trim();
             
-            // Якщо немає тексту і немає картинки - не відправляємо
-            if ((!text && !uploadedImageBase64) || !activeChannelId) return;
-            
+            if ((!text && !currentBase64Img) || !activeChannelId) return;
+
             const msgData = {
                 text: text,
                 author: userData.name,
@@ -497,51 +480,41 @@
                 createdAt: serverTimestamp()
             };
 
-            // Якщо є відповідь
-            if (replyTo) {
-                msgData.replyTo = {
-                    id: replyTo.id,
-                    author: replyTo.author,
-                    text: replyTo.text
-                };
-            }
-
-            // Якщо є фото
-            if (uploadedImageBase64) {
-                msgData.imageUrl = uploadedImageBase64;
-            }
+            if (replyTo) msgData.replyTo = { id: replyTo.id, author: replyTo.author, text: replyTo.text };
+            if (currentBase64Img) msgData.imageUrl = currentBase64Img;
 
             await addDoc(collection(db, "channels", activeChannelId, "messages"), msgData);
-            
-            // Очищення
+
             input.value = "";
             cancelReply();
-            uploadedImageBase64 = null;
-            document.querySelector('.upload-btn').style.color = '#666';
-            document.getElementById('imgUpload').value = "";
-            input.placeholder = "Напишіть повідомлення... (@ для згадування)";
+            cancelImage();
         };
 
-        // --- ІНШІ ФУНКЦІЇ ---
-        window.deleteMessage = async (msgId) => { 
-            if (confirm("Видалити повідомлення?")) 
-                await deleteDoc(doc(db, "channels", activeChannelId, "messages", msgId)); 
+        // ФОРМАТУВАННЯ ТА ІНШЕ
+        function formatMessage(text) {
+            if (!text) return "";
+            let f = text.replace(/(\b(https?):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
+            f = f.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>');
+            return f;
+        }
+
+        window.mentionUser = (name) => {
+            const i = document.getElementById('msgInput');
+            i.value += `@${name} `; i.focus();
         };
 
-        window.createChannel = async () => { 
-            const name = prompt("Назва каналу:"); 
+        window.deleteMessage = async (id) => { if(confirm("Видалити?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
+        
+        window.createChannel = async () => {
+            const name = prompt("Назва каналу:");
             if (name) {
-                const snap = await getDocs(collection(db, "channels"));
-                await addDoc(collection(db, "channels"), { 
-                    name: name.toUpperCase(), 
-                    index: snap.size,
-                    readOnly: false // За замовчуванням відкритий
-                }); 
+                const s = await getDocs(collection(db, "channels"));
+                await addDoc(collection(db, "channels"), { name: name.toUpperCase(), index: s.size, isHidden: false });
             }
         };
 
         window.deleteChannel = async (id, name) => {
-            if (confirm(`Видалити канал #${name}?`)) {
+            if (confirm(`Видалити канал ${name}?`)) {
                 await deleteDoc(doc(db, "channels", id));
                 if (activeChannelId === id) window.location.reload();
             }
@@ -550,14 +523,12 @@
         function initSortable() {
             const el = document.getElementById('channelList');
             Sortable.create(el, {
-                handle: '.drag-handle',
-                animation: 250,
+                handle: '.drag-handle', animation: 250,
                 onEnd: async () => {
                     const items = el.querySelectorAll('.channel-item');
                     const batch = writeBatch(db);
                     items.forEach((item, idx) => {
-                        const ref = doc(db, "channels", item.dataset.id);
-                        batch.update(ref, { index: idx });
+                        batch.update(doc(db, "channels", item.dataset.id), { index: idx });
                     });
                     await batch.commit();
                 }
