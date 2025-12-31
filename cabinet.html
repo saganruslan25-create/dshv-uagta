@@ -187,10 +187,10 @@
             display: flex; justify-content: space-between; align-items: center;
             background: #0c121d; padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
             position: relative; z-index: 1; border: 1px solid rgba(255,255,255,0.05);
-            cursor: grab;
         }
-        .staff-item:active { cursor: grabbing; }
-        .sortable-ghost { opacity: 0.3; background: var(--primary); }
+        .drag-handle { cursor: grab; padding: 10px; color: var(--primary); font-size: 20px; }
+        .drag-handle:active { cursor: grabbing; }
+        .sortable-ghost { opacity: 0.1; background: var(--primary) !important; }
 
         /* КНОПКИ ДІЙ */
         .btn-action-g, .btn-manage, .btn-verify, .btn-ban { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
@@ -310,7 +310,8 @@
                     </div>
                     <div class="info-box">
                         <span>ДОГАНИ</span>
-                        <h2 id="userWarns" style="color: white;">0</h2> <div class="admin-controls">
+                        <h2 id="userWarns" style="color: white !important;">0</h2> 
+                        <div class="admin-controls">
                             <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
                             <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
                         </div>
@@ -336,7 +337,7 @@
 
     <div class="staff-section-container" id="adminSection" style="display:none;">
         <div class="staff-section">
-            <h3 style="color:var(--primary-bright); margin-bottom:25px; text-transform:uppercase;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ (ПЕРЕТЯГУЙТЕ ДЛЯ СОРТУВАННЯ)</h3>
+            <h3 style="color:var(--primary-bright); margin-bottom:25px; text-transform:uppercase;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ (ПЕРЕТЯГУЙТЕ ЗА ☰ ДЛЯ СОРТУВАННЯ)</h3>
             <div id="staffList"></div>
         </div>
     </div>
@@ -370,6 +371,7 @@
         let currentUID = null;
         let myData = null;
         let editingUID = null;
+        let isDragging = false; // ПРАВКА: Стан для блокування оновлення під час перетягування
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
         // ЗАХИСТ ВІД КОНСОЛІ
@@ -438,7 +440,6 @@
             listenForMentions();
         });
 
-        // ФУНКЦІЯ ДОДАВАННЯ ПАСПОРТУ ТА ДІСКОРДУ
         window.updateField = async (field) => {
             const label = field === 'passport' ? "Посилання на паспорт (Imgur/Yapx):" : "Ваш Discord (User#0000):";
             const newVal = prompt(label);
@@ -456,11 +457,9 @@
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
             
-            // Відображення документів
             document.getElementById('userPassport').innerText = data.passport || "НЕМАЄ";
             document.getElementById('userDiscord').innerText = data.discord || "---";
 
-            // Показуємо кнопки "+" тільки якщо даних немає
             if (!data.passport || data.passport === "НЕМАЄ") document.getElementById('btnAddPass').style.display = 'flex';
             else document.getElementById('btnAddPass').style.display = 'none';
 
@@ -470,16 +469,18 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
-        // ЗАВАНТАЖЕННЯ ТА ЗБЕРЕЖЕННЯ ПОРЯДКУ РЕЄСТРУ
+        // ПРАВКА: Система перетягування з фіксом "стрибків"
         async function loadStaffList() {
             const list = document.getElementById('staffList');
             if(!list) return;
 
-            // Ініціалізація перетягування
             new Sortable(list, {
                 animation: 250,
+                handle: '.drag-handle', // Тягнемо тільки за іконку
                 ghostClass: 'sortable-ghost',
+                onStart: () => { isDragging = true; },
                 onEnd: async function() {
+                    isDragging = false;
                     const items = list.querySelectorAll('.staff-item');
                     const batch = writeBatch(db);
                     items.forEach((item, index) => {
@@ -490,13 +491,10 @@
                 }
             });
 
-            // Виправлення: Сортування по staffIndex, якщо він є. Якщо немає - по імені.
-            const qStaff = query(collection(db, "users"), orderBy("staffIndex", "asc"));
             onSnapshot(collection(db, "users"), (snap) => {
+                if (isDragging) return; // ПРАВКА: Не оновлюємо список, доки адмін щось тягне
                 const users = [];
                 snap.forEach(s => users.push({id: s.id, ...s.data()}));
-                
-                // Сортуємо в коді, щоб не ламалося якщо поля немає
                 users.sort((a, b) => (a.staffIndex || 999) - (b.staffIndex || 999));
 
                 list.innerHTML = "";
@@ -504,11 +502,11 @@
                     const item = document.createElement('div');
                     item.className = 'staff-item';
                     item.setAttribute('data-id', d.id);
-                    const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${d.id}')">ВЕРИФІКУВАТИ</button>` : "";
+                    const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${d.id}')">OK</button>` : "";
                     
                     item.innerHTML = `
                         <div style="display:flex; align-items:center; gap:15px;">
-                            <span style="opacity:0.3; font-size:20px;">☰</span>
+                            <div class="drag-handle">☰</div>
                             <div>
                                 <b>${d.name}</b><br>
                                 <small style="color:var(--text-gray)">[${d.rank}] • Game ID: ${d.gameID || '---'}</small>
@@ -527,7 +525,6 @@
             });
         }
 
-        // МОНІТОРИНГ ЗГАДУВАНЬ В ЧАТАХ (@Name)
         function listenForMentions() {
             onSnapshot(collection(db, "channels"), (channelsSnap) => {
                 channelsSnap.forEach(channelDoc => {
@@ -621,14 +618,22 @@
             });
         }
 
+        // ПРАВКА: Очищення повідомлень про теги при кліку на дзвіночок
         window.toggleNotifs = (e) => {
             if(e) e.stopPropagation();
             const drop = document.getElementById('notifDropdown');
             const isOpen = drop.style.display === 'flex';
             drop.style.display = isOpen ? 'none' : 'flex';
             if(!isOpen) {
+                // Ховаємо точки
                 document.getElementById('bellDot').style.display = 'none';
                 document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
+                
+                // Очищуємо список повідомлень (або позначаємо як прочитані)
+                const list = document.getElementById('notifList');
+                list.innerHTML = `<div style="color:var(--text-gray); text-align:center; padding: 10px;">Сповіщення прочитані</div>`;
+
+                // Оновлюємо лічильники, щоб нові сповіщення не з'являлися до нових подій
                 ['reports', 'subotniks', 'applications'].forEach(async c => {
                     const s = await getDocs(collection(db, c));
                     localStorage.setItem('count_' + c, s.size);
