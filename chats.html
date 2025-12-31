@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>ДШВ | ТАКТИЧНИЙ ЗВ'ЯЗОК</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -20,12 +20,20 @@
             --mention-text: #fbbf24;
         }
 
-        /* Загальні налаштування та скидання */
         * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        html, body { 
+            height: 100%; 
+            width: 100%; 
+            overflow: hidden; 
+            position: fixed; /* Запобігає смиканню на мобільних */
+        }
+
         body { 
             background-color: var(--bg);
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
-            color: white; font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; 
+            color: white; font-family: 'Inter', sans-serif; 
+            display: flex;
             user-select: none;
         }
 
@@ -40,13 +48,27 @@
         .sidebar {
             width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
             display: flex; flex-direction: column; padding: 25px; z-index: 1000;
-            position: relative;
+            height: 100%;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .close-sidebar-btn {
+            display: none; /* Тільки для мобільних */
+            background: none; border: 1px solid var(--glass-border); color: white;
+            padding: 5px 10px; border-radius: 8px; cursor: pointer; font-weight: 900;
         }
 
         .dsw-title {
             background: var(--primary); color: black; padding: 8px 15px; border-radius: 8px;
-            font-weight: 900; text-align: center; text-transform: uppercase; margin-bottom: 25px;
+            font-weight: 900; text-align: center; text-transform: uppercase;
             box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); letter-spacing: 1px;
+            flex-grow: 1;
         }
 
         .back-btn {
@@ -80,7 +102,7 @@
         }
 
         /* --- ГОЛОВНА ЧАСТИНА ЧАТУ --- */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: transparent; min-width: 0; }
+        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: transparent; min-width: 0; height: 100%; }
         
         .chat-header {
             padding: 15px 25px; background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
@@ -88,7 +110,6 @@
             display: flex; align-items: center; justify-content: space-between;
         }
 
-        /* Кнопка меню для мобільних */
         .mobile-menu-toggle {
             display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 15px;
         }
@@ -99,7 +120,6 @@
         }
         .visibility-toggle.hidden-mode { background: var(--danger); color: white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
 
-        /* ПОВІДОМЛЕННЯ ТА РОЗДІЛЕННЯ ТЕКСТУ */
         .messages-container { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; scroll-behavior: smooth; }
         
         .msg { position: relative; padding: 8px 15px; border-radius: 8px; border-left: 3px solid transparent; transition: background 0.2s; max-width: 100%; }
@@ -112,15 +132,10 @@
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        /* Нормальне розділення тексту */
+        /* РОЗДІЛЕННЯ ТЕКСТУ */
         .msg-content { 
-            line-height: 1.6; 
-            white-space: pre-wrap; 
-            word-wrap: break-word; 
-            word-break: break-word; /* Щоб довгі слова не ламали верстку */
-            color: #ddd; 
-            font-size: 15px;
-            max-width: 100%;
+            line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; 
+            color: #ddd; font-size: 15px; max-width: 100%;
         }
 
         .reply-block {
@@ -128,7 +143,6 @@
             padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; color: #aaa;
             cursor: pointer; transition: 0.2s; max-width: fit-content;
         }
-        .reply-block:hover { background: rgba(251, 191, 36, 0.2); color: white; }
         
         .msg-image {
             max-width: 100%; max-height: 400px; border-radius: 12px; 
@@ -149,8 +163,6 @@
             background: transparent; border: none; color: #888;
             padding: 6px 10px; border-radius: 4px; cursor: pointer; font-size: 14px; font-weight: 700;
         }
-        .action-btn:hover { color: var(--primary); background: rgba(255,255,255,0.05); }
-        .del-btn:hover { color: var(--danger); }
 
         .edit-box {
             width: 100%; background: #000; border: 1px solid var(--primary);
@@ -166,13 +178,17 @@
         #mentionBox {
             position: absolute; bottom: 85px; left: 20px; background: #0a0c10; border: 1px solid var(--glass-border);
             border-radius: 10px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        .mention-item { padding: 10px 15px; cursor: pointer; font-size: 13px; font-weight: 600; border-bottom: 1px solid #1a1c20; }
-        .mention-item:hover { background: var(--primary); color: black; }
 
         /* ПАНЕЛЬ ВВОДУ */
-        .chat-input-area { padding: 15px 20px; background: rgba(3, 5, 7, 0.9); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
+        .chat-input-area { 
+            padding: 15px 20px; 
+            background: rgba(3, 5, 7, 0.95); 
+            border-top: 1px solid var(--glass-border); 
+            display: none; 
+            flex-direction: column;
+            margin-bottom: env(safe-area-inset-bottom); /* Підтримка iPhone */
+        }
         
         .preview-bar {
             display: none; background: rgba(34, 197, 94, 0.05); padding: 10px 15px; 
@@ -180,46 +196,42 @@
             flex-direction: column; gap: 5px;
         }
         
-        .reply-preview-line, .image-preview-line {
-            display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #ccc;
-        }
-        .preview-thumb { height: 40px; border-radius: 5px; border: 1px solid #555; object-fit: cover; }
-        .close-preview { cursor: pointer; color: #666; font-weight: 900; padding: 5px; }
-
         .input-wrapper {
             background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 15px; 
             display: flex; align-items: center; padding: 5px 15px; gap: 10px;
         }
         
-        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 150px; overflow-y: auto; font-size: 16px; /* Для запобігання зуму в iOS */ }
-        .upload-btn { cursor: pointer; font-size: 20px; color: #666; padding: 8px; transition: 0.3s; }
+        textarea { 
+            background: none; border: none; color: white; padding: 12px; flex-grow: 1; 
+            outline: none; font-family: inherit; resize: none; max-height: 120px; 
+            overflow-y: auto; font-size: 16px; 
+        }
+        .upload-btn { cursor: pointer; font-size: 20px; color: #666; padding: 8px; }
         .send-btn { background: var(--primary); color: black; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        /* LIGHTBOX */
         #lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;
             z-index: 10000; cursor: zoom-out; backdrop-filter: blur(10px);
         }
-        #lightbox img { max-width: 95%; max-height: 90%; border-radius: 10px; }
 
-        /* --- МОБІЛЬНІ НАЛАШТУВАННЯ (ADAPTIVE) --- */
+        /* МОБІЛЬНА АДАПТАЦІЯ */
         @media (max-width: 768px) {
             .mobile-menu-toggle { display: block; }
+            .close-sidebar-btn { display: block; }
             
             .sidebar {
                 position: absolute; left: -100%; top: 0; bottom: 0; 
-                width: 280px; transition: 0.3s ease;
+                width: 85%; transition: 0.4s cubic-bezier(0.19, 1, 0.22, 1);
             }
             .sidebar.active { left: 0; box-shadow: 10px 0 50px rgba(0,0,0,0.9); }
 
             .chat-header { padding: 10px 15px; }
-            .messages-container { padding: 15px; }
-            .msg { padding: 8px 10px; }
             .chat-input-area { padding: 10px; }
-            .msg-actions { display: flex; opacity: 0.5; top: -10px; right: 5px; } /* На мобільних показуємо зразу, бо немає hover */
+            .msg-actions { display: flex; opacity: 1; top: -10px; right: 5px; }
             
-            .msg-image { max-width: 100%; }
+            /* Фікс щоб клавіатура не перекривала інпут */
+            .chat-main { height: 100%; }
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -229,20 +241,23 @@
 <body oncontextmenu="return false;">
 
     <div id="lightbox" onclick="closeLightbox()">
-        <img id="lightbox-img" src="">
+        <img id="lightbox-img" src="" style="max-width:95%; max-height:90%;">
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="dsw-title">ДШВ КОМУНІКАЦІЯ</div>
-        <a href="cabinet.html" class="back-btn">⬅ НАЗАД ДО КАБІНЕТУ</a>
+        <div class="sidebar-header">
+            <div class="dsw-title">ДШВ КАНАЛИ</div>
+            <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
+        </div>
+        <a href="cabinet.html" class="back-btn">⬅ КАБІНЕТ</a>
         <div id="channelList" class="channel-list"></div>
-        <button id="adminCreateChannel" class="create-btn" style="display:none;" onclick="createChannel()">+ СТВОРИТИ КАНАЛ</button>
+        <button id="adminCreateChannel" class="create-btn" style="display:none;" onclick="createChannel()">+ СТВОРИТИ</button>
     </div>
 
-    <div class="chat-main" onclick="closeSidebarMobile()">
+    <div class="chat-main">
         <div class="chat-header">
             <div style="display:flex; align-items:center;">
-                <button class="mobile-menu-toggle" onclick="event.stopPropagation(); toggleSidebar()">☰</button>
+                <button class="mobile-menu-toggle" onclick="toggleSidebar()">☰</button>
                 <div><span style="color:var(--primary)">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span></div>
             </div>
             <div id="visibilityToggle" class="visibility-toggle" onclick="toggleChannelVisibility()">👁️ ВСІМ ВИДНО</div>
@@ -255,21 +270,18 @@
 
         <div id="inputArea" class="chat-input-area">
             <div id="previewBar" class="preview-bar">
-                <div id="replyInfo" class="reply-preview-line" style="display:none;">
-                    <span id="replyText">Відповідь...</span>
-                    <span class="close-preview" onclick="cancelReply()">✕</span>
+                <div id="replyInfo" style="display:none;" class="reply-preview-line">
+                    <span id="replyText"></span>
+                    <span style="cursor:pointer;" onclick="cancelReply()">✕</span>
                 </div>
-                <div id="imageInfo" class="image-preview-line" style="display:none;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img id="imgPreviewThumb" class="preview-thumb" src="">
-                        <span id="imgSizeLabel">Зображення готове</span>
-                    </div>
-                    <span class="close-preview" onclick="cancelImage()">✕</span>
+                <div id="imageInfo" style="display:none;" class="reply-preview-line">
+                    <img id="imgPreviewThumb" style="height:30px; border-radius:4px;">
+                    <span onclick="cancelImage()">✕</span>
                 </div>
             </div>
 
             <div class="input-wrapper">
-                <label for="imgUpload" class="upload-btn" id="uploadBtnIcon">📷</label>
+                <label for="imgUpload" class="upload-btn">📷</label>
                 <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
                 <textarea id="msgInput" placeholder="Повідомлення..." rows="1"></textarea>
                 <button class="send-btn" onclick="sendMessage()">➤</button>
@@ -282,7 +294,15 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs, setDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Конфігурація Firebase
+        // ЗАХИСТ ВІД КОНСОЛІ ТА ГАРЯЧИХ КЛАВІШ
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) return false; // F12
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+        };
+
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -300,7 +320,6 @@
         let activeChannelData = null, unsubMessages = null, unsubTyping = null;
         let replyTo = null, currentBase64Img = null, allUsers = [];
 
-        // Перевірка авторизації
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 user = u;
@@ -316,23 +335,13 @@
             } else { window.location.href = "index.html"; }
         });
 
-        // Мобільний сайдбар
-        window.toggleSidebar = () => {
-            document.getElementById('sidebar').classList.toggle('active');
-        };
-        window.closeSidebarMobile = () => {
-            if (window.innerWidth <= 768) {
-                document.getElementById('sidebar').classList.remove('active');
-            }
-        };
+        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
 
         async function loadUsersList() {
             const s = await getDocs(collection(db, "users"));
-            allUsers = [];
-            s.forEach(d => allUsers.push(d.data().name));
+            allUsers = []; s.forEach(d => allUsers.push(d.data().name));
         }
 
-        // Завантаження каналів
         function loadChannels() {
             const q = query(collection(db, "channels"), orderBy("index", "asc"));
             onSnapshot(q, (snap) => {
@@ -348,7 +357,7 @@
                     item.onclick = (e) => {
                         if (e.target.classList.contains('drag-handle') || e.target.classList.contains('chan-del-btn')) return;
                         selectChannel(d.id, ch);
-                        closeSidebarMobile();
+                        if(window.innerWidth <= 768) toggleSidebar();
                     };
                     list.appendChild(item);
                 });
@@ -360,14 +369,12 @@
         }
 
         function selectChannel(id, chData) {
-            activeChannelId = id;
-            activeChannelData = chData;
+            activeChannelId = id; activeChannelData = chData;
             localStorage.setItem('lastChatID', id); 
             document.getElementById('activeChannelName').innerText = chData.name;
             document.getElementById('inputArea').style.display = 'flex';
             updateVisibilityButtonUI(chData.isHidden);
-            loadMessages(id);
-            listenTyping(id);
+            loadMessages(id); listenTyping(id);
         }
 
         function updateVisibilityButtonUI(isHidden) {
@@ -391,33 +398,26 @@
             });
         }
 
-        // Автовисота поля вводу
         document.getElementById('msgInput').addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
+            this.style.height = 'auto'; this.style.height = (this.scrollHeight) + 'px';
             setDoc(doc(db, "typing", activeChannelId), { [user.uid]: userData.name }, { merge: true });
             if (this.value.endsWith('@')) showMentionBox();
         });
 
         function showMentionBox() {
-            const box = document.getElementById('mentionBox');
-            box.innerHTML = "";
+            const box = document.getElementById('mentionBox'); box.innerHTML = "";
             allUsers.forEach(name => {
-                const d = document.createElement('div');
-                d.className = 'mention-item';
-                d.innerText = name;
-                d.onclick = () => {
+                const d = document.createElement('div'); d.className = 'mention-item';
+                d.innerText = name; d.onclick = () => {
                     const inp = document.getElementById('msgInput');
                     inp.value = inp.value.slice(0, -1) + `@${name} `;
-                    box.style.display = 'none';
-                    inp.focus();
+                    box.style.display = 'none'; inp.focus();
                 };
                 box.appendChild(d);
             });
             box.style.display = 'block';
         }
 
-        // Завантаження повідомлень
         function loadMessages(channelId) {
             if (unsubMessages) unsubMessages();
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -425,17 +425,12 @@
                 const container = document.getElementById('messages');
                 container.innerHTML = "";
                 let lastAuth = null, lastTime = 0;
-                
                 snap.forEach(d => {
-                    const m = d.data();
-                    const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
+                    const m = d.data(); const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
                     const isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
                     const isOwner = m.uid === user.uid;
-
                     const msgDiv = document.createElement('div');
-                    msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`;
-                    msgDiv.id = `msg-${d.id}`;
-                    
+                    msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`; msgDiv.id = `msg-${d.id}`;
                     msgDiv.innerHTML = `
                         ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span></div>` : ''}
                         ${m.replyTo ? `<div class="reply-block" onclick="scrollToMsg('${m.replyTo.id}')">↩ ${m.replyTo.author}: ${m.replyTo.text.substring(0, 30)}...</div>` : ""}
@@ -444,9 +439,8 @@
                         <div class="msg-actions">
                             <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
                             ${isOwner ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
-                            ${userData.role === 'admin' ? `<button class="action-btn del-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
+                            ${userData.role === 'admin' ? `<button class="action-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
                         </div>`;
-                    
                     container.appendChild(msgDiv);
                     lastAuth = m.author; lastTime = msgTime;
                 });
@@ -454,39 +448,30 @@
             });
         }
 
-        // ПУНКТ 1: Підсвічування повідомлення при переході
         window.scrollToMsg = (id) => {
             const el = document.getElementById(`msg-${id}`);
             if (el) {
                 el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.remove('msg-highlighted');
-                void el.offsetWidth; // Тригер рефлоу для перезапуску анімації
+                el.classList.remove('msg-highlighted'); void el.offsetWidth;
                 el.classList.add('msg-highlighted');
             }
         };
 
-        // ПУНКТ 2 та 3: Виправлене редагування (Enter зберігає завжди)
         window.editMessage = (id, oldText) => {
             const textDiv = document.getElementById(`text-${id}`);
             textDiv.innerHTML = `<div class="edit-box"><textarea class="edit-input" id="edit-input-${id}">${oldText}</textarea></div>`;
             const area = document.getElementById(`edit-input-${id}`);
-            
-            area.style.height = area.scrollHeight + 'px';
-            area.focus();
-            area.setSelectionRange(area.value.length, area.value.length);
-            
+            area.style.height = area.scrollHeight + 'px'; area.focus();
             area.onkeydown = async (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) { 
                     e.preventDefault(); 
-                    const newText = area.value.trim();
-                    await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: newText }); 
+                    await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: area.value.trim() }); 
                     loadMessages(activeChannelId);
                 }
                 if (e.key === 'Escape') loadMessages(activeChannelId);
             };
         };
 
-        // Обробка зображень
         function processImage(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -508,25 +493,18 @@
             reader.readAsDataURL(file);
         }
 
-        document.addEventListener('paste', (e) => {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let i in items) { if (items[i].kind === 'file') processImage(items[i].getAsFile()); }
-        });
-
         window.handleImageSelect = (input) => { if (input.files[0]) processImage(input.files[0]); };
         window.cancelImage = () => { currentBase64Img = null; document.getElementById('imageInfo').style.display = 'none'; checkPreviewBar(); };
-        
         window.replyToMessage = (id, author, text) => {
             replyTo = { id, author, text };
             document.getElementById('previewBar').style.display = 'flex';
             document.getElementById('replyInfo').style.display = 'flex';
-            document.getElementById('replyText').innerText = `Відповідь для ${author}`;
+            document.getElementById('replyText').innerText = `Відповідь: ${author}`;
             document.getElementById('msgInput').focus();
         };
         window.cancelReply = () => { replyTo = null; document.getElementById('replyInfo').style.display = 'none'; checkPreviewBar(); };
         function checkPreviewBar() { if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none'; }
 
-        // Форматування тексту
         function formatMarkdown(text) {
             if (!text) return "";
             let s = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -536,15 +514,12 @@
         }
 
         window.sendMessage = async () => {
-            const input = document.getElementById('msgInput');
-            const text = input.value.trim();
+            const input = document.getElementById('msgInput'); const text = input.value.trim();
             if ((!text && !currentBase64Img) || !activeChannelId) return;
             const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
-            if (replyTo) data.replyTo = replyTo;
-            if (currentBase64Img) data.imageUrl = currentBase64Img;
+            if (replyTo) data.replyTo = replyTo; if (currentBase64Img) data.imageUrl = currentBase64Img;
             await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
-            input.value = ""; input.style.height = 'auto';
-            cancelReply(); cancelImage();
+            input.value = ""; input.style.height = 'auto'; cancelReply(); cancelImage();
             updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
         };
 
@@ -552,13 +527,13 @@
         window.deleteMessage = async (id) => { if(confirm("Видалити?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
         
         window.createChannel = async () => {
-            const name = prompt("Назва каналу:");
+            const name = prompt("Назва:");
             if (name) {
                 const s = await getDocs(collection(db, "channels"));
                 await addDoc(collection(db, "channels"), { name: name.toUpperCase(), index: s.size, isHidden: false });
             }
         };
-        window.deleteChannel = async (id, name) => { if (confirm(`Видалити канал ${name}?`)) await deleteDoc(doc(db, "channels", id)); };
+        window.deleteChannel = async (id, name) => { if (confirm(`Видалити ${name}?`)) await deleteDoc(doc(db, "channels", id)); };
 
         function initSortable() {
             Sortable.create(document.getElementById('channelList'), {
@@ -574,7 +549,7 @@
         }
 
         window.openLightbox = (src) => { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').style.display = 'flex'; };
-        window.closeLightbox = () => { document.getElementById('lightbox').style.display = 'none'; };
+        window.closeLightbox = () => document.getElementById('lightbox').style.display = 'none';
 
         document.getElementById('msgInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
