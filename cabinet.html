@@ -191,6 +191,8 @@
         }
         .staff-item:active { cursor: grabbing; }
         .sortable-ghost { opacity: 0.3; background: var(--primary); }
+        .sortable-chosen { background: rgba(34, 197, 94, 0.1); border-color: var(--primary); }
+        .sortable-drag { opacity: 0.8; transform: rotate(2deg); }
 
         /* КНОПКИ ДІЙ */
         .btn-action-g, .btn-manage, .btn-verify, .btn-ban { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
@@ -352,7 +354,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -391,12 +393,29 @@
         }
 
         onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
+            if (!user) { 
+                console.log("Користувач не авторизований, перенаправляємо...");
+                window.location.href = "index.html"; 
+                return; 
+            }
             
-            const res = await fetch('https://api.ipify.org?format=json');
-            const ipData = await res.json();
-            const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
-            if (banSnap.exists()) { document.getElementById('banScreen').style.display = 'flex'; return; }
+            console.log("Користувач авторизований:", user.uid);
+            
+            // Отримання IP
+            try {
+                const res = await fetch('https://api.ipify.org?format=json');
+                const ipData = await res.json();
+                console.log("IP користувача:", ipData.ip);
+                
+                const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
+                if (banSnap.exists()) { 
+                    console.log("IP заблоковано:", ipData.ip);
+                    document.getElementById('banScreen').style.display = 'flex'; 
+                    return; 
+                }
+            } catch (error) {
+                console.warn("Не вдалося отримати IP:", error);
+            }
 
             currentUID = user.uid;
             editingUID = user.uid;
@@ -404,6 +423,7 @@
             const userDoc = await getDoc(doc(db, "users", user.uid));
             
             if (!userDoc.exists()) {
+                console.log("Користувача немає в базі, створюємо нового...");
                 await setDoc(doc(db, "users", user.uid), {
                     name: user.displayName || "Новий боєць",
                     verified: false,
@@ -412,15 +432,21 @@
                     reprimands: 0,
                     warns: 0,
                     gameID: "---",
-                    lastIP: ipData.ip,
-                    staffIndex: 999
+                    lastIP: ipData?.ip || "---",
+                    staffIndex: 999,
+                    passport: "НЕМАЄ",
+                    discord: "---",
+                    position: "Боєць"
                 });
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
             }
 
             myData = userDoc.data();
+            console.log("Дані користувача завантажено:", myData);
+            
             if (!myData.verified && myData.role !== 'admin') {
+                console.log("Користувач не верифікований");
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
             }
@@ -429,11 +455,15 @@
             listenToSystemStatus(myData.role);
             
             if (myData.role === 'admin') {
+                console.log("Користувач адмін, завантажуємо адмін-панель...");
                 document.getElementById('adminSection').style.display = 'block';
                 document.getElementById('adminAppBtn').style.display = 'flex';
                 document.getElementById('lockBtn').style.display = 'block';
                 loadStaffList();
+            } else {
+                console.log("Користувач не адмін");
             }
+            
             initNotifications();
             listenForMentions();
         });
@@ -443,12 +473,19 @@
             const label = field === 'passport' ? "Посилання на паспорт (Imgur/Yapx):" : "Ваш Discord (User#0000):";
             const newVal = prompt(label);
             if (newVal) {
-                await updateDoc(doc(db, "users", currentUID), { [field]: newVal });
-                location.reload();
+                try {
+                    await updateDoc(doc(db, "users", currentUID), { [field]: newVal });
+                    alert("Дані оновлено!");
+                    location.reload();
+                } catch (error) {
+                    alert("Помилка оновлення: " + error.message);
+                }
             }
         };
 
         function updateUI(data) {
+            console.log("Оновлення UI з даними:", data);
+            
             document.getElementById('userName').innerText = data.name || "Невідомо";
             document.getElementById('topName').innerText = data.name || "Користувач";
             document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
@@ -461,222 +498,63 @@
             document.getElementById('userDiscord').innerText = data.discord || "---";
 
             // Показуємо кнопки "+" тільки якщо даних немає
-            if (!data.passport || data.passport === "НЕМАЄ") document.getElementById('btnAddPass').style.display = 'flex';
-            else document.getElementById('btnAddPass').style.display = 'none';
+            if (!data.passport || data.passport === "НЕМАЄ") {
+                document.getElementById('btnAddPass').style.display = 'flex';
+            } else {
+                document.getElementById('btnAddPass').style.display = 'none';
+            }
 
-            if (!data.discord || data.discord === "---") document.getElementById('btnAddDisc').style.display = 'flex';
-            else document.getElementById('btnAddDisc').style.display = 'none';
+            if (!data.discord || data.discord === "---") {
+                document.getElementById('btnAddDisc').style.display = 'flex';
+            } else {
+                document.getElementById('btnAddDisc').style.display = 'none';
+            }
 
-            document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
+            // Показуємо адмін-контроли тільки для адмінів
+            const adminControls = document.querySelectorAll('.admin-controls');
+            adminControls.forEach(c => {
+                c.style.display = (myData && myData.role === 'admin') ? 'flex' : 'none';
+            });
+            
+            console.log("UI оновлено");
         }
 
-        // ЗАВАНТАЖЕННЯ ТА ЗБЕРЕЖЕННЯ ПОРЯДКУ РЕЄСТРУ
+        // ВИПРАВЛЕНА СИСТЕМА DRAG&DROP ДЛЯ РЕЄСТРУ
+        let sortableInstance = null;
+
         async function loadStaffList() {
             const list = document.getElementById('staffList');
-            if(!list) return;
+            if(!list) {
+                console.error("Елемент staffList не знайдено!");
+                return;
+            }
 
-            // Ініціалізація перетягування
-            new Sortable(list, {
-                animation: 250,
-                ghostClass: 'sortable-ghost',
-                onEnd: async function() {
-                    const items = list.querySelectorAll('.staff-item');
-                    const batch = writeBatch(db);
-                    items.forEach((item, index) => {
-                        const uid = item.getAttribute('data-id');
-                        batch.update(doc(db, "users", uid), { staffIndex: index });
-                    });
-                    await batch.commit();
-                }
-            });
-
-            // Виправлення: Сортування по staffIndex, якщо він є. Якщо немає - по імені.
-            const qStaff = query(collection(db, "users"), orderBy("staffIndex", "asc"));
-            onSnapshot(collection(db, "users"), (snap) => {
-                const users = [];
-                snap.forEach(s => users.push({id: s.id, ...s.data()}));
-                
-                // Сортуємо в коді, щоб не ламалося якщо поля немає
-                users.sort((a, b) => (a.staffIndex || 999) - (b.staffIndex || 999));
-
-                list.innerHTML = "";
-                users.forEach(d => {
-                    const item = document.createElement('div');
-                    item.className = 'staff-item';
-                    item.setAttribute('data-id', d.id);
-                    const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${d.id}')">ВЕРИФІКУВАТИ</button>` : "";
-                    
-                    item.innerHTML = `
-                        <div style="display:flex; align-items:center; gap:15px;">
-                            <span style="opacity:0.3; font-size:20px;">☰</span>
-                            <div>
-                                <b>${d.name}</b><br>
-                                <small style="color:var(--text-gray)">[${d.rank}] • Game ID: ${d.gameID || '---'}</small>
-                            </div>
-                        </div>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-                            ${verifyBtn}
-                            <button class="btn-action-g" onclick="window.viewReports('${d.id}', '${d.name}', '${d.gameID}')">ЗВІТИ</button>
-                            <button class="btn-manage" onclick="window.enterManageMode('${d.id}')">КЕРУВАТИ</button>
-                            <button class="btn-ban" onclick="window.banByIP('${d.lastIP}', '${d.name}')">BAN IP</button>
-                            <button class="btn-action-r" onclick="window.deleteUser('${d.id}')">ВИДАЛИТИ</button>
-                        </div>
-                    `;
-                    list.appendChild(item);
-                });
-            });
-        }
-
-        // МОНІТОРИНГ ЗГАДУВАНЬ В ЧАТАХ (@Name)
-        function listenForMentions() {
-            onSnapshot(collection(db, "channels"), (channelsSnap) => {
-                channelsSnap.forEach(channelDoc => {
-                    const qMessages = query(collection(db, "channels", channelDoc.id, "messages"), orderBy("createdAt", "desc"), where("createdAt", ">", new Date(Date.now() - 1800000)));
-                    onSnapshot(qMessages, (msgSnap) => {
-                        msgSnap.docChanges().forEach(change => {
-                            if (change.type === "added") {
-                                const msg = change.doc.data();
-                                if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
-                                    addNotification(`Згадка у чаті від ${msg.author}`, 'chats.html', true);
-                                }
-                            }
-                        });
-                    });
-                });
-            });
-        }
-
-        function addNotification(text, link, isMention = false) {
-            const list = document.getElementById('notifList');
-            const empty = list.querySelector('div');
-            if(empty && empty.innerText.includes("Немає")) list.innerHTML = "";
+            console.log("Завантаження списку бійців...");
             
-            const item = document.createElement('a');
-            item.href = link;
-            item.className = `notif-item-link ${isMention ? 'notif-mention' : ''}`;
-            item.innerHTML = `<b>${isMention ? '📢' : '📧'}</b> ${text}`;
-            list.prepend(item);
-            document.getElementById('bellDot').style.display = 'block';
-        }
+            // Спочатку очищуємо список
+            list.innerHTML = "<div style='text-align:center; padding:20px; color:var(--text-gray);'>Завантаження...</div>";
 
-        window.banByIP = async (ip, name) => {
-            if (!ip || ip === '---') return alert("IP не знайдено.");
-            if (prompt(`Секретний код для BAN IP ${ip}:`) === SECRET_CODE) {
-                await setDoc(doc(db, "bannedIPs", ip), { bannedAt: new Date(), userName: name });
-                alert("IP Заблоковано!");
-            }
-        };
-
-        window.verifyUser = async (id) => {
-            if(confirm("Надати доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
-        };
-
-        window.viewReports = async (uid, name, gameID) => {
-            const listUI = document.getElementById('modalReportsList');
-            document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
-            document.getElementById('reportsModal').style.display = 'flex';
-            listUI.innerHTML = "<p style='text-align:center;'>Завантаження...</p>";
-            let found = [];
-            const cols = ['reports', 'subotniks'];
-            for (const c of cols) {
-                const snap = await getDocs(collection(db, c));
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
-                    const raw = JSON.stringify(data).toLowerCase();
-                    if (raw.includes(uid.toLowerCase()) || raw.includes(name.toLowerCase())) {
-                        found.push({ ...data, colType: c === 'reports' ? 'Щотижневий' : 'Суботник' });
-                    }
+            try {
+                // Отримуємо всіх користувачів
+                const usersSnapshot = await getDocs(collection(db, "users"));
+                const users = [];
+                
+                console.log("Отримано користувачів:", usersSnapshot.size);
+                
+                // Збираємо всіх користувачів
+                usersSnapshot.forEach(docSnap => {
+                    const userData = docSnap.data();
+                    users.push({
+                        id: docSnap.id,
+                        name: userData.name || "Невідомо",
+                        rank: userData.rank || "Рекрут",
+                        gameID: userData.gameID || "---",
+                        verified: userData.verified || false,
+                        lastIP: userData.lastIP || "---",
+                        staffIndex: userData.staffIndex !== undefined ? userData.staffIndex : 999,
+                        role: userData.role || 'user'
+                    });
                 });
-            }
-            found.sort((a, b) => (b.date || 0) - (a.date || 0));
-            listUI.innerHTML = found.map(f => `
-                <div class="report-card ${f.colType === 'Суботник' ? 'subotnik' : ''}">
-                    <div class="report-header">
-                        <span class="report-date">📅 ${f.period || f.date || '---'}</span>
-                        <div class="badge-type ${f.colType === 'Суботник' ? 'badge-sub' : 'badge-rep'}">${f.colType}</div>
-                    </div>
-                    <div class="report-body">
-                        <div class="report-content-text">${linkify(f.content || f.message)}</div>
-                    </div>
-                </div>
-            `).join('') || "<p style='text-align:center;'>Звітів не знайдено.</p>";
-        };
 
-        function initNotifications() {
-            const targets = [
-                { id: 'reports', dot: 'dot-reports', label: 'Звіт', link: 'reports.html' },
-                { id: 'subotniks', dot: 'dot-subotniks', label: 'Суботник', link: 'subotnik.html' },
-                { id: 'applications', dot: 'dot-apps', label: 'Рапорт', link: 'applications.html' }
-            ];
-            targets.forEach(t => {
-                onSnapshot(collection(db, t.id), (snap) => {
-                    const savedCount = localStorage.getItem('count_' + t.id) || 0;
-                    if (snap.size > savedCount) {
-                        const dot = document.getElementById(t.dot);
-                        if(dot) dot.style.display = 'block';
-                        document.getElementById('bellDot').style.display = 'block';
-                        addNotification(`Новий запис у розділі: ${t.label}`, t.link);
-                    }
-                });
-            });
-        }
-
-        window.toggleNotifs = (e) => {
-            if(e) e.stopPropagation();
-            const drop = document.getElementById('notifDropdown');
-            const isOpen = drop.style.display === 'flex';
-            drop.style.display = isOpen ? 'none' : 'flex';
-            if(!isOpen) {
-                document.getElementById('bellDot').style.display = 'none';
-                document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
-                ['reports', 'subotniks', 'applications'].forEach(async c => {
-                    const s = await getDocs(collection(db, c));
-                    localStorage.setItem('count_' + c, s.size);
-                });
-            }
-        };
-
-        window.enterManageMode = async (id) => {
-            const snap = await getDoc(doc(db, "users", id));
-            editingUID = id;
-            updateUI(snap.data());
-            document.getElementById('backToMe').style.display = 'block';
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        };
-
-        window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
-
-        window.deleteUser = async (id) => {
-            if (prompt("ПАРОЛЬ ВИДАЛЕННЯ:") === SECRET_CODE) {
-                if(confirm("ВИДАЛИТИ БІЙЦЯ НАЗАВЖДИ?")) await deleteDoc(doc(db, "users", id));
-            }
-        };
-
-        function listenToSystemStatus(role) {
-            onSnapshot(doc(db, "settings", "systemStatus"), (snap) => {
-                const locked = snap.data()?.isLocked;
-                document.getElementById('lockScreen').style.display = (locked && role !== 'admin') ? 'flex' : 'none';
-                if(role === 'admin') document.getElementById('lockBtn').innerText = locked ? "🔓 ВІДКРИТИ ДОСТУП" : "🔒 ЗАБЛОКУВАТИ ДОСТУП";
-            });
-        }
-
-        window.toggleSystemAccess = async () => {
-            if(prompt("КОД АДМІНІСТРАТОРА:") === SECRET_CODE) {
-                const ref = doc(db, "settings", "systemStatus");
-                const snap = await getDoc(ref);
-                await updateDoc(ref, { isLocked: !snap.data().isLocked });
-            }
-        };
-
-        window.changeStat = async (field, val) => {
-            const docRef = doc(db, "users", editingUID);
-            const snap = await getDoc(docRef);
-            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
-            await updateDoc(docRef, { [field]: newVal });
-            if(editingUID === currentUID) myData[field] = newVal;
-            const updated = await getDoc(docRef);
-            updateUI(updated.data());
-        };
-    </script>
-</body>
-</html>
+                // Сортуємо за staffIndex (якщо він є), потім за іменем
+                users.sort((
