@@ -7,13 +7,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* ============================================================
-           БЛОК ОСНОВНИХ СТИЛІВ (ТВОЇ ОРИГІНАЛЬНІ КОЛЬОРИ)
-           ============================================================ */
+        /* ОСНОВНІ ПАРАМЕТРИ КОЛЬОРІВ */
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
-            --primary-glow: rgba(34, 197, 94, 0.25);
+            --primary-glow: rgba(34, 197, 94, 0.15);
             --bg: #030507;
             --card-bg: #0a0c10;
             --glass-border: rgba(34, 197, 94, 0.2);
@@ -22,15 +20,7 @@
             --text-gray: #94a3b8;
         }
 
-        /* КАСТОМНИЙ СКРОЛБАР З НЕОНОМ */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #030507; }
-        ::-webkit-scrollbar-thumb { 
-            background: var(--primary); 
-            border-radius: 10px; 
-            box-shadow: 0 0 10px var(--primary-glow);
-        }
-
+        /* ЗАГАЛЬНІ СТИЛІ */
         * { 
             box-sizing: border-box; 
             margin: 0; 
@@ -51,17 +41,22 @@
             -webkit-user-select: none;
         }
 
-        /* ТВОЇ ОРИГІНАЛЬНІ ЕФЕКТИ НАВЕДЕННЯ + БІЛЬШЕ НЕОНУ */
+        input, textarea {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+        }
+
+        /* ЕФЕКТИ ПРИ НАВЕДЕННІ */
         .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
         .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
         .btn-lock-menu:hover, .btn-verify:hover {
             transform: scale(1.02) translateY(-5px); 
-            box-shadow: 0 10px 40px var(--primary-glow);
+            box-shadow: 0 15px 35px rgba(34, 197, 94, 0.2);
             border-color: var(--primary-bright);
             z-index: 10;
         }
 
-        /* ЕКРАНИ БЛОКУВАННЯ */
+        /* ЕКРАНИ СИСТЕМИ (БЛОКУВАННЯ) */
         #lockScreen, #verifyWaitingScreen, #banScreen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -69,8 +64,11 @@
             flex-direction: column; align-items: center; justify-content: center;
             text-align: center; padding: 20px; backdrop-filter: blur(10px);
         }
+        #verifyWaitingScreen h1 { color: var(--warning); font-size: 32px; font-weight: 900; margin-bottom: 20px; text-shadow: 0 0 20px rgba(251, 191, 36, 0.3); }
+        #lockScreen h1 { color: var(--danger); font-size: 48px; font-weight: 900; margin-bottom: 20px; }
+        #banScreen { background: #000; z-index: 10000; color: var(--danger); }
 
-        /* ШАПКА */
+        /* ШАПКА САЙТУ */
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 5%; background: rgba(3, 5, 7, 0.85); backdrop-filter: blur(15px);
@@ -83,12 +81,21 @@
             box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); text-transform: uppercase;
         }
 
-        /* ДЗВІНОЧОК */
+        .header-right { display: flex; align-items: center; gap: 20px; }
+
+        /* СПИСОК ПОВІДОМЛЕНЬ (DROPDOWN) */
         .notif-wrapper { position: relative; cursor: pointer; padding: 5px; z-index: 2001; }
+        .bell-icon { font-size: 24px; color: var(--warning); filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.4)); }
         .bell-dot { 
             position: absolute; top: 0; right: 0; width: 12px; height: 12px; 
             background: var(--danger); border-radius: 50%; border: 2px solid var(--bg); display: none;
-            box-shadow: 0 0 10px var(--danger);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); }
         }
 
         #notifDropdown {
@@ -97,29 +104,46 @@
             display: none; flex-direction: column; padding: 15px; z-index: 2000; 
             box-shadow: 0 20px 50px rgba(0,0,0,0.8);
         }
+        
+        .notif-item-link {
+            padding: 12px; border-bottom: 1px solid #1a1a1a; cursor: pointer;
+            border-radius: 8px; margin-bottom: 5px; display: block;
+            text-decoration: none; color: white; font-size: 13px;
+        }
+        .notif-item-link:hover { background: rgba(34, 197, 94, 0.1); }
+        .notif-mention { border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.05); }
 
-        /* ГРИД-СИСТЕМА (ТВОЯ ОРИГІНАЛЬНА) */
+        /* ОСНОВНА СІТКА КОНТЕНТУ */
         .main-wrapper { display: flex; justify-content: center; padding: 30px 5%; }
         .main-container {
             display: grid; grid-template-columns: 280px 420px 1fr; gap: 20px;
             width: 100%; max-width: 1600px;
         }
 
+        /* СТИЛІ КАРТОК */
         .side-menu, .profile-card, .info-box {
             background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         }
 
-        /* МЕНЮ */
+        /* БОКОВЕ МЕНЮ */
         .side-menu { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .menu-item {
             display: flex; align-items: center; justify-content: space-between;
             padding: 14px 18px; background: rgba(255,255,255,0.03); border-radius: 12px;
-            color: white; text-decoration: none; font-size: 14px; font-weight: 600;
+            color: white; text-decoration: none; font-size: 14px; font-weight: 600; position: relative;
         }
+        .menu-item:hover { background: rgba(34, 197, 94, 0.08); border-color: var(--glass-border); }
+
         .fire-dot { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 10px var(--danger); display: none; }
 
-        /* ПРОФІЛЬ (ТВІЙ РОЗМІР) */
+        .btn-lock-menu {
+            margin-top: auto; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 12px;
+            text-transform: uppercase; cursor: pointer; border: 1px solid var(--danger);
+            background: rgba(239, 68, 68, 0.05); color: var(--danger); display: none; text-align: center;
+        }
+
+        /* КАРТКА ПРОФІЛЮ */
         .profile-card { 
             padding: 40px 20px; text-align: center; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; border: 2px solid var(--primary);
@@ -128,18 +152,22 @@
         .avatar-circle { 
             width: 140px; height: 140px; border-radius: 50%; border: 3px solid var(--primary); 
             display: flex; align-items: center; justify-content: center; font-size: 65px; 
-            margin-bottom: 25px; background: #111; box-shadow: 0 0 25px var(--primary-glow);
+            margin-bottom: 25px; background: #111; box-shadow: 0 0 25px rgba(34, 197, 94, 0.2);
         }
         .user-name { font-size: 32px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; }
         .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; }
 
-        /* ІНФО-БЛОКИ */
+        /* ІНФОРМАЦІЙНІ БЛОКИ */
         .info-panel { display: flex; flex-direction: column; gap: 15px; }
         .info-box { padding: 20px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
         .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .info-box h2 { margin: 0; font-size: 18px; font-weight: 800; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        
+        .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
+        .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 900; }
+        .btn-mini:hover { background: var(--primary); color: black; }
 
-        /* КНОПКИ + ДЛЯ ПАСПОРТА ТА ДИСКОРДА */
         .btn-add-info {
             position: absolute; top: 10px; right: 10px;
             background: var(--primary); color: black; border: none;
@@ -149,70 +177,95 @@
             box-shadow: 0 0 10px var(--primary-glow);
         }
 
-        /* РЕЄСТР (ТВІЙ СТАРИЙ РОЗМІР + НЕОН) */
+        /* РЕЄСТР ТА СПИСОК БІЙЦІВ */
         .staff-section-container { width: 100%; display: flex; justify-content: center; padding: 20px 5% 50px; }
         .staff-section { width: 100%; max-width: 1520px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 25px; padding: 30px; }
         
         .staff-item {
             display: flex; justify-content: space-between; align-items: center;
             background: #0c121d; padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
-            position: relative; border: 1px solid rgba(255,255,255,0.05);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        /* ПОЛОСКА ПЕРЕДВИНЕННЯ (СТИЛІЗОВАНА) */
-        .staff-item::after {
-            content: ''; position: absolute; left: 0; top: 10%; height: 80%; width: 3px;
-            background: var(--primary); box-shadow: 0 0 10px var(--primary); border-radius: 0 4px 4px 0;
+            position: relative; z-index: 1; border: 1px solid rgba(255,255,255,0.05);
         }
 
-        /* КНОПКИ СТРІЛОК */
-        .order-controls { display: flex; flex-direction: column; gap: 4px; margin-right: 20px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 8px; }
+        /* КНОПКИ СТРІЛОЧОК */
+        .order-controls { display: flex; flex-direction: column; gap: 4px; margin-right: 15px; }
         .btn-order { 
-            background: none; border: none; color: var(--primary); 
-            cursor: pointer; font-size: 12px; opacity: 0.5;
+            background: rgba(34, 197, 94, 0.1); border: 1px solid var(--glass-border); 
+            color: var(--primary); width: 28px; height: 28px; border-radius: 6px; 
+            cursor: pointer; font-size: 10px; font-weight: 900; 
         }
-        .btn-order:hover { opacity: 1; transform: scale(1.2); }
+        .btn-order:hover { background: var(--primary); color: black; }
 
         /* КНОПКИ ДІЙ */
-        .btn-action-g, .btn-manage, .btn-verify { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
+        .btn-action-g, .btn-manage, .btn-verify, .btn-ban { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
         .btn-action-g { background: var(--primary); color: black; }
         .btn-manage { background: #1e293b; color: white; border: 1px solid var(--glass-border); }
+        .btn-verify { background: var(--warning); color: black; }
+        .btn-ban { background: #450a0a; color: #ff4444; border: 1px solid #7f1d1d; }
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
 
-        .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
-        .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 900; }
+        /* МОДАЛЬНЕ ВІКНО */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); display: none; justify-content: center; align-items: center; z-index: 2000; }
+        .modal-content { 
+            background: #0c121d; border: 1px solid var(--glass-border); 
+            width: 95%; max-width: 800px; height: 85vh; border-radius: 30px; 
+            padding: 20px; position: relative; display: flex; flex-direction: column;
+            box-shadow: 0 0 100px rgba(0,0,0,1);
+        }
+        #modalReportsList { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
 
         @media (max-width: 1024px) {
             .main-container { grid-template-columns: 1fr; }
+            .side-menu { order: 2; }
+            .profile-card { order: 1; }
+            .info-panel { order: 3; }
+            header { padding: 10px 5%; }
             .staff-item { flex-direction: column; text-align: center; gap: 15px; }
         }
+
+        /* ЗВІТИ */
+        .report-card {
+            background: rgba(255, 255, 255, 0.03); border-radius: 15px; margin-bottom: 20px;
+            border-left: 5px solid var(--primary); overflow: hidden; border-top: 1px solid rgba(255,255,255,0.05);
+        }
+        .report-card.subotnik { border-left-color: var(--warning); }
+        .report-header { padding: 15px 20px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
+        .report-date { font-size: 12px; font-weight: 900; color: var(--primary-bright); }
+        .report-body { padding: 20px; }
+        .report-content-text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #ddd; }
+        .badge-type { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .badge-rep { background: var(--primary); color: black; }
+        .badge-sub { background: var(--warning); color: black; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="verifyWaitingScreen">
-        <h1 style="color: var(--warning);">ВЕРИФІКАЦІЯ...</h1>
-        <p>Ваш акаунт очікує підтвердження.</p>
+        <h1>ВЕРИФІКАЦІЯ...</h1>
+        <p style="color: var(--text-gray); max-width: 500px;">Ваш акаунт зареєстровано. Очікуйте підтвердження.</p>
         <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ</button>
     </div>
 
     <div id="banScreen">
-        <h1 style="color: var(--danger); font-size: 60px;">BAN IP</h1>
+        <h1 style="font-size: 60px; font-weight: 900;">BAN IP</h1>
     </div>
 
     <div id="lockScreen">
         <h1>ДОСТУП ОБМЕЖЕНО</h1>
+        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ</button>
     </div>
 
-    <header>
+    <header id="mainHeader">
         <a href="index.html" class="logo-box">ДШВ</a>
-        <div style="display:flex; align-items:center; gap:20px;">
-            <div class="notif-wrapper" onclick="toggleNotifs()">
-                <span style="font-size:24px;">🔔</span>
+        <div class="header-right">
+            <div class="notif-wrapper" id="bellWrapper" onclick="toggleNotifs(event)">
+                <span class="bell-icon">🔔</span>
                 <div id="bellDot" class="bell-dot"></div>
-                <div id="notifDropdown">
-                    <h4 style="color:var(--primary-bright); margin-bottom:10px;">ПОВІДОМЛЕННЯ</h4>
-                    <div id="notifList" style="max-height: 250px; overflow-y: auto;"></div>
+            </div>
+            <div id="notifDropdown">
+                <h4 style="margin-bottom: 10px; color: var(--primary-bright); border-bottom: 1px solid #222; padding-bottom: 5px;">ПОВІДОМЛЕННЯ</h4>
+                <div id="notifList" style="font-size: 13px; max-height: 250px; overflow-y: auto;">
+                    <div style="color:var(--text-gray); text-align:center; padding: 10px;">Немає нових подій</div>
                 </div>
             </div>
             <span id="topName" style="color:var(--primary-bright); font-weight:800;">...</span>
@@ -220,7 +273,7 @@
         </div>
     </header>
 
-    <div class="main-wrapper">
+    <div class="main-wrapper" id="mainContent">
         <div class="main-container">
             <div class="side-menu">
                 <button id="backToMe" onclick="resetView()" style="display:none; width:100%; background:var(--warning); color:black; padding:14px; border-radius:12px; font-weight:900; border:none; cursor:pointer; margin-bottom:15px;">⬅ МІЙ ПРОФІЛЬ</button>
@@ -228,8 +281,8 @@
                 <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
                 <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
                 <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
-                <a href="chats.html" class="menu-item">💬 Чати / Оголошення</a>
-                <div id="lockBtn" style="display:none; margin-top:auto; padding:14px; border-radius:12px; font-weight:900; cursor:pointer; border:1px solid var(--danger); color:var(--danger); text-align:center;" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
+                <a href="chats.html" class="menu-item" id="chatBtn">💬 Чати / Оголошення <div id="dot-chats" class="fire-dot"></div></a>
+                <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
             </div>
 
             <div class="profile-card">
@@ -254,7 +307,7 @@
                     </div>
                     <div class="info-box">
                         <span>ДОГАНИ</span>
-                        <h2 id="userWarns">0</h2>
+                        <h2 id="userWarns" style="color: white !important;">0</h2> 
                         <div class="admin-controls">
                             <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
                             <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
@@ -263,12 +316,12 @@
                     <div class="info-box">
                         <span>ПАСПОРТ</span>
                         <h2 id="userPassport" style="font-size: 12px;">НЕМАЄ</h2>
-                        <button id="btnAddPass" class="btn-add-info" onclick="updateField('passport')">+</button>
+                        <button id="btnAddPass" class="btn-add-info" onclick="updateField('passport')" style="display:none;">+</button>
                     </div>
                     <div class="info-box">
                         <span>DISCORD</span>
                         <h2 id="userDiscord" style="font-size: 12px;">---</h2>
-                        <button id="btnAddDisc" class="btn-add-info" onclick="updateField('discord')">+</button>
+                        <button id="btnAddDisc" class="btn-add-info" onclick="updateField('discord')" style="display:none;">+</button>
                     </div>
                 </div>
                 <div class="info-box">
@@ -281,8 +334,16 @@
 
     <div class="staff-section-container" id="adminSection" style="display:none;">
         <div class="staff-section">
-            <h3 style="color:var(--primary-bright); margin-bottom:25px;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ</h3>
+            <h3 style="color:var(--primary-bright); margin-bottom:25px; text-transform:uppercase;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ</h3>
             <div id="staffList"></div>
+        </div>
+    </div>
+
+    <div id="reportsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span onclick="document.getElementById('reportsModal').style.display='none'" style="position:absolute; top:20px; right:25px; font-size:35px; cursor:pointer; color: #555;">&times;</span>
+            <h2 id="modalTitle" style="color: var(--primary-bright); margin-bottom: 30px;">АРХІВ ЗВІТІВ</h2>
+            <div id="modalReportsList"></div>
         </div>
     </div>
 
@@ -309,8 +370,31 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
+        // ЗАХИСТ
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) return false; 
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; 
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
+        };
+
+        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+
+        function linkify(text) {
+            if (!text) return "---";
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:#3498db;">${url}</a>`);
+        }
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
+            
+            const res = await fetch('https://api.ipify.org?format=json');
+            const ipData = await res.json();
+            const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
+            if (banSnap.exists()) { document.getElementById('banScreen').style.display = 'flex'; return; }
+
             currentUID = user.uid;
             editingUID = user.uid;
 
@@ -318,7 +402,7 @@
             if (!userDoc.exists()) {
                 await setDoc(doc(db, "users", user.uid), {
                     name: user.displayName || "Новий боєць",
-                    verified: false, role: 'user', rank: 'Рекрут', reprimands: 0, warns: 0, staffIndex: 999
+                    verified: false, role: 'user', rank: 'Рекрут', reprimands: 0, warns: 0, staffIndex: 999, lastIP: ipData.ip
                 });
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
@@ -344,10 +428,10 @@
         });
 
         function updateUI(data) {
-            document.getElementById('userName').innerText = data.name;
-            document.getElementById('topName').innerText = data.name;
-            document.getElementById('userRank').innerText = data.rank;
+            document.getElementById('userName').innerText = data.name || "---";
+            document.getElementById('topName').innerText = data.name || "---";
             document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
+            document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
             document.getElementById('userPassport').innerText = data.passport || "НЕМАЄ";
@@ -359,6 +443,7 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
+        // РЕЄСТР З КНОПКАМИ
         async function loadStaffList() {
             const list = document.getElementById('staffList');
             onSnapshot(collection(db, "users"), (snap) => {
@@ -367,22 +452,22 @@
                 users.sort((a, b) => (a.staffIndex || 0) - (b.staffIndex || 0));
 
                 list.innerHTML = "";
-                users.forEach((u) => {
+                users.forEach((u, index) => {
                     const item = document.createElement('div');
                     item.className = 'staff-item';
                     item.innerHTML = `
                         <div style="display:flex; align-items:center;">
                             <div class="order-controls">
-                                <button class="btn-order" onclick="moveUser('${u.id}', -1)">▲</button>
-                                <button class="btn-order" onclick="moveUser('${u.id}', 1)">▼</button>
+                                <button class="btn-order" onclick="window.moveUser('${u.id}', -1)">▲</button>
+                                <button class="btn-order" onclick="window.moveUser('${u.id}', 1)">▼</button>
                             </div>
                             <div><b>${u.name}</b><br><small>${u.rank}</small></div>
                         </div>
-                        <div style="display:flex; gap:10px;">
-                            ${!u.verified ? `<button class="btn-verify" onclick="verifyUser('${u.id}')">OK</button>` : ""}
-                            <button class="btn-action-g" onclick="viewReports('${u.id}', '${u.name}')">ЗВІТИ</button>
-                            <button class="btn-manage" onclick="enterManageMode('${u.id}')">КЕРУВАТИ</button>
-                            <button class="btn-action-r" onclick="deleteUser('${u.id}')">ВИДАЛИТИ</button>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+                            ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">OK</button>` : ""}
+                            <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">ЗВІТИ</button>
+                            <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
+                            <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">ВИДАЛИТИ</button>
                         </div>
                     `;
                     list.appendChild(item);
@@ -394,27 +479,77 @@
             const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
             let users = [];
             snap.forEach(d => users.push({id: d.id, ...d.data()}));
-            const index = users.findIndex(u => u.id === id);
-            if (index === -1) return;
-            const newIdx = index + direction;
+            const idx = users.findIndex(u => u.id === id);
+            if (idx === -1) return;
+            const newIdx = idx + direction;
             if (newIdx < 0 || newIdx >= users.length) return;
 
             const batch = writeBatch(db);
-            batch.update(doc(db, "users", users[index].id), { staffIndex: newIdx });
-            batch.update(doc(db, "users", users[newIdx].id), { staffIndex: index });
+            batch.update(doc(db, "users", users[idx].id), { staffIndex: newIdx });
+            batch.update(doc(db, "users", users[newIdx].id), { staffIndex: idx });
             await batch.commit();
         };
 
+        // ЗГАДКИ ТА СПОВІЩЕННЯ
+        function listenForMentions() {
+            const halfHourAgo = new Date(Date.now() - 30 * 60 * 1000);
+            onSnapshot(collection(db, "channels"), (snap) => {
+                snap.forEach(channel => {
+                    const q = query(collection(db, "channels", channel.id, "messages"), where("createdAt", ">", halfHourAgo));
+                    onSnapshot(q, (mSnap) => {
+                        mSnap.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                const msg = change.doc.data();
+                                if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
+                                    addNotification(`Згадка від ${msg.author}: ${msg.text.substring(0,20)}...`, 'chats.html', true);
+                                }
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+        function addNotification(text, link, isMention = false) {
+            const list = document.getElementById('notifList');
+            const empty = list.querySelector('div');
+            if(empty && empty.innerText.includes("Немає")) list.innerHTML = "";
+            const item = document.createElement('a');
+            item.href = link;
+            item.className = `notif-item-link ${isMention ? 'notif-mention' : ''}`;
+            item.innerHTML = `<b>${isMention ? '📢' : '📧'}</b> ${text}`;
+            list.prepend(item);
+            document.getElementById('bellDot').style.display = 'block';
+        }
+
+        window.toggleNotifs = (e) => {
+            if(e) e.stopPropagation();
+            const drop = document.getElementById('notifDropdown');
+            const isOpen = drop.style.display === 'flex';
+            drop.style.display = isOpen ? 'none' : 'flex';
+            if(!isOpen) {
+                document.getElementById('bellDot').style.display = 'none';
+                document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
+                ['reports', 'subotniks', 'applications'].forEach(async c => {
+                    const s = await getDocs(collection(db, c));
+                    localStorage.setItem('count_' + c, s.size);
+                });
+            }
+        };
+
+        // ІНША ЛОГІКА
         window.changeStat = async (field, val) => {
-            const ref = doc(db, "users", editingUID);
-            const s = await getDoc(ref);
-            const newVal = Math.max(0, (s.data()[field] || 0) + val);
-            await updateDoc(ref, { [field]: newVal });
-            const upd = await getDoc(ref); updateUI(upd.data());
+            const docRef = doc(db, "users", editingUID);
+            const snap = await getDoc(docRef);
+            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
+            await updateDoc(docRef, { [field]: newVal });
+            if(editingUID === currentUID) myData[field] = newVal;
+            const updated = await getDoc(docRef);
+            updateUI(updated.data());
         };
 
         window.updateField = async (f) => {
-            const val = prompt(f === 'passport' ? "Посилання на паспорт:" : "Discord tag:");
+            const val = prompt(f === 'passport' ? "Посилання:" : "Discord:");
             if(val) await updateDoc(doc(db, "users", currentUID), { [f]: val });
         };
 
@@ -428,52 +563,23 @@
 
         window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
 
-        function listenForMentions() {
-            const startTime = new Date(Date.now() - 20 * 60 * 1000);
-            onSnapshot(collection(db, "channels"), (snap) => {
-                snap.forEach(channel => {
-                    const q = query(collection(db, "channels", channel.id, "messages"), where("createdAt", ">", startTime));
-                    onSnapshot(q, (messages) => {
-                        messages.docChanges().forEach(change => {
-                            if (change.type === "added") {
-                                const m = change.doc.data();
-                                if (m.text && m.text.includes(`@${myData.name}`) && m.uid !== currentUID) {
-                                    addNotif(`Згадка від ${m.author}: ${m.text}`);
-                                }
-                            }
-                        });
-                    });
-                });
-            });
-        }
+        window.verifyUser = async (id) => {
+            if(confirm("Доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
+        };
 
-        function addNotif(txt) {
-            const list = document.getElementById('notifList');
-            const item = document.createElement('div');
-            item.style.padding = "10px";
-            item.style.borderBottom = "1px solid #222";
-            item.innerHTML = txt;
-            list.prepend(item);
-            document.getElementById('bellDot').style.display = 'block';
-        }
-
-        window.toggleNotifs = () => {
-            const drop = document.getElementById('notifDropdown');
-            const isVisible = drop.style.display === 'flex';
-            drop.style.display = isVisible ? 'none' : 'flex';
-            if (!isVisible) document.getElementById('bellDot').style.display = 'none';
+        window.deleteUser = async (id) => {
+            if (prompt("ПАРОЛЬ:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
         };
 
         function initNotifications() {
-            ['reports', 'subotniks', 'applications'].forEach(coll => {
-                onSnapshot(collection(db, coll), (snap) => {
-                    const saved = localStorage.getItem('cnt_' + coll) || 0;
+            ['reports', 'subotniks', 'applications'].forEach(t => {
+                onSnapshot(collection(db, t), (snap) => {
+                    const saved = localStorage.getItem('count_' + t) || 0;
                     if (snap.size > saved) {
-                        const dot = document.getElementById('dot-' + coll);
-                        if (dot) dot.style.display = 'block';
+                        const dot = document.getElementById('dot-' + t);
+                        if(dot) dot.style.display = 'block';
                         document.getElementById('bellDot').style.display = 'block';
                     }
-                    localStorage.setItem('cnt_' + coll, snap.size);
                 });
             });
         }
@@ -486,20 +592,39 @@
         }
 
         window.toggleSystemAccess = async () => {
-            if(prompt("PASSWORD:") === SECRET_CODE) {
+            if(prompt("КОД:") === SECRET_CODE) {
                 const ref = doc(db, "settings", "systemStatus");
-                const s = await getDoc(ref);
-                await updateDoc(ref, { isLocked: !s.data().isLocked });
+                const snap = await getDoc(ref);
+                await updateDoc(ref, { isLocked: !snap.data().isLocked });
             }
         };
 
-        window.verifyUser = async (id) => { if(confirm("VERIFY?")) await updateDoc(doc(db, "users", id), { verified: true }); };
-        window.deleteUser = async (id) => { if (prompt("CODE:") === SECRET_CODE) await deleteDoc(doc(db, "users", id)); };
-        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
-        
-        window.viewReports = (id, name) => {
-             // Тут твій старий виклик модалки звітів, якщо він був у тебе в index.html
-             alert("Архів звітів для: " + name);
+        window.viewReports = async (uid, name) => {
+            const listUI = document.getElementById('modalReportsList');
+            document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
+            document.getElementById('reportsModal').style.display = 'flex';
+            listUI.innerHTML = "Завантаження...";
+            let found = [];
+            for (const c of ['reports', 'subotniks']) {
+                const snap = await getDocs(collection(db, c));
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (JSON.stringify(data).toLowerCase().includes(name.toLowerCase())) {
+                        found.push({ ...data, colType: c === 'reports' ? 'Щотижневий' : 'Суботник' });
+                    }
+                });
+            }
+            listUI.innerHTML = found.map(f => `
+                <div class="report-card ${f.colType === 'Суботник' ? 'subotnik' : ''}">
+                    <div class="report-header">
+                        <span class="report-date">📅 ${f.period || f.date || '---'}</span>
+                        <div class="badge-type ${f.colType === 'Суботник' ? 'badge-sub' : 'badge-rep'}">${f.colType}</div>
+                    </div>
+                    <div class="report-body">
+                        <div class="report-content-text">${linkify(f.content || f.message)}</div>
+                    </div>
+                </div>
+            `).join('') || "Звітів не знайдено.";
         };
     </script>
 </body>
