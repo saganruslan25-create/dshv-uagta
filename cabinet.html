@@ -7,31 +7,53 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
-        /* ОСНОВНІ ПАРАМЕТРИ КОЛЬОРІВ */
+        /* ============================================================
+           БЛОК ЗМІННИХ ТА ГЛОБАЛЬНИХ СТИЛІВ
+           ============================================================ */
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
-            --primary-glow: rgba(34, 197, 94, 0.15);
+            --primary-glow: rgba(34, 197, 94, 0.35);
             --bg: #030507;
-            --card-bg: #0a0c10;
-            --glass-border: rgba(34, 197, 94, 0.2);
+            --card-bg: rgba(10, 12, 16, 0.95);
+            --glass-border: rgba(34, 197, 94, 0.25);
             --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.4);
             --warning: #fbbf24;
             --text-gray: #94a3b8;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* ЗАГАЛЬНІ СТИЛІ */
+        /* КАСТОМНИЙ СКРОЛБАР (НЕОНОВИЙ СТИЛЬ) */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #05070a;
+            border-left: 1px solid var(--glass-border);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 20px;
+            box-shadow: inset 0 0 10px var(--primary-glow);
+            border: 2px solid #05070a;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-bright);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
         * { 
             box-sizing: border-box; 
             margin: 0; 
             padding: 0; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            transition: var(--transition); 
         }
 
         body {
             background-color: var(--bg);
             background-image: 
-                radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.18) 0%, transparent 50%),
                 radial-gradient(circle at 0% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 30%);
             color: white; 
             font-family: 'Inter', sans-serif;
@@ -41,264 +63,248 @@
             -webkit-user-select: none;
         }
 
-        input, textarea {
-            user-select: text !important;
-            -webkit-user-select: text !important;
-        }
-
-        /* ЕФЕКТИ ПРИ НАВЕДЕННІ */
-        .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
-        .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
-        .btn-lock-menu:hover, .btn-verify:hover {
-            transform: scale(1.02) translateY(-5px); 
-            box-shadow: 0 15px 35px rgba(34, 197, 94, 0.2);
-            border-color: var(--primary-bright);
-            z-index: 10;
-        }
-
-        /* ЕКРАНИ СИСТЕМИ (БЛОКУВАННЯ) */
+        /* ============================================================
+           ЕКРАНИ БЛОКУВАННЯ ТА ВЕРИФІКАЦІЇ
+           ============================================================ */
         #lockScreen, #verifyWaitingScreen, #banScreen {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(3, 5, 7, 0.98); z-index: 9999; display: none;
             flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 20px; backdrop-filter: blur(10px);
+            text-align: center; padding: 20px; backdrop-filter: blur(15px);
         }
-        #verifyWaitingScreen h1 { color: var(--warning); font-size: 32px; font-weight: 900; margin-bottom: 20px; text-shadow: 0 0 20px rgba(251, 191, 36, 0.3); }
-        #lockScreen h1 { color: var(--danger); font-size: 48px; font-weight: 900; margin-bottom: 20px; }
-        #banScreen { background: #000; z-index: 10000; color: var(--danger); }
+        
+        #verifyWaitingScreen h1 {
+            color: var(--warning);
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+        }
 
-        /* ШАПКА САЙТУ */
+        #banScreen h1 {
+            color: var(--danger);
+            font-size: 60px;
+            font-weight: 900;
+            letter-spacing: 5px;
+        }
+
+        /* ============================================================
+           ШАПКА ТА НАВІГАЦІЯ
+           ============================================================ */
         header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 5%; background: rgba(3, 5, 7, 0.85); backdrop-filter: blur(15px);
+            padding: 18px 5%; background: rgba(3, 5, 7, 0.92); backdrop-filter: blur(25px);
             position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--glass-border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
         }
 
         .logo-box { 
-            background: var(--primary); color: black; padding: 6px 14px; 
-            border-radius: 8px; font-weight: 900; text-decoration: none; font-size: 15px;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); text-transform: uppercase;
+            background: var(--primary); color: black; padding: 8px 18px; 
+            border-radius: 10px; font-weight: 900; text-decoration: none; font-size: 16px;
+            box-shadow: 0 0 25px var(--primary-glow); text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .header-right { display: flex; align-items: center; gap: 20px; }
+        .header-right { display: flex; align-items: center; gap: 25px; }
 
-        /* СПИСОК ПОВІДОМЛЕНЬ (DROPDOWN) */
-        .notif-wrapper { position: relative; cursor: pointer; padding: 5px; z-index: 2001; }
-        .bell-icon { font-size: 24px; color: var(--warning); filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.4)); }
+        /* СПОВІЩЕННЯ ТА ДЗВІНОЧОК */
+        .notif-wrapper { position: relative; cursor: pointer; padding: 8px; }
+        .bell-icon { font-size: 26px; filter: drop-shadow(0 0 8px var(--warning)); }
         .bell-dot { 
-            position: absolute; top: 0; right: 0; width: 12px; height: 12px; 
-            background: var(--danger); border-radius: 50%; border: 2px solid var(--bg); display: none;
-            animation: pulse 1.5s infinite;
+            position: absolute; top: 5px; right: 5px; width: 12px; height: 12px; 
+            background: var(--danger); border-radius: 50%; border: 2px solid var(--bg); 
+            display: none; box-shadow: 0 0 15px var(--danger);
+            animation: bell-pulse 1.8s infinite;
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { transform: scale(1.2); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-            100% { transform: scale(1); }
+        @keyframes bell-pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
         }
 
         #notifDropdown {
-            position: absolute; top: 70px; right: 5%; width: 320px; 
-            background: #0c121d; border: 1px solid var(--glass-border); border-radius: 15px;
-            display: none; flex-direction: column; padding: 15px; z-index: 2000; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            position: absolute; top: 75px; right: 5%; width: 340px; 
+            background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 20px;
+            display: none; flex-direction: column; padding: 20px; z-index: 2000; 
+            box-shadow: 0 25px 60px rgba(0,0,0,1);
         }
-        
-        .notif-item-link {
-            padding: 12px; border-bottom: 1px solid #1a1a1a; cursor: pointer;
-            border-radius: 8px; margin-bottom: 5px; display: block;
-            text-decoration: none; color: white; font-size: 13px;
-        }
-        .notif-item-link:hover { background: rgba(34, 197, 94, 0.1); }
-        .notif-mention { border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.05); }
 
-        /* ОСНОВНА СІТКА КОНТЕНТУ */
-        .main-wrapper { display: flex; justify-content: center; padding: 30px 5%; }
+        /* ============================================================
+           ОСНОВНИЙ КОНТЕНТ (GRID)
+           ============================================================ */
+        .main-wrapper { display: flex; justify-content: center; padding: 35px 5%; }
         .main-container {
-            display: grid; grid-template-columns: 280px 420px 1fr; gap: 20px;
-            width: 100%; max-width: 1600px;
+            display: grid; grid-template-columns: 300px 450px 1fr; gap: 25px;
+            width: 100%; max-width: 1650px;
         }
 
-        /* СТИЛІ КАРТОК */
+        /* КАРТКИ */
         .side-menu, .profile-card, .info-box {
-            background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 24px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
 
-        /* БОКОВЕ МЕНЮ */
-        .side-menu { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+        /* МЕНЮ */
+        .side-menu { padding: 25px; display: flex; flex-direction: column; gap: 12px; }
         .menu-item {
             display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 18px; background: rgba(255,255,255,0.03); border-radius: 12px;
-            color: white; text-decoration: none; font-size: 14px; font-weight: 600; position: relative;
+            padding: 16px 20px; background: rgba(255,255,255,0.03); border-radius: 14px;
+            color: white; text-decoration: none; font-size: 14px; font-weight: 700;
         }
-        .menu-item:hover { background: rgba(34, 197, 94, 0.08); border-color: var(--glass-border); }
-
-        .fire-dot { width: 10px; height: 10px; background: var(--danger); border-radius: 50%; box-shadow: 0 0 10px var(--danger); display: none; }
-
-        .btn-lock-menu {
-            margin-top: auto; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 12px;
-            text-transform: uppercase; cursor: pointer; border: 1px solid var(--danger);
-            background: rgba(239, 68, 68, 0.05); color: var(--danger); display: none; text-align: center;
+        .menu-item:hover {
+            background: rgba(34, 197, 94, 0.1); border-color: var(--primary);
+            transform: translateX(5px); box-shadow: 0 0 20px var(--primary-glow);
         }
 
-        /* КАРТКА ПРОФІЛЮ */
+        /* ПРОФІЛЬ */
         .profile-card { 
-            padding: 40px 20px; text-align: center; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; border: 2px solid var(--primary);
-            background: radial-gradient(circle at center, rgba(34, 197, 94, 0.05) 0%, transparent 100%), var(--card-bg);
+            padding: 50px 25px; text-align: center; border: 2px solid var(--primary);
+            background: radial-gradient(circle at top, rgba(34, 197, 94, 0.08) 0%, transparent 70%), var(--card-bg);
         }
         .avatar-circle { 
-            width: 140px; height: 140px; border-radius: 50%; border: 3px solid var(--primary); 
-            display: flex; align-items: center; justify-content: center; font-size: 65px; 
-            margin-bottom: 25px; background: #111; box-shadow: 0 0 25px rgba(34, 197, 94, 0.2);
+            width: 150px; height: 150px; border-radius: 50%; border: 4px solid var(--primary); 
+            display: flex; align-items: center; justify-content: center; font-size: 70px; 
+            margin: 0 auto 30px; background: #080a0d; box-shadow: 0 0 40px var(--primary-glow);
         }
-        .user-name { font-size: 32px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; }
-        .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; }
+        .user-name { font-size: 34px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; }
 
-        /* ІНФОРМАЦІЙНІ БЛОКИ */
-        .info-panel { display: flex; flex-direction: column; gap: 15px; }
-        .info-box { padding: 20px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 8px; display: block; }
-        .info-box h2 { margin: 0; font-size: 18px; font-weight: 800; }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        
-        .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
-        .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 900; }
-        .btn-mini:hover { background: var(--primary); color: black; }
+        /* ІНФО-ПАНЕЛЬ */
+        .info-panel { display: flex; flex-direction: column; gap: 18px; }
+        .info-box { padding: 25px; text-align: center; position: relative; min-height: 110px; }
+        .info-box span { font-size: 11px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 10px; display: block; opacity: 0.8; }
+        .info-box h2 { font-size: 20px; font-weight: 900; }
 
-        .btn-add-info {
-            position: absolute; top: 10px; right: 10px;
-            background: var(--primary); color: black; border: none;
-            border-radius: 50%; width: 22px; height: 22px;
-            font-size: 14px; font-weight: 900; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 10px var(--primary-glow);
+        /* ============================================================
+           РЕЄСТР БІЙЦІВ (НЕОНОВИЙ ДИЗАЙН)
+           ============================================================ */
+        .staff-section-container { width: 100%; display: flex; justify-content: center; padding: 20px 5% 60px; }
+        .staff-section { 
+            width: 100%; max-width: 1550px; background: var(--card-bg); 
+            border: 1px solid var(--glass-border); border-radius: 35px; padding: 45px; 
+            box-shadow: 0 0 60px rgba(0,0,0,0.7);
         }
-
-        /* РЕЄСТР ТА СПИСОК БІЙЦІВ */
-        .staff-section-container { width: 100%; display: flex; justify-content: center; padding: 20px 5% 50px; }
-        .staff-section { width: 100%; max-width: 1520px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 25px; padding: 30px; }
         
         .staff-item {
             display: flex; justify-content: space-between; align-items: center;
-            background: #0c121d; padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
-            position: relative; z-index: 1; border: 1px solid rgba(255,255,255,0.05);
+            background: rgba(255, 255, 255, 0.02); backdrop-filter: blur(12px);
+            padding: 22px 35px; border-radius: 22px; margin-bottom: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            position: relative; overflow: hidden;
+        }
+        .staff-item:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: var(--primary-bright);
+            box-shadow: 0 0 35px var(--primary-glow);
+            transform: translateY(-3px);
+        }
+        .staff-item::before {
+            content: ''; position: absolute; left: 0; top: 0; height: 100%; width: 5px;
+            background: var(--primary); box-shadow: 0 0 20px var(--primary);
         }
 
-        /* КНОПКИ СТРІЛОЧОК */
-        .order-controls { display: flex; flex-direction: column; gap: 4px; margin-right: 15px; }
+        /* КНОПКИ ПОРЯДКУ (СТРІЛОЧКИ) */
+        .order-controls { 
+            display: flex; flex-direction: column; gap: 6px; margin-right: 30px; 
+            background: rgba(0,0,0,0.4); padding: 10px; border-radius: 12px; border: 1px solid var(--glass-border);
+        }
         .btn-order { 
-            background: rgba(34, 197, 94, 0.1); border: 1px solid var(--glass-border); 
-            color: var(--primary); width: 28px; height: 28px; border-radius: 6px; 
-            cursor: pointer; font-size: 10px; font-weight: 900; 
+            background: none; border: none; color: var(--primary); cursor: pointer; 
+            font-size: 16px; opacity: 0.5; transition: 0.2s;
         }
-        .btn-order:hover { background: var(--primary); color: black; }
+        .btn-order:hover { opacity: 1; transform: scale(1.4); filter: drop-shadow(0 0 8px var(--primary)); }
 
-        /* КНОПКИ ДІЙ */
-        .btn-action-g, .btn-manage, .btn-verify, .btn-ban { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
-        .btn-action-g { background: var(--primary); color: black; }
-        .btn-manage { background: #1e293b; color: white; border: 1px solid var(--glass-border); }
-        .btn-verify { background: var(--warning); color: black; }
-        .btn-ban { background: #450a0a; color: #ff4444; border: 1px solid #7f1d1d; }
-        .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        /* КНОПКИ ДІЙ У РЕЄСТРІ */
+        .btn-action-g { background: var(--primary); color: black; padding: 12px 24px; border-radius: 14px; font-weight: 900; border: none; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); }
+        .btn-manage { background: #161b22; color: white; padding: 12px 24px; border-radius: 14px; border: 1px solid var(--glass-border); font-weight: 700; }
+        .btn-action-r { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); padding: 12px 24px; border-radius: 14px; font-weight: 900; }
+        .btn-action-r:hover { background: var(--danger); color: white; box-shadow: 0 0 25px var(--danger-glow); }
 
-        /* МОДАЛЬНЕ ВІКНО */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); display: none; justify-content: center; align-items: center; z-index: 2000; }
-        .modal-content { 
-            background: #0c121d; border: 1px solid var(--glass-border); 
-            width: 95%; max-width: 800px; height: 85vh; border-radius: 30px; 
-            padding: 20px; position: relative; display: flex; flex-direction: column;
-            box-shadow: 0 0 100px rgba(0,0,0,1);
-        }
-        #modalReportsList { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+        /* АДМІН-КНОПКИ В КАРТЦІ */
+        .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 12px; }
+        .btn-mini { background: #111; border: 1px solid #333; color: white; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; font-weight: 900; }
+        .btn-mini:hover { background: var(--primary); color: black; border-color: var(--primary); }
 
-        @media (max-width: 1024px) {
+        /* ============================================================
+           МЕДІА-ЗАПИТИ (МОБІЛЬНА ВЕРСІЯ)
+           ============================================================ */
+        @media (max-width: 1200px) {
             .main-container { grid-template-columns: 1fr; }
             .side-menu { order: 2; }
             .profile-card { order: 1; }
             .info-panel { order: 3; }
-            header { padding: 10px 5%; }
-            .staff-item { flex-direction: column; text-align: center; gap: 15px; }
         }
 
-        /* ЗВІТИ */
-        .report-card {
-            background: rgba(255, 255, 255, 0.03); border-radius: 15px; margin-bottom: 20px;
-            border-left: 5px solid var(--primary); overflow: hidden; border-top: 1px solid rgba(255,255,255,0.05);
+        @media (max-width: 768px) {
+            .staff-item { flex-direction: column; gap: 20px; text-align: center; }
+            .order-controls { flex-direction: row; margin-right: 0; justify-content: center; }
+            .logo-box { font-size: 14px; }
         }
-        .report-card.subotnik { border-left-color: var(--warning); }
-        .report-header { padding: 15px 20px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
-        .report-date { font-size: 12px; font-weight: 900; color: var(--primary-bright); }
-        .report-body { padding: 20px; }
-        .report-content-text { font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #ddd; }
-        .badge-type { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 900; text-transform: uppercase; }
-        .badge-rep { background: var(--primary); color: black; }
-        .badge-sub { background: var(--warning); color: black; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="verifyWaitingScreen">
         <h1>ВЕРИФІКАЦІЯ...</h1>
-        <p style="color: var(--text-gray); max-width: 500px;">Ваш акаунт зареєстровано. Очікуйте підтвердження.</p>
-        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ</button>
+        <p style="color: var(--text-gray); font-size: 18px;">Ваш профіль очікує підтвердження від Генерального Штабу.</p>
+        <button class="btn-action-r" style="margin-top: 40px;" onclick="window.logout()">ПОКИНУТИ СИСТЕМУ</button>
     </div>
 
     <div id="banScreen">
-        <h1 style="font-size: 60px; font-weight: 900;">BAN IP</h1>
+        <h1>ACCESS DENIED</h1>
+        <p style="color: var(--danger); margin-top: 15px; font-weight: 800;">ВАШ IP ЗАБЛОКОВАНО ЗА ПОРУШЕННЯ</p>
     </div>
 
     <div id="lockScreen">
-        <h1>ДОСТУП ОБМЕЖЕНО</h1>
-        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ</button>
+        <h1 style="color: var(--danger);">СИСТЕМА ЗАБЛОКОВАНА</h1>
+        <p style="color: var(--text-gray); margin-top: 10px;">Введено режим надзвичайного стану.</p>
     </div>
 
-    <header id="mainHeader">
-        <a href="index.html" class="logo-box">ДШВ</a>
+    <header>
+        <a href="index.html" class="logo-box">ДШВ | COMMAND</a>
         <div class="header-right">
-            <div class="notif-wrapper" id="bellWrapper" onclick="toggleNotifs(event)">
+            <div class="notif-wrapper" onclick="toggleNotifs()">
                 <span class="bell-icon">🔔</span>
                 <div id="bellDot" class="bell-dot"></div>
-            </div>
-            <div id="notifDropdown">
-                <h4 style="margin-bottom: 10px; color: var(--primary-bright); border-bottom: 1px solid #222; padding-bottom: 5px;">ПОВІДОМЛЕННЯ</h4>
-                <div id="notifList" style="font-size: 13px; max-height: 250px; overflow-y: auto;">
-                    <div style="color:var(--text-gray); text-align:center; padding: 10px;">Немає нових подій</div>
+                <div id="notifDropdown">
+                    <b style="color:var(--primary); font-size: 14px; margin-bottom:15px; display:block; text-transform:uppercase; letter-spacing:1px;">Центр сповіщень</b>
+                    <div id="notifList" style="max-height: 350px; overflow-y: auto;">
+                        <div style="color:#444; text-align:center; padding: 20px;">Немає нових повідомлень</div>
+                    </div>
                 </div>
             </div>
-            <span id="topName" style="color:var(--primary-bright); font-weight:800;">...</span>
-            <button onclick="window.logout()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer;">ВИЙТИ</button>
+            <span id="topName" style="font-weight:900; color:var(--primary-bright); text-shadow: 0 0 10px var(--primary-glow);">...</span>
+            <button onclick="window.logout()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:900; text-transform:uppercase;">Вихід</button>
         </div>
     </header>
 
-    <div class="main-wrapper" id="mainContent">
+    <div class="main-wrapper">
         <div class="main-container">
             <div class="side-menu">
-                <button id="backToMe" onclick="resetView()" style="display:none; width:100%; background:var(--warning); color:black; padding:14px; border-radius:12px; font-weight:900; border:none; cursor:pointer; margin-bottom:15px;">⬅ МІЙ ПРОФІЛЬ</button>
-                <a href="index.html" class="menu-item">🏠 Головна сторінка</a>
+                <button id="backToMe" onclick="resetView()" style="display:none; background:var(--warning); color:black; padding:18px; border-radius:15px; font-weight:900; border:none; cursor:pointer; margin-bottom:15px; box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);">⬅ МІЙ ПРОФІЛЬ</button>
+                <a href="index.html" class="menu-item">🏠 Головний термінал</a>
                 <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
-                <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
-                <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
-                <a href="chats.html" class="menu-item" id="chatBtn">💬 Чати / Оголошення <div id="dot-chats" class="fire-dot"></div></a>
-                <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
+                <a href="subotnik.html" class="menu-item">🧹 Господарчі роботи <div id="dot-subotniks" class="fire-dot"></div></a>
+                <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;">📝 Реєстр рапортів <div id="dot-apps" class="fire-dot"></div></a>
+                <a href="chats.html" class="menu-item">💬 Оперативний чат</a>
+                <div id="lockBtn" style="display:none; margin-top:auto; color:var(--danger); border:1px solid var(--danger); padding:15px; border-radius:15px; text-align:center; cursor:pointer; font-weight:900; background: rgba(239, 68, 68, 0.05);" onclick="toggleSystemAccess()">🔴 ЗАКРИТИ ДОСТУП</div>
             </div>
 
             <div class="profile-card">
                 <div class="avatar-circle">👤</div>
-                <div id="userName" class="user-name">...</div>
-                <div id="userID" class="id-badge">ID: ...</div>
+                <div id="userName" class="user-name">Завантаження...</div>
+                <div id="userID" class="id-badge">ID: ---</div>
             </div>
 
             <div class="info-panel">
                 <div class="info-box">
-                    <span>ПОСАДА / ЗВАННЯ</span>
-                    <h2 id="userRank" style="color:var(--primary-bright);">...</h2>
+                    <span>ПОТОЧНЕ ЗВАННЯ</span>
+                    <h2 id="userRank" style="color:var(--primary-bright); text-transform:uppercase;">...</h2>
                 </div>
                 <div class="stats-grid">
                     <div class="info-box">
-                        <span>ПОПЕРЕДЖЕННЯ</span>
+                        <span>ДОГАНИ</span>
                         <h2 id="userRep">0</h2>
                         <div class="admin-controls">
                             <button class="btn-mini" onclick="changeStat('reprimands', -1)">-</button>
@@ -306,27 +312,21 @@
                         </div>
                     </div>
                     <div class="info-box">
-                        <span>ДОГАНИ</span>
-                        <h2 id="userWarns" style="color: white !important;">0</h2> 
+                        <span>СУВОРІ ДОГАНИ</span>
+                        <h2 id="userWarns" style="color:white !important;">0</h2>
                         <div class="admin-controls">
                             <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
                             <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
                         </div>
                     </div>
-                    <div class="info-box">
-                        <span>ПАСПОРТ</span>
-                        <h2 id="userPassport" style="font-size: 12px;">НЕМАЄ</h2>
-                        <button id="btnAddPass" class="btn-add-info" onclick="updateField('passport')" style="display:none;">+</button>
-                    </div>
-                    <div class="info-box">
-                        <span>DISCORD</span>
-                        <h2 id="userDiscord" style="font-size: 12px;">---</h2>
-                        <button id="btnAddDisc" class="btn-add-info" onclick="updateField('discord')" style="display:none;">+</button>
-                    </div>
                 </div>
                 <div class="info-box">
-                    <span>СТАТУС СЛУЖБИ</span>
-                    <h2 style="color: var(--primary);">АКТИВНА</h2>
+                    <span>ПАСПОРТНІ ДАНІ</span>
+                    <h2 id="userPassport" style="font-size:15px; font-family: 'Courier New', monospace;">---</h2>
+                </div>
+                <div class="info-box">
+                    <span>КОНТАКТ DISCORD</span>
+                    <h2 id="userDiscord" style="font-size:15px; color: #5865F2;">---</h2>
                 </div>
             </div>
         </div>
@@ -334,16 +334,8 @@
 
     <div class="staff-section-container" id="adminSection" style="display:none;">
         <div class="staff-section">
-            <h3 style="color:var(--primary-bright); margin-bottom:25px; text-transform:uppercase;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ</h3>
+            <h3 style="margin-bottom:35px; color:var(--primary); font-size: 24px; font-weight: 900; letter-spacing: 1px;">📋 ОСОБОВИЙ СКЛАД ПІДРОЗДІЛУ</h3>
             <div id="staffList"></div>
-        </div>
-    </div>
-
-    <div id="reportsModal" class="modal-overlay">
-        <div class="modal-content">
-            <span onclick="document.getElementById('reportsModal').style.display='none'" style="position:absolute; top:20px; right:25px; font-size:35px; cursor:pointer; color: #555;">&times;</span>
-            <h2 id="modalTitle" style="color: var(--primary-bright); margin-bottom: 30px;">АРХІВ ЗВІТІВ</h2>
-            <div id="modalReportsList"></div>
         </div>
     </div>
 
@@ -352,6 +344,7 @@
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // КОНФІГУРАЦІЯ
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
@@ -370,31 +363,9 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // ЗАХИСТ
-        document.onkeydown = function(e) {
-            if (e.keyCode == 123) return false; 
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; 
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; 
-            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; 
-        };
-
-        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
-
-        function linkify(text) {
-            if (!text) return "---";
-            const urlRegex = /(https?:\/\/[^\s]+)/g;
-            return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:#3498db;">${url}</a>`);
-        }
-
+        // ОСНОВНА ПЕРЕВІРКА АВТОРИЗАЦІЇ
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
-            
-            const res = await fetch('https://api.ipify.org?format=json');
-            const ipData = await res.json();
-            const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
-            if (banSnap.exists()) { document.getElementById('banScreen').style.display = 'flex'; return; }
-
             currentUID = user.uid;
             editingUID = user.uid;
 
@@ -402,7 +373,7 @@
             if (!userDoc.exists()) {
                 await setDoc(doc(db, "users", user.uid), {
                     name: user.displayName || "Новий боєць",
-                    verified: false, role: 'user', rank: 'Рекрут', reprimands: 0, warns: 0, staffIndex: 999, lastIP: ipData.ip
+                    verified: false, role: 'user', rank: 'Рекрут', reprimands: 0, warns: 0, staffIndex: 999, gameID: "---"
                 });
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
@@ -414,6 +385,7 @@
                 return;
             }
 
+            // ОНОВЛЕННЯ ІНТЕРФЕЙСУ
             updateUI(myData);
             listenToSystemStatus(myData.role);
             
@@ -423,27 +395,28 @@
                 document.getElementById('lockBtn').style.display = 'block';
                 loadStaffList();
             }
+
+            // ЗАПУСК СИСТЕМ
             initNotifications();
             listenForMentions();
         });
 
+        // ФУНКЦІЯ ОНОВЛЕННЯ ДАНИХ НА ЕКРАНІ
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "---";
             document.getElementById('topName').innerText = data.name || "---";
+            document.getElementById('userRank').innerText = data.rank || "---";
             document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
-            document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
-            document.getElementById('userPassport').innerText = data.passport || "НЕМАЄ";
-            document.getElementById('userDiscord').innerText = data.discord || "---";
-
-            document.getElementById('btnAddPass').style.display = (!data.passport || data.passport === "НЕМАЄ") ? 'flex' : 'none';
-            document.getElementById('btnAddDisc').style.display = (!data.discord || data.discord === "---") ? 'flex' : 'none';
-
-            document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
+            document.getElementById('userPassport').innerText = data.passport || "ВІДСУТНІЙ";
+            document.getElementById('userDiscord').innerText = data.discord || "НЕ ВКАЗАНО";
+            
+            const controls = document.querySelectorAll('.admin-controls');
+            controls.forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
-        // РЕЄСТР З КНОПКАМИ
+        // РЕЄСТР З КЕРУВАННЯМ ПОРЯДКОМ
         async function loadStaffList() {
             const list = document.getElementById('staffList');
             onSnapshot(collection(db, "users"), (snap) => {
@@ -452,22 +425,25 @@
                 users.sort((a, b) => (a.staffIndex || 0) - (b.staffIndex || 0));
 
                 list.innerHTML = "";
-                users.forEach((u, index) => {
+                users.forEach((u) => {
                     const item = document.createElement('div');
                     item.className = 'staff-item';
                     item.innerHTML = `
                         <div style="display:flex; align-items:center;">
                             <div class="order-controls">
-                                <button class="btn-order" onclick="window.moveUser('${u.id}', -1)">▲</button>
-                                <button class="btn-order" onclick="window.moveUser('${u.id}', 1)">▼</button>
+                                <button class="btn-order" onclick="moveUser('${u.id}', -1)">▲</button>
+                                <button class="btn-order" onclick="moveUser('${u.id}', 1)">▼</button>
                             </div>
-                            <div><b>${u.name}</b><br><small>${u.rank}</small></div>
+                            <div>
+                                <b style="font-size: 19px; color: white;">${u.name}</b><br>
+                                <small style="color: var(--primary-bright); font-weight: 800; text-transform: uppercase;">${u.rank}</small>
+                                <span style="margin-left: 20px; color: #555; font-size: 12px; font-weight: 900;">ID: ${u.gameID || '---'}</span>
+                            </div>
                         </div>
-                        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-                            ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">OK</button>` : ""}
-                            <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">ЗВІТИ</button>
-                            <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
-                            <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">ВИДАЛИТИ</button>
+                        <div style="display:flex; gap:15px;">
+                            ${!u.verified ? `<button class="btn-action-g" onclick="verifyUser('${u.id}')">ПРИЙНЯТИ</button>` : ''}
+                            <button class="btn-manage" onclick="enterManageMode('${u.id}')">⚙️ ДОСЬЄ</button>
+                            <button class="btn-action-r" onclick="deleteUser('${u.id}')">ВИДАЛИТИ</button>
                         </div>
                     `;
                     list.appendChild(item);
@@ -475,33 +451,34 @@
             });
         }
 
+        // ПЕРЕМІЩЕННЯ БІЙЦІВ
         window.moveUser = async (id, direction) => {
             const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
             let users = [];
             snap.forEach(d => users.push({id: d.id, ...d.data()}));
-            const idx = users.findIndex(u => u.id === id);
-            if (idx === -1) return;
-            const newIdx = idx + direction;
-            if (newIdx < 0 || newIdx >= users.length) return;
+            const index = users.findIndex(u => u.id === id);
+            if (index === -1) return;
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= users.length) return;
 
             const batch = writeBatch(db);
-            batch.update(doc(db, "users", users[idx].id), { staffIndex: newIdx });
-            batch.update(doc(db, "users", users[newIdx].id), { staffIndex: idx });
+            batch.update(doc(db, "users", users[index].id), { staffIndex: newIndex });
+            batch.update(doc(db, "users", users[newIndex].id), { staffIndex: index });
             await batch.commit();
         };
 
-        // ЗГАДКИ ТА СПОВІЩЕННЯ
+        // СИСТЕМА УПОМИНАНЬ (@NAME)
         function listenForMentions() {
-            const halfHourAgo = new Date(Date.now() - 30 * 60 * 1000);
+            const startTime = new Date(Date.now() - 15 * 60 * 1000); // Тільки нові за 15 хв
             onSnapshot(collection(db, "channels"), (snap) => {
                 snap.forEach(channel => {
-                    const q = query(collection(db, "channels", channel.id, "messages"), where("createdAt", ">", halfHourAgo));
-                    onSnapshot(q, (mSnap) => {
-                        mSnap.docChanges().forEach(change => {
+                    const q = query(collection(db, "channels", channel.id, "messages"), where("createdAt", ">", startTime));
+                    onSnapshot(q, (messages) => {
+                        messages.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const msg = change.doc.data();
                                 if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
-                                    addNotification(`Згадка від ${msg.author}: ${msg.text.substring(0,20)}...`, 'chats.html', true);
+                                    pushToNotifList(msg.author, msg.text);
                                 }
                             }
                         });
@@ -510,49 +487,33 @@
             });
         }
 
-        function addNotification(text, link, isMention = false) {
+        function pushToNotifList(author, text) {
             const list = document.getElementById('notifList');
-            const empty = list.querySelector('div');
-            if(empty && empty.innerText.includes("Немає")) list.innerHTML = "";
-            const item = document.createElement('a');
-            item.href = link;
-            item.className = `notif-item-link ${isMention ? 'notif-mention' : ''}`;
-            item.innerHTML = `<b>${isMention ? '📢' : '📧'}</b> ${text}`;
+            if (list.innerHTML.includes("Немає нових")) list.innerHTML = "";
+            const item = document.createElement('div');
+            item.style.cssText = "padding:15px; border-bottom:1px solid #1a1a1a; font-size:13px; border-left:4px solid var(--warning); background:rgba(251,191,36,0.03); margin-bottom:8px; border-radius:10px;";
+            item.innerHTML = `<b style="color:var(--warning)">📢 НОВЕ ПОВІДОМЛЕННЯ:</b><br><span style="color:#aaa">Від: ${author}</span><br>${text}`;
             list.prepend(item);
             document.getElementById('bellDot').style.display = 'block';
         }
 
-        window.toggleNotifs = (e) => {
-            if(e) e.stopPropagation();
+        window.toggleNotifs = () => {
             const drop = document.getElementById('notifDropdown');
-            const isOpen = drop.style.display === 'flex';
-            drop.style.display = isOpen ? 'none' : 'flex';
-            if(!isOpen) {
-                document.getElementById('bellDot').style.display = 'none';
-                document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
-                ['reports', 'subotniks', 'applications'].forEach(async c => {
-                    const s = await getDocs(collection(db, c));
-                    localStorage.setItem('count_' + c, s.size);
-                });
-            }
+            const isVisible = drop.style.display === 'flex';
+            drop.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) document.getElementById('bellDot').style.display = 'none';
         };
 
-        // ІНША ЛОГІКА
+        // КЕРУВАННЯ СТАТИСТИКОЮ
         window.changeStat = async (field, val) => {
-            const docRef = doc(db, "users", editingUID);
-            const snap = await getDoc(docRef);
-            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
-            await updateDoc(docRef, { [field]: newVal });
-            if(editingUID === currentUID) myData[field] = newVal;
-            const updated = await getDoc(docRef);
-            updateUI(updated.data());
+            const ref = doc(db, "users", editingUID);
+            const s = await getDoc(ref);
+            const newVal = Math.max(0, (s.data()[field] || 0) + val);
+            await updateDoc(ref, { [field]: newVal });
+            const upd = await getDoc(ref); updateUI(upd.data());
         };
 
-        window.updateField = async (f) => {
-            const val = prompt(f === 'passport' ? "Посилання:" : "Discord:");
-            if(val) await updateDoc(doc(db, "users", currentUID), { [f]: val });
-        };
-
+        // ПЕРЕХІД В РЕЖИМ КЕРУВАННЯ
         window.enterManageMode = async (id) => {
             editingUID = id;
             const s = await getDoc(doc(db, "users", id));
@@ -561,71 +522,57 @@
             window.scrollTo({top: 0, behavior: 'smooth'});
         };
 
-        window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
-
-        window.verifyUser = async (id) => {
-            if(confirm("Доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
+        window.resetView = () => { 
+            editingUID = currentUID; 
+            updateUI(myData); 
+            document.getElementById('backToMe').style.display = 'none'; 
         };
 
-        window.deleteUser = async (id) => {
-            if (prompt("ПАРОЛЬ:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
-        };
-
+        // СПОВІЩЕННЯ ПРО НОВІ ЗВІТИ/РАПОРТИ
         function initNotifications() {
-            ['reports', 'subotniks', 'applications'].forEach(t => {
-                onSnapshot(collection(db, t), (snap) => {
-                    const saved = localStorage.getItem('count_' + t) || 0;
+            ['reports', 'subotniks', 'applications'].forEach(coll => {
+                onSnapshot(collection(db, coll), (snap) => {
+                    const localKey = 'last_count_' + coll;
+                    const saved = localStorage.getItem(localKey) || 0;
                     if (snap.size > saved) {
-                        const dot = document.getElementById('dot-' + t);
-                        if(dot) dot.style.display = 'block';
+                        const dot = document.getElementById('dot-' + coll);
+                        if (dot) dot.style.display = 'block';
                         document.getElementById('bellDot').style.display = 'block';
                     }
+                    localStorage.setItem(localKey, snap.size);
                 });
             });
         }
 
+        // СТАТУС СИСТЕМИ
         function listenToSystemStatus(role) {
             onSnapshot(doc(db, "settings", "systemStatus"), (snap) => {
-                const locked = snap.data()?.isLocked;
-                document.getElementById('lockScreen').style.display = (locked && role !== 'admin') ? 'flex' : 'none';
+                const isLocked = snap.data()?.isLocked;
+                document.getElementById('lockScreen').style.display = (isLocked && role !== 'admin') ? 'flex' : 'none';
             });
         }
 
         window.toggleSystemAccess = async () => {
-            if(prompt("КОД:") === SECRET_CODE) {
+            if(prompt("ВВЕДІТЬ КЛЮЧ ДОСТУПУ (ADMIN ONLY):") === SECRET_CODE) {
                 const ref = doc(db, "settings", "systemStatus");
-                const snap = await getDoc(ref);
-                await updateDoc(ref, { isLocked: !snap.data().isLocked });
+                const s = await getDoc(ref);
+                await updateDoc(ref, { isLocked: !s.data().isLocked });
             }
         };
 
-        window.viewReports = async (uid, name) => {
-            const listUI = document.getElementById('modalReportsList');
-            document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
-            document.getElementById('reportsModal').style.display = 'flex';
-            listUI.innerHTML = "Завантаження...";
-            let found = [];
-            for (const c of ['reports', 'subotniks']) {
-                const snap = await getDocs(collection(db, c));
-                snap.forEach(d => {
-                    const data = d.data();
-                    if (JSON.stringify(data).toLowerCase().includes(name.toLowerCase())) {
-                        found.push({ ...data, colType: c === 'reports' ? 'Щотижневий' : 'Суботник' });
-                    }
-                });
+        window.verifyUser = async (id) => { 
+            if(confirm("Надати доступ бійцю до терміналу?")) {
+                await updateDoc(doc(db, "users", id), { verified: true }); 
             }
-            listUI.innerHTML = found.map(f => `
-                <div class="report-card ${f.colType === 'Суботник' ? 'subotnik' : ''}">
-                    <div class="report-header">
-                        <span class="report-date">📅 ${f.period || f.date || '---'}</span>
-                        <div class="badge-type ${f.colType === 'Суботник' ? 'badge-sub' : 'badge-rep'}">${f.colType}</div>
-                    </div>
-                    <div class="report-body">
-                        <div class="report-content-text">${linkify(f.content || f.message)}</div>
-                    </div>
-                </div>
-            `).join('') || "Звітів не знайдено.";
         };
+
+        window.deleteUser = async (id) => { 
+            if (prompt("ПІДТВЕРДІТЬ ВИДАЛЕННЯ (КОД):") === SECRET_CODE) {
+                await deleteDoc(doc(db, "users", id)); 
+            }
+        };
+
+        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
     </script>
 </body>
 </html>
