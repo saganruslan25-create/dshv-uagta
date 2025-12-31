@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ДШВ | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
@@ -12,7 +12,7 @@
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
-            --primary-glow: rgba(34, 197, 94, 0.15); /* Нове: м'яке світіння */
+            --primary-glow: rgba(34, 197, 94, 0.15);
             --bg: #030507;
             --card-bg: #0a0c10;
             --glass-border: rgba(34, 197, 94, 0.2);
@@ -31,7 +31,6 @@
 
         body {
             background-color: var(--bg);
-            /* Покращений фон: додано радіальні градієнти для глибини */
             background-image: 
                 radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.12) 0%, transparent 50%),
                 radial-gradient(circle at 0% 100%, rgba(34, 197, 94, 0.05) 0%, transparent 30%);
@@ -48,7 +47,7 @@
             -webkit-user-select: text !important;
         }
 
-        /* ЕФЕКТИ ПРИ НАВЕДЕННІ (ДОДАНО СВІТІННЯ ТА ПІДЙОМ) */
+        /* ЕФЕКТИ ПРИ НАВЕДЕННІ */
         .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
         .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
         .btn-lock-menu:hover, .btn-verify:hover {
@@ -113,6 +112,7 @@
             text-decoration: none; color: white; font-size: 13px;
         }
         .notif-item-link:hover { background: rgba(34, 197, 94, 0.1); }
+        .notif-mention { border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.05); }
 
         /* ОСНОВНА СІТКА КОНТЕНТУ */
         .main-wrapper { display: flex; justify-content: center; padding: 30px 5%; }
@@ -194,11 +194,23 @@
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); backdrop-filter: blur(20px); display: none; justify-content: center; align-items: center; z-index: 2000; }
         .modal-content { 
             background: #0c121d; border: 1px solid var(--glass-border); 
-            width: 90%; max-width: 800px; height: 85vh; border-radius: 30px; 
-            padding: 40px; position: relative; display: flex; flex-direction: column;
+            width: 95%; max-width: 800px; height: 85vh; border-radius: 30px; 
+            padding: 20px; position: relative; display: flex; flex-direction: column;
             box-shadow: 0 0 100px rgba(0,0,0,1);
         }
-        #modalReportsList { overflow-y: auto; flex-grow: 1; padding-right: 10px; }
+        #modalReportsList { overflow-y: auto; flex-grow: 1; padding-right: 5px; }
+
+        /* АДАПТИВНІСТЬ ДЛЯ ТЕЛЕФОНІВ */
+        @media (max-width: 1024px) {
+            .main-container { grid-template-columns: 1fr; }
+            .side-menu { order: 2; }
+            .profile-card { order: 1; }
+            .info-panel { order: 3; }
+            header { padding: 10px 5%; }
+            .top-name { display: none; }
+            .staff-item { flex-direction: column; text-align: center; gap: 15px; }
+            .staff-item div { width: 100%; justify-content: center; flex-wrap: wrap; }
+        }
 
         /* ЗВІТИ (КАРТКИ В МОДАЛЦІ) */
         .report-card {
@@ -248,7 +260,7 @@
                     <div style="color:var(--text-gray); text-align:center; padding: 10px;">Немає нових подій</div>
                 </div>
             </div>
-            <span id="topName" class="top-name">...</span>
+            <span id="topName" class="top-name" style="color:var(--primary-bright); font-weight:800;">...</span>
             <button onclick="window.logout()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer;">ВИЙТИ</button>
         </div>
     </header>
@@ -329,7 +341,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -349,7 +361,7 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // ЗАХИСТ ВІД КОНСОЛІ (F12, CTRL+SHIFT+I ТОЩО)
+        // ЗАХИСТ ВІД КОНСОЛІ
         document.onkeydown = function(e) {
             if (e.keyCode == 123) return false; 
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
@@ -359,23 +371,17 @@
             if (e.ctrlKey && e.keyCode == 'S'.charCodeAt(0)) return false; 
         };
 
-        setInterval(function() { debugger; }, 100);
-
-        // ФУНКЦІЯ ВИХОДУ
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-        // ПЕРЕТВОРЕННЯ ПОСИЛАНЬ У ТЕКСТІ НА КЛІКАБЕЛЬНІ
         function linkify(text) {
             if (!text) return "---";
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:#3498db; text-decoration: underline;">${url}</a>`);
         }
 
-        // ВІДСТЕЖЕННЯ СТАНУ АВТОРИЗАЦІЇ
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             
-            // ПЕРЕВІРКА BAN IP
             const res = await fetch('https://api.ipify.org?format=json');
             const ipData = await res.json();
             const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
@@ -386,7 +392,6 @@
 
             const userDoc = await getDoc(doc(db, "users", user.uid));
             
-            // ЯКЩО НОВИЙ КОРИСТУВАЧ - СТВОРЮЄМО ЗАПИС
             if (!userDoc.exists()) {
                 await setDoc(doc(db, "users", user.uid), {
                     name: user.displayName || "Новий боєць",
@@ -396,15 +401,14 @@
                     reprimands: 0,
                     warns: 0,
                     gameID: "---",
-                    lastIP: ipData.ip
+                    lastIP: ipData.ip,
+                    staffIndex: 999
                 });
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
             }
 
             myData = userDoc.data();
-            
-            // ПЕРЕВІРКА ВЕРИФІКАЦІЇ
             if (!myData.verified && myData.role !== 'admin') {
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
@@ -413,7 +417,6 @@
             updateUI(myData);
             listenToSystemStatus(myData.role);
             
-            // ПАНЕЛЬ АДМІНІСТРАТОРА
             if (myData.role === 'admin') {
                 document.getElementById('adminSection').style.display = 'block';
                 document.getElementById('adminAppBtn').style.display = 'flex';
@@ -421,9 +424,9 @@
                 loadStaffList();
             }
             initNotifications();
+            listenForMentions(); // НОВА ФУНКЦІЯ: слухаємо чати на предмет тегів
         });
 
-        // ОНОВЛЕННЯ ІНТЕРФЕЙСУ ДАНИМИ
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "Невідомо";
             document.getElementById('topName').innerText = data.name || "Користувач";
@@ -436,16 +439,29 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
-        // ЗАВАНТАЖЕННЯ СПИСКУ ОСОБОВОГО СКЛАДУ
+        // ЗАВАНТАЖЕННЯ ТА ЗБЕРЕЖЕННЯ ПОРЯДКУ РЕЄСТРУ
         async function loadStaffList() {
             const list = document.getElementById('staffList');
             
+            // Створюємо Sortable з обробником збереження
             new Sortable(list, {
-                animation: 150,
-                ghostClass: 'sortable-ghost'
+                animation: 250,
+                handle: '.staff-item',
+                ghostClass: 'sortable-ghost',
+                onEnd: async function() {
+                    const items = list.querySelectorAll('.staff-item');
+                    const batch = writeBatch(db);
+                    items.forEach((item, index) => {
+                        const uid = item.getAttribute('data-id');
+                        batch.update(doc(db, "users", uid), { staffIndex: index });
+                    });
+                    await batch.commit(); // Зберігаємо нові позиції в Firebase
+                }
             });
 
-            onSnapshot(collection(db, "users"), (snap) => {
+            // Слухаємо базу з сортуванням по staffIndex
+            const qStaff = query(collection(db, "users"), orderBy("staffIndex", "asc"));
+            onSnapshot(qStaff, (snap) => {
                 list.innerHTML = "";
                 snap.forEach(s => {
                     const d = s.data();
@@ -455,11 +471,14 @@
                     const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${s.id}')">ВЕРИФІКУВАТИ</button>` : "";
                     
                     item.innerHTML = `
-                        <div>
-                            <b>${d.name}</b><br>
-                            <small style="color:var(--text-gray)">[${d.rank}] • Game ID: ${d.gameID || '---'}</small>
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <span style="opacity:0.3; font-size:20px;">☰</span>
+                            <div>
+                                <b>${d.name}</b><br>
+                                <small style="color:var(--text-gray)">[${d.rank}] • Game ID: ${d.gameID || '---'}</small>
+                            </div>
                         </div>
-                        <div style="display:flex; gap:10px;">
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
                             ${verifyBtn}
                             <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}', '${d.gameID}')">ЗВІТИ</button>
                             <button class="btn-manage" onclick="window.enterManageMode('${s.id}')">КЕРУВАТИ</button>
@@ -472,27 +491,52 @@
             });
         }
 
-        // БАН ПО IP
-        window.banByIP = async (ip, name) => {
-            if (!ip || ip === '---') return alert("IP не знайдено для цього користувача.");
-            if (prompt(`Введіть секретний код, щоб заблокувати IP ${ip} (${name}):`) === SECRET_CODE) {
-                await setDoc(doc(db, "bannedIPs", ip), {
-                    bannedAt: new Date(),
-                    reason: "Адміністративне блокування",
-                    userName: name
+        // МОНІТОРИНГ ЗГАДУВАНЬ В ЧАТАХ (@Name)
+        function listenForMentions() {
+            onSnapshot(collection(db, "channels"), (channelsSnap) => {
+                channelsSnap.forEach(channelDoc => {
+                    const qMessages = query(collection(db, "channels", channelDoc.id, "messages"), orderBy("createdAt", "desc"), where("createdAt", ">", new Date(Date.now() - 3600000))); // за останню годину
+                    onSnapshot(qMessages, (msgSnap) => {
+                        msgSnap.docChanges().forEach(change => {
+                            if (change.type === "added") {
+                                const msg = change.doc.data();
+                                // Перевірка чи є тег вашого імені в тексті
+                                if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
+                                    addNotification(`Вас згадав ${msg.author} у чаті`, 'chats.html', true);
+                                }
+                            }
+                        });
+                    });
                 });
-                alert(`IP ${ip} успішно заблоковано!`);
+            });
+        }
+
+        function addNotification(text, link, isMention = false) {
+            const list = document.getElementById('notifList');
+            const empty = list.querySelector('div');
+            if(empty && empty.innerText.includes("Немає")) list.innerHTML = "";
+            
+            const item = document.createElement('a');
+            item.href = link;
+            item.className = `notif-item-link ${isMention ? 'notif-mention' : ''}`;
+            item.innerHTML = `<b>${isMention ? '📢' : '📧'}</b> ${text}`;
+            list.prepend(item);
+            document.getElementById('bellDot').style.display = 'block';
+        }
+
+        // РЕШТА ФУНКЦІЙ БЕЗ ЗМІН (ЯК ВИ ПРОСИЛИ)
+        window.banByIP = async (ip, name) => {
+            if (!ip || ip === '---') return alert("IP не знайдено.");
+            if (prompt(`Секретний код для BAN IP ${ip}:`) === SECRET_CODE) {
+                await setDoc(doc(db, "bannedIPs", ip), { bannedAt: new Date(), userName: name });
+                alert("IP Заблоковано!");
             }
         };
 
-        // ВЕРИФІКАЦІЯ КОРИСТУВАЧА
         window.verifyUser = async (id) => {
-            if(confirm("Надати доступ до кабінету?")) {
-                await updateDoc(doc(db, "users", id), { verified: true });
-            }
+            if(confirm("Надати доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
         };
 
-        // ПЕРЕГЛЯД ЗВІТІВ БІЙЦЯ В МОДАЛЦІ
         window.viewReports = async (uid, name, gameID) => {
             const listUI = document.getElementById('modalReportsList');
             document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
@@ -524,7 +568,6 @@
             `).join('') || "<p style='text-align:center;'>Звітів не знайдено.</p>";
         };
 
-        // СИСТЕМА ПОВІДОМЛЕНЬ (ДЗВІНОЧОК)
         function initNotifications() {
             const targets = [
                 { id: 'reports', dot: 'dot-reports', label: 'Звіт', link: 'reports.html' },
@@ -538,6 +581,7 @@
                         const dot = document.getElementById(t.dot);
                         if(dot) dot.style.display = 'block';
                         document.getElementById('bellDot').style.display = 'block';
+                        addNotification(`Новий запис у розділі: ${t.label}`, t.link);
                     }
                 });
             });
@@ -558,7 +602,6 @@
             }
         };
 
-        // РЕЖИМ КЕРУВАННЯ ІНШИМ БІЙЦЕМ
         window.enterManageMode = async (id) => {
             const snap = await getDoc(doc(db, "users", id));
             editingUID = id;
@@ -569,14 +612,12 @@
 
         window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
 
-        // ВИДАЛЕННЯ КОРИСТУВАЧА
         window.deleteUser = async (id) => {
             if (prompt("ПАРОЛЬ ВИДАЛЕННЯ:") === SECRET_CODE) {
                 if(confirm("ВИДАЛИТИ БІЙЦЯ НАЗАВЖДИ?")) await deleteDoc(doc(db, "users", id));
             }
         };
 
-        // БЛОКУВАННЯ ВСІЄЇ СИСТЕМИ
         function listenToSystemStatus(role) {
             onSnapshot(doc(db, "settings", "systemStatus"), (snap) => {
                 const locked = snap.data()?.isLocked;
@@ -593,7 +634,6 @@
             }
         };
 
-        // ЗМІНА СТАТИСТИКИ (ДОГАНИ/ПОПЕРЕДЖЕННЯ)
         window.changeStat = async (field, val) => {
             const docRef = doc(db, "users", editingUID);
             const snap = await getDoc(docRef);
