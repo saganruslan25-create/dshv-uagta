@@ -160,7 +160,7 @@
 
         /* ІНФОРМАЦІЙНІ БЛОКИ */
         .info-panel { display: flex; flex-direction: column; gap: 15px; }
-        .info-box { padding: 20px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .info-box { padding: 20px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
         .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 8px; display: block; }
         .info-box h2 { margin: 0; font-size: 18px; font-weight: 800; }
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
@@ -168,6 +168,16 @@
         .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
         .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 900; }
         .btn-mini:hover { background: var(--primary); color: black; }
+
+        /* Кнопка "Додати документ" */
+        .btn-add-info {
+            position: absolute; top: 10px; right: 10px;
+            background: var(--primary); color: black; border: none;
+            border-radius: 50%; width: 22px; height: 22px;
+            font-size: 14px; font-weight: 900; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
 
         /* РЕЄСТР ТА СПИСОК БІЙЦІВ */
         .staff-section-container { width: 100%; display: flex; justify-content: center; padding: 20px 5% 50px; }
@@ -300,8 +310,7 @@
                     </div>
                     <div class="info-box">
                         <span>ДОГАНИ</span>
-                        <h2 id="userWarns" style="color: var(--danger);">0</h2>
-                        <div class="admin-controls">
+                        <h2 id="userWarns" style="color: white;">0</h2> <div class="admin-controls">
                             <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
                             <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
                         </div>
@@ -309,10 +318,12 @@
                     <div class="info-box">
                         <span>ДОКУМЕНТИ (ПАСПОРТ)</span>
                         <h2 id="userPassport" style="font-size: 12px;">НЕМАЄ</h2>
+                        <button id="btnAddPass" class="btn-add-info" onclick="updateField('passport')" style="display:none;">+</button>
                     </div>
                     <div class="info-box">
                         <span>DISCORD АКАУНТ</span>
                         <h2 id="userDiscord" style="font-size: 12px;">---</h2>
+                        <button id="btnAddDisc" class="btn-add-info" onclick="updateField('discord')" style="display:none;">+</button>
                     </div>
                 </div>
                 <div class="info-box">
@@ -424,8 +435,18 @@
                 loadStaffList();
             }
             initNotifications();
-            listenForMentions(); // НОВА ФУНКЦІЯ: слухаємо чати на предмет тегів
+            listenForMentions();
         });
+
+        // ФУНКЦІЯ ДОДАВАННЯ ПАСПОРТУ ТА ДІСКОРДУ
+        window.updateField = async (field) => {
+            const label = field === 'passport' ? "Посилання на паспорт (Imgur/Yapx):" : "Ваш Discord (User#0000):";
+            const newVal = prompt(label);
+            if (newVal) {
+                await updateDoc(doc(db, "users", currentUID), { [field]: newVal });
+                location.reload();
+            }
+        };
 
         function updateUI(data) {
             document.getElementById('userName').innerText = data.name || "Невідомо";
@@ -434,19 +455,29 @@
             document.getElementById('userRank').innerText = data.rank || "Рекрут";
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
-            document.getElementById('userPassport').innerText = data.passport || "ВІДСУТНІЙ";
+            
+            // Відображення документів
+            document.getElementById('userPassport').innerText = data.passport || "НЕМАЄ";
             document.getElementById('userDiscord').innerText = data.discord || "---";
+
+            // Показуємо кнопки "+" тільки якщо даних немає
+            if (!data.passport || data.passport === "НЕМАЄ") document.getElementById('btnAddPass').style.display = 'flex';
+            else document.getElementById('btnAddPass').style.display = 'none';
+
+            if (!data.discord || data.discord === "---") document.getElementById('btnAddDisc').style.display = 'flex';
+            else document.getElementById('btnAddDisc').style.display = 'none';
+
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
         // ЗАВАНТАЖЕННЯ ТА ЗБЕРЕЖЕННЯ ПОРЯДКУ РЕЄСТРУ
         async function loadStaffList() {
             const list = document.getElementById('staffList');
-            
-            // Створюємо Sortable з обробником збереження
+            if(!list) return;
+
+            // Ініціалізація перетягування
             new Sortable(list, {
                 animation: 250,
-                handle: '.staff-item',
                 ghostClass: 'sortable-ghost',
                 onEnd: async function() {
                     const items = list.querySelectorAll('.staff-item');
@@ -455,20 +486,25 @@
                         const uid = item.getAttribute('data-id');
                         batch.update(doc(db, "users", uid), { staffIndex: index });
                     });
-                    await batch.commit(); // Зберігаємо нові позиції в Firebase
+                    await batch.commit();
                 }
             });
 
-            // Слухаємо базу з сортуванням по staffIndex
+            // Виправлення: Сортування по staffIndex, якщо він є. Якщо немає - по імені.
             const qStaff = query(collection(db, "users"), orderBy("staffIndex", "asc"));
-            onSnapshot(qStaff, (snap) => {
+            onSnapshot(collection(db, "users"), (snap) => {
+                const users = [];
+                snap.forEach(s => users.push({id: s.id, ...s.data()}));
+                
+                // Сортуємо в коді, щоб не ламалося якщо поля немає
+                users.sort((a, b) => (a.staffIndex || 999) - (b.staffIndex || 999));
+
                 list.innerHTML = "";
-                snap.forEach(s => {
-                    const d = s.data();
+                users.forEach(d => {
                     const item = document.createElement('div');
                     item.className = 'staff-item';
-                    item.setAttribute('data-id', s.id);
-                    const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${s.id}')">ВЕРИФІКУВАТИ</button>` : "";
+                    item.setAttribute('data-id', d.id);
+                    const verifyBtn = !d.verified ? `<button class="btn-verify" onclick="window.verifyUser('${d.id}')">ВЕРИФІКУВАТИ</button>` : "";
                     
                     item.innerHTML = `
                         <div style="display:flex; align-items:center; gap:15px;">
@@ -480,10 +516,10 @@
                         </div>
                         <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
                             ${verifyBtn}
-                            <button class="btn-action-g" onclick="window.viewReports('${s.id}', '${d.name}', '${d.gameID}')">ЗВІТИ</button>
-                            <button class="btn-manage" onclick="window.enterManageMode('${s.id}')">КЕРУВАТИ</button>
+                            <button class="btn-action-g" onclick="window.viewReports('${d.id}', '${d.name}', '${d.gameID}')">ЗВІТИ</button>
+                            <button class="btn-manage" onclick="window.enterManageMode('${d.id}')">КЕРУВАТИ</button>
                             <button class="btn-ban" onclick="window.banByIP('${d.lastIP}', '${d.name}')">BAN IP</button>
-                            <button class="btn-action-r" onclick="window.deleteUser('${s.id}')">ВИДАЛИТИ</button>
+                            <button class="btn-action-r" onclick="window.deleteUser('${d.id}')">ВИДАЛИТИ</button>
                         </div>
                     `;
                     list.appendChild(item);
@@ -495,14 +531,13 @@
         function listenForMentions() {
             onSnapshot(collection(db, "channels"), (channelsSnap) => {
                 channelsSnap.forEach(channelDoc => {
-                    const qMessages = query(collection(db, "channels", channelDoc.id, "messages"), orderBy("createdAt", "desc"), where("createdAt", ">", new Date(Date.now() - 3600000))); // за останню годину
+                    const qMessages = query(collection(db, "channels", channelDoc.id, "messages"), orderBy("createdAt", "desc"), where("createdAt", ">", new Date(Date.now() - 1800000)));
                     onSnapshot(qMessages, (msgSnap) => {
                         msgSnap.docChanges().forEach(change => {
                             if (change.type === "added") {
                                 const msg = change.doc.data();
-                                // Перевірка чи є тег вашого імені в тексті
                                 if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
-                                    addNotification(`Вас згадав ${msg.author} у чаті`, 'chats.html', true);
+                                    addNotification(`Згадка у чаті від ${msg.author}`, 'chats.html', true);
                                 }
                             }
                         });
@@ -524,7 +559,6 @@
             document.getElementById('bellDot').style.display = 'block';
         }
 
-        // РЕШТА ФУНКЦІЙ БЕЗ ЗМІН (ЯК ВИ ПРОСИЛИ)
         window.banByIP = async (ip, name) => {
             if (!ip || ip === '---') return alert("IP не знайдено.");
             if (prompt(`Секретний код для BAN IP ${ip}:`) === SECRET_CODE) {
