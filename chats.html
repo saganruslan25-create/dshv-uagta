@@ -27,10 +27,10 @@
             width: 100%; 
             overflow: hidden; 
             position: fixed; /* Запобігає смиканню на мобільних */
+            background-color: var(--bg);
         }
 
         body { 
-            background-color: var(--bg);
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
             color: white; font-family: 'Inter', sans-serif; 
             display: flex;
@@ -46,9 +46,11 @@
 
         /* --- САЙДБАР (КАНАЛИ) --- */
         .sidebar {
-            width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
+            width: 320px; min-width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
             display: flex; flex-direction: column; padding: 25px; z-index: 1000;
-            height: 100%;
+            height: 100%; position: relative;
+            /* Фікс дергання: */
+            contain: size;
         }
 
         .sidebar-header {
@@ -102,7 +104,10 @@
         }
 
         /* --- ГОЛОВНА ЧАСТИНА ЧАТУ --- */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: transparent; min-width: 0; height: 100%; }
+        .chat-main { 
+            flex-grow: 1; display: flex; flex-direction: column; position: relative; 
+            background: transparent; min-width: 0; height: 100%;
+        }
         
         .chat-header {
             padding: 15px 25px; background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
@@ -114,11 +119,37 @@
             display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 15px;
         }
         
-        .visibility-toggle {
-            font-size: 12px; background: rgba(255,255,255,0.1); padding: 8px 15px; 
-            border-radius: 8px; cursor: pointer; display: none; font-weight: 700; transition: 0.3s;
+        /* КНОПКА ШЕСТЕРНІ */
+        .settings-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: white; width: 40px; height: 40px; border-radius: 10px;
+            display: none; align-items: center; justify-content: center; cursor: pointer;
+            font-size: 20px; transition: 0.3s;
         }
-        .visibility-toggle.hidden-mode { background: var(--danger); color: white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
+        .settings-btn:hover { background: var(--primary); color: black; transform: rotate(45deg); }
+
+        /* МЕНЮ НАЛАШТУВАНЬ */
+        .settings-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+            z-index: 2000; display: none; align-items: center; justify-content: center;
+        }
+        .settings-content {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            padding: 30px; border-radius: 20px; width: 90%; max-width: 450px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .settings-title { font-weight: 900; margin-bottom: 20px; color: var(--primary); font-size: 20px; text-transform: uppercase; }
+        .settings-group { margin-bottom: 20px; }
+        .settings-label { display: block; font-size: 12px; color: #666; font-weight: 800; margin-bottom: 8px; text-transform: uppercase; }
+        .settings-input, .settings-select {
+            width: 100%; background: #000; border: 1px solid #333; color: white;
+            padding: 12px; border-radius: 8px; outline: none; font-family: inherit; font-weight: 600;
+        }
+        .settings-input:focus { border-color: var(--primary); }
+        .settings-actions { display: flex; gap: 10px; margin-top: 30px; }
+        .save-settings-btn { flex: 1; background: var(--primary); color: black; border: none; padding: 15px; border-radius: 10px; font-weight: 900; cursor: pointer; }
+        .close-settings-btn { flex: 1; background: #222; color: white; border: none; padding: 15px; border-radius: 10px; font-weight: 900; cursor: pointer; }
 
         .messages-container { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; scroll-behavior: smooth; }
         
@@ -132,7 +163,6 @@
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        /* РОЗДІЛЕННЯ ТЕКСТУ */
         .msg-content { 
             line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; word-break: break-word; 
             color: #ddd; font-size: 15px; max-width: 100%;
@@ -179,15 +209,16 @@
             position: absolute; bottom: 85px; left: 20px; background: #0a0c10; border: 1px solid var(--glass-border);
             border-radius: 10px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
         }
+        .mention-item { padding: 10px 15px; cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .mention-item:hover { background: var(--primary); color: black; }
 
-        /* ПАНЕЛЬ ВВОДУ */
         .chat-input-area { 
             padding: 15px 20px; 
             background: rgba(3, 5, 7, 0.95); 
             border-top: 1px solid var(--glass-border); 
             display: none; 
             flex-direction: column;
-            margin-bottom: env(safe-area-inset-bottom); /* Підтримка iPhone */
+            margin-bottom: env(safe-area-inset-bottom);
         }
         
         .preview-bar {
@@ -229,9 +260,8 @@
             .chat-header { padding: 10px 15px; }
             .chat-input-area { padding: 10px; }
             .msg-actions { display: flex; opacity: 1; top: -10px; right: 5px; }
-            
-            /* Фікс щоб клавіатура не перекривала інпут */
             .chat-main { height: 100%; }
+            .settings-content { width: 95%; padding: 20px; }
         }
 
         ::-webkit-scrollbar { width: 4px; }
@@ -242,6 +272,40 @@
 
     <div id="lightbox" onclick="closeLightbox()">
         <img id="lightbox-img" src="" style="max-width:95%; max-height:90%;">
+    </div>
+
+    <div id="settingsModal" class="settings-modal">
+        <div class="settings-content">
+            <div class="settings-title">Налаштування каналу</div>
+            
+            <div class="settings-group">
+                <label class="settings-label">Назва каналу</label>
+                <input type="text" id="editChannelName" class="settings-input">
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">Хто бачить канал</label>
+                <select id="editViewRole" class="settings-select">
+                    <option value="all">Всі (Бійці та вище)</option>
+                    <option value="officer">Тільки Офіцери</option>
+                    <option value="admin">Тільки Адміністрація</option>
+                </select>
+            </div>
+
+            <div class="settings-group">
+                <label class="settings-label">Хто може писати</label>
+                <select id="editWriteRole" class="settings-select">
+                    <option value="all">Всі</option>
+                    <option value="officer">Тільки Офіцери</option>
+                    <option value="admin">Тільки Адміністрація</option>
+                </select>
+            </div>
+
+            <div class="settings-actions">
+                <button class="close-settings-btn" onclick="closeSettings()">СКАСУВАТИ</button>
+                <button class="save-settings-btn" onclick="saveChannelSettings()">ЗБЕРЕГТИ</button>
+            </div>
+        </div>
     </div>
 
     <div class="sidebar" id="sidebar">
@@ -260,7 +324,7 @@
                 <button class="mobile-menu-toggle" onclick="toggleSidebar()">☰</button>
                 <div><span style="color:var(--primary)">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span></div>
             </div>
-            <div id="visibilityToggle" class="visibility-toggle" onclick="toggleChannelVisibility()">👁️ ВСІМ ВИДНО</div>
+            <div id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙</div>
         </div>
         
         <div id="messages" class="messages-container"></div>
@@ -294,9 +358,9 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs, setDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ЗАХИСТ ВІД КОНСОЛІ ТА ГАРЯЧИХ КЛАВІШ
+        // ЗАХИСТ
         document.onkeydown = function(e) {
-            if (e.keyCode == 123) return false; // F12
+            if (e.keyCode == 123) return false;
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
@@ -327,7 +391,7 @@
                 userData = snap.data();
                 if (userData.role === 'admin') {
                     document.getElementById('adminCreateChannel').style.display = 'block';
-                    document.getElementById('visibilityToggle').style.display = 'block';
+                    document.getElementById('settingsBtn').style.display = 'flex';
                     initSortable();
                 }
                 loadChannels();
@@ -349,11 +413,17 @@
                 list.innerHTML = "";
                 snap.forEach(d => {
                     const ch = d.data();
-                    if (ch.isHidden && userData.role !== 'admin') return; 
+                    
+                    // Перевірка доступу (Хто бачить)
+                    if (userData.role !== 'admin') {
+                        if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
+                        if (ch.viewRole === 'officer' && userData.role === 'soldier') return;
+                    }
+
                     const item = document.createElement('div');
-                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.isHidden ? 'hidden-channel' : ''}`;
+                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.viewRole !== 'all' ? 'hidden-channel' : ''}`;
                     item.dataset.id = d.id;
-                    item.innerHTML = `<span>${ch.isHidden ? '🔒' : '#'} ${ch.name}</span><div class="channel-controls">${userData?.role === 'admin' ? '<span class="chan-del-btn" onclick="deleteChannel(\''+d.id+'\', \''+ch.name+'\')">✕</span><span class="drag-handle">⋮⋮</span>' : ''}</div>`;
+                    item.innerHTML = `<span>${ch.viewRole !== 'all' ? '🔒' : '#'} ${ch.name}</span><div class="channel-controls">${userData?.role === 'admin' ? '<span class="chan-del-btn" onclick="deleteChannel(\''+d.id+'\', \''+ch.name+'\')">✕</span><span class="drag-handle">⋮⋮</span>' : ''}</div>`;
                     item.onclick = (e) => {
                         if (e.target.classList.contains('drag-handle') || e.target.classList.contains('chan-del-btn')) return;
                         selectChannel(d.id, ch);
@@ -372,21 +442,46 @@
             activeChannelId = id; activeChannelData = chData;
             localStorage.setItem('lastChatID', id); 
             document.getElementById('activeChannelName').innerText = chData.name;
-            document.getElementById('inputArea').style.display = 'flex';
-            updateVisibilityButtonUI(chData.isHidden);
+            
+            // Перевірка чи може користувач писати
+            const canWrite = checkWritePermission(chData.writeRole);
+            document.getElementById('inputArea').style.display = canWrite ? 'flex' : 'none';
+            
             loadMessages(id); listenTyping(id);
         }
 
-        function updateVisibilityButtonUI(isHidden) {
-            if (userData.role !== 'admin') return;
-            const btn = document.getElementById('visibilityToggle');
-            btn.classList.toggle('hidden-mode', isHidden);
-            btn.innerText = isHidden ? "🔒 ПРИХОВАНО" : "👁️ ВСІМ ВИДНО";
+        function checkWritePermission(roleLimit) {
+            if (userData.role === 'admin') return true;
+            if (roleLimit === 'admin') return false;
+            if (roleLimit === 'officer' && userData.role === 'officer') return true;
+            if (roleLimit === 'all') return true;
+            return false;
         }
 
-        window.toggleChannelVisibility = async () => {
-            const newState = !activeChannelData.isHidden;
-            await updateDoc(doc(db, "channels", activeChannelId), { isHidden: newState });
+        // НАЛАШТУВАННЯ КАНАЛУ
+        window.openSettings = () => {
+            if (!activeChannelData) return;
+            document.getElementById('editChannelName').value = activeChannelData.name;
+            document.getElementById('editViewRole').value = activeChannelData.viewRole || 'all';
+            document.getElementById('editWriteRole').value = activeChannelData.writeRole || 'all';
+            document.getElementById('settingsModal').style.display = 'flex';
+        }
+
+        window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
+
+        window.saveChannelSettings = async () => {
+            const newName = document.getElementById('editChannelName').value.trim().toUpperCase();
+            const viewRole = document.getElementById('editViewRole').value;
+            const writeRole = document.getElementById('editWriteRole').value;
+
+            if (newName) {
+                await updateDoc(doc(db, "channels", activeChannelId), {
+                    name: newName,
+                    viewRole: viewRole,
+                    writeRole: writeRole
+                });
+                closeSettings();
+            }
         };
 
         function listenTyping(chid) {
@@ -530,7 +625,12 @@
             const name = prompt("Назва:");
             if (name) {
                 const s = await getDocs(collection(db, "channels"));
-                await addDoc(collection(db, "channels"), { name: name.toUpperCase(), index: s.size, isHidden: false });
+                await addDoc(collection(db, "channels"), { 
+                    name: name.toUpperCase(), 
+                    index: s.size, 
+                    viewRole: 'all', 
+                    writeRole: 'all' 
+                });
             }
         };
         window.deleteChannel = async (id, name) => { if (confirm(`Видалити ${name}?`)) await deleteDoc(doc(db, "channels", id)); };
