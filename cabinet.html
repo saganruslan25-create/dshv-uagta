@@ -20,7 +20,7 @@
             --text-gray: #94a3b8;
         }
 
-        /* КАСТОМНИЙ СКРОЛБАР У СТИЛІ САЙТУ */
+        /* КАСТОМНИЙ СКРОЛБАР (ЯК НА ФОТО) */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -200,9 +200,18 @@
         
         .staff-item {
             display: flex; justify-content: space-between; align-items: center;
-            background: #0c121d; padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
+            background: var(--card-bg); padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
+            border: 1px solid var(--glass-border);
         }
+
+        /* КРАСИВІ КНОПКИ СТРІЛОЧОК */
+        .order-arrows { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
+        .btn-arrow {
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--primary); border-radius: 6px; width: 26px; height: 26px;
+            font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .btn-arrow:hover { background: var(--primary); color: black; border-color: var(--primary); }
 
         /* КНОПКИ ДІЙ У РЕЄСТРІ */
         .btn-action-g, .btn-manage, .btn-verify, .btn-ban { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
@@ -219,20 +228,23 @@
             padding: 25px; position: relative; display: flex; flex-direction: column;
         }
 
+        /* КАРТКИ ЗВІТІВ В АРХІВІ */
+        .report-card {
+            background: rgba(255, 255, 255, 0.03); border-radius: 15px; margin-bottom: 20px;
+            overflow: hidden; border: 1px solid rgba(255,255,255,0.05);
+        }
+        .rep-weekly { border-left: 5px solid var(--primary); }
+        .rep-subotnik { border-left: 5px solid var(--warning); }
+
+        .report-header { padding: 15px 20px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
+        .report-body { padding: 20px; font-size: 14px; line-height: 1.7; color: #ddd; white-space: pre-wrap; }
+
         @media (max-width: 1024px) {
             .main-container { grid-template-columns: 1fr; }
             .side-menu { order: 2; }
             .profile-card { order: 1; }
             .info-panel { order: 3; }
         }
-
-        /* КАРТКИ ЗВІТІВ В АРХІВІ */
-        .report-card {
-            background: rgba(255, 255, 255, 0.03); border-radius: 15px; margin-bottom: 20px;
-            border-left: 5px solid var(--primary); overflow: hidden;
-        }
-        .report-header { padding: 15px 20px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
-        .report-body { padding: 20px; font-size: 14px; line-height: 1.7; color: #ddd; white-space: pre-wrap; }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -278,7 +290,7 @@
                 <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
                 <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
                 <a href="applications.html" class="menu-item" id="adminAppBtn" style="display:none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
-                <a href="chats.html" class="menu-item">💬 Чати та канали <div id="dot-chats" class="fire-dot"></div></a>
+                <a href="chats.html" class="menu-item">💬 Чати / Інформація <div id="dot-chats" class="fire-dot"></div></a>
                 <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
             </div>
 
@@ -449,17 +461,17 @@
                     item.className = 'staff-item';
                     item.innerHTML = `
                         <div style="display:flex; align-items:center;">
-                            <div style="display:flex; flex-direction:column; gap:4px; margin-right:15px;">
-                                <button style="background:none; border:1px solid #333; color:var(--primary); cursor:pointer; font-size:10px; width:25px;" onclick="window.moveUser('${u.id}', -1)">▲</button>
-                                <button style="background:none; border:1px solid #333; color:var(--primary); cursor:pointer; font-size:10px; width:25px;" onclick="window.moveUser('${u.id}', 1)">▼</button>
+                            <div class="order-arrows">
+                                <button class="btn-arrow" onclick="window.moveUser('${u.id}', -1)">▲</button>
+                                <button class="btn-arrow" onclick="window.moveUser('${u.id}', 1)">▼</button>
                             </div>
                             <div><b style="font-size:14px;">${u.name}</b><br><small style="color:var(--text-gray)">${u.rank}</small></div>
                         </div>
                         <div style="display:flex; gap:10px;">
-                            ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">OK</button>` : ""}
-                            <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">ЗВІТИ</button>
+                            ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">ВЕРИФІКУВАТИ</button>` : ""}
+                            <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">АРХІВ</button>
                             <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
-                            <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">ВИДАЛИТИ</button>
+                            <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">X</button>
                         </div>
                     `;
                     list.appendChild(item);
@@ -557,7 +569,7 @@
         };
 
         window.deleteUser = async (id) => {
-            if (prompt("ПАРОЛЬ:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
+            if (prompt("ПАРОЛЬ АДМІНІСТРАТОРА:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
         };
 
         function initNotifications() {
@@ -565,7 +577,7 @@
                 onSnapshot(collection(db, t), (snap) => {
                     const saved = localStorage.getItem('count_' + t) || 0;
                     if (snap.size > saved) {
-                        const dot = document.getElementById('dot-' + t);
+                        const dot = document.getElementById('dot-' + (t === 'reports' ? 'reports' : t === 'subotniks' ? 'subotniks' : 'apps'));
                         if(dot) dot.style.display = 'block';
                         document.getElementById('bellDot').style.display = 'block';
                     }
@@ -581,7 +593,7 @@
         }
 
         window.toggleSystemAccess = async () => {
-            if(prompt("КОД:") === SECRET_CODE) {
+            if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === SECRET_CODE) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { isLocked: !snap.data().isLocked });
@@ -592,7 +604,7 @@
             const listUI = document.getElementById('modalReportsList');
             document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
             document.getElementById('reportsModal').style.display = 'flex';
-            listUI.innerHTML = "<p style='text-align:center; padding:20px; font-size:13px;'>Завантаження архіву...</p>";
+            listUI.innerHTML = "<p style='text-align:center; padding:20px; font-size:13px;'>Завантаження даних бійця...</p>";
             let found = [];
             for (const c of ['reports', 'subotniks']) {
                 const snap = await getDocs(collection(db, c));
@@ -604,10 +616,10 @@
                 });
             }
             listUI.innerHTML = found.map(f => `
-                <div class="report-card">
+                <div class="report-card ${f.colType === 'Щотижневий' ? 'rep-weekly' : 'rep-subotnik'}">
                     <div class="report-header">
                         <span style="font-size:12px; font-weight:900; color:var(--primary-bright);">${f.period || f.date || '---'}</span>
-                        <span style="font-size:10px; background:var(--primary); color:black; padding:3px 8px; border-radius:5px; font-weight:900;">${f.colType}</span>
+                        <span style="font-size:10px; background:${f.colType === 'Щотижневий' ? 'var(--primary)' : 'var(--warning)'}; color:black; padding:3px 8px; border-radius:5px; font-weight:900;">${f.colType}</span>
                     </div>
                     <div class="report-body">${linkify(f.content || f.message)}</div>
                 </div>
