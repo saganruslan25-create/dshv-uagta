@@ -154,18 +154,34 @@
             display: flex; align-items: center; justify-content: center; font-size: 65px; 
             margin-bottom: 25px; background: #111; box-shadow: 0 0 25px rgba(34, 197, 94, 0.2);
         }
-        .user-name { font-size: 32px; font-weight: 900; margin-bottom: 15px; letter-spacing: -1px; }
+        
+        /* ВИПРАВЛЕНО: Пропорційний розмір імені */
+        .user-name { 
+            font-size: clamp(24px, 4vw, 36px); 
+            font-weight: 900; 
+            margin-bottom: 15px; 
+            letter-spacing: -1px; 
+            text-transform: uppercase;
+        }
         .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; }
 
         /* ІНФОРМАЦІЙНІ БЛОКИ */
         .info-panel { display: flex; flex-direction: column; gap: 15px; }
-        .info-box { padding: 20px; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
-        .info-box span { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 8px; display: block; }
-        .info-box h2 { margin: 0; font-size: 18px; font-weight: 800; }
+        .info-box { padding: 25px; text-align: center; min-height: 120px; display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; }
+        .info-box span { font-size: clamp(10px, 1.5vw, 13px); font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 12px; display: block; opacity: 0.8; }
+        
+        /* ВИПРАВЛЕНО: Пропорційний розмір тексту в інфо-боксах */
+        .info-box h2 { 
+            margin: 0; 
+            font-size: clamp(18px, 2.5vw, 28px); 
+            font-weight: 800; 
+            line-height: 1.2;
+        }
+        
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         
-        .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 10px; }
-        .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 900; }
+        .admin-controls { display: none; justify-content: center; gap: 12px; margin-top: 15px; }
+        .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 35px; height: 35px; border-radius: 8px; cursor: pointer; font-weight: 900; font-size: 18px; }
         .btn-mini:hover { background: var(--primary); color: black; }
 
         .btn-add-info {
@@ -315,18 +331,18 @@
                     </div>
                     <div class="info-box">
                         <span>ПАСПОРТ</span>
-                        <h2 id="userPassport" style="font-size: 12px;">НЕМАЄ</h2>
+                        <h2 id="userPassport" style="font-size: 16px;">НЕМАЄ</h2>
                         <button id="btnAddPass" class="btn-add-info" onclick="updateField('passport')" style="display:none;">+</button>
                     </div>
                     <div class="info-box">
                         <span>DISCORD</span>
-                        <h2 id="userDiscord" style="font-size: 12px;">---</h2>
+                        <h2 id="userDiscord" style="font-size: 16px;">---</h2>
                         <button id="btnAddDisc" class="btn-add-info" onclick="updateField('discord')" style="display:none;">+</button>
                     </div>
                 </div>
                 <div class="info-box">
                     <span>СТАТУС СЛУЖБИ</span>
-                    <h2 style="color: var(--primary);">АКТИВНА</h2>
+                    <h2 style="color: var(--primary); font-size: 32px;">АКТИВНА</h2>
                 </div>
             </div>
         </div>
@@ -370,7 +386,7 @@
         let editingUID = null;
         const SECRET_CODE = "g%!V4/(&BMwnmT&";
 
-        // ЗАХИСТ
+        // ЗАХИСТ ВІД ПЕРЕГЛЯДУ КОДУ
         document.onkeydown = function(e) {
             if (e.keyCode == 123) return false; 
             if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; 
@@ -443,7 +459,7 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
-        // РЕЄСТР З КНОПКАМИ
+        // РЕЄСТР З КНОПКАМИ УПРАВЛІННЯ
         async function loadStaffList() {
             const list = document.getElementById('staffList');
             onSnapshot(collection(db, "users"), (snap) => {
@@ -490,7 +506,7 @@
             await batch.commit();
         };
 
-        // ЗГАДКИ ТА СПОВІЩЕННЯ
+        // ЛОГІКА ЗГАДОК
         function listenForMentions() {
             const halfHourAgo = new Date(Date.now() - 30 * 60 * 1000);
             onSnapshot(collection(db, "channels"), (snap) => {
@@ -537,7 +553,7 @@
             }
         };
 
-        // ІНША ЛОГІКА
+        // КЕРУВАННЯ СТАТИСТИКОЮ
         window.changeStat = async (field, val) => {
             const docRef = doc(db, "users", editingUID);
             const snap = await getDoc(docRef);
@@ -549,7 +565,7 @@
         };
 
         window.updateField = async (f) => {
-            const val = prompt(f === 'passport' ? "Посилання:" : "Discord:");
+            const val = prompt(f === 'passport' ? "Посилання на паспорт:" : "Discord ID:");
             if(val) await updateDoc(doc(db, "users", currentUID), { [f]: val });
         };
 
@@ -564,11 +580,11 @@
         window.resetView = () => { editingUID = currentUID; updateUI(myData); document.getElementById('backToMe').style.display = 'none'; };
 
         window.verifyUser = async (id) => {
-            if(confirm("Доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
+            if(confirm("Надати доступ до системи?")) await updateDoc(doc(db, "users", id), { verified: true });
         };
 
         window.deleteUser = async (id) => {
-            if (prompt("ПАРОЛЬ:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
+            if (prompt("ВВЕДІТЬ КОД ПІДТВЕРДЖЕННЯ:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
         };
 
         function initNotifications() {
@@ -592,18 +608,19 @@
         }
 
         window.toggleSystemAccess = async () => {
-            if(prompt("КОД:") === SECRET_CODE) {
+            if(prompt("ВВЕДІТЬ ПАРОЛЬ АДМІНІСТРАТОРА:") === SECRET_CODE) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { isLocked: !snap.data().isLocked });
             }
         };
 
+        // ПЕРЕГЛЯД АРХІВУ ЗВІТІВ
         window.viewReports = async (uid, name) => {
             const listUI = document.getElementById('modalReportsList');
             document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
             document.getElementById('reportsModal').style.display = 'flex';
-            listUI.innerHTML = "Завантаження...";
+            listUI.innerHTML = "<p style='text-align:center;'>Завантаження даних...</p>";
             let found = [];
             for (const c of ['reports', 'subotniks']) {
                 const snap = await getDocs(collection(db, c));
@@ -624,7 +641,7 @@
                         <div class="report-content-text">${linkify(f.content || f.message)}</div>
                     </div>
                 </div>
-            `).join('') || "Звітів не знайдено.";
+            `).join('') || "<p style='text-align:center; padding:50px; color:var(--text-gray);'>Звітів не знайдено.</p>";
         };
     </script>
 </body>
