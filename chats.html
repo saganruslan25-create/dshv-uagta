@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
     <title>ДШВ | ТАКТИЧНИЙ ЗВ'ЯЗОК</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
@@ -20,25 +20,40 @@
             --mention-text: #fbbf24;
         }
 
-        /* Загальні стилі та відключення виділення тексту для імерсивності */
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        /* СТИЛІЗАЦІЯ СКРОЛБАРУ ПІД СТИЛЬ САЙТУ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: #1a1d21; border-radius: 10px; border: 1px solid #0a0c10; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.2s, transform 0.2s; }
+        
+        html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); }
+
         body { 
-            background-color: var(--bg);
             background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
-            color: white; font-family: 'Inter', sans-serif; height: 100vh; display: flex; overflow: hidden; 
-            user-select: none;
+            color: white; font-family: 'Inter', sans-serif; display: flex; user-select: none;
         }
 
-        /* Бокова панель (Список каналів) */
-        .sidebar {
-            width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
-            display: flex; flex-direction: column; padding: 25px; z-index: 10;
+        @keyframes highlightMsg {
+            0% { background: rgba(34, 197, 94, 0.4); border-left: 3px solid var(--primary-bright); }
+            100% { background: transparent; border-left: 3px solid transparent; }
         }
+        .msg-highlighted { animation: highlightMsg 2s ease-out; }
+
+        /* САЙДБАР */
+        .sidebar {
+            width: 320px; min-width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column; padding: 25px; z-index: 1000; height: 100%; position: relative;
+        }
+
+        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .close-sidebar-btn { display: none; background: none; border: 1px solid var(--glass-border); color: white; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
 
         .dsw-title {
             background: var(--primary); color: black; padding: 8px 15px; border-radius: 8px;
-            font-weight: 900; text-align: center; text-transform: uppercase; margin-bottom: 25px;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); letter-spacing: 1px;
+            font-weight: 900; text-align: center; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); letter-spacing: 1px; flex-grow: 1;
         }
 
         .back-btn {
@@ -46,187 +61,181 @@
             color: white; padding: 14px; border-radius: 12px; text-decoration: none;
             text-align: center; font-weight: 800; font-size: 13px; margin-bottom: 20px; display: block;
         }
-        .back-btn:hover { background: var(--danger); border-color: var(--danger); transform: scale(1.02); }
+        .back-btn:hover { background: var(--danger); border-color: var(--danger); }
 
-        .channel-list { flex-grow: 1; overflow-y: auto; }
+        .channel-list { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
         
         .channel-item {
             padding: 12px 15px; border-radius: 12px; cursor: pointer; color: #777;
             margin-bottom: 8px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;
             background: rgba(255,255,255,0.02); border: 1px solid transparent;
         }
-        .channel-item:hover, .channel-item.active { 
-            background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); 
-            border-color: var(--glass-border); 
-        }
-        .channel-item.hidden-channel { opacity: 0.5; border: 1px dashed #444; }
+        .channel-item:hover, .channel-item.active { background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); border-color: var(--glass-border); }
+        .channel-item.hidden-channel { opacity: 0.6; }
 
-        /* Елементи керування адміна (сортування та видалення) */
-        .channel-controls { display: flex; align-items: center; gap: 10px; }
-        .drag-handle { cursor: grab; opacity: 0.3; font-size: 18px; padding: 5px; }
-        .chan-del-btn { color: #444; font-size: 14px; cursor: pointer; transition: 0.2s; }
-        .chan-del-btn:hover { color: var(--danger); transform: scale(1.2); }
+        .channel-controls { display: flex; align-items: center; gap: 8px; }
+        .drag-handle { cursor: grab; opacity: 0.4; font-size: 18px; padding: 0 5px; }
+        .drag-handle:active { cursor: grabbing; }
+        .chan-del-btn { color: #444; font-size: 14px; cursor: pointer; }
+        .chan-del-btn:hover { color: var(--danger); }
 
         .create-btn {
             background: var(--primary); color: black; border: none; padding: 15px;
             border-radius: 12px; font-weight: 900; cursor: pointer; margin-top: 20px; text-transform: uppercase;
         }
 
-        /* Основна зона чату */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: transparent; }
+        /* ЧАТ */
+        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0; height: 100%; }
         
         .chat-header {
-            padding: 20px 40px; background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--glass-border); font-weight: 900; font-size: 20px; z-index: 5;
+            padding: 15px 25px; background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--glass-border); font-weight: 900; font-size: 18px; z-index: 5;
             display: flex; align-items: center; justify-content: space-between;
         }
-        
-        .visibility-toggle {
-            font-size: 12px; background: rgba(255,255,255,0.1); padding: 8px 15px; 
-            border-radius: 8px; cursor: pointer; display: none; font-weight: 700; transition: 0.3s;
-        }
-        .visibility-toggle.hidden-mode { background: var(--danger); color: white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3); }
 
-        /* Повідомлення */
-        .messages-container { flex-grow: 1; overflow-y: auto; padding: 30px 40px; display: flex; flex-direction: column; gap: 2px; }
+        .settings-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: white; width: 40px; height: 40px; border-radius: 10px;
+            display: none; align-items: center; justify-content: center; cursor: pointer;
+        }
+
+        .messages-container { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; scroll-behavior: auto; }
         
-        .msg { position: relative; padding: 5px 25px; border-radius: 5px; border: 1px solid transparent; transition: all 0.2s; }
-        .msg:hover { background: rgba(255, 255, 255, 0.02); }
+        .msg { position: relative; padding: 8px 15px; border-radius: 8px; border-left: 3px solid transparent; }
+        .msg:hover { background: rgba(255, 255, 255, 0.04); }
         .msg.grouped { padding-top: 2px; padding-bottom: 2px; }
 
         .msg-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; margin-top: 10px; }
-        .msg.grouped .msg-header { display: none; }
-        
         .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
         .msg-time { font-size: 11px; color: #444; }
 
-        /* FIX: Вирішення проблеми "каші" тексу */
-        .msg-content { 
-            line-height: 1.6; 
-            white-space: pre-wrap; /* Зберігає Enter та пробіли */
-            word-wrap: break-word; 
-            color: #ddd; 
-            font-size: 15px;
-        }
+        .msg-content { line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; color: #ddd; font-size: 15px; }
 
         .reply-block {
             border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
             padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; color: #aaa;
-            cursor: pointer;
+            cursor: pointer; max-width: fit-content;
         }
         
-        .msg-image {
-            max-width: 400px; max-height: 400px; border-radius: 12px; 
-            margin-top: 10px; cursor: zoom-in; border: 1px solid var(--glass-border);
-            display: block; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
+        .msg-image { max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 10px; cursor: zoom-in; border: 1px solid var(--glass-border); display: block;}
         
         .mention { background: var(--mention-bg); color: var(--mention-text); padding: 0 4px; border-radius: 4px; font-weight: bold; }
 
-        /* Кнопки дій (відповідь, ред, вид) */
         .msg-actions {
-            position: absolute; right: 20px; top: -15px;
+            position: absolute; right: 10px; top: -15px;
             display: none; gap: 5px; z-index: 100; background: var(--card-bg);
             padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);
         }
         .msg:hover .msg-actions { display: flex; }
         
-        .action-btn {
-            background: transparent; border: none; color: #888;
-            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 700;
-        }
-        .action-btn:hover { color: var(--primary); background: rgba(255,255,255,0.05); }
-        .del-btn:hover { color: var(--danger); }
+        .action-btn { background: transparent; border: none; color: #888; padding: 6px 10px; cursor: pointer; font-size: 14px; }
 
-        /* Зона вводу */
-        .chat-input-area { padding: 20px 40px; background: rgba(3, 5, 7, 0.9); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
-        
-        .preview-bar {
-            display: none; background: rgba(34, 197, 94, 0.05); padding: 10px 15px; 
-            border-radius: 10px 10px 0 0; border: 1px solid var(--glass-border); border-bottom: none;
-            flex-direction: column; gap: 5px;
-        }
-        
-        .reply-preview-line, .image-preview-line {
-            display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #ccc;
-        }
-        .preview-thumb { height: 40px; border-radius: 5px; border: 1px solid #555; object-fit: cover; }
-        .close-preview { cursor: pointer; color: #666; font-weight: 900; }
-        .close-preview:hover { color: white; }
+        .typing-indicator { padding: 5px 20px; font-size: 12px; color: var(--primary-bright); font-style: italic; min-height: 22px; font-weight: 600; }
 
-        .input-wrapper {
-            background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 15px; 
-            display: flex; align-items: center; padding: 5px 15px; gap: 10px;
+        /* МЕНЮ @ */
+        #mentionBox {
+            position: absolute; bottom: 85px; left: 20px; background: #0a0c10; border: 1px solid var(--glass-border);
+            border-radius: 10px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
-        .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 15px rgba(34, 197, 94, 0.1); }
-        
-        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 200px; overflow-y: auto; }
-        
-        .upload-btn { cursor: pointer; font-size: 20px; color: #666; padding: 5px; transition: 0.3s; }
-        .upload-btn:hover { color: var(--primary); transform: scale(1.1); }
-        .upload-btn.active { color: var(--primary-bright); text-shadow: 0 0 10px var(--primary); }
-        
-        .send-btn { background: var(--primary); color: black; border: none; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; font-weight: 900; display: flex; align-items: center; justify-content: center; }
-        .send-btn:hover { background: var(--primary-bright); }
+        .mention-item { padding: 10px 15px; cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .mention-item:hover { background: var(--primary); color: black; }
 
-        /* Lightbox (перегляд фото) */
-        #lightbox {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;
-            z-index: 10000; cursor: zoom-out; backdrop-filter: blur(10px);
+        /* ВВОД */
+        .chat-input-area { padding: 15px 20px; background: rgba(3, 5, 7, 0.95); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
+        .preview-bar { display: none; background: rgba(34, 197, 94, 0.05); padding: 10px 15px; border-radius: 10px 10px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; justify-content: space-between; }
+        .input-wrapper { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 15px; display: flex; align-items: center; padding: 5px 15px; gap: 10px; }
+        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 120px; font-size: 16px; }
+        .send-btn { background: var(--primary); color: black; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-weight: 900; }
+
+        /* МОДАЛКА */
+        .settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 2000; display: none; align-items: center; justify-content: center; }
+        .settings-content { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; }
+        .settings-input, .settings-select { width: 100%; background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; margin-top: 5px; outline: none; }
+        .settings-actions { display: flex; gap: 10px; margin-top: 25px; }
+
+        #lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 10000; cursor: zoom-out; }
+
+        @media (max-width: 768px) {
+            .sidebar { position: absolute; left: -100%; top: 0; bottom: 0; width: 85%; transition: 0.4s; }
+            .sidebar.active { left: 0; }
+            .close-sidebar-btn { display: block; }
         }
-        #lightbox img { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
-        #lightbox-close { position: absolute; top: 30px; right: 40px; font-size: 40px; color: white; font-weight: 100; cursor: pointer; opacity: 0.5; }
-        #lightbox-close:hover { opacity: 1; }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
     <div id="lightbox" onclick="closeLightbox()">
-        <span id="lightbox-close">✕</span>
-        <img id="lightbox-img" src="">
+        <img id="lightbox-img" src="" style="max-width:95%; max-height:90%;">
     </div>
 
-    <div class="sidebar">
-        <div class="dsw-title">ДШВ КОМУНІКАЦІЯ</div>
-        <a href="cabinet.html" class="back-btn">⬅ НАЗАД ДО КАБІНЕТУ</a>
-        
+    <div id="settingsModal" class="settings-modal">
+        <div class="settings-content">
+            <h3 style="color:var(--primary); margin-bottom:20px;">НАЛАШТУВАННЯ КАНАЛУ</h3>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:12px; color:#666;">НАЗВА КАНАЛУ</label>
+                <input type="text" id="editChannelName" class="settings-input">
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:12px; color:#666;">ДОСТУП (ХТО БАЧИТ)</label>
+                <select id="editViewRole" class="settings-select">
+                    <option value="all">Всі Бійці</option>
+                    <option value="officer">Тільки Офіцери</option>
+                    <option value="admin">Тільки Адміністрація</option>
+                </select>
+            </div>
+            <div style="margin-bottom:15px;">
+                <label style="font-size:12px; color:#666;">ХТО МОЖЕ ПИСАТИ</label>
+                <select id="editWriteRole" class="settings-select">
+                    <option value="all">Всі</option>
+                    <option value="officer">Офіцери</option>
+                    <option value="admin">Адміни</option>
+                </select>
+            </div>
+            <div class="settings-actions">
+                <button onclick="closeSettings()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#222; color:white; cursor:pointer;">СКАСУВАТИ</button>
+                <button onclick="saveChannelSettings()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:black; font-weight:900; cursor:pointer;">ЗБЕРЕГТИ</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="dsw-title">ДШВ КАНАЛИ</div>
+            <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
+        </div>
+        <a href="cabinet.html" class="back-btn">⬅ КАБІНЕТ</a>
         <div id="channelList" class="channel-list"></div>
-        
         <button id="adminCreateChannel" class="create-btn" style="display:none;" onclick="createChannel()">+ СТВОРИТИ КАНАЛ</button>
     </div>
 
     <div class="chat-main">
         <div class="chat-header">
-            <div><span style="color:var(--primary)">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span></div>
-            <div id="visibilityToggle" class="visibility-toggle" onclick="toggleChannelVisibility()">👁️ ВСІМ ВИДНО</div>
+            <div style="display:flex; align-items:center;">
+                <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; margin-right:15px;" class="mobile-toggle">☰</button>
+                <span style="color:var(--primary); margin-right:5px;">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span>
+            </div>
+            <div id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙</div>
         </div>
         
         <div id="messages" class="messages-container"></div>
-        
+        <div id="typingArea" class="typing-indicator"></div>
+        <div id="mentionBox"></div>
+
         <div id="inputArea" class="chat-input-area">
             <div id="previewBar" class="preview-bar">
-                <div id="replyInfo" class="reply-preview-line" style="display:none;">
-                    <span id="replyText">Відповідь...</span>
-                    <span class="close-preview" onclick="cancelReply()">✕</span>
+                <div id="replyInfo" style="display:none; font-size:13px; color:#aaa;">
+                    <span id="replyText"></span> <span onclick="cancelReply()" style="cursor:pointer; margin-left:10px; color:var(--danger)">✕</span>
                 </div>
-                <div id="imageInfo" class="image-preview-line" style="display:none;">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <img id="imgPreviewThumb" class="preview-thumb" src="">
-                        <span id="imgSizeLabel">Зображення готове</span>
-                    </div>
-                    <span class="close-preview" onclick="cancelImage()">✕</span>
+                <div id="imageInfo" style="display:none;">
+                    <img id="imgPreviewThumb" style="height:35px; border-radius:5px; border:1px solid var(--primary);">
+                    <span onclick="cancelImage()" style="cursor:pointer; margin-left:10px; color:var(--danger)">✕</span>
                 </div>
             </div>
-
             <div class="input-wrapper">
-                <label for="imgUpload" class="upload-btn" id="uploadBtnIcon">📷</label>
+                <label for="imgUpload" style="cursor:pointer; font-size:20px; color:#666;">📷</label>
                 <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
-                
-                <textarea id="msgInput" placeholder="Напишіть повідомлення... (Shift+Enter - рядок, Ctrl+V - фото)" rows="1"></textarea>
+                <textarea id="msgInput" placeholder="Напишіть повідомлення..." rows="1"></textarea>
                 <button class="send-btn" onclick="sendMessage()">➤</button>
             </div>
         </div>
@@ -235,7 +244,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs, setDoc, deleteField, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -250,22 +259,11 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let user = null;
-        let userData = null;
-        let activeChannelId = localStorage.getItem('lastChatID') || null; 
-        let activeChannelData = null;
-        let unsubMessages = null;
-        let replyTo = null; 
-        let currentBase64Img = null;
+        let user = null, userData = null, activeChannelId = localStorage.getItem('lastChatID') || null;
+        let activeChannelData = null, unsubMessages = null, unsubTyping = null;
+        let replyTo = null, currentBase64Img = null, allUsers = [], typingTimeout = null;
+        let lastVisibleMsg = null, isLoadingMore = false, canLoadMore = true;
 
-        // Блокування F12 та правої кнопки миші
-        window.addEventListener('keydown', function(e) {
-            if (e.keyCode == 123) { e.preventDefault(); return false; }
-            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) { e.preventDefault(); return false; }
-            if (e.ctrlKey && (e.keyCode == 85 || e.keyCode == 83)) { e.preventDefault(); return false; }
-        });
-
-        // Перевірка авторизації
         onAuthStateChanged(auth, async (u) => {
             if (u) {
                 user = u;
@@ -273,276 +271,292 @@
                 userData = snap.data();
                 if (userData.role === 'admin') {
                     document.getElementById('adminCreateChannel').style.display = 'block';
-                    document.getElementById('visibilityToggle').style.display = 'block';
-                    initSortable();
+                    document.getElementById('settingsBtn').style.display = 'flex';
                 }
                 loadChannels();
+                loadUsersList();
             } else { window.location.href = "index.html"; }
         });
 
-        // Завантаження каналів
-        function loadChannels() {
-            const q = query(collection(db, "channels"), orderBy("index", "asc"));
-            onSnapshot(q, (snap) => {
-                const list = document.getElementById('channelList');
-                list.innerHTML = "";
-                snap.forEach(d => {
-                    const ch = d.data();
-                    if (ch.isHidden && userData.role !== 'admin') return; 
-                    const item = document.createElement('div');
-                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.isHidden ? 'hidden-channel' : ''}`;
-                    item.dataset.id = d.id;
-                    item.innerHTML = `<span>${ch.isHidden ? '🔒' : '#'} ${ch.name}</span><div class="channel-controls">${userData?.role === 'admin' ? '<span class="chan-del-btn" onclick="deleteChannel(\''+d.id+'\', \''+ch.name+'\')">✕</span><span class="drag-handle">⋮⋮</span>' : ''}</div>`;
-                    item.onclick = (e) => {
-                        if (e.target.classList.contains('drag-handle') || e.target.classList.contains('chan-del-btn')) return;
-                        selectChannel(d.id, ch);
-                    };
-                    list.appendChild(item);
-                });
-
-                if (activeChannelId) {
-                    const found = snap.docs.find(doc => doc.id === activeChannelId);
-                    if (found) selectChannel(found.id, found.data());
+        // ПІДТРИМКА CTRL+V
+        document.getElementById('msgInput').addEventListener('paste', (e) => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i in items) {
+                if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) {
+                    processImage(items[i].getAsFile());
                 }
-            });
-        }
-
-        // Вибір каналу + збереження в пам'ять браузера
-        function selectChannel(id, chData) {
-            activeChannelId = id;
-            activeChannelData = chData;
-            localStorage.setItem('lastChatID', id); 
-
-            document.getElementById('activeChannelName').innerText = chData.name;
-            document.getElementById('inputArea').style.display = 'flex';
-            
-            document.querySelectorAll('.channel-item').forEach(el => {
-                el.classList.toggle('active', el.dataset.id === id);
-            });
-
-            updateVisibilityButtonUI(chData.isHidden);
-            loadMessages(id);
-        }
-
-        // Керування видимістю каналу (Адмін)
-        function updateVisibilityButtonUI(isHidden) {
-            if (userData.role !== 'admin') return;
-            const btn = document.getElementById('visibilityToggle');
-            if (isHidden) {
-                btn.classList.add('hidden-mode');
-                btn.innerText = "🔒 ПРИХОВАНО ВІД БІЙЦІВ";
-            } else {
-                btn.classList.remove('hidden-mode');
-                btn.innerText = "👁️ ВСІМ ВИДНО";
             }
-        }
+        });
 
-        window.toggleChannelVisibility = async () => {
-            if (!activeChannelId || userData.role !== 'admin') return;
-            const newState = !activeChannelData.isHidden;
-            await updateDoc(doc(db, "channels", activeChannelId), { isHidden: newState });
-            activeChannelData.isHidden = newState; 
-            updateVisibilityButtonUI(newState);
-        };
-
-        // --- РОБОТА З ФОТО (ВИБІР, CTRL+V, СТИСКАННЯ) ---
-
-        // Універсальна функція обробки картинки
         function processImage(file) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    let width = img.width, height = img.height, max_size = 1280;
-                    if (width > height) { if (width > max_size) { height *= max_size / width; width = max_size; } }
-                    else { if (height > max_size) { width *= max_size / height; height = max_size; } }
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
+                    let w = img.width, h = img.height, max = 1280;
+                    if (w > h) { if (w > max) { h *= max/w; w = max; } }
+                    else { if (h > max) { w *= max/h; h = max; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     currentBase64Img = canvas.toDataURL('image/jpeg', 0.6);
                     document.getElementById('previewBar').style.display = 'flex';
                     document.getElementById('imageInfo').style.display = 'flex';
                     document.getElementById('imgPreviewThumb').src = currentBase64Img;
-                    document.getElementById('uploadBtnIcon').classList.add('active');
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        // Обробка вставки через CTRL+V
-        document.addEventListener('paste', (e) => {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let index in items) {
-                const item = items[index];
-                if (item.kind === 'file') {
-                    const blob = item.getAsFile();
-                    if (blob.type.indexOf("image") !== -1) {
-                        processImage(blob);
-                    }
-                }
-            }
-        });
-
-        // Обробка вибору через кнопку
-        window.handleImageSelect = (input) => {
-            const file = input.files[0];
-            if (file) processImage(file);
-        };
-
-        window.cancelImage = () => {
-            currentBase64Img = null;
-            document.getElementById('imageInfo').style.display = 'none';
-            document.getElementById('imgUpload').value = "";
-            document.getElementById('uploadBtnIcon').classList.remove('active');
-            checkPreviewBar();
-        };
-
-        // --- ВІДПОВІДІ ТА МЕНШНИ ---
-        window.replyToMessage = (id, author, text) => {
-            replyTo = { id, author, text };
-            document.getElementById('previewBar').style.display = 'flex';
-            document.getElementById('replyInfo').style.display = 'flex';
-            document.getElementById('replyText').innerText = `Відповідь для ${author}`;
-            document.getElementById('msgInput').focus();
-        };
-
-        window.cancelReply = () => {
-            replyTo = null;
-            document.getElementById('replyInfo').style.display = 'none';
-            checkPreviewBar();
-        };
-
-        function checkPreviewBar() {
-            if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none';
+        async function loadUsersList() {
+            const s = await getDocs(collection(db, "users"));
+            allUsers = []; s.forEach(d => allUsers.push(d.data().name));
         }
 
-        // --- MARKDOWN (DISCORD STYLE) ---
-        function formatMarkdown(text) {
-            if (!text) return "";
-            let safeText = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            safeText = safeText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Жирний
-            safeText = safeText.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Курсив
-            safeText = safeText.replace(/__(.*?)__/g, '<u>$1</u>'); // Підкреслений
-            safeText = safeText.replace(/~~(.*?)~~/g, '<del>$1</del>'); // Закреслений
-            safeText = safeText.replace(/(\b(https?):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
-            safeText = safeText.replace(/@([\wа-яА-ЯёЁіІїЇєЄ]+)/g, '<span class="mention">@$1</span>'); // Тег юзера
-            return safeText;
-        }
-
-        // --- ЛОГІКА ПОВІДОМЛЕНЬ ---
-        function loadMessages(channelId) {
-            if (unsubMessages) unsubMessages();
-            const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
-            unsubMessages = onSnapshot(q, (snap) => {
-                const container = document.getElementById('messages');
-                container.innerHTML = "";
-                let lastAuth = null, lastTime = 0;
-                
+        function loadChannels() {
+            onSnapshot(query(collection(db, "channels"), orderBy("index", "asc")), (snap) => {
+                const list = document.getElementById('channelList');
+                list.innerHTML = "";
                 snap.forEach(d => {
-                    const m = d.data();
-                    const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
-                    const timeStr = m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "";
+                    const ch = d.data();
+                    if (userData.role !== 'admin') {
+                        if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
+                        if (ch.viewRole === 'officer' && userData.role === 'soldier') return;
+                    }
+                    const item = document.createElement('div');
+                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.viewRole !== 'all' ? 'hidden-channel' : ''}`;
+                    item.dataset.id = d.id;
                     
-                    // Групування повідомлень, якщо вони від одного автора протягом 5 хв
-                    let isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
-                    const canEdit = (m.uid === user.uid) || (userData.role === 'admin');
-                    
-                    const msgDiv = document.createElement('div');
-                    msgDiv.className = `msg ${isGrouped ? 'grouped' : ''}`;
-                    
-                    let formattedContent = formatMarkdown(m.text);
-                    let contentHtml = (m.replyTo ? `<div class="reply-block">↩ ${m.replyTo.author}: ${m.replyTo.text.substring(0, 40)}...</div>` : "") + 
-                                     `<div class="msg-content" id="text-${d.id}">${formattedContent}</div>` + 
-                                     (m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : "");
-                    
-                    msgDiv.innerHTML = `
-                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${timeStr}</span></div>` : ''}
-                        ${contentHtml}
-                        <div class="msg-actions">
-                            <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
-                            ${canEdit ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
-                            ${userData.role === 'admin' ? `<button class="action-btn del-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
-                        </div>`;
-                    
-                    container.appendChild(msgDiv);
-                    lastAuth = m.author; lastTime = msgTime;
+                    // ПОВЕРНУТО ЗАМОЧКИ ТА РУЧКИ ПЕРЕТЯГУВАННЯ
+                    const lockIcon = ch.viewRole !== 'all' ? '<span style="margin-right:8px; font-size:12px;">🔒</span>' : '';
+                    const dragIcon = userData.role === 'admin' ? '<span class="drag-handle">⋮⋮</span>' : '';
+                    const delBtn = userData.role === 'admin' ? `<span class="chan-del-btn" onclick="deleteChannel('${d.id}')">✕</span>` : '';
+
+                    item.innerHTML = `<div>${lockIcon} ${ch.name}</div><div class="channel-controls">${delBtn}${dragIcon}</div>`;
+                    item.onclick = (e) => { 
+                        if(!e.target.classList.contains('chan-del-btn') && !e.target.classList.contains('drag-handle')) 
+                            selectChannel(d.id, ch); 
+                    };
+                    list.appendChild(item);
                 });
-                container.scrollTop = container.scrollHeight;
+                if (userData.role === 'admin') initSortable();
             });
         }
 
-        window.editMessage = (id, oldText) => {
-            const textDiv = document.getElementById(`text-${id}`);
-            textDiv.innerHTML = `<div class="edit-area"><textarea class="edit-input" id="edit-input-${id}">${oldText}</textarea></div>`;
-            const area = document.getElementById(`edit-input-${id}`);
-            area.focus();
-            area.onkeydown = async (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { 
-                    e.preventDefault(); 
-                    await updateDoc(doc(db, "channels", activeChannelId, "messages", id), { text: area.value }); 
-                    loadMessages(activeChannelId); 
-                }
-                if (e.key === 'Escape') loadMessages(activeChannelId);
-            };
+        function selectChannel(id, chData) {
+            if (activeChannelId) updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
+            activeChannelId = id; activeChannelData = chData;
+            localStorage.setItem('lastChatID', id);
+            document.getElementById('activeChannelName').innerText = chData.name;
+            document.getElementById('inputArea').style.display = checkWritePermission(chData.writeRole) ? 'flex' : 'none';
+            lastVisibleMsg = null; canLoadMore = true;
+            document.getElementById('messages').innerHTML = "";
+            loadMessages(id); listenTyping(id);
+        }
+
+        function checkWritePermission(r) {
+            if (userData.role === 'admin') return true;
+            if (r === 'admin') return false;
+            if (r === 'officer') return userData.role === 'officer';
+            return true;
+        }
+
+        // ПРАВИЛЬНА СИСТЕМА ДРУКУ
+        document.getElementById('msgInput').addEventListener('input', function() {
+            this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+            if (this.value.trim().length > 0) {
+                setDoc(doc(db, "typing", activeChannelId), { [user.uid]: userData.name }, { merge: true });
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => { updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() }); }, 3000);
+            } else { updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() }); }
+
+            // МЕНЮ @
+            const val = this.value;
+            const atPos = val.lastIndexOf('@');
+            if (atPos !== -1 && (atPos === 0 || val[atPos-1] === ' ')) {
+                const query = val.substring(atPos + 1).toLowerCase();
+                showMentionBox(query);
+            } else { document.getElementById('mentionBox').style.display = 'none'; }
+        });
+
+        function showMentionBox(q) {
+            const box = document.getElementById('mentionBox'); box.innerHTML = "";
+            const filtered = allUsers.filter(u => u.toLowerCase().includes(q));
+            if (filtered.length === 0) { box.style.display = 'none'; return; }
+            filtered.forEach(name => {
+                const d = document.createElement('div'); d.className = 'mention-item';
+                d.innerText = name;
+                d.onclick = () => {
+                    const inp = document.getElementById('msgInput');
+                    const text = inp.value;
+                    const atPos = text.lastIndexOf('@');
+                    inp.value = text.substring(0, atPos) + `@${name} `;
+                    box.style.display = 'none'; inp.focus();
+                };
+                box.appendChild(d);
+            });
+            box.style.display = 'block';
+        }
+
+        function listenTyping(chid) {
+            if (unsubTyping) unsubTyping();
+            unsubTyping = onSnapshot(doc(db, "typing", chid), (d) => {
+                const data = d.data() || {};
+                const typers = Object.entries(data).filter(([uid, name]) => uid !== user.uid).map(([uid, name]) => name);
+                document.getElementById('typingArea').innerText = typers.length > 0 ? `${typers.join(', ')} пише...` : "";
+            });
+        }
+
+        // РОЗУМНЕ ПІДВАНТАЖЕННЯ (БЕЗ СТРИБКІВ)
+        function loadMessages(channelId) {
+            if (unsubMessages) unsubMessages();
+            const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "desc"), limit(50));
+            unsubMessages = onSnapshot(q, (snap) => {
+                if (isLoadingMore) return;
+                const container = document.getElementById('messages');
+                const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+                container.innerHTML = "";
+                const docs = [...snap.docs].reverse();
+                if (docs.length > 0) lastVisibleMsg = snap.docs[snap.docs.length - 1];
+                renderMessages(docs, container);
+                if (isAtBottom) container.scrollTop = container.scrollHeight;
+            });
+        }
+
+        async function loadMoreMessages() {
+            if (!canLoadMore || isLoadingMore || !lastVisibleMsg) return;
+            isLoadingMore = true;
+            const container = document.getElementById('messages');
+            const scrollPos = container.scrollHeight - container.scrollTop; // Запам'ятовуємо позицію від низу
+
+            const q = query(collection(db, "channels", activeChannelId, "messages"), orderBy("createdAt", "desc"), startAfter(lastVisibleMsg), limit(50));
+            const snap = await getDocs(q);
+            if (snap.empty) { canLoadMore = false; isLoadingMore = false; return; }
+            
+            lastVisibleMsg = snap.docs[snap.docs.length - 1];
+            const newMsgs = [...snap.docs].reverse();
+            const tempDiv = document.createElement('div');
+            renderMessages(newMsgs, tempDiv);
+            container.prepend(...tempDiv.childNodes);
+            
+            container.scrollTop = container.scrollHeight - scrollPos; // Повертаємо на ту ж точку
+            isLoadingMore = false;
+        }
+
+        document.getElementById('messages').onscroll = function() {
+            if (this.scrollTop < 50) loadMoreMessages();
+        };
+
+        function renderMessages(docs, target) {
+            let lastAuth = null, lastTime = 0;
+            docs.forEach(d => {
+                const m = d.data(); const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
+                const isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
+                const div = document.createElement('div');
+                div.className = `msg ${isGrouped ? 'grouped' : ''}`; div.id = `msg-${d.id}`;
+                div.innerHTML = `
+                    ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span></div>` : ''}
+                    ${m.replyTo ? `<div class="reply-block" onclick="scrollToMsg('${m.replyTo.id}')">↩ ${m.replyTo.author}: ${m.replyTo.text.substring(0, 35)}...</div>` : ""}
+                    <div class="msg-content">${formatMarkdown(m.text)}</div>
+                    ${m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : ""}
+                    <div class="msg-actions">
+                        <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
+                        ${m.uid === user.uid ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
+                        ${userData.role === 'admin' ? `<button class="action-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
+                    </div>`;
+                target.appendChild(div);
+                lastAuth = m.author; lastTime = msgTime;
+            });
+        }
+
+        window.scrollToMsg = (id) => {
+            const el = document.getElementById(`msg-${id}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.remove('msg-highlighted'); void el.offsetWidth;
+                el.classList.add('msg-highlighted');
+            }
         };
 
         window.sendMessage = async () => {
-            const input = document.getElementById('msgInput');
-            const text = input.value.trim();
+            const input = document.getElementById('msgInput'); const text = input.value.trim();
             if ((!text && !currentBase64Img) || !activeChannelId) return;
-            const msgData = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
-            if (replyTo) msgData.replyTo = { id: replyTo.id, author: replyTo.author, text: replyTo.text };
-            if (currentBase64Img) msgData.imageUrl = currentBase64Img;
-            await addDoc(collection(db, "channels", activeChannelId, "messages"), msgData);
-            input.value = ""; cancelReply(); cancelImage();
-            input.style.height = 'auto';
+            const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
+            if (replyTo) data.replyTo = replyTo; if (currentBase64Img) data.imageUrl = currentBase64Img;
+            
+            input.value = ""; input.style.height = 'auto'; 
+            cancelReply(); cancelImage();
+            updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
+            await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
         };
 
-        // --- ІНШІ ФУНКЦІЇ ---
-        window.mentionUser = (name) => { const i = document.getElementById('msgInput'); i.value += `@${name} `; i.focus(); };
+        window.openSettings = () => {
+            document.getElementById('editChannelName').value = activeChannelData.name;
+            document.getElementById('editViewRole').value = activeChannelData.viewRole || 'all';
+            document.getElementById('editWriteRole').value = activeChannelData.writeRole || 'all';
+            document.getElementById('settingsModal').style.display = 'flex';
+        };
+        window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
+        window.saveChannelSettings = async () => {
+            await updateDoc(doc(db, "channels", activeChannelId), {
+                name: document.getElementById('editChannelName').value.trim().toUpperCase(),
+                viewRole: document.getElementById('editViewRole').value,
+                writeRole: document.getElementById('editWriteRole').value
+            });
+            closeSettings();
+        };
+
+        function formatMarkdown(t) {
+            if (!t) return "";
+            return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/@([\wа-яА-ЯёЁіІїЇєЄ ]+)/g, '<span class="mention">@$1</span>');
+        }
+
+        window.replyToMessage = (id, author, text) => {
+            replyTo = { id, author, text };
+            document.getElementById('previewBar').style.display = 'flex';
+            document.getElementById('replyInfo').style.display = 'block';
+            document.getElementById('replyText').innerText = `Відповідь користувачу ${author}`;
+            document.getElementById('msgInput').focus();
+        };
+
+        window.cancelReply = () => { replyTo = null; document.getElementById('replyInfo').style.display = 'none'; checkPreviewBar(); };
+        window.cancelImage = () => { currentBase64Img = null; document.getElementById('imageInfo').style.display = 'none'; checkPreviewBar(); };
+        function checkPreviewBar() { if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none'; }
+        window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); };
+        window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
+        window.closeLightbox = () => document.getElementById('lightbox').style.display = 'none';
+        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
+        window.mentionUser = (n) => { const i = document.getElementById('msgInput'); i.value += `@${n} `; i.focus(); };
         window.deleteMessage = async (id) => { if(confirm("Видалити повідомлення?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
         
         window.createChannel = async () => {
-            const name = prompt("Назва каналу:");
-            if (name) {
+            const n = prompt("Введіть назву каналу:");
+            if (n) {
                 const s = await getDocs(collection(db, "channels"));
-                await addDoc(collection(db, "channels"), { name: name.toUpperCase(), index: s.size, isHidden: false });
+                await addDoc(collection(db, "channels"), { name: n.toUpperCase(), index: s.size, viewRole: 'all', writeRole: 'all' });
             }
         };
-        window.deleteChannel = async (id, name) => { if (confirm(`Видалити канал ${name}?`)) await deleteDoc(doc(db, "channels", id)); };
+        window.deleteChannel = async (id) => { if (confirm(`Видалити цей канал назавжди?`)) await deleteDoc(doc(db, "channels", id)); };
 
-        // Ініціалізація перетягування (для Адміна)
         function initSortable() {
             const el = document.getElementById('channelList');
-            Sortable.create(el, {
-                handle: '.drag-handle', animation: 250,
+            if (el.sortableInstance) el.sortableInstance.destroy();
+            el.sortableInstance = Sortable.create(el, {
+                handle: '.drag-handle', animation: 200, ghostClass: 'sortable-ghost',
                 onEnd: async () => {
-                    const items = el.querySelectorAll('.channel-item');
                     const batch = writeBatch(db);
-                    items.forEach((item, idx) => { batch.update(doc(db, "channels", item.dataset.id), { index: idx }); });
+                    document.querySelectorAll('.channel-item').forEach((item, idx) => {
+                        batch.update(doc(db, "channels", item.dataset.id), { index: idx });
+                    });
                     await batch.commit();
                 }
             });
         }
 
-        // Повноекранний перегляд фото
-        window.openLightbox = (src) => {
-            document.getElementById('lightbox-img').src = src;
-            document.getElementById('lightbox').style.display = 'flex';
-        };
-        window.closeLightbox = () => { document.getElementById('lightbox').style.display = 'none'; };
-
-        // Автовисота поля вводу
-        const msgInput = document.getElementById('msgInput');
-        msgInput.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = (this.scrollHeight) + 'px';
-        });
-
-        // Відправка по Enter
-        msgInput.addEventListener('keydown', (e) => {
+        document.getElementById('msgInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
     </script>
