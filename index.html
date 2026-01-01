@@ -7,7 +7,6 @@
     
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
         :root {
@@ -19,7 +18,6 @@
             --inner-glass: rgba(255, 255, 255, 0.04);
             --text-gray: #94a3b8;
             --neon-glow: 0 0 25px rgba(34, 197, 94, 0.5);
-            --accent-orange: #f97316;
         }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -95,57 +93,90 @@
 
         .section { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 120px 8% 60px; }
 
-        /* --- НОВІ СТИЛІ ФАКТІВ --- */
-        .fact-container {
-            width: 100%; max-width: 1200px; margin: 50px 0;
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 50px; padding: 40px; background: rgba(255, 255, 255, 0.02);
-            border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.05);
-            text-align: left; backdrop-filter: blur(10px);
+        .grid-container {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px;
+            width: 100%; max-width: 1200px; margin-top: 60px;
         }
-        .fact-container.reverse { flex-direction: row-reverse; }
-        .fact-image { flex: 1.2; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .fact-image img { width: 100%; height: 400px; object-fit: cover; display: block; transition: 0.6s ease; }
-        .fact-image:hover img { transform: scale(1.05); }
-        .fact-content { flex: 1; }
-        .fact-badge { color: var(--accent-orange); font-weight: 800; font-size: 14px; margin-bottom: 15px; display: block; text-transform: uppercase; }
-        .fact-title { font-size: clamp(28px, 4vw, 42px); font-weight: 900; margin-bottom: 25px; text-transform: uppercase; line-height: 1.1; }
-        .fact-text { color: var(--text-gray); line-height: 1.8; margin-bottom: 30px; font-size: 16px; }
-
-        .mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .mini-card {
-            background: rgba(255,255,255,0.04); padding: 15px; border-radius: 12px;
-            display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px;
-            border: 1px solid rgba(255,255,255,0.06); transition: 0.3s;
-        }
-        .mini-card:hover { border-color: var(--accent-orange); background: rgba(249, 115, 22, 0.1); }
-        .mini-card i { color: var(--accent-orange); font-size: 18px; }
-
-        /* --- КАРТКИ СТАТИСТИКИ --- */
+        
         .card { 
             background: var(--card-bg); padding: 35px; border-radius: 24px; 
             border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(15px);
-            transition: all 0.4s; text-align: left; position: relative; overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            text-align: left;
+            position: relative;
+            overflow: hidden;
         }
-        .card:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: var(--neon-glow); }
+        .card:hover { 
+            border-color: var(--primary); 
+            transform: translateY(-12px) scale(1.02); 
+            background: rgba(34, 197, 94, 0.08); 
+            box-shadow: var(--neon-glow);
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
+            transition: 0.5s;
+        }
+        .card:hover::before { left: 100%; }
 
-        /* --- ФОРМА --- */
+        @media (max-width: 1100px) { .grid-container { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 750px) { .grid-container { grid-template-columns: 1fr; } }
+
+        /* ГАЛЕРЕЯ */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 40px;
+        }
+        .gallery-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            transition: 0.3s;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: 0.5s;
+        }
+        .gallery-item:hover img { transform: scale(1.1); }
+        .gallery-item:hover { border-color: var(--primary); box-shadow: var(--neon-glow); }
+
+        .admin-controls {
+            display: none; /* Показується тільки адмінам */
+            background: var(--inner-glass);
+            padding: 30px;
+            border-radius: 25px;
+            border: 1px solid var(--primary);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+
         .form-container { 
             width: 100%; max-width: 700px; background: var(--card-bg); padding: 50px; 
             border-radius: 40px; border: 1px solid rgba(34, 197, 94, 0.4); backdrop-filter: blur(20px); margin-top: 50px;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.05);
         }
         .form-input { 
             width: 100%; padding: 20px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); 
             color: white; border-radius: 18px; box-sizing: border-box; font-size: 16px; outline: none; margin-bottom: 25px;
+            font-family: inherit; transition: 0.3s;
         }
-        .form-input:focus { border-color: var(--primary); background: rgba(0,0,0,0.8); }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(34, 197, 94, 0.2); background: rgba(0,0,0,0.8); }
+        
         .btn-submit {
             width: 100%; background: var(--primary); color: black; padding: 22px; border: none; 
             border-radius: 18px; font-weight: 900; cursor: pointer; font-size: 18px; text-transform: uppercase; transition: 0.3s;
         }
-        .btn-submit:hover { transform: scale(1.01); box-shadow: 0 0 20px rgba(34, 197, 94, 0.4); }
+        .btn-submit:hover { background: var(--primary-bright); box-shadow: 0 0 25px rgba(34, 197, 94, 0.5); transform: scale(1.01); }
 
-        /* --- МОДАЛЬНІ ВІКНА --- */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.92); display: none; justify-content: center; align-items: center;
@@ -155,34 +186,25 @@
             background: var(--modal-bg); width: 92%; max-width: 850px; max-height: 85vh; 
             overflow-y: auto; padding: 50px; border-radius: 45px; 
             border: 2px solid var(--primary); position: relative;
+            box-shadow: 0 0 50px rgba(34, 197, 94, 0.2), inset 0 0 20px rgba(34, 197, 94, 0.1);
         }
         .inner-glass-block {
             background: var(--inner-glass); border: 1px solid rgba(34, 197, 94, 0.15);
-            border-radius: 25px; padding: 30px; margin-bottom: 25px;
+            border-radius: 25px; padding: 30px; margin-bottom: 25px; backdrop-filter: blur(10px);
+            transition: 0.3s;
         }
+        .inner-glass-block:hover { border-color: var(--primary); background: rgba(34, 197, 94, 0.03); }
+
         .m-list { list-style: none; padding: 0; margin: 0; }
         .m-list li { margin-bottom: 12px; font-size: 15px; color: #cbd5e1; display: flex; gap: 15px; line-height: 1.6; text-align: left; }
-        .m-list li b { color: var(--primary-bright); min-width: 25px; }
+        .m-list li b { color: var(--primary-bright); min-width: 25px; text-shadow: 0 0 5px var(--primary); }
         .close-btn { position: absolute; top: 35px; right: 40px; font-size: 40px; cursor: pointer; color: var(--primary); transition: 0.3s; }
+        .close-btn:hover { transform: rotate(90deg); color: var(--primary-bright); }
+        .modal-content h3 { color: var(--primary-bright); margin-top: 30px; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
 
-        /* --- AUTH --- */
         #regFields { display: none; margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
         .switch-auth { color: var(--text-gray); font-size: 13px; cursor: pointer; display: block; margin-top: 20px; text-align: center; text-decoration: underline; }
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* --- БЛОК ПРОФЕСІЙ (НОВА ПОШТА) --- */
-        .jobs-section { padding: 80px 8%; display: flex; align-items: center; justify-content: space-between; gap: 50px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05); }
-        .jobs-image { flex: 1; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-        .jobs-image img { width: 100%; height: auto; display: block; }
-        .jobs-content { flex: 1; text-align: left; }
-        .jobs-tag { color: var(--accent-orange); font-size: 14px; font-weight: 700; margin-bottom: 15px; display: inline-block; }
-        .jobs-title { font-size: 36px; font-weight: 900; line-height: 1.1; margin: 0 0 25px; text-transform: uppercase; }
-        .jobs-desc { color: var(--text-gray); font-size: 15px; line-height: 1.7; margin-bottom: 30px; }
-        .jobs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .job-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 20px; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
-        .job-item i { color: var(--accent-orange); }
-
-        @media (max-width: 900px) { .jobs-section { flex-direction: column; text-align: center; } .jobs-content { text-align: center; } }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -193,16 +215,21 @@
         <div class="nav-links" id="navLinks">
             <a onclick="window.openModal('aboutModal'); window.toggleMenu()">Від нас</a>
             <a onclick="window.openModal('reqModal'); window.toggleMenu()">Вимоги</a>
+            <a href="#gallery">Галерея</a>
             <a href="https://ukraine-gta.com.ua/uk/" target="_blank">Сайт Проекту</a>
-            <a onclick="window.handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary);">Кабінет</a>
+            <a onclick="window.handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary); box-shadow: none;">Кабінет</a>
             <a href="#join" class="btn-accent" onclick="window.toggleMenu()">Вступити</a>
         </div>
     </nav>
 
     <section class="section">
-        <div style="border:1px solid var(--primary); padding:8px 25px; border-radius:30px; color:var(--primary-bright); font-size:12px; margin-bottom:25px; background:rgba(34,197,94,0.1); font-weight: 700; text-transform: uppercase;">🛡️ Елітний підрозділ ЗСУ</div>
+        <div style="border:1px solid var(--primary); padding:8px 25px; border-radius:30px; color:var(--primary-bright); font-size:12px; margin-bottom:25px; background:rgba(34,197,94,0.1); font-weight: 700; text-transform: uppercase; box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);">🛡️ Елітний підрозділ ЗСУ</div>
         <h1 data-aos="fade-up" style="font-size: clamp(34px, 8vw, 75px); margin: 0; font-weight: 800; line-height: 1.1;">Десантно Штурмові Війська</h1>
         <p style="color:var(--primary-bright); font-weight: 900; letter-spacing: 5px; margin-top: 20px; font-size: 18px; margin-bottom: 30px; text-shadow: 0 0 10px rgba(34, 197, 94, 0.3);">ДШВ — ЗАВЖДИ ПЕРШІ!</p>
+        
+        <p style="max-width: 850px; color: var(--text-gray); font-size: 18px; line-height: 1.8;" data-aos="fade-up">
+            Ми - елітний підрозділ ЗСУ в світі Ukraine GTA. Наша місія - виконувати найскладніші бойові завдання, захищати мирних громадян та підтримувати правопорядок в повітрі та на землі.
+        </p>
         
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; width:100%; max-width: 1100px; margin-top: 60px;">
             <div class="card" style="text-align:center;">
@@ -216,63 +243,37 @@
     </section>
 
     <section class="section">
-        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 20px;">Чому саме ми</h2>
-
-        <div class="fact-container" data-aos="fade-right">
-            <div class="fact-image">
-                <img src="https://i.ibb.co/Lhb8mBy/image-7bba8a.jpg" alt="Авіація ДШВ">
+        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 40px;">Чому обрати нас?</h2>
+        <div class="grid-container">
+            <div class="card" data-aos="fade-up">
+                <h3>🎓 Професійна підготовка</h3>
+                <p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Курс військової та тактичної підготовки від досвідчених інструкторів.</p>
             </div>
-            <div class="fact-content">
-                <span class="fact-badge">| Перший факт</span>
-                <h3 class="fact-title">Авіація і повітря</h3>
-                <p class="fact-text">
-                    Десантно штурмові війська (ДШВ) це перший підрозділ ЗСУ де є реально свої системи у нас є собствені винищувачі та гвинтокрили:
-                </p>
-                <div class="mini-grid">
-                    <div class="mini-card"><i class="fas fa-plane"></i> F-16</div>
-                    <div class="mini-card"><i class="fas fa-plane"></i> Міг-29</div>
-                    <div class="mini-card"><i class="fas fa-helicopter"></i> Міг-24</div>
-                    <div class="mini-card"><i class="fas fa-helicopter"></i> Мі-8</div>
-                </div>
+            <div class="card" data-aos="fade-up" data-aos-delay="100">
+                <h3>🛡️ Сучасне спорядження</h3>
+                <p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Доступ до найкращої зброї та винищувачів F-16.</p>
             </div>
-        </div>
-
-        <div class="fact-container reverse" data-aos="fade-left">
-            <div class="fact-image">
-                <img src="https://i.ibb.co/p37MshR/image-7bbaa4.jpg" alt="Системи ДШВ">
-            </div>
-            <div class="fact-content">
-                <span class="fact-badge">| Другий факт</span>
-                <h3 class="fact-title">Системи і зайняття</h3>
-                <p class="fact-text">
-                    Також у ДШВ є Патруль всіх міст на автомобілі, Повітряний патруль на гвинтокрилі, Повітряний патруль на винищувачах, Протиповітряна оборона ВЧ, Розвідка та диверсії в тилу ворога, Десантування та штурмові операції.
-                </p>
-                <div class="mini-grid">
-                    <div class="mini-card"><i class="fas fa-car"></i> Патруль міст</div>
-                    <div class="mini-card"><i class="fas fa-shield-alt"></i> ППО ВЧ</div>
-                    <div class="mini-card"><i class="fas fa-user-secret"></i> Розвідка</div>
-                    <div class="mini-card"><i class="fas fa-parachute-box"></i> Десантування</div>
-                </div>
+            <div class="card" data-aos="fade-up" data-aos-delay="200">
+                <h3>👥 Бойове братство</h3>
+                <p style="color:var(--text-gray); font-size:14px; margin-top:15px;">Станьте частиною команди професіоналів.</p>
             </div>
         </div>
     </section>
 
-    <div class="jobs-section">
-        <div class="jobs-image" data-aos="fade-right">
-            <img src="https://wallpapers.com/images/hd/euro-truck-simulator-2-1920x1080-scania-truck-w2i0q9c4x6k2r8d3.jpg" alt="GTA Jobs">
+    <section id="gallery" class="section">
+        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 20px;">Наше життя</h2>
+        <p style="color: var(--text-gray); margin-bottom: 40px;">Фоторепортажі з бойових вильотів та тренувань</p>
+        
+        <div id="adminGalleryControls" class="admin-controls">
+            <h4 style="margin-top:0">Додати нове фото</h4>
+            <input type="text" id="newPhotoUrl" class="form-input" placeholder="Пряме посилання на фото (imgur, і т.д.)" style="margin-bottom:15px">
+            <button onclick="window.addNewPhoto()" class="btn-submit" style="padding:15px">Опублікувати</button>
         </div>
-        <div class="jobs-content" data-aos="fade-left">
-            <div class="jobs-tag">| Кар'єра</div>
-            <h2 class="jobs-title">РЕАЛЬНІ РОБОТИ ТА ПРОФЕСІЇ</h2>
-            <p class="jobs-desc">Величезний вибір робіт для новачків та гравців із досвідом. Працюй у державних установах, очоль місто або піди служити в ЗСУ — обороняй країну в UKRAINE GTA. Подобається кримінал? Викрадай авто, але не потрапляй до поліції.</p>
-            <div class="jobs-grid">
-                <div class="job-item"><i class="fas fa-truck"></i> Далекобійник</div>
-                <div class="job-item"><i class="fas fa-train"></i> Машиніст</div>
-                <div class="job-item"><i class="fas fa-taxi"></i> Таксист</div>
-                <div class="job-item"><i class="fas fa-tractor"></i> Фермер</div>
-            </div>
+
+        <div id="galleryGrid" class="gallery-grid">
+            <div style="text-align:center; grid-column: 1/-1;">Завантаження галереї...</div>
         </div>
-    </div>
+    </section>
 
     <section id="join" class="section">
         <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 50px;">Подати рапорт на вступ</h2>
@@ -299,8 +300,6 @@
                     <li><b>2</b> Повітряний патруль на гвинтокрилі.</li>
                     <li><b>3</b> Повітряний патруль на винищувачах.</li>
                     <li><b>4</b> Протиповітряна оборона ВЧ.</li>
-                    <li><b>5</b> Десантування та штурм будівель.</li>
-                    <li><b>6</b> Розвідка та диверсії в тилу ворога.</li>
                 </ul>
             </div>
         </div>
@@ -315,7 +314,6 @@
                     <li>🟢 Мінімальний вік 14+</li>
                     <li>🟢 Бути у фракції ЗСУ</li>
                     <li>🟢 Мати звання Ст.Солдат [3]</li>
-                    <li>🟢 Адекватність та дисциплінованість</li>
                 </ul>
             </div>
         </div>
@@ -331,9 +329,13 @@
                 <div id="regFields">
                     <input type="text" id="regName" class="form-input" placeholder="Ваш NickName">
                     <input type="text" id="regRank" class="form-input" placeholder="Ваше звання">
+                    <input type="text" id="regPos" class="form-input" placeholder="Ваша посада">
+                    <input type="number" id="regGameID" class="form-input" placeholder="ID гравця">
+                    <input type="text" id="regDiscord" class="form-input" placeholder="Discord">
                 </div>
                 <button type="submit" class="btn-submit" id="loginBtn">Увійти</button>
-                <span class="switch-auth" id="switchAuthBtn" onclick="window.toggleAuthMode()">Реєстрація</span>
+                <p id="authError" style="color:#f87171; font-size:14px; margin-top:20px; text-align:center; display:none;"></p>
+                <span class="switch-auth" id="switchAuthBtn" onclick="window.toggleAuthMode()">Ще не маєте акаунту? Реєстрація</span>
             </form>
         </div>
     </div>
@@ -341,7 +343,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, collection, addDoc, serverTimestamp, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import AOS from "https://cdn.skypack.dev/aos";
 
         const firebaseConfig = {
@@ -352,17 +354,113 @@
             messagingSenderId: "661591588818",
             appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
+
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Глобальні змінні для роботи систем
+        let currentUserData = null;
+
+        // ЗАХИСТ КОНСОЛІ
+        (function() {
+            window.addEventListener('keydown', function(e) {
+                if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) {
+                    e.preventDefault();
+                }
+            });
+        })();
+
+        // ОНОВЛЕННЯ ЛІЧИЛЬНИКА БІЙЦІВ
         onSnapshot(collection(db, "users"), (snap) => {
             const circle = document.getElementById('loadingCircle');
             if(circle) circle.style.display = 'none';
             const fCount = document.getElementById('fightersCount');
-            if(fCount) { fCount.style.display = 'block'; fCount.innerText = snap.size; }
+            if(fCount) {
+                fCount.style.display = 'block';
+                fCount.innerText = snap.size;
+            }
         });
 
+        // СИСТЕМА ГАЛЕРЕЇ (Live)
+        const qGallery = query(collection(db, "gallery"), orderBy("date", "desc"));
+        onSnapshot(qGallery, (snap) => {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '';
+            
+            snap.forEach(photoDoc => {
+                const data = photoDoc.data();
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.setAttribute('data-aos', 'fade-up');
+                
+                // Якщо адмін - додати кнопку видалення
+                const deleteBtn = (currentUserData && currentUserData.role === 'admin') 
+                    ? `<button onclick="window.deletePhoto('${photoDoc.id}')" style="position:absolute; top:10px; right:10px; background:red; border:none; color:white; border-radius:5px; cursor:pointer; padding:5px; z-index:10">Видалити</button>` 
+                    : '';
+
+                div.innerHTML = `
+                    ${deleteBtn}
+                    <img src="${data.url}" alt="ДШВ Фото">
+                `;
+                grid.appendChild(div);
+            });
+        });
+
+        // ДОДАВАННЯ ФОТО (Тільки для адмінів)
+        window.addNewPhoto = async () => {
+            const urlInput = document.getElementById('newPhotoUrl');
+            const url = urlInput.value.trim();
+            
+            if(!url) return alert("Введіть посилання!");
+            
+            try {
+                await addDoc(collection(db, "gallery"), {
+                    url: url,
+                    date: serverTimestamp(),
+                    author: auth.currentUser.uid
+                });
+                urlInput.value = '';
+                alert("Фото опубліковано!");
+            } catch(e) {
+                alert("Помилка доступу!");
+            }
+        };
+
+        // ВИДАЛЕННЯ ФОТО (Тільки для адмінів)
+        window.deletePhoto = async (id) => {
+            if(confirm("Видалити це фото?")) {
+                await deleteDoc(doc(db, "gallery", id));
+            }
+        };
+
+        // АВТОРИЗАЦІЯ І ПЕРЕВІРКА РОЛІ
+        onAuthStateChanged(auth, async (user) => {
+            const btn = document.getElementById('cabinetBtn');
+            const adminPanel = document.getElementById('adminGalleryControls');
+
+            if(user) {
+                btn.innerText = "ОСОБИСТИЙ КАБІНЕТ";
+                btn.style.background = "var(--primary)";
+                btn.style.color = "black";
+                
+                // Перевірка ролі в базі
+                onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+                    if(docSnap.exists()) {
+                        currentUserData = docSnap.data();
+                        if(currentUserData.role === 'admin') {
+                            adminPanel.style.display = 'block';
+                        }
+                    }
+                });
+            } else {
+                btn.innerText = "Кабінет";
+                adminPanel.style.display = 'none';
+                currentUserData = null;
+            }
+        });
+
+        // ІНШІ СТАНДАРТНІ ФУНКЦІЇ (Модалки, Форма)
         window.openModal = (id) => document.getElementById(id).style.display = 'flex';
         window.closeModal = (id) => document.getElementById(id).style.display = 'none';
         window.toggleMenu = () => {
@@ -391,14 +489,10 @@
                     await signInWithEmailAndPassword(auth, email, pass);
                     window.location.href = "cabinet.html";
                 } else {
-                    const nickname = document.getElementById('regName').value;
                     const res = await createUserWithEmailAndPassword(auth, email, pass);
                     await setDoc(doc(db, "users", res.user.uid), {
-                        name: nickname,
-                        rank: document.getElementById('regRank').value || "Рекрут",
-                        role: 'user',
-                        photoURL: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
-                        points: 0,
+                        name: document.getElementById('regName').value,
+                        role: 'user', // За замовчуванням звичайний юзер
                         registeredAt: serverTimestamp()
                     });
                     window.location.href = "cabinet.html";
@@ -408,36 +502,15 @@
 
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('appSubmitBtn');
-            btn.innerText = "Відправка..."; btn.disabled = true;
             try {
                 await addDoc(collection(db, "applications"), {
                     name: document.getElementById('appName').value,
-                    age: document.getElementById('appAge').value,
-                    rank: document.getElementById('appRank').value,
-                    discord: document.getElementById('appDiscord').value,
-                    motivation: document.getElementById('appMotivation').value,
                     status: "new",
                     date: serverTimestamp()
                 });
-                alert("Рапорт успішно надіслано!");
+                alert("Рапорт надіслано!");
                 e.target.reset();
             } catch (err) { alert(err.message); }
-            finally { btn.innerText = "Відправити рапорт"; btn.disabled = false; }
-        });
-
-        onAuthStateChanged(auth, async (user) => {
-            if(user) {
-                const btn = document.getElementById('cabinetBtn');
-                let avatarUrl = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-                try {
-                    const userDoc = await getDoc(doc(db, "users", user.uid));
-                    if(userDoc.exists() && userDoc.data().photoURL) avatarUrl = userDoc.data().photoURL;
-                } catch (e) {}
-                btn.innerHTML = `<img src="${avatarUrl}" style="width:20px; height:20px; border-radius:50%; vertical-align:middle; margin-right:8px;"> КАБІНЕТ`;
-                btn.style.background = "var(--primary)";
-                btn.style.color = "black";
-            }
         });
 
         AOS.init({ duration: 1000, once: true });
