@@ -419,6 +419,8 @@
                         gameID: document.getElementById('regGameID').value || "0",
                         discord: document.getElementById('regDiscord').value || "Не вказано",
                         role: 'user',
+                        // Можна додати стандартне фото сюди, якщо його немає
+                        photoURL: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png',
                         points: 0, warns: 0, reprimands: 0,
                         registeredAt: serverTimestamp()
                     });
@@ -453,10 +455,32 @@
             }
         });
 
-        onAuthStateChanged(auth, user => {
+        // ОСНОВНА СИСТЕМА ФОТО ТУТ
+        onAuthStateChanged(auth, async (user) => {
             if(user) {
                 const btn = document.getElementById('cabinetBtn');
-                btn.innerText = "ОСОБИСТИЙ КАБІНЕТ";
+                
+                // Спробуємо завантажити фото користувача з бази
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.uid));
+                    // Це дефолтне фото (іконка солдата), якщо в базі немає іншого
+                    let avatarUrl = "https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
+                    
+                    if(userDoc.exists()) {
+                        const data = userDoc.data();
+                        // Якщо в базі є поле photoURL, використовуємо його
+                        if (data.photoURL) {
+                            avatarUrl = data.photoURL;
+                        }
+                    }
+
+                    // Вставляємо фото прямо в кнопку
+                    btn.innerHTML = `<img src="${avatarUrl}" alt="Photo" style="width:26px; height:26px; border-radius:50%; vertical-align:middle; margin-right:8px; border: 2px solid #000;"> КАБІНЕТ`;
+                } catch (e) {
+                    console.error("Помилка завантаження фото:", e);
+                    btn.innerText = "ОСОБИСТИЙ КАБІНЕТ";
+                }
+
                 btn.style.background = "var(--primary)";
                 btn.style.color = "black";
             }
