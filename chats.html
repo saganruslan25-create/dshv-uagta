@@ -2,249 +2,321 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>ДШВ | ТАКТИЧНИЙ ЗВ'ЯЗОК</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | UKRAINE GTA</title>
+    
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
             --bg: #030507;
-            --card-bg: #0a0c10;
-            --glass-border: rgba(34, 197, 94, 0.2);
-            --danger: #ef4444;
-            --warning: #fbbf24;
-            --mention-bg: rgba(251, 191, 36, 0.2);
-            --mention-text: #fbbf24;
+            --card-bg: rgba(255, 255, 255, 0.03); 
+            --modal-bg: rgba(10, 15, 26, 0.98);
+            --inner-glass: rgba(255, 255, 255, 0.04);
+            --text-gray: #94a3b8;
+            --neon-glow: 0 0 25px rgba(34, 197, 94, 0.5);
+            --accent-orange: #f97316;
         }
 
-        /* СТИЛІЗАЦІЯ СКРОЛБАРУ ПІД СТИЛЬ САЙТУ */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #05070a; }
-        ::-webkit-scrollbar-thumb { background: #1a1d21; border-radius: 10px; border: 1px solid #0a0c10; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.2s, transform 0.2s; }
-        
-        html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); }
-
-        body { 
-            background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
-            color: white; font-family: 'Inter', sans-serif; display: flex; user-select: none;
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { 
+            background: linear-gradient(180deg, var(--primary-bright), var(--primary)); 
+            border-radius: 10px; 
         }
 
-        @keyframes highlightMsg {
-            0% { background: rgba(34, 197, 94, 0.4); border-left: 3px solid var(--primary-bright); }
-            100% { background: transparent; border-left: 3px solid transparent; }
-        }
-        .msg-highlighted { animation: highlightMsg 2s ease-out; }
+        html { scroll-behavior: smooth; }
 
-        /* САЙДБАР */
-        .sidebar {
-            width: 320px; min-width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
-            display: flex; flex-direction: column; padding: 25px; z-index: 1000; height: 100%; position: relative;
-        }
-
-        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .close-sidebar-btn { display: none; background: none; border: 1px solid var(--glass-border); color: white; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
-
-        .dsw-title {
-            background: var(--primary); color: black; padding: 8px 15px; border-radius: 8px;
-            font-weight: 900; text-align: center; text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); letter-spacing: 1px; flex-grow: 1;
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.25) 0%, transparent 50%),
+                radial-gradient(circle at 15% 85%, rgba(34, 197, 94, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(34, 197, 94, 0.15) 0%, transparent 40%);
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
-        .back-btn {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
-            color: white; padding: 14px; border-radius: 12px; text-decoration: none;
-            text-align: center; font-weight: 800; font-size: 13px; margin-bottom: 20px; display: block;
-        }
-        .back-btn:hover { background: var(--danger); border-color: var(--danger); }
-
-        .channel-list { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
-        
-        .channel-item {
-            padding: 12px 15px; border-radius: 12px; cursor: pointer; color: #777;
-            margin-bottom: 8px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.02); border: 1px solid transparent;
-        }
-        .channel-item:hover, .channel-item.active { background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); border-color: var(--glass-border); }
-        .channel-item.hidden-channel { opacity: 0.6; }
-
-        .channel-controls { display: flex; align-items: center; gap: 8px; }
-        .drag-handle { cursor: grab; opacity: 0.4; font-size: 18px; padding: 0 5px; }
-        .drag-handle:active { cursor: grabbing; }
-        .chan-del-btn { color: #444; font-size: 14px; cursor: pointer; }
-        .chan-del-btn:hover { color: var(--danger); }
-
-        .create-btn {
-            background: var(--primary); color: black; border: none; padding: 15px;
-            border-radius: 12px; font-weight: 900; cursor: pointer; margin-top: 20px; text-transform: uppercase;
+        /* Навігація */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 8%; 
+            background: rgba(0, 0, 0, 0.7); 
+            backdrop-filter: blur(25px); 
+            position: fixed; width: 100%; z-index: 1000;
+            box-sizing: border-box; 
+            border-bottom: 1px solid rgba(34, 197, 94, 0.2);
         }
 
-        /* ЧАТ */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0; height: 100%; }
-        
-        .chat-header {
-            padding: 15px 25px; background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--glass-border); font-weight: 900; font-size: 18px; z-index: 5;
+        .logo { display: flex; align-items: center; gap: 10px; z-index: 1001; text-decoration: none; color: white; }
+        .logo-box { 
+            background: var(--primary); color: black; padding: 4px 10px; 
+            border-radius: 6px; font-weight: 800; box-shadow: 0 0 15px var(--primary);
+        }
+
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; font-size: 14px; font-weight: 600; opacity: 0.8; transition: 0.3s; cursor: pointer; }
+        .nav-links a:hover { opacity: 1; color: var(--primary-bright); text-shadow: 0 0 10px var(--primary); }
+
+        .btn-accent {
+            background: var(--primary); color: black !important; 
+            padding: 10px 22px; border-radius: 10px; font-weight: 800; 
+            opacity: 1 !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);
+            transition: 0.3s ease; text-transform: uppercase;
+            font-size: 12px; display: inline-block;
+        }
+        .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(34, 197, 94, 0.6); }
+
+        .burger { display: none; flex-direction: column; gap: 5px; cursor: pointer; z-index: 2001; }
+        .burger span { display: block; width: 28px; height: 3px; background: var(--primary); border-radius: 2px; transition: 0.3s; }
+        .burger.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+        .burger.active span:nth-child(2) { opacity: 0; }
+        .burger.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+        @media (max-width: 900px) {
+            .burger { display: flex; }
+            .nav-links {
+                position: fixed; top: 0; right: -100%; width: 100%; height: 100vh;
+                background: rgba(3, 5, 7, 0.99); backdrop-filter: blur(25px);
+                flex-direction: column; justify-content: center;
+                transition: 0.5s; z-index: 2000; gap: 25px;
+            }
+            .nav-links.active { right: 0; }
+        }
+
+        .section { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 120px 8% 60px; }
+
+        /* Система великих карток Фактів */
+        .fact-container {
+            width: 100%; max-width: 1200px; margin: 50px 0;
             display: flex; align-items: center; justify-content: space-between;
+            gap: 50px; padding: 40px; background: rgba(255, 255, 255, 0.02);
+            border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: left; backdrop-filter: blur(10px); position: relative;
         }
+        .fact-container.reverse { flex-direction: row-reverse; }
 
-        .settings-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            color: white; width: 40px; height: 40px; border-radius: 10px;
-            display: none; align-items: center; justify-content: center; cursor: pointer;
+        .fact-image {
+            flex: 1.2; border-radius: 24px; overflow: hidden; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
         }
-
-        .messages-container { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; scroll-behavior: auto; }
+        .fact-image img { width: 100%; height: 400px; object-fit: cover; display: block; transition: 0.6s ease; background: #111; }
         
-        .msg { position: relative; padding: 8px 15px; border-radius: 8px; border-left: 3px solid transparent; }
-        .msg:hover { background: rgba(255, 255, 255, 0.04); }
-        .msg.grouped { padding-top: 2px; padding-bottom: 2px; }
-
-        .msg-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; margin-top: 10px; }
-        .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
-        .msg-time { font-size: 11px; color: #444; }
-
-        .msg-content { line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; color: #ddd; font-size: 15px; }
-
-        .reply-block {
-            border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
-            padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; color: #aaa;
-            cursor: pointer; max-width: fit-content;
+        /* Кнопка редагування для адміна */
+        .admin-edit-btn {
+            position: absolute; top: 15px; right: 15px; background: var(--primary);
+            color: black; border: none; padding: 8px 15px; border-radius: 8px;
+            font-weight: 800; font-size: 12px; cursor: pointer; display: none;
+            z-index: 10; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
-        
-        .msg-image { max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 10px; cursor: zoom-in; border: 1px solid var(--glass-border); display: block;}
-        
-        .mention { background: var(--mention-bg); color: var(--mention-text); padding: 0 4px; border-radius: 4px; font-weight: bold; }
 
-        .msg-actions {
-            position: absolute; right: 10px; top: -15px;
-            display: none; gap: 5px; z-index: 100; background: var(--card-bg);
-            padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);
+        .fact-content { flex: 1; }
+        .fact-badge { color: var(--accent-orange); font-weight: 800; font-size: 14px; margin-bottom: 15px; display: block; text-transform: uppercase; }
+        .fact-title { font-size: clamp(28px, 4vw, 42px); font-weight: 900; margin-bottom: 25px; text-transform: uppercase; line-height: 1.1; }
+        .fact-text { color: var(--text-gray); line-height: 1.8; margin-bottom: 30px; font-size: 16px; }
+
+        .mini-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .mini-card {
+            background: rgba(255,255,255,0.04); padding: 15px; border-radius: 12px;
+            display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 14px;
+            border: 1px solid rgba(255,255,255,0.06);
         }
-        .msg:hover .msg-actions { display: flex; }
-        
-        .action-btn { background: transparent; border: none; color: #888; padding: 6px 10px; cursor: pointer; font-size: 14px; }
+        .mini-card i { color: var(--accent-orange); }
 
-        .typing-indicator { padding: 5px 20px; font-size: 12px; color: var(--primary-bright); font-style: italic; min-height: 22px; font-weight: 600; }
-
-        /* МЕНЮ @ */
-        #mentionBox {
-            position: absolute; bottom: 85px; left: 20px; background: #0a0c10; border: 1px solid var(--glass-border);
-            border-radius: 10px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        @media (max-width: 1000px) {
+            .fact-container, .fact-container.reverse { flex-direction: column; text-align: center; }
+            .fact-image img { height: 300px; }
         }
-        .mention-item { padding: 10px 15px; cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .mention-item:hover { background: var(--primary); color: black; }
 
-        /* ВВОД */
-        .chat-input-area { padding: 15px 20px; background: rgba(3, 5, 7, 0.95); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
-        .preview-bar { display: none; background: rgba(34, 197, 94, 0.05); padding: 10px 15px; border-radius: 10px 10px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; justify-content: space-between; }
-        .input-wrapper { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 15px; display: flex; align-items: center; padding: 5px 15px; gap: 10px; }
-        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 120px; font-size: 16px; }
-        .send-btn { background: var(--primary); color: black; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-weight: 900; }
-
-        /* МОДАЛКА */
-        .settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 2000; display: none; align-items: center; justify-content: center; }
-        .settings-content { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; }
-        .settings-input, .settings-select { width: 100%; background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; margin-top: 5px; outline: none; }
-        .settings-actions { display: flex; gap: 10px; margin-top: 25px; }
-
-        #lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 10000; cursor: zoom-out; }
-
-        @media (max-width: 768px) {
-            .sidebar { position: absolute; left: -100%; top: 0; bottom: 0; width: 85%; transition: 0.4s; }
-            .sidebar.active { left: 0; }
-            .close-sidebar-btn { display: block; }
+        /* Статистика */
+        .card { 
+            background: var(--card-bg); padding: 35px; border-radius: 24px; 
+            border: 1px solid rgba(255,255,255,0.06); backdrop-filter: blur(15px);
+            transition: 0.4s; text-align: center;
         }
+
+        /* Форма */
+        .form-container { 
+            width: 100%; max-width: 700px; background: var(--card-bg); padding: 50px; 
+            border-radius: 40px; border: 1px solid var(--primary); margin-top: 50px;
+        }
+        .form-input { 
+            width: 100%; padding: 20px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); 
+            color: white; border-radius: 18px; box-sizing: border-box; font-size: 16px; margin-bottom: 25px;
+        }
+        .btn-submit {
+            width: 100%; background: var(--primary); color: black; padding: 22px; 
+            border-radius: 18px; font-weight: 900; cursor: pointer; font-size: 18px; text-transform: uppercase; border: none;
+        }
+
+        /* Блок професій */
+        .jobs-section { padding: 80px 8%; display: flex; align-items: center; justify-content: space-between; gap: 50px; background: rgba(0,0,0,0.4); border-top: 1px solid rgba(255,255,255,0.05); }
+        .jobs-image { flex: 1; border-radius: 24px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+        .jobs-image img { width: 100%; height: auto; display: block; }
+        .jobs-content { flex: 1; text-align: left; }
+        .jobs-title { font-size: 36px; font-weight: 900; margin: 0 0 25px; text-transform: uppercase; }
+        .jobs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .job-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 20px; border-radius: 12px; display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14px; }
+        .job-item i { color: var(--accent-orange); }
+
+        /* Модалки */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.92); display: none; justify-content: center; align-items: center; z-index: 3000;
+        }
+        .modal-content { 
+            background: var(--modal-bg); width: 92%; max-width: 850px; max-height: 85vh; 
+            overflow-y: auto; padding: 50px; border-radius: 45px; border: 2px solid var(--primary); position: relative;
+        }
+        .close-btn { position: absolute; top: 35px; right: 40px; font-size: 40px; cursor: pointer; color: var(--primary); }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <div id="lightbox" onclick="closeLightbox()">
-        <img id="lightbox-img" src="" style="max-width:95%; max-height:90%;">
-    </div>
-
-    <div id="settingsModal" class="settings-modal">
-        <div class="settings-content">
-            <h3 style="color:var(--primary); margin-bottom:20px;">НАЛАШТУВАННЯ КАНАЛУ</h3>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; color:#666;">НАЗВА КАНАЛУ</label>
-                <input type="text" id="editChannelName" class="settings-input">
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; color:#666;">ДОСТУП (ХТО БАЧИТ)</label>
-                <select id="editViewRole" class="settings-select">
-                    <option value="all">Всі Бійці</option>
-                    <option value="officer">Тільки Офіцери</option>
-                    <option value="admin">Тільки Адміністрація</option>
-                </select>
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; color:#666;">ХТО МОЖЕ ПИСАТИ</label>
-                <select id="editWriteRole" class="settings-select">
-                    <option value="all">Всі</option>
-                    <option value="officer">Офіцери</option>
-                    <option value="admin">Адміни</option>
-                </select>
-            </div>
-            <div class="settings-actions">
-                <button onclick="closeSettings()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#222; color:white; cursor:pointer;">СКАСУВАТИ</button>
-                <button onclick="saveChannelSettings()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:black; font-weight:900; cursor:pointer;">ЗБЕРЕГТИ</button>
-            </div>
+    <nav>
+        <a href="index.html" class="logo"><div class="logo-box">ДШВ</div><strong>UKRAINE GTA</strong></a>
+        <div class="burger" id="burgerBtn" onclick="window.toggleMenu()"><span></span><span></span><span></span></div>
+        <div class="nav-links" id="navLinks">
+            <a onclick="window.openModal('aboutModal')">Від нас</a>
+            <a onclick="window.openModal('reqModal')">Вимоги</a>
+            <a href="https://ukraine-gta.com.ua/uk/" target="_blank">Сайт Проекту</a>
+            <a onclick="window.handleCabinetClick()" id="cabinetBtn" class="btn-accent" style="background: transparent; color: white !important; border: 1px solid var(--primary);">Кабінет</a>
+            <a href="#join" class="btn-accent">Вступити</a>
         </div>
-    </div>
+    </nav>
 
-    <div class="sidebar" id="sidebar">
-        <div class="sidebar-header">
-            <div class="dsw-title">ДШВ КАНАЛИ</div>
-            <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
-        </div>
-        <a href="cabinet.html" class="back-btn">⬅ КАБІНЕТ</a>
-        <div id="channelList" class="channel-list"></div>
-        <button id="adminCreateChannel" class="create-btn" style="display:none;" onclick="createChannel()">+ СТВОРИТИ КАНАЛ</button>
-    </div>
-
-    <div class="chat-main">
-        <div class="chat-header">
-            <div style="display:flex; align-items:center;">
-                <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; margin-right:15px;" class="mobile-toggle">☰</button>
-                <span style="color:var(--primary); margin-right:5px;">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span>
-            </div>
-            <div id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙</div>
-        </div>
+    <section class="section">
+        <div style="border:1px solid var(--primary); padding:8px 25px; border-radius:30px; color:var(--primary-bright); font-size:12px; margin-bottom:25px; background:rgba(34,197,94,0.1); font-weight: 700;">🛡️ ЕЛІТНИЙ ПІДРОЗДІЛ ЗСУ</div>
+        <h1 data-aos="fade-up" style="font-size: clamp(34px, 8vw, 75px); margin: 0; font-weight: 800;">Десантно Штурмові Війська</h1>
+        <p style="color:var(--primary-bright); font-weight: 900; letter-spacing: 5px; margin-top: 20px; font-size: 18px;">ДШВ — ЗАВЖДИ ПЕРШІ!</p>
         
-        <div id="messages" class="messages-container"></div>
-        <div id="typingArea" class="typing-indicator"></div>
-        <div id="mentionBox"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; width:100%; max-width: 1100px; margin-top: 60px;">
+            <div class="card">
+                <p style="font-size:11px; color:var(--text-gray); font-weight:700;">КІЛЬКІСТЬ БІЙЦІВ</p>
+                <h2 id="fightersCount" style="font-size: 40px; margin:15px 0 0; color:white;">0</h2>
+            </div>
+            <div class="card"><p style="font-size:11px; color:var(--text-gray); font-weight:700;">РОКИ ДОСВІДУ</p><h2 style="font-size: 40px; margin:15px 0 0; color:white;">3</h2></div>
+            <div class="card"><p style="font-size:11px; color:var(--text-gray); font-weight:700;">РОБОТА</p><h2 style="font-size: 26px; color: var(--primary-bright); margin-top: 15px; font-weight: 800;">ЕЛІТНА</h2></div>
+        </div>
+    </section>
 
-        <div id="inputArea" class="chat-input-area">
-            <div id="previewBar" class="preview-bar">
-                <div id="replyInfo" style="display:none; font-size:13px; color:#aaa;">
-                    <span id="replyText"></span> <span onclick="cancelReply()" style="cursor:pointer; margin-left:10px; color:var(--danger)">✕</span>
-                </div>
-                <div id="imageInfo" style="display:none;">
-                    <img id="imgPreviewThumb" style="height:35px; border-radius:5px; border:1px solid var(--primary);">
-                    <span onclick="cancelImage()" style="cursor:pointer; margin-left:10px; color:var(--danger)">✕</span>
+    <section class="section">
+        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 20px;">Чому саме ми</h2>
+
+        <div class="fact-container" data-aos="fade-right">
+            <div class="fact-image">
+                <button class="admin-edit-btn" onclick="window.editPhoto('fact1')"><i class="fas fa-edit"></i> Змінити фото</button>
+                <img id="img-fact1" src="" alt="Завантаження...">
+            </div>
+            <div class="fact-content">
+                <span class="fact-badge">| Перший факт</span>
+                <h3 class="fact-title">Авіація і повітря</h3>
+                <p class="fact-text">
+                    Десантно штурмові війська (ДШВ) це перший підрозділ ЗСУ де є реально свої системи у нас є собствені винищувачі та гвинтокрили:
+                </p>
+                <div class="mini-grid">
+                    <div class="mini-card"><i class="fas fa-plane"></i> F-16</div>
+                    <div class="mini-card"><i class="fas fa-plane"></i> Міг-29</div>
+                    <div class="mini-card"><i class="fas fa-helicopter"></i> Міг-24</div>
+                    <div class="mini-card"><i class="fas fa-helicopter"></i> Мі-8</div>
                 </div>
             </div>
-            <div class="input-wrapper">
-                <label for="imgUpload" style="cursor:pointer; font-size:20px; color:#666;">📷</label>
-                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
-                <textarea id="msgInput" placeholder="Напишіть повідомлення..." rows="1"></textarea>
-                <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+
+        <div class="fact-container reverse" data-aos="fade-left">
+            <div class="fact-image">
+                <button class="admin-edit-btn" onclick="window.editPhoto('fact2')"><i class="fas fa-edit"></i> Змінити фото</button>
+                <img id="img-fact2" src="" alt="Завантаження...">
             </div>
+            <div class="fact-content">
+                <span class="fact-badge">| Другий факт</span>
+                <h3 class="fact-title">Системи і зайняття</h3>
+                <p class="fact-text">
+                    Також у ДШВ є Патруль всіх міст на автомобілі, Повітряний патруль на гвинтокрилі, Повітряний патруль на винищувачах, Протиповітряна оборона ВЧ, Розвідка та диверсії в тилу ворога, Десантування та штурмові дії.
+                </p>
+                <div class="mini-grid">
+                    <div class="mini-card"><i class="fas fa-car"></i> Патруль</div>
+                    <div class="mini-card"><i class="fas fa-shield-alt"></i> ППО ВЧ</div>
+                    <div class="mini-card"><i class="fas fa-user-secret"></i> Розвідка</div>
+                    <div class="mini-card"><i class="fas fa-parachute-box"></i> Штурм</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="jobs-section">
+        <div class="jobs-image" data-aos="fade-right">
+            <img src="https://i.ibb.co/Lhb8mBy/image-7bba8a.jpg" alt="GTA Jobs">
+        </div>
+        <div class="jobs-content" data-aos="fade-left">
+            <h2 class="jobs-title">РЕАЛЬНІ РОБОТИ ТА ПРОФЕСІЇ</h2>
+            <p style="color:var(--text-gray); margin-bottom:25px;">Величезний вибір робіт для новачків та досвідчених гравців у світі UKRAINE GTA.</p>
+            <div class="jobs-grid">
+                <div class="job-item"><i class="fas fa-truck"></i> Далекобійник</div>
+                <div class="job-item"><i class="fas fa-train"></i> Машиніст</div>
+                <div class="job-item"><i class="fas fa-taxi"></i> Таксист</div>
+                <div class="job-item"><i class="fas fa-tractor"></i> Фермер</div>
+            </div>
+        </div>
+    </div>
+
+    <section id="join" class="section">
+        <h2 style="font-size: 45px; font-weight: 800; margin-bottom: 50px;">Подати рапорт на вступ</h2>
+        <div class="form-container" data-aos="zoom-in">
+            <form id="applicationForm">
+                <input type="text" id="appName" class="form-input" placeholder="Ваш NickName" required>
+                <input type="number" id="appAge" class="form-input" placeholder="Ваш реальний вік" required>
+                <input type="text" id="appRank" class="form-input" placeholder="Яке ваше звання?" required>
+                <input type="text" id="appDiscord" class="form-input" placeholder="Ваш Discord" required>
+                <textarea id="appMotivation" class="form-input" rows="5" placeholder="Мотивація..." required></textarea>
+                <button type="submit" id="appSubmitBtn" class="btn-submit">Відправити рапорт</button>
+            </form>
+        </div>
+    </section>
+
+    <div class="modal-overlay" id="aboutModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('aboutModal')">&times;</span>
+            <h2>Завдання підрозділу</h2>
+            <p>Охорона повітряного простору та швидке реагування.</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reqModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="window.closeModal('reqModal')">&times;</span>
+            <h2>Вимоги до бійців</h2>
+            <p>Звання від 3+, вік 14+, наявність Discord.</p>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <span class="close-btn" onclick="window.closeModal('authModal')">&times;</span>
+            <h2 id="authTitle">Вхід</h2>
+            <form id="authForm">
+                <input type="email" id="email" class="form-input" placeholder="Пошта" required>
+                <input type="password" id="pass" class="form-input" placeholder="Пароль" required>
+                <button type="submit" class="btn-submit">Увійти</button>
+            </form>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs, setDoc, deleteField, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, serverTimestamp, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import AOS from "https://cdn.skypack.dev/aos";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -254,311 +326,94 @@
             messagingSenderId: "661591588818",
             appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
-
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let user = null, userData = null, activeChannelId = localStorage.getItem('lastChatID') || null;
-        let activeChannelData = null, unsubMessages = null, unsubTyping = null;
-        let replyTo = null, currentBase64Img = null, allUsers = [], typingTimeout = null;
-        let lastVisibleMsg = null, isLoadingMore = false, canLoadMore = true;
-
-        onAuthStateChanged(auth, async (u) => {
-            if (u) {
-                user = u;
-                const snap = await getDoc(doc(db, "users", u.uid));
-                userData = snap.data();
-                if (userData.role === 'admin') {
-                    document.getElementById('adminCreateChannel').style.display = 'block';
-                    document.getElementById('settingsBtn').style.display = 'flex';
-                }
-                loadChannels();
-                loadUsersList();
-            } else { window.location.href = "index.html"; }
-        });
-
-        // ПІДТРИМКА CTRL+V
-        document.getElementById('msgInput').addEventListener('paste', (e) => {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let i in items) {
-                if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) {
-                    processImage(items[i].getAsFile());
-                }
+        // --- СИСТЕМА ДИНАМІЧНИХ ФОТО ---
+        // Слухаємо зміни фото в базі
+        onSnapshot(doc(db, "settings", "landing_photos"), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                if(data.fact1) document.getElementById('img-fact1').src = data.fact1;
+                if(data.fact2) document.getElementById('img-fact2').src = data.fact2;
+            } else {
+                // Дефолтні фото, якщо бази ще немає
+                document.getElementById('img-fact1').src = "https://i.ibb.co/Lhb8mBy/image-7bba8a.jpg";
+                document.getElementById('img-fact2').src = "https://i.ibb.co/p37MshR/image-7bbaa4.jpg";
             }
         });
 
-        function processImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height, max = 1280;
-                    if (w > h) { if (w > max) { h *= max/w; w = max; } }
-                    else { if (h > max) { w *= max/h; h = max; } }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    currentBase64Img = canvas.toDataURL('image/jpeg', 0.6);
-                    document.getElementById('previewBar').style.display = 'flex';
-                    document.getElementById('imageInfo').style.display = 'flex';
-                    document.getElementById('imgPreviewThumb').src = currentBase64Img;
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
+        // Функція редагування (тільки для адмінів)
+        window.editPhoto = async (factId) => {
+            const newUrl = prompt("Вставте пряме посилання на нове фото:");
+            if (newUrl && newUrl.trim() !== "") {
+                try {
+                    await setDoc(doc(db, "settings", "landing_photos"), {
+                        [factId]: newUrl
+                    }, { merge: true });
+                    alert("Фото оновлено успішно!");
+                } catch (e) { alert("Помилка доступу: " + e.message); }
+            }
+        };
 
-        async function loadUsersList() {
-            const s = await getDocs(collection(db, "users"));
-            allUsers = []; s.forEach(d => allUsers.push(d.data().name));
-        }
+        // Перевірка ролі адміна
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists() && userDoc.data().role === 'admin') {
+                    document.querySelectorAll('.admin-edit-btn').forEach(btn => btn.style.display = 'block');
+                }
+                
+                // Оновлення кнопки кабінету
+                const btn = document.getElementById('cabinetBtn');
+                let avatar = userDoc.exists() ? userDoc.data().photoURL : "";
+                btn.innerHTML = `<img src="${avatar || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" style="width:20px; border-radius:50%; margin-right:8px;"> КАБІНЕТ`;
+            }
+        });
 
-        function loadChannels() {
-            onSnapshot(query(collection(db, "channels"), orderBy("index", "asc")), (snap) => {
-                const list = document.getElementById('channelList');
-                list.innerHTML = "";
-                snap.forEach(d => {
-                    const ch = d.data();
-                    if (userData.role !== 'admin') {
-                        if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
-                        if (ch.viewRole === 'officer' && userData.role === 'soldier') return;
-                    }
-                    const item = document.createElement('div');
-                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.viewRole !== 'all' ? 'hidden-channel' : ''}`;
-                    item.dataset.id = d.id;
-                    
-                    // ПОВЕРНУТО ЗАМОЧКИ ТА РУЧКИ ПЕРЕТЯГУВАННЯ
-                    const lockIcon = ch.viewRole !== 'all' ? '<span style="margin-right:8px; font-size:12px;">🔒</span>' : '';
-                    const dragIcon = userData.role === 'admin' ? '<span class="drag-handle">⋮⋮</span>' : '';
-                    const delBtn = userData.role === 'admin' ? `<span class="chan-del-btn" onclick="deleteChannel('${d.id}')">✕</span>` : '';
+        // Статистика
+        onSnapshot(collection(db, "users"), (snap) => {
+            document.getElementById('fightersCount').innerText = snap.size;
+        });
 
-                    item.innerHTML = `<div>${lockIcon} ${ch.name}</div><div class="channel-controls">${delBtn}${dragIcon}</div>`;
-                    item.onclick = (e) => { 
-                        if(!e.target.classList.contains('chan-del-btn') && !e.target.classList.contains('drag-handle')) 
-                            selectChannel(d.id, ch); 
-                    };
-                    list.appendChild(item);
+        // Решта функцій
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+        window.toggleMenu = () => document.getElementById('navLinks').classList.toggle('active');
+        window.handleCabinetClick = () => {
+            if(auth.currentUser) window.location.href = "cabinet.html";
+            else window.openModal('authModal');
+        };
+
+        // Форма вступу
+        document.getElementById('applicationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await addDoc(collection(db, "applications"), {
+                    name: document.getElementById('appName').value,
+                    age: document.getElementById('appAge').value,
+                    rank: document.getElementById('appRank').value,
+                    discord: document.getElementById('appDiscord').value,
+                    motivation: document.getElementById('appMotivation').value,
+                    status: "new",
+                    date: serverTimestamp()
                 });
-                if (userData.role === 'admin') initSortable();
-            });
-        }
-
-        function selectChannel(id, chData) {
-            if (activeChannelId) updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
-            activeChannelId = id; activeChannelData = chData;
-            localStorage.setItem('lastChatID', id);
-            document.getElementById('activeChannelName').innerText = chData.name;
-            document.getElementById('inputArea').style.display = checkWritePermission(chData.writeRole) ? 'flex' : 'none';
-            lastVisibleMsg = null; canLoadMore = true;
-            document.getElementById('messages').innerHTML = "";
-            loadMessages(id); listenTyping(id);
-        }
-
-        function checkWritePermission(r) {
-            if (userData.role === 'admin') return true;
-            if (r === 'admin') return false;
-            if (r === 'officer') return userData.role === 'officer';
-            return true;
-        }
-
-        // ПРАВИЛЬНА СИСТЕМА ДРУКУ
-        document.getElementById('msgInput').addEventListener('input', function() {
-            this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
-            if (this.value.trim().length > 0) {
-                setDoc(doc(db, "typing", activeChannelId), { [user.uid]: userData.name }, { merge: true });
-                clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => { updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() }); }, 3000);
-            } else { updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() }); }
-
-            // МЕНЮ @
-            const val = this.value;
-            const atPos = val.lastIndexOf('@');
-            if (atPos !== -1 && (atPos === 0 || val[atPos-1] === ' ')) {
-                const query = val.substring(atPos + 1).toLowerCase();
-                showMentionBox(query);
-            } else { document.getElementById('mentionBox').style.display = 'none'; }
+                alert("Рапорт надіслано!");
+                e.target.reset();
+            } catch (err) { alert(err.message); }
         });
 
-        function showMentionBox(q) {
-            const box = document.getElementById('mentionBox'); box.innerHTML = "";
-            const filtered = allUsers.filter(u => u.toLowerCase().includes(q));
-            if (filtered.length === 0) { box.style.display = 'none'; return; }
-            filtered.forEach(name => {
-                const d = document.createElement('div'); d.className = 'mention-item';
-                d.innerText = name;
-                d.onclick = () => {
-                    const inp = document.getElementById('msgInput');
-                    const text = inp.value;
-                    const atPos = text.lastIndexOf('@');
-                    inp.value = text.substring(0, atPos) + `@${name} `;
-                    box.style.display = 'none'; inp.focus();
-                };
-                box.appendChild(d);
-            });
-            box.style.display = 'block';
-        }
-
-        function listenTyping(chid) {
-            if (unsubTyping) unsubTyping();
-            unsubTyping = onSnapshot(doc(db, "typing", chid), (d) => {
-                const data = d.data() || {};
-                const typers = Object.entries(data).filter(([uid, name]) => uid !== user.uid).map(([uid, name]) => name);
-                document.getElementById('typingArea').innerText = typers.length > 0 ? `${typers.join(', ')} пише...` : "";
-            });
-        }
-
-        // РОЗУМНЕ ПІДВАНТАЖЕННЯ (БЕЗ СТРИБКІВ)
-        function loadMessages(channelId) {
-            if (unsubMessages) unsubMessages();
-            const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "desc"), limit(50));
-            unsubMessages = onSnapshot(q, (snap) => {
-                if (isLoadingMore) return;
-                const container = document.getElementById('messages');
-                const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-                container.innerHTML = "";
-                const docs = [...snap.docs].reverse();
-                if (docs.length > 0) lastVisibleMsg = snap.docs[snap.docs.length - 1];
-                renderMessages(docs, container);
-                if (isAtBottom) container.scrollTop = container.scrollHeight;
-            });
-        }
-
-        async function loadMoreMessages() {
-            if (!canLoadMore || isLoadingMore || !lastVisibleMsg) return;
-            isLoadingMore = true;
-            const container = document.getElementById('messages');
-            const scrollPos = container.scrollHeight - container.scrollTop; // Запам'ятовуємо позицію від низу
-
-            const q = query(collection(db, "channels", activeChannelId, "messages"), orderBy("createdAt", "desc"), startAfter(lastVisibleMsg), limit(50));
-            const snap = await getDocs(q);
-            if (snap.empty) { canLoadMore = false; isLoadingMore = false; return; }
-            
-            lastVisibleMsg = snap.docs[snap.docs.length - 1];
-            const newMsgs = [...snap.docs].reverse();
-            const tempDiv = document.createElement('div');
-            renderMessages(newMsgs, tempDiv);
-            container.prepend(...tempDiv.childNodes);
-            
-            container.scrollTop = container.scrollHeight - scrollPos; // Повертаємо на ту ж точку
-            isLoadingMore = false;
-        }
-
-        document.getElementById('messages').onscroll = function() {
-            if (this.scrollTop < 50) loadMoreMessages();
-        };
-
-        function renderMessages(docs, target) {
-            let lastAuth = null, lastTime = 0;
-            docs.forEach(d => {
-                const m = d.data(); const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
-                const isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
-                const div = document.createElement('div');
-                div.className = `msg ${isGrouped ? 'grouped' : ''}`; div.id = `msg-${d.id}`;
-                div.innerHTML = `
-                    ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span></div>` : ''}
-                    ${m.replyTo ? `<div class="reply-block" onclick="scrollToMsg('${m.replyTo.id}')">↩ ${m.replyTo.author}: ${m.replyTo.text.substring(0, 35)}...</div>` : ""}
-                    <div class="msg-content">${formatMarkdown(m.text)}</div>
-                    ${m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : ""}
-                    <div class="msg-actions">
-                        <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
-                        ${m.uid === user.uid ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
-                        ${userData.role === 'admin' ? `<button class="action-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
-                    </div>`;
-                target.appendChild(div);
-                lastAuth = m.author; lastTime = msgTime;
-            });
-        }
-
-        window.scrollToMsg = (id) => {
-            const el = document.getElementById(`msg-${id}`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.remove('msg-highlighted'); void el.offsetWidth;
-                el.classList.add('msg-highlighted');
-            }
-        };
-
-        window.sendMessage = async () => {
-            const input = document.getElementById('msgInput'); const text = input.value.trim();
-            if ((!text && !currentBase64Img) || !activeChannelId) return;
-            const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
-            if (replyTo) data.replyTo = replyTo; if (currentBase64Img) data.imageUrl = currentBase64Img;
-            
-            input.value = ""; input.style.height = 'auto'; 
-            cancelReply(); cancelImage();
-            updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
-            await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
-        };
-
-        window.openSettings = () => {
-            document.getElementById('editChannelName').value = activeChannelData.name;
-            document.getElementById('editViewRole').value = activeChannelData.viewRole || 'all';
-            document.getElementById('editWriteRole').value = activeChannelData.writeRole || 'all';
-            document.getElementById('settingsModal').style.display = 'flex';
-        };
-        window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
-        window.saveChannelSettings = async () => {
-            await updateDoc(doc(db, "channels", activeChannelId), {
-                name: document.getElementById('editChannelName').value.trim().toUpperCase(),
-                viewRole: document.getElementById('editViewRole').value,
-                writeRole: document.getElementById('editWriteRole').value
-            });
-            closeSettings();
-        };
-
-        function formatMarkdown(t) {
-            if (!t) return "";
-            return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/@([\wа-яА-ЯёЁіІїЇєЄ ]+)/g, '<span class="mention">@$1</span>');
-        }
-
-        window.replyToMessage = (id, author, text) => {
-            replyTo = { id, author, text };
-            document.getElementById('previewBar').style.display = 'flex';
-            document.getElementById('replyInfo').style.display = 'block';
-            document.getElementById('replyText').innerText = `Відповідь користувачу ${author}`;
-            document.getElementById('msgInput').focus();
-        };
-
-        window.cancelReply = () => { replyTo = null; document.getElementById('replyInfo').style.display = 'none'; checkPreviewBar(); };
-        window.cancelImage = () => { currentBase64Img = null; document.getElementById('imageInfo').style.display = 'none'; checkPreviewBar(); };
-        function checkPreviewBar() { if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none'; }
-        window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); };
-        window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
-        window.closeLightbox = () => document.getElementById('lightbox').style.display = 'none';
-        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
-        window.mentionUser = (n) => { const i = document.getElementById('msgInput'); i.value += `@${n} `; i.focus(); };
-        window.deleteMessage = async (id) => { if(confirm("Видалити повідомлення?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
-        
-        window.createChannel = async () => {
-            const n = prompt("Введіть назву каналу:");
-            if (n) {
-                const s = await getDocs(collection(db, "channels"));
-                await addDoc(collection(db, "channels"), { name: n.toUpperCase(), index: s.size, viewRole: 'all', writeRole: 'all' });
-            }
-        };
-        window.deleteChannel = async (id) => { if (confirm(`Видалити цей канал назавжди?`)) await deleteDoc(doc(db, "channels", id)); };
-
-        function initSortable() {
-            const el = document.getElementById('channelList');
-            if (el.sortableInstance) el.sortableInstance.destroy();
-            el.sortableInstance = Sortable.create(el, {
-                handle: '.drag-handle', animation: 200, ghostClass: 'sortable-ghost',
-                onEnd: async () => {
-                    const batch = writeBatch(db);
-                    document.querySelectorAll('.channel-item').forEach((item, idx) => {
-                        batch.update(doc(db, "channels", item.dataset.id), { index: idx });
-                    });
-                    await batch.commit();
-                }
-            });
-        }
-
-        document.getElementById('msgInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+        // Авторизація (проста версія для головної)
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            try {
+                await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('pass').value);
+                window.location.href = "cabinet.html";
+            } catch (err) { alert("Помилка: " + err.message); }
         });
+
+        AOS.init({ duration: 1000, once: true });
     </script>
 </body>
 </html>
