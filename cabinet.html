@@ -268,7 +268,10 @@
                 <div id="bellDot" class="bell-dot"></div>
             </div>
             <div id="notifDropdown">
-                <h4 style="margin-bottom: 10px; color: var(--primary-bright); border-bottom: 1px solid #222; padding-bottom: 5px; font-size: 13px;">СПОВІЩЕННЯ</h4>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px; border-bottom: 1px solid #222; padding-bottom: 5px;">
+                    <h4 style="color: var(--primary-bright); font-size: 13px;">СПОВІЩЕННЯ</h4>
+                    <button onclick="clearAllNotifications()" style="background:none; border:none; color:var(--text-gray); font-size:10px; cursor:pointer;">Прочитати все</button>
+                </div>
                 <div id="notifList" style="max-height: 250px; overflow-y: auto;">
                     <div style="color:var(--text-gray); text-align:center; padding: 10px; font-size: 12px;">Нових подій немає</div>
                 </div>
@@ -444,61 +447,66 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
+        // ФІКС ЗНИКЛИХ ПРОФІЛІВ: Додана перевірка на наявність staffIndex
         async function loadStaffList() {
             const list = document.getElementById('staffList');
-            onSnapshot(query(collection(db, "users"), orderBy("staffIndex", "asc")), (snap) => {
-                list.innerHTML = "";
-                snap.forEach((s) => {
-                    const u = {id: s.id, ...s.data()};
-                    const item = document.createElement('div');
-                    item.className = 'staff-item';
-                    item.innerHTML = `
-                        <div style="display:flex; align-items:center;">
-                            <div class="order-arrows">
-                                <button class="btn-arrow" onclick="window.moveUser('${u.id}', -1)">▲</button>
-                                <button class="btn-arrow" onclick="window.moveUser('${u.id}', 1)">▼</button>
+            // Отримуємо ВСІХ, щоб знайти тих, у кого немає індексу
+            onSnapshot(collection(db, "users"), async (fullSnap) => {
+                const batch = writeBatch(db);
+                let needsUpdate = false;
+                
+                fullSnap.forEach(docSnap => {
+                    if (docSnap.data().staffIndex === undefined) {
+                        batch.update(doc(db, "users", docSnap.id), { staffIndex: Date.now() });
+                        needsUpdate = true;
+                    }
+                });
+                if (needsUpdate) await batch.commit();
+
+                // Тепер відображаємо відсортовано
+                const q = query(collection(db, "users"), orderBy("staffIndex", "asc"));
+                onSnapshot(q, (snap) => {
+                    list.innerHTML = "";
+                    snap.forEach((s) => {
+                        const u = {id: s.id, ...s.data()};
+                        const item = document.createElement('div');
+                        item.className = 'staff-item';
+                        item.innerHTML = `
+                            <div style="display:flex; align-items:center;">
+                                <div class="order-arrows">
+                                    <button class="btn-arrow" onclick="window.moveUser('${u.id}', -1)">▲</button>
+                                    <button class="btn-arrow" onclick="window.moveUser('${u.id}', 1)">▼</button>
+                                </div>
+                                <div>
+                                    <b style="font-size:14px;">${u.name}</b> 
+                                    <span style="color:var(--primary); font-size:11px; margin-left:5px; font-weight:800;">ID: ${u.gameID || '---'}</span>
+                                    <br><small style="color:var(--text-gray)">${u.rank}</small>
+                                </div>
                             </div>
-                            <div>
-                                <b style="font-size:14px;">${u.name}</b> 
-                                <span style="color:var(--primary); font-size:11px; margin-left:5px; font-weight:800;">ID: ${u.gameID || '---'}</span>
-                                <br><small style="color:var(--text-gray)">${u.rank}</small>
+                            <div style="display:flex; gap:10px;">
+                                ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">ВЕРИФІКУВАТИ</button>` : ""}
+                                <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">АРХІВ</button>
+                                <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
+                                <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">X</button>
                             </div>
-                        </div>
-                        <div style="display:flex; gap:10px;">
-                            ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">ВЕРИФІКУВАТИ</button>` : ""}
-                            <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">АРХІВ</button>
-                            <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
-                            <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">X</button>
-                        </div>
-                    `;
-                    list.appendChild(item);
+                        `;
+                        list.appendChild(item);
+                    });
                 });
             });
         }
 
-        // ВИПРАВЛЕНА ЛОГІКА СТРІЛОЧОК (БЕЗ БАГІВ ВЕРХУ ТА НЕСТАБІЛЬНОСТІ)
         window.moveUser = async (id, direction) => {
             const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
             let users = [];
             snap.forEach(d => users.push({id: d.id, ...d.data()}));
-            
             const idx = users.findIndex(u => u.id === id);
             if (idx === -1) return;
-            
             const newIdx = idx + direction;
-            if (newIdx < 0 || newIdx >= users.length) return; // Не дає вийти за межі
-
+            if (newIdx < 0 || newIdx >= users.length) return;
             const batch = writeBatch(db);
-            
-            // Замість того, щоб просто міняти індекси, ми гарантуємо, що вони будуть унікальними
-            // Для цього при кожному переміщенні ми можемо просто переписати індекси обох учасників
-            const currentItem = users[idx];
-            const swapItem = users[newIdx];
-
-            // Тимчасово створюємо нові індекси на основі їх поточної позиції у відсортованому масиві
-            batch.update(doc(db, "users", currentItem.id), { staffIndex: newIdx });
-            batch.update(doc(db, "users", swapItem.id), { staffIndex: idx });
-            
+            batch.update(doc(db, "users", users[idx].id), { staffIndex: newIdx });
+            batch.update(doc(db, "users", users[newIdx].id), { staffIndex: idx });
             await batch.commit();
         };
 
@@ -512,7 +520,7 @@
                             if (change.type === "added") {
                                 const msg = change.doc.data();
                                 if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
-                                    addNotification(`Згадка від ${msg.author}: ${msg.text.substring(0,20)}...`, 'chats.html');
+                                    addNotification(`Згадка від ${msg.author}: ${msg.text.substring(0,20)}...`, 'chats.html', change.doc.id);
                                 }
                             }
                         });
@@ -521,30 +529,38 @@
             });
         }
 
-        function addNotification(text, link) {
+        // ФІКС СПОВІЩЕНЬ: Тепер вони не зникають самі
+        function addNotification(text, link, id) {
             const list = document.getElementById('notifList');
             if(list.innerText.includes("немає")) list.innerHTML = "";
+            
+            // Якщо таке сповіщення вже є в списку, не додаємо
+            if (document.getElementById('notif-' + id)) return;
+
             const item = document.createElement('a');
+            item.id = 'notif-' + id;
             item.href = link;
             item.className = 'notif-item-link';
             item.innerHTML = `📢 ${text}`;
+            // При кліку на конкретне сповіщення воно видаляється
+            item.onclick = () => item.remove();
+            
             list.prepend(item);
             document.getElementById('bellDot').style.display = 'block';
         }
+
+        window.clearAllNotifications = () => {
+            document.getElementById('notifList').innerHTML = '<div style="color:var(--text-gray); text-align:center; padding: 10px; font-size: 12px;">Нових подій немає</div>';
+            document.getElementById('bellDot').style.display = 'none';
+            document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
+        };
 
         window.toggleNotifs = (e) => {
             if(e) e.stopPropagation();
             const drop = document.getElementById('notifDropdown');
             const isOpen = drop.style.display === 'flex';
             drop.style.display = isOpen ? 'none' : 'flex';
-            if(!isOpen) {
-                document.getElementById('bellDot').style.display = 'none';
-                document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
-                ['reports', 'subotniks', 'applications'].forEach(async c => {
-                    const s = await getDocs(collection(db, c));
-                    localStorage.setItem('count_' + c, s.size);
-                });
-            }
+            // ТУТ ВИДАЛЕНО ОЧИЩЕННЯ, сповіщення тепер живуть поки не натиснеш "Прочитати все"
         };
 
         window.changeStat = async (field, val) => {
@@ -588,6 +604,7 @@
                         const dot = document.getElementById('dot-' + (t === 'reports' ? 'reports' : t === 'subotniks' ? 'subotniks' : 'apps'));
                         if(dot) dot.style.display = 'block';
                         document.getElementById('bellDot').style.display = 'block';
+                        addNotification(`З'явився новий запис у розділі: ${t}`, `${t}.html`, t + snap.size);
                     }
                 });
             });
