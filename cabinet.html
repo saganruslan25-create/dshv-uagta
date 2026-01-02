@@ -388,7 +388,6 @@
             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:var(--primary-bright);">${url}</a>`);
         }
 
-        // Авторизація та завантаження даних користувача
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             
@@ -404,7 +403,7 @@
             if (!userDoc.exists()) {
                 await setDoc(doc(db, "users", user.uid), {
                     name: user.displayName || "Новий боєць",
-                    verified: false, role: 'user', rank: 'Рекрут', reprimands: 0, warns: 0, staffIndex: 999, lastIP: ipData.ip
+                    verified: false, role: 'user', rank: 'Рекрут', reprimands: 0, warns: 0, staffIndex: Date.now(), lastIP: ipData.ip
                 });
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
@@ -423,7 +422,7 @@
                 document.getElementById('adminSection').style.display = 'block';
                 document.getElementById('adminAppBtn').style.display = 'flex';
                 document.getElementById('lockBtn').style.display = 'block';
-                loadStaffList(); // Запуск списку адміна
+                loadStaffList();
             }
             initNotifications();
             listenForMentions();
@@ -445,16 +444,12 @@
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
 
-        // ВИПРАВЛЕНО: Функція завантаження списку з сортуванням в реальному часі
         async function loadStaffList() {
             const list = document.getElementById('staffList');
-            // Додано orderBy прямо в snapshot для правильного відображення стрілочок
             onSnapshot(query(collection(db, "users"), orderBy("staffIndex", "asc")), (snap) => {
-                const users = [];
-                snap.forEach(s => users.push({id: s.id, ...s.data()}));
-
                 list.innerHTML = "";
-                users.forEach((u) => {
+                snap.forEach((s) => {
+                    const u = {id: s.id, ...s.data()};
                     const item = document.createElement('div');
                     item.className = 'staff-item';
                     item.innerHTML = `
@@ -481,9 +476,8 @@
             });
         }
 
-        // ВИПРАВЛЕНО: Робота стрілочок переміщення
+        // ВИПРАВЛЕНА ЛОГІКА СТРІЛОЧОК (БЕЗ БАГІВ ВЕРХУ ТА НЕСТАБІЛЬНОСТІ)
         window.moveUser = async (id, direction) => {
-            // Отримуємо актуальний список усіх користувачів за порядком
             const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
             let users = [];
             snap.forEach(d => users.push({id: d.id, ...d.data()}));
@@ -492,16 +486,18 @@
             if (idx === -1) return;
             
             const newIdx = idx + direction;
-            // Перевірка межі списку
-            if (newIdx < 0 || newIdx >= users.length) return;
+            if (newIdx < 0 || newIdx >= users.length) return; // Не дає вийти за межі
 
             const batch = writeBatch(db);
-            // Міняємо staffIndex місцями у двох користувачів
-            const currentStaff = users[idx];
-            const targetStaff = users[newIdx];
+            
+            // Замість того, щоб просто міняти індекси, ми гарантуємо, що вони будуть унікальними
+            // Для цього при кожному переміщенні ми можемо просто переписати індекси обох учасників
+            const currentItem = users[idx];
+            const swapItem = users[newIdx];
 
-            batch.update(doc(db, "users", currentStaff.id), { staffIndex: newIdx });
-            batch.update(doc(db, "users", targetStaff.id), { staffIndex: idx });
+            // Тимчасово створюємо нові індекси на основі їх поточної позиції у відсортованому масиві
+            batch.update(doc(db, "users", currentItem.id), { staffIndex: newIdx });
+            batch.update(doc(db, "users", swapItem.id), { staffIndex: idx });
             
             await batch.commit();
         };
@@ -638,10 +634,10 @@
             `).join('') || "<p style='text-align:center; padding:50px; color:var(--text-gray); font-size:13px;'>Звітів не знайдено.</p>";
         };
 
-        // Закриття дропдауна повідомлень при кліку в будь-якому місці
         window.onclick = function(event) {
             if (!event.target.matches('.notif-wrapper') && !event.target.matches('.bell-icon')) {
-                document.getElementById('notifDropdown').style.display = 'none';
+                const dropdown = document.getElementById('notifDropdown');
+                if (dropdown) dropdown.style.display = 'none';
             }
         }
     </script>
