@@ -16,6 +16,7 @@
             --card-bg: #0a0c10;
             --glass-border: rgba(34, 197, 94, 0.2);
             --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.4);
             --warning: #fbbf24;
             --text-gray: #94a3b8;
         }
@@ -204,6 +205,34 @@
             display: flex; align-items: center; justify-content: center;
         }
 
+        /* НОВА КНОПКА ВИЙТИ (СТИЛЬ АРХІВ + АНІМАЦІЯ) */
+        .btn-logout-custom {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 900;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 13px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-logout-custom:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px var(--danger-glow);
+        }
+        
+        .btn-logout-custom:active {
+            transform: translateY(0);
+        }
+
         /* РЕЄСТР ОСОБОВОГО СКЛАДУ */
         .staff-section-container { width: 100%; display: flex; justify-content: center; padding: 20px 5% 50px; }
         .staff-section { width: 100%; max-width: 1520px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 25px; padding: 30px; }
@@ -246,17 +275,44 @@
         .report-header { padding: 15px 20px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
         .report-body { padding: 20px; font-size: 14px; line-height: 1.7; color: #ddd; white-space: pre-wrap; }
 
+        /* АДАПТАЦІЯ ДЛЯ ТЕЛЕФОНІВ */
         @media (max-width: 1024px) {
             .main-container { grid-template-columns: 1fr; }
             .side-menu { order: 2; }
             .profile-card { order: 1; }
             .info-panel { order: 3; }
+            
+            .side-menu, .profile-card, .info-panel, .staff-section {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header { padding: 14px 20px; }
+            .logo-box { font-size: 12px; padding: 5px 10px; }
+            .header-right { gap: 10px; }
+            
+            #notifDropdown {
+                right: 20px;
+                left: 20px;
+                width: auto;
+                max-width: 90vw;
+            }
+
+            .profile-card { padding: 20px; }
+            .avatar-circle { width: 100px; height: 100px; font-size: 45px; }
+            .user-name { font-size: 20px; }
+            
+            .staff-item { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .staff-item > div:first-child { width: 100%; }
+            .staff-item > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 5px; }
+            
+            .modal-content { width: 100%; height: 100%; border-radius: 0; border: none; }
         }
     </style>
 </head>
 <body oncontextmenu="return false;">
-
-    <div id="verifyWaitingScreen">
+        <div id="verifyWaitingScreen">
         <h1>ВЕРИФІКАЦІЯ...</h1>
         <p style="color: var(--text-gray); max-width: 500px;">Очікуйте підтвердження доступу від керівництва підрозділу.</p>
         <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АКАУНТУ</button>
@@ -288,7 +344,8 @@
                 </div>
             </div>
             <span id="topName" style="color:var(--primary-bright); font-weight:800; font-size: 14px;">...</span>
-            <button onclick="window.logout()" style="background:none; border:none; color:var(--danger); font-weight:900; cursor:pointer; font-size: 13px;">ВИЙТИ</button>
+            <!-- НОВА КНОПКА ВИЙТИ -->
+            <button onclick="window.logout()" class="btn-logout-custom">ВИЙТИ</button>
         </div>
     </header>
 
@@ -309,6 +366,7 @@
                 <div id="userName" class="user-name">...</div>
                 <h2 id="userRank" style="color:var(--primary-bright); font-weight: 900; font-size: 28px;">...</h2>
                 <h6>------------------------</h6>
+                <!-- ВИПРАВЛЕНО: Посада -->
                 <h6 id="userPos" style="color:var(--primary-bright); font-weight: 700; font-size: 14px;">...</h6>
                 <h3>ㅤ</h3>
                 <div id="userID" class="id-badge">ID: ...</div>
@@ -369,8 +427,7 @@
             <div id="modalReportsList" style="overflow-y:auto; flex-grow: 1;"></div>
         </div>
     </div>
-
-    <script type="module">
+        <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -422,6 +479,82 @@
             return cachedSecret;
         }
 
+        // --- СИСТЕМА СПОВІЩЕНЬ (ВИПРАВЛЕНО: ПЕРЕХІД + ПАМ'ЯТЬ) ---
+        let readNotifIds = JSON.parse(localStorage.getItem('readNotifIds')) || [];
+
+        function isRead(id) {
+            return readNotifIds.includes(id);
+        }
+
+        function markAsRead(id) {
+            if (!isRead(id)) {
+                readNotifIds.push(id);
+                localStorage.setItem('readNotifIds', JSON.stringify(readNotifIds));
+            }
+        }
+
+        function addNotification(text, link, id) {
+            const list = document.getElementById('notifList');
+            if(list.innerText.includes("немає") && !document.querySelector('.notif-item-link')) {
+                list.innerHTML = "";
+            }
+            
+            // Якщо сповіщення вже існує в DOM, не додаємо дублікат
+            if (document.getElementById('notif-' + id)) return;
+
+            const item = document.createElement('a');
+            item.id = 'notif-' + id;
+            item.href = link; // Силка для переходу
+            item.className = 'notif-item-link';
+            
+            // Перевіряємо чи прочитане при додаванні
+            if (isRead(id)) {
+                item.classList.add('read');
+            }
+
+            item.innerHTML = `
+                <span class="notif-text">📢 ${text}</span>
+                <span class="notif-time">щойно</span>
+            `;
+            
+            // При кліку: позначити прочитаним і дозволити перехід за посиланням
+            item.onclick = (e) => {
+                markAsRead(id);
+                item.classList.add('read');
+                updateBadgeCount();
+            };
+            
+            list.prepend(item);
+            updateBadgeCount();
+        }
+
+        function updateBadgeCount() {
+            const unread = document.querySelectorAll('.notif-item-link:not(.read)').length;
+            const badge = document.getElementById('bellBadge');
+            if (unread > 0) {
+                badge.innerText = unread;
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        window.clearAllNotifications = () => {
+            document.getElementById('notifList').innerHTML = '<div style="color:var(--text-gray); text-align:center; padding: 20px; font-size: 12px;">Нових подій немає</div>';
+            readNotifIds = []; // Очищаємо список прочитаних
+            localStorage.setItem('readNotifIds', JSON.stringify([]));
+            updateBadgeCount();
+            document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
+        };
+
+        window.toggleNotifs = (e) => {
+            if(e) e.stopPropagation();
+            const drop = document.getElementById('notifDropdown');
+            drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
+        };
+
+        // --- КІНЕЦЬ СИСТЕМИ СПОВІЩЕНЬ ---
+
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             
@@ -471,7 +604,12 @@
             const fullRank = data.rank || "Рекрут | Службовець";
             const parts = fullRank.split('|');
             document.getElementById('userRank').innerText = parts[0].trim();
-            document.getElementById('userPos').innerText = parts[1] ? parts[1].trim() : "Службовець";
+            
+            // ВИПРАВЛЕНО: ЛОГІКА ПОСАДИ
+            // 1. Пріоритет полю position (яке створюється при реєстрації)
+            // 2. Якщо немає, беремо другу частину звання (якщо є роздільник |)
+            // 3. Інакше "Службовець"
+            document.getElementById('userPos').innerText = data.position || (parts[1] ? parts[1].trim() : "Службовець");
             
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
@@ -507,7 +645,7 @@
                         
                         const rankParts = (u.rank || "Рекрут | Службовець").split('|');
                         const rName = rankParts[0].trim();
-                        const pName = rankParts[1] ? rankParts[1].trim() : "---";
+                        const pName = u.position || (rankParts[1] ? rankParts[1].trim() : "---");
 
                         item.innerHTML = `
                             <div style="display:flex; align-items:center;">
@@ -547,50 +685,6 @@
             await batch.commit();
         };
 
-        function addNotification(text, link, id) {
-            const list = document.getElementById('notifList');
-            if(list.innerText.includes("немає")) list.innerHTML = "";
-            if (document.getElementById('notif-' + id)) return;
-
-            const item = document.createElement('a');
-            item.id = 'notif-' + id;
-            item.href = link;
-            item.className = 'notif-item-link';
-            item.innerHTML = `
-                <span class="notif-text">📢 ${text}</span>
-                <span class="notif-time">щойно</span>
-            `;
-            item.onclick = (e) => {
-                item.classList.add('read');
-                updateBadgeCount();
-            };
-            list.prepend(item);
-            updateBadgeCount();
-        }
-
-        function updateBadgeCount() {
-            const unread = document.querySelectorAll('.notif-item-link:not(.read)').length;
-            const badge = document.getElementById('bellBadge');
-            if (unread > 0) {
-                badge.innerText = unread;
-                badge.style.display = 'block';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-
-        window.clearAllNotifications = () => {
-            document.getElementById('notifList').innerHTML = '<div style="color:var(--text-gray); text-align:center; padding: 20px; font-size: 12px;">Нових подій немає</div>';
-            updateBadgeCount();
-            document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
-        };
-
-        window.toggleNotifs = (e) => {
-            if(e) e.stopPropagation();
-            const drop = document.getElementById('notifDropdown');
-            drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
-        };
-
         function listenForMentions() {
             const halfHourAgo = new Date(Date.now() - 30 * 60 * 1000);
             onSnapshot(collection(db, "channels"), (snap) => {
@@ -601,7 +695,7 @@
                             if (change.type === "added") {
                                 const msg = change.doc.data();
                                 if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
-                                    addNotification(`Згадка від ${msg.author}`, 'chats.html', change.doc.id);
+                                    addNotification(`Згадка від ${msg.author}`, 'chats.html', 'mention-'+change.doc.id);
                                 }
                             }
                         });
@@ -647,13 +741,23 @@
         function initNotifications() {
             ['reports', 'subotniks', 'applications'].forEach(t => {
                 onSnapshot(collection(db, t), (snap) => {
-                    const saved = localStorage.getItem('count_' + t) || 0;
-                    if (snap.size > saved) {
-                        const dotId = t === 'reports' ? 'dot-reports' : t === 'subotniks' ? 'dot-subotniks' : 'dot-apps';
-                        const dot = document.getElementById(dotId);
-                        if(dot) dot.style.display = 'block';
-                        addNotification(`Новий запис: ${t}`, `${t}.html`, t + snap.size);
-                    }
+                    // Перебираємо всі документи, щоб знайти нові
+                    snap.forEach(docSnap => {
+                        const id = t + docSnap.id; // Унікальний ID для сповіщення
+                        if (!isRead(id)) {
+                            // Визначаємо текст і силку
+                            let text = `Новий запис: ${t}`;
+                            let link = `${t}.html`;
+                            
+                            // Якщо це заявка, і я адмін, то силка на applications
+                            if (t === 'applications' && myData.role !== 'admin') return;
+                            
+                            // Викликаємо addNotification тільки якщо елемента ще немає в DOM
+                            if (!document.getElementById('notif-' + id)) {
+                                addNotification(text, link, id);
+                            }
+                        }
+                    });
                 });
             });
         }
@@ -666,7 +770,7 @@
         }
 
         window.toggleSystemAccess = async () => {
-            const code = await getSecret();
+            const const code = await getSecret();
             if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === code) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
