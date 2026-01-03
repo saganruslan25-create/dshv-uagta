@@ -167,7 +167,7 @@
             background: rgba(239, 68, 68, 0.05); color: var(--danger); display: none; text-align: center;
         }
 
-        /* КАРТКА ПРОФІЛЮ ТА ЗВАННЯ (ЯК НА ФОТО) */
+        /* КАРТКА ПРОФІЛЮ ОНОВЛЕНА */
         .profile-card { 
             padding: 35px 20px; text-align: center; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; border: 1px solid var(--primary);
@@ -178,18 +178,11 @@
             margin-bottom: 20px; background: #111; box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
         }
         .user-name { 
-            font-size: 26px; font-weight: 900; margin-bottom: 10px; 
+            font-size: 26px; font-weight: 900; margin-bottom: 5px; 
             text-transform: uppercase; letter-spacing: -0.5px;
         }
-
-        /* Стиль Звання як на фото */
-        .rank-block { margin: 15px 0; width: 100%; }
-        .rank-header { color: var(--primary); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
-        .rank-title { color: var(--primary-bright); font-size: 28px; font-weight: 900; text-transform: none; margin: 0; }
-        .rank-line { width: 60%; height: 1px; border-bottom: 1.5px dashed rgba(255,255,255,0.2); margin: 8px auto; }
-        .rank-sub { color: var(--primary); font-size: 13px; font-weight: 700; }
-
-        .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; font-size: 14px; margin-top: 10px; }
+        .profile-card h6 { color: rgba(255,255,255,0.3); letter-spacing: 2px; margin: 5px 0; }
+        .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; font-size: 14px; margin-top: 15px; }
 
         /* ІНФОРМАЦІЙНІ БЛОКИ */
         .info-panel { display: flex; flex-direction: column; gap: 15px; }
@@ -314,19 +307,16 @@
             <div class="profile-card">
                 <div class="avatar-circle">👤</div>
                 <div id="userName" class="user-name">...</div>
-                
-                <div class="rank-block">
-                    <div class="rank-header">Посада / Звання</div>
-                    <h2 id="userRankMain" class="rank-title">Рекрут</h2>
-                    <div class="rank-line"></div>
-                    <div id="userRankSub" class="rank-sub">Службовець</div>
-                </div>
-
+                <h2 id="userRank" style="color:var(--primary-bright); font-weight: 900; font-size: 28px;">...</h2>
+                <h6>------------------------</h6>
+                <h6 id="userPos" style="color:var(--primary-bright); font-weight: 700; font-size: 14px;">...</h6>
+                <h3>ㅤ</h3>
                 <div id="userID" class="id-badge">ID: ...</div>
             </div>
 
             <div class="info-panel">
-                <div class="info-box" style="display:none;"> <h2 id="userRank">...</h2>
+                <div class="info-box">
+                    <h2 id="greeting"> Очікуйте, йде завантаження сайту </h2>
                 </div>
                 
                 <div class="stats-grid">
@@ -401,9 +391,18 @@
         let currentUID = null;
         let myData = null;
         let editingUID = null;
-        const SECRET_CODE = "g%!V4/(&BMwnmT&";
+        let cachedSecret = null; // Код завантажується з БД
 
-        // Захист
+        const greetings = [
+            "Раді бачити Вас!", "Вітаємо з поверненням!", "Приємно знову Вас бачити!",
+            "З поверненням у стрій!", "Раді знову Вас вітати!", "Вітаємо на борту!",
+            "Раді Вашій присутності!", "Ласкаво просимо назад!", "Приємно бачити Вас знову!",
+            "Вітаємо знову серед нас!", "Раді, що Ви з нами!", "З поверненням до справ!",
+            "Раді бачити Вас у строю!", "Вітаємо з поверненням до служби!",
+            "Раді знову працювати з Вами!", "Вітаємо знову у команді!", "Приємно бачити Вас тут!",
+            "Раді Вашому поверненню!", "Знову раді Вас бачити!", "Вітаємо, приємно що Ви тут!"
+        ];
+
         document.onkeydown = function(e) {
             if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false;
         };
@@ -414,6 +413,13 @@
             if (!text) return "---";
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, (url) => `<a href="${url}" target="_blank" style="color:var(--primary-bright);">${url}</a>`);
+        }
+
+        async function getSecret() {
+            if(cachedSecret) return cachedSecret;
+            const s = await getDoc(doc(db, "settings", "secrets"));
+            cachedSecret = s.data()?.adminCode;
+            return cachedSecret;
         }
 
         onAuthStateChanged(auth, async (user) => {
@@ -443,6 +449,7 @@
                 return;
             }
 
+            document.getElementById("greeting").textContent = greetings[Math.floor(Math.random() * greetings.length)];
             updateUI(myData);
             listenToSystemStatus(myData.role);
             
@@ -461,13 +468,11 @@
             document.getElementById('topName').innerText = data.name || "---";
             document.getElementById('userID').innerText = "ID: " + (data.gameID || "---");
             
-            // Логіка розділення звання та посади
             const fullRank = data.rank || "Рекрут | Службовець";
             const parts = fullRank.split('|');
-            document.getElementById('userRankMain').innerText = parts[0].trim();
-            document.getElementById('userRankSub').innerText = parts[1] ? parts[1].trim() : "Службовець";
+            document.getElementById('userRank').innerText = parts[0].trim();
+            document.getElementById('userPos').innerText = parts[1] ? parts[1].trim() : "Службовець";
             
-            document.getElementById('userRank').innerText = fullRank; // Для сумісності
             document.getElementById('userRep').innerText = data.reprimands || 0;
             document.getElementById('userWarns').innerText = data.warns || 0;
             document.getElementById('userPassport').innerText = data.passport || "---";
@@ -499,6 +504,11 @@
                         const u = {id: s.id, ...s.data()};
                         const item = document.createElement('div');
                         item.className = 'staff-item';
+                        
+                        const rankParts = (u.rank || "Рекрут | Службовець").split('|');
+                        const rName = rankParts[0].trim();
+                        const pName = rankParts[1] ? rankParts[1].trim() : "---";
+
                         item.innerHTML = `
                             <div style="display:flex; align-items:center;">
                                 <div class="order-arrows">
@@ -507,8 +517,7 @@
                                 </div>
                                 <div>
                                     <b style="font-size:14px;">${u.name}</b> 
-                                    <span style="color:var(--primary); font-size:11px; margin-left:5px; font-weight:800;">ID: ${u.gameID || '---'}</span>
-                                    <br><small style="color:var(--text-gray)">${u.rank}</small>
+                                    <br><small>ID: ${u.gameID || '---'} | ${rName}, ${pName}</small>
                                 </div>
                             </div>
                             <div style="display:flex; gap:10px;">
@@ -538,11 +547,9 @@
             await batch.commit();
         };
 
-        /* СИСТЕМА СПОВІЩЕНЬ YOUTUBE STYLE */
         function addNotification(text, link, id) {
             const list = document.getElementById('notifList');
             if(list.innerText.includes("немає")) list.innerHTML = "";
-            
             if (document.getElementById('notif-' + id)) return;
 
             const item = document.createElement('a');
@@ -553,12 +560,10 @@
                 <span class="notif-text">📢 ${text}</span>
                 <span class="notif-time">щойно</span>
             `;
-            
             item.onclick = (e) => {
                 item.classList.add('read');
                 updateBadgeCount();
             };
-            
             list.prepend(item);
             updateBadgeCount();
         }
@@ -586,7 +591,6 @@
             drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
         };
 
-        // Решта функцій логіки
         function listenForMentions() {
             const halfHourAgo = new Date(Date.now() - 30 * 60 * 1000);
             onSnapshot(collection(db, "channels"), (snap) => {
@@ -636,7 +640,8 @@
         };
 
         window.deleteUser = async (id) => {
-            if (prompt("ПАРОЛЬ АДМІНІСТРАТОРА:") === SECRET_CODE) await deleteDoc(doc(db, "users", id));
+            const code = await getSecret();
+            if (prompt("ПАРОЛЬ АДМІНІСТРАТОРА:") === code) await deleteDoc(doc(db, "users", id));
         };
 
         function initNotifications() {
@@ -661,7 +666,8 @@
         }
 
         window.toggleSystemAccess = async () => {
-            if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === SECRET_CODE) {
+            const code = await getSecret();
+            if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === code) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
                 await updateDoc(ref, { isLocked: !snap.data().isLocked });
