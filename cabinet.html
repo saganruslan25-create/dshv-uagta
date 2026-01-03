@@ -427,7 +427,7 @@
             <div id="modalReportsList" style="overflow-y:auto; flex-grow: 1;"></div>
         </div>
     </div>
-        <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -479,7 +479,7 @@
             return cachedSecret;
         }
 
-        // --- СИСТЕМА СПОВІЩЕНЬ (ВИПРАВЛЕНО: ПЕРЕХІД + ПАМ'ЯТЬ) ---
+        // --- СИСТЕМА СПОВІЩЕНЬ (ВИПРАВЛЕНО) ---
         let readNotifIds = JSON.parse(localStorage.getItem('readNotifIds')) || [];
 
         function isRead(id) {
@@ -740,22 +740,27 @@
 
         function initNotifications() {
             ['reports', 'subotniks', 'applications'].forEach(t => {
+                let isInitialLoad = true; // Флаг, щоб ігнорувати старі записи при завантаженні
+                
                 onSnapshot(collection(db, t), (snap) => {
-                    // Перебираємо всі документи, щоб знайти нові
-                    snap.forEach(docSnap => {
-                        const id = t + docSnap.id; // Унікальний ID для сповіщення
-                        if (!isRead(id)) {
-                            // Визначаємо текст і силку
+                    // Якщо це перше завантаження — пропускаємо обробку існуючих даних
+                    if (isInitialLoad) {
+                        isInitialLoad = false;
+                        return;
+                    }
+
+                    // Обробляємо тільки ТІЛЬКИ нові зміни (added)
+                    snap.docChanges().forEach((change) => {
+                        if (change.type === "added") {
+                            const id = t + change.doc.id;
+                            if (isRead(id) || document.getElementById('notif-' + id)) return;
+
                             let text = `Новий запис: ${t}`;
                             let link = `${t}.html`;
                             
-                            // Якщо це заявка, і я адмін, то силка на applications
                             if (t === 'applications' && myData.role !== 'admin') return;
                             
-                            // Викликаємо addNotification тільки якщо елемента ще немає в DOM
-                            if (!document.getElementById('notif-' + id)) {
-                                addNotification(text, link, id);
-                            }
+                            addNotification(text, link, id);
                         }
                     });
                 });
@@ -770,7 +775,8 @@
         }
 
         window.toggleSystemAccess = async () => {
-            const const code = await getSecret();
+            // ВИПРАВЛЕНО: Прибрав дубль 'const'
+            const code = await getSecret();
             if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === code) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
@@ -810,5 +816,5 @@
             }
         }
     </script>
-</body>
+    </body>
 </html>
