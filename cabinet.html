@@ -564,7 +564,7 @@
             appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
 
-        const app = initializeApp(firebaseConfig);
+        const DEFAULT_SECRET_CODE = "admin123";
         const auth = getAuth(app);
         const db = getFirestore(app);
 
@@ -597,12 +597,22 @@
 
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-        async function getSecret() {
-            if(cachedSecret) return cachedSecret;
-            const s = await getDoc(doc(db, "settings", "secrets"));
-            cachedSecret = s.data()?.adminCode;
-            return cachedSecret;
-        }
+// ЗАМІНИ getSecret НА ЦЮ ФУНКЦІЮ
+async function getSecret() {
+    if(cachedSecret) return cachedSecret;
+    
+    try {
+        // Спробуємо взяти код з бази
+        const s = await getDoc(doc(db, "settings", "secrets"));
+        // Якщо в базі є код, використовуємо його. Якщо немає (undefined) -> використовуємо наш дефолтний.
+        cachedSecret = s.data()?.adminCode || DEFAULT_SECRET_CODE;
+        return cachedSecret;
+    } catch (e) {
+        // Якщо база не доступна, використовуємо дефолтний
+        console.error("Помилка доступу до секрету:", e);
+        return DEFAULT_SECRET_CODE;
+    }
+}
 
         // --- СПОВІЩЕННЯ ---
         let readNotifIds = JSON.parse(localStorage.getItem('readNotifIds')) || [];
