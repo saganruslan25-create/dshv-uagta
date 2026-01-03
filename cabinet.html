@@ -312,7 +312,8 @@
     </style>
 </head>
 <body oncontextmenu="return false;">
-        <div id="verifyWaitingScreen">
+
+    <div id="verifyWaitingScreen">
         <h1>ВЕРИФІКАЦІЯ...</h1>
         <p style="color: var(--text-gray); max-width: 500px;">Очікуйте підтвердження доступу від керівництва підрозділу.</p>
         <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АКАУНТУ</button>
@@ -405,9 +406,11 @@
                         <button id="btnAddDisc" class="btn-add-info" onclick="updateField('discord')" style="display:none;">+</button>
                     </div>
                 </div>
+                <!-- НОВИЙ БЛОК: ПОСАДА (замість статусу) -->
                 <div class="info-box">
-                    <span>СТАТУС СЛУЖБИ</span>
-                    <h2 style="color: var(--primary);">АКТИВНА</h2>
+                    <span>ПОСАДА</span>
+                    <h2 id="userPosEdit" style="font-size: 16px;">---</h2>
+                    <button id="btnAddPos" class="btn-add-info" onclick="updateField('position')" style="display:none;">+</button>
                 </div>
             </div>
         </div>
@@ -427,6 +430,7 @@
             <div id="modalReportsList" style="overflow-y:auto; flex-grow: 1;"></div>
         </div>
     </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -605,10 +609,7 @@
             const parts = fullRank.split('|');
             document.getElementById('userRank').innerText = parts[0].trim();
             
-            // ВИПРАВЛЕНО: ЛОГІКА ПОСАДИ
-            // 1. Пріоритет полю position (яке створюється при реєстрації)
-            // 2. Якщо немає, беремо другу частину звання (якщо є роздільник |)
-            // 3. Інакше "Службовець"
+            // ВИПРАВЛЕНО: ЛОГІКА ПОСАДИ В ПРОФІЛІ
             document.getElementById('userPos').innerText = data.position || (parts[1] ? parts[1].trim() : "Службовець");
             
             document.getElementById('userRep').innerText = data.reprimands || 0;
@@ -618,6 +619,11 @@
 
             document.getElementById('btnAddPass').style.display = (!data.passport || data.passport === "---") ? 'flex' : 'none';
             document.getElementById('btnAddDisc').style.display = (!data.discord || data.discord === "---") ? 'flex' : 'none';
+
+            // НОВЕ: ЛОГІКА ПОСАДИ В ІНФО БЛОЦІ
+            const posValue = data.position || (parts[1] ? parts[1].trim() : "---");
+            document.getElementById('userPosEdit').innerText = posValue;
+            document.getElementById('btnAddPos').style.display = (!data.position || data.position === "---") ? 'flex' : 'none';
 
             document.querySelectorAll('.admin-controls').forEach(c => c.style.display = (myData.role === 'admin') ? 'flex' : 'none');
         }
@@ -715,7 +721,14 @@
         };
 
         window.updateField = async (f) => {
-            const val = prompt(f === 'passport' ? "Посилання на паспорт:" : "Discord ID:");
+            let val;
+            let promptText = "";
+            
+            if (f === 'passport') promptText = "Посилання на паспорт:";
+            else if (f === 'discord') promptText = "Discord ID:";
+            else if (f === 'position') promptText = "Ваша посада (наприклад: Інст.ДШВ):";
+            
+            val = prompt(promptText);
             if(val) await updateDoc(doc(db, "users", currentUID), { [f]: val });
         };
 
@@ -775,7 +788,6 @@
         }
 
         window.toggleSystemAccess = async () => {
-            // ВИПРАВЛЕНО: Прибрав дубль 'const'
             const code = await getSecret();
             if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === code) {
                 const ref = doc(db, "settings", "systemStatus");
@@ -816,5 +828,5 @@
             }
         }
     </script>
-    </body>
+</body>
 </html>
