@@ -170,7 +170,7 @@
             background: rgba(239, 68, 68, 0.05); color: var(--danger); display: none; text-align: center;
         }
 
-        /* ПРОФІЛЬ */
+        /* ПРОФІЛЬ (КАРТКА) */
         .profile-card { 
             padding: 35px 20px; text-align: center; display: flex; flex-direction: column; 
             align-items: center; justify-content: center; border: 1px solid var(--primary);
@@ -181,16 +181,18 @@
             display: flex; align-items: center; justify-content: center; font-size: 60px; 
             margin-bottom: 20px; background: #111; box-shadow: 0 0 20px var(--primary-glow);
         }
-        .user-name { font-size: 26px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; letter-spacing: -0.5px; }
+        .user-name { font-size: 26px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; letter-spacing: -0.5px; color: white; }
         
         .profile-card h2, .profile-card h6 {
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            color: rgba(255,255,255,0.3); letter-spacing: 2px; margin: 5px 0;
+            /* ЗАЛІВКА КАРТКИ: Змінено колір на яскравий */
+            color: var(--primary-bright); 
+            letter-spacing: 2px; margin: 5px 0;
             text-align: center; 
         }
         
-        .profile-card h2 { color: var(--primary-bright); font-weight: 900; font-size: 28px; }
-        .profile-card h6 { color: var(--primary-bright); font-weight: 700; font-size: 14px; }
+        .profile-card h2 { font-weight: 900; font-size: 28px; text-shadow: 0 0 10px rgba(74, 222, 128, 0.2); }
+        .profile-card h6 { font-weight: 700; font-size: 14px; }
         .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; font-size: 14px; margin-top: 15px; }
         
         .vacation-status-badge {
@@ -273,7 +275,7 @@
             color: #ccc; font-size: 14px; line-height: 1.6;
         }
         .credits-list li { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 10px; }
-        .credits-list li:last-child { border-bottom: none; margin-bottom: 0; }
+        .credits-list li:last-child { border-bottom: none; }
         .credits-title { 
             color: var(--primary-bright); font-weight: 900; font-size: 16px; 
             display: block; margin-bottom: 20px; text-align: center; text-transform: uppercase; 
@@ -300,7 +302,7 @@
         }
         .order-arrows { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
         .btn-arrow {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255, 0.05); border: 1px solid rgba(255,255,255,0.1);
             color: var(--primary); border-radius: 6px; width: 26px; height: 26px;
             font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
@@ -435,6 +437,7 @@
                             <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
                         </div>
                     </div>
+                    <!-- ПАСПОРТ В ПРАВІЙ ПАНЕЛІ -->
                     <div class="info-box">
                         <span>ПАСПОРТ</span>
                         <h2 id="userPassport" style="font-size: 16px;">---</h2>
@@ -468,7 +471,7 @@
         <div class="modal-content">
             <button class="close-modal-btn" onclick="closeCreditsModal()">&times;</button>
             <div class="credits-title">🏆 ПОЧАТОК</div>
-            <p style="text-align:center; color: var(--primary); font-weight: 700; margin-bottom: 25px; padding: 0 10px; background: rgba(34, 197, 94, 0.05); border-radius: 10px;">Шановний Бієць дякую що ти користуєшся нашим продуктом</p>
+            <p style="text-align:center; color: var(--primary); font-weight: 700; margin-bottom: 20px; padding: 0 10px; background: rgba(34, 197, 94, 0.05); border-radius: 10px;">Шановний Бієць дякую що ти користуєшся нашим продуктом</p>
             
             <ul class="credits-list">
                 <li><span class="credits-role">Глав.Розробник/Тех.Адмін -</span> <span class="credits-name">Руслан Кущирг</span></li>
@@ -694,12 +697,7 @@
             const endDate = new Date(dateVal);
             if (endDate <= new Date()) return alert("Дата має бути в майбутньому!");
             await updateDoc(doc(db, "users", currentUID), {
-                vacation: {
-                    active: true,
-                    endDate: endDate.getTime(),
-                    screenshot: screenVal,
-                    requestedAt: Date.now()
-                }
+                vacation: { active: true, endDate: endDate.getTime(), screenshot: screenVal, requestedAt: Date.now() }
             });
             alert("Заявку подано!"); closeVacationModal();
         };
@@ -739,7 +737,7 @@
 
             document.getElementById("greeting").textContent = greetings[Math.floor(Math.random() * greetings.length)];
             
-            // Події кнопок
+            // Події
             document.getElementById('btnEditRank').onclick = () => window.openEditModal(editingUID, 'rank', 'Ваше звання', document.getElementById('userRankText').innerText);
             document.getElementById('btnEditPos').onclick = () => window.openEditModal(editingUID, 'position', 'Ваша посада', document.getElementById('userPosText').innerText);
             document.getElementById('btnAddPass').onclick = () => window.openEditModal(editingUID, 'passport', 'Посилання на паспорт', document.getElementById('userPassport').innerText);
@@ -769,10 +767,6 @@
                     if(editingUID === uid) {
                         updateUI(data); 
                         updateVacationIndicator(data.vacation);
-                        // Оновлюємо myData якщо це сам юзер (щоб кнопки адміна з'явились при промоції)
-                        if (uid === currentUID) {
-                            myData = data;
-                        }
                     }
                 }
             });
@@ -809,12 +803,12 @@
             
             const fullRank = data.rank || "Рекрут | Службовець";
             const parts = fullRank.split('|');
+            
             setTextIfChanged('userRankText', parts[0].trim());
             setTextIfChanged('userPosText', data.position || (parts[1] ? parts[1].trim() : "Службовець"));
             
             setTextIfChanged('userRep', data.reprimands || 0);
             setTextIfChanged('userWarns', data.warns || 0);
-            
             setTextIfChanged('userPassport', data.passport || "---");
             setTextIfChanged('userDiscord', data.discord || "---");
             
@@ -824,12 +818,8 @@
             const isManaging = (myData.role === 'admin' && editingUID !== currentUID);
             const isSelf = (editingUID === currentUID);
 
-            // Паспорт
             document.getElementById('btnAddPass').style.display = (isSelf && (!data.passport || data.passport === "---")) ? 'flex' : 'none';
-            // Дискорд
             document.getElementById('btnAddDisc').style.display = (isSelf && (!data.discord || data.discord === "---")) ? 'flex' : 'none';
-
-            // Посада
             document.getElementById('btnAddPos').style.display = (isManaging) ? 'flex' : 'none';
 
             // Олівці
@@ -841,6 +831,9 @@
                 const btnPos = document.getElementById('btnEditPos');
                 btnPos.style.display = 'inline-block';
                 btnPos.style.opacity = '1';
+                
+                btnRank.onclick = () => window.openEditModal(editingUID, 'rank', 'Ваше звання', parts[0].trim());
+                btnPos.onclick = () => window.openEditModal(editingUID, 'position', 'Ваша посада', data.position);
             } else if (isSelf) {
                 document.getElementById('btnEditRank').style.display = 'none';
                 document.getElementById('btnEditRank').style.opacity = '0';
@@ -848,6 +841,7 @@
                 const btnPos = document.getElementById('btnEditPos');
                 btnPos.style.display = 'inline-block';
                 btnPos.style.opacity = '1';
+                btnPos.onclick = () => window.openEditModal(editingUID, 'position', 'Ваша посада', data.position);
             } else {
                 document.getElementById('btnEditRank').style.display = 'none';
                 document.getElementById('btnEditRank').style.opacity = '0';
@@ -880,7 +874,6 @@
                         const u = {id: s.id, ...s.data()};
                         const item = document.createElement('div');
                         item.className = 'staff-item';
-                        
                         const rankParts = (u.rank || "Рекрут | Службовець").split('|');
                         const rName = rankParts[0].trim();
                         const pName = u.position || (rankParts[1] ? rankParts[1].trim() : "---");
@@ -973,9 +966,20 @@
             if(confirm("Надати доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
         };
 
+        // ВИПРАВЛЕНО: Добавлено оповіщення про помилку
         window.deleteUser = async (id) => {
             const code = await getSecret();
-            if (prompt("ПАРОЛЬ АДМІНІСТРАТОРА:") === code) await deleteDoc(doc(db, "users", id));
+            const input = prompt("ПАРОЛЬ АДМІНІСТРАТОРА:");
+            if (input === code) {
+                await deleteDoc(doc(db, "users", id));
+                alert("Бійця видалено!");
+            } else {
+                if (input === null) {
+                    // Скасування або порожній ввід
+                } else {
+                    alert("Невірний пароль!");
+                }
+            }
         };
 
         function initNotifications() {
@@ -1006,10 +1010,23 @@
 
         window.toggleSystemAccess = async () => {
             const code = await getSecret();
-            if(prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:") === code) {
+            const input = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            if (input === code) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
-                await updateDoc(ref, { isLocked: !snap.data().isLocked });
+                // Якщо документу ще немає, створюємо його
+                if (!snap.exists()) {
+                    await setDoc(ref, { isLocked: false });
+                }
+                const newState = !snap.data().isLocked;
+                await updateDoc(ref, { isLocked: newState });
+                alert(newState ? "Система заблокована" : "Система розблокована");
+            } else {
+                if (input === null) {
+                    // Скасування
+                } else {
+                    alert("Невірний код!");
+                }
             }
         };
 
