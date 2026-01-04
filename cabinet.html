@@ -275,7 +275,7 @@
             color: #ccc; font-size: 14px; line-height: 1.6;
         }
         .credits-list li { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 10px; }
-        .credits-list li:last-child { border-bottom: none; }
+        .credits-list li:last-child { border-bottom: none; margin-bottom: 0; }
         .credits-title { 
             color: var(--primary-bright); font-weight: 900; font-size: 16px; 
             display: block; margin-bottom: 20px; text-align: center; text-transform: uppercase; 
@@ -471,7 +471,7 @@
         <div class="modal-content">
             <button class="close-modal-btn" onclick="closeCreditsModal()">&times;</button>
             <div class="credits-title">🏆 ПОЧАТОК</div>
-            <p style="text-align:center; color: var(--primary); font-weight: 700; margin-bottom: 20px; padding: 0 10px; background: rgba(34, 197, 94, 0.05); border-radius: 10px;">Шановний Бієць дякую що ти користуєшся нашим продуктом</p>
+            <p style="text-align:center; color: var(--primary); font-weight: 700; margin-bottom: 25px; padding: 0 10px; background: rgba(34, 197, 94, 0.05); border-radius: 10px;">Шановний Бієць дякую що ти користуєшся нашим продуктом</p>
             
             <ul class="credits-list">
                 <li><span class="credits-role">Глав.Розробник/Тех.Адмін -</span> <span class="credits-name">Руслан Кущирг</span></li>
@@ -564,14 +564,17 @@
             appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
 
-        const DEFAULT_SECRET_CODE = "admin123";
+        const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         let currentUID = null;
         let myData = null;
         let editingUID = null;
-        let cachedSecret = null; 
+        let cachedSecret = null;
+        
+        // ДЕФОЛТНИЙ СЕКРЕТНИЙ КОД (Виправлення)
+        const DEFAULT_SECRET_CODE = "admin123"; 
 
         const greetings = [
             "Раді бачити Вас!","Вітаємо з поверненням!","Приємно знову Вас бачити!",
@@ -597,22 +600,19 @@
 
         window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
 
-// ЗАМІНИ getSecret НА ЦЮ ФУНКЦІЮ
-async function getSecret() {
-    if(cachedSecret) return cachedSecret;
-    
-    try {
-        // Спробуємо взяти код з бази
-        const s = await getDoc(doc(db, "settings", "secrets"));
-        // Якщо в базі є код, використовуємо його. Якщо немає (undefined) -> використовуємо наш дефолтний.
-        cachedSecret = s.data()?.adminCode || DEFAULT_SECRET_CODE;
-        return cachedSecret;
-    } catch (e) {
-        // Якщо база не доступна, використовуємо дефолтний
-        console.error("Помилка доступу до секрету:", e);
-        return DEFAULT_SECRET_CODE;
-    }
-}
+        // ВИПРАВЛЕНА ФУНКЦІЯ СЕКРЕТУ
+        async function getSecret() {
+            if(cachedSecret) return cachedSecret;
+            try {
+                const s = await getDoc(doc(db, "settings", "secrets"));
+                // Якщо в базі немає запису (undefined), використовуємо дефолтний
+                cachedSecret = s.data()?.adminCode || DEFAULT_SECRET_CODE;
+                return cachedSecret;
+            } catch (e) {
+                console.error("Помилка читання секрету:", e);
+                return DEFAULT_SECRET_CODE;
+            }
+        }
 
         // --- СПОВІЩЕННЯ ---
         let readNotifIds = JSON.parse(localStorage.getItem('readNotifIds')) || [];
@@ -707,7 +707,12 @@ async function getSecret() {
             const endDate = new Date(dateVal);
             if (endDate <= new Date()) return alert("Дата має бути в майбутньому!");
             await updateDoc(doc(db, "users", currentUID), {
-                vacation: { active: true, endDate: endDate.getTime(), screenshot: screenVal, requestedAt: Date.now() }
+                vacation: {
+                    active: true,
+                    endDate: endDate.getTime(),
+                    screenshot: screenVal,
+                    requestedAt: Date.now()
+                }
             });
             alert("Заявку подано!"); closeVacationModal();
         };
@@ -747,7 +752,7 @@ async function getSecret() {
 
             document.getElementById("greeting").textContent = greetings[Math.floor(Math.random() * greetings.length)];
             
-            // Події
+            // Події кнопок
             document.getElementById('btnEditRank').onclick = () => window.openEditModal(editingUID, 'rank', 'Ваше звання', document.getElementById('userRankText').innerText);
             document.getElementById('btnEditPos').onclick = () => window.openEditModal(editingUID, 'position', 'Ваша посада', document.getElementById('userPosText').innerText);
             document.getElementById('btnAddPass').onclick = () => window.openEditModal(editingUID, 'passport', 'Посилання на паспорт', document.getElementById('userPassport').innerText);
@@ -828,8 +833,11 @@ async function getSecret() {
             const isManaging = (myData.role === 'admin' && editingUID !== currentUID);
             const isSelf = (editingUID === currentUID);
 
+            // Паспорт
             document.getElementById('btnAddPass').style.display = (isSelf && (!data.passport || data.passport === "---")) ? 'flex' : 'none';
+            // Дискорд
             document.getElementById('btnAddDisc').style.display = (isSelf && (!data.discord || data.discord === "---")) ? 'flex' : 'none';
+            // Посада
             document.getElementById('btnAddPos').style.display = (isManaging) ? 'flex' : 'none';
 
             // Олівці
@@ -884,10 +892,12 @@ async function getSecret() {
                         const u = {id: s.id, ...s.data()};
                         const item = document.createElement('div');
                         item.className = 'staff-item';
+                        
                         const rankParts = (u.rank || "Рекрут | Службовець").split('|');
                         const rName = rankParts[0].trim();
                         const pName = u.position || (rankParts[1] ? rankParts[1].trim() : "---");
 
+                        // Адмін бачить олівці в списку
                         const editBtns = (myData.role === 'admin') ? `
                             <button class="edit-icon" style="display:inline-block; opacity: 1;" onclick="window.openEditModal('${u.id}', 'rank', 'Звання', '${rName}')">✎</button>
                         ` : '';
@@ -976,7 +986,7 @@ async function getSecret() {
             if(confirm("Надати доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
         };
 
-        // ВИПРАВЛЕНО: Добавлено оповіщення про помилку
+        // ВИПРАВЛЕНО: Повідомлення про помилку + логіка скасування
         window.deleteUser = async (id) => {
             const code = await getSecret();
             const input = prompt("ПАРОЛЬ АДМІНІСТРАТОРА:");
