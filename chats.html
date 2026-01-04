@@ -13,8 +13,8 @@
             --primary-bright: #4ade80;
             --primary-glow: rgba(34, 197, 94, 0.5); 
             --bg: #030507;
-            --sidebar-bg: rgba(10, 12, 16, 0.6);
-            --chat-bg: rgba(5, 7, 9, 0.8);
+            --sidebar-bg: rgba(10, 12, 16, 0.65);
+            --chat-bg: rgba(5, 7, 9, 0.6);
             --panel-bg: rgba(10, 15, 26, 0.8);
             --input-bg: #0a0c10;
             --text-main: #ffffff;
@@ -22,22 +22,28 @@
             --text-dim: #64748b;
             --danger: #ef4444;
             --danger-glow: rgba(239, 68, 68, 0.6);
-            --glass-border: rgba(34, 197, 94, 0.15);
+            --glass-border: rgba(34, 197, 94, 0.2);
         }
 
         body {
             margin: 0; padding: 0;
             background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 50% 15%, rgba(34, 197, 94, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(34, 197, 94, 0.1) 0%, transparent 40%);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex;
-            user-select: none;
+            user-select: none; /* Глобально нельзя */
             -webkit-user-select: none;
+        }
+
+        /* PARTICLES CANVAS */
+        #particles-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
         }
 
         /* --- LAYOUT --- */
@@ -45,6 +51,8 @@
             display: flex;
             width: 100%;
             height: 100%;
+            position: relative;
+            z-index: 1;
         }
 
         /* --- SERVERS --- */
@@ -57,7 +65,7 @@
             align-items: center;
             overflow-y: auto;
             border-right:1px solid rgba(255,255,255,0.05);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
         .server-icon {
             width: 48px; height: 48px;
@@ -90,7 +98,7 @@
             flex-direction: column;
             position: relative;
             border-right:1px solid var(--glass-border);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
         }
         .sidebar-header {
             height: 48px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
@@ -133,12 +141,13 @@
         .chat-main {
             background-color: var(--chat-bg);
             display: flex; flex-direction: column; position: relative; min-width: 0; flex: 1;
+            backdrop-filter: blur(5px);
         }
         .chat-header {
             height: 48px; border-bottom: 1px solid var(--glass-border);
             display: flex; align-items: center; padding: 0 20px;
-            background: var(--sidebar-bg); cursor: pointer; flex-shrink: 0;
-            backdrop-filter: blur(10px);
+            background: rgba(10, 15, 20, 0.7); cursor: pointer; flex-shrink: 0;
+            backdrop-filter: blur(15px);
             box-shadow: 0 4px 20px rgba(0,0,0,0.2);
         }
         .header-hashtag { color: var(--text-dim); font-size: 24px; font-weight: 700; margin-right: 10px; }
@@ -146,7 +155,7 @@
         .channel-settings-gear { color: var(--text-dim); font-size: 20px; cursor: pointer; transition: 0.2s; }
         .channel-settings-gear:hover { color: var(--primary-bright); transform: rotate(45deg); text-shadow: 0 0 8px var(--primary-glow); }
 
-        .messages-wrapper { flex: 1; padding: 20px 0; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; background-image: radial-gradient(#111 1px, transparent 1px); background-size: 20px 20px; }
+        .messages-wrapper { flex: 1; padding: 20px 0; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; background-image: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px); background-size: 20px 20px; }
         .date-divider { margin: 20px 0 10px 20px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; color: var(--text-dim); font-size: 11px; font-weight: 700; flex-shrink: 0; letter-spacing: 0.5px; }
 
         .message { display: flex; margin-top: 17px; padding: 0 20px; position: relative; transition: 0.1s; }
@@ -155,25 +164,47 @@
         .msg-avatar { width: 40px; height: 40px; background: #1a1a1a; border-radius: 50%; flex-shrink: 0; margin-right: 16px; margin-left: 16px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: white; box-shadow: 0 0 5px rgba(0,0,0,0.5); background-size: cover; background-position: center; border: 2px solid transparent; }
         .msg-avatar.admin { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
         
-        .msg-content { max-width: 100%; display: flex; flex-direction: column; }
-        .msg-header { display: flex; align-items: baseline; margin-bottom: 5px; }
-        .msg-username { color: white; font-weight: 700; font-size: 15px; margin-right: 5px; cursor: pointer; }
-        .msg-username:hover { color: var(--primary-bright); text-shadow: 0 0 5px var(--primary-glow); }
-        .msg-timestamp { font-size: 11px; color: var(--text-dim); }
-        .msg-text { color: #cbd5e1; font-size: 16px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+        .msg-content { max-width: 100%; display: flex; flex-direction: column; position: relative; }
+        
+        /* FIX: COPY/PASTE SUPPORT */
+        .msg-text { 
+            color: #cbd5e1; font-size: 16px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; 
+            user-select: text !important; 
+            -webkit-user-select: text !important; 
+            /* Разрешаем контекстное меню на тексте */
+            -webkit-touch-callout: default;
+        }
+
         .msg-mention { background-color: rgba(34, 197, 94, 0.2); color: var(--primary-bright); padding: 0 2px; border-radius: 3px; cursor: pointer; border: 1px solid var(--glass-border); }
 
-        .reply-preview { display: flex; align-items: center; margin-bottom: 4px; margin-top: 4px; position: relative; overflow: hidden; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 4px; border-left: 2px solid var(--primary); }
-        .reply-avatar { width: 20px; height: 20px; border-radius: 50%; background: #333; margin-right: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
-        .reply-content { display: flex; flex-direction: column; overflow: hidden; }
-        .reply-author { font-size: 13px; font-weight: 700; color: var(--primary-bright); margin-right: 4px; white-space: nowrap; text-shadow: 0 0 5px var(--primary-glow); }
-        .reply-text { font-size: 13px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Discord Style Reply (UPDATED) */
+        .reply-preview { 
+            background: rgba(34, 197, 94, 0.05); 
+            border-left: 3px solid var(--primary); 
+            padding: 6px 8px 6px 12px; margin-bottom: 4px; margin-top: 4px; 
+            border-radius: 4px; 
+            display: flex; gap: 8px; align-items: flex-start; 
+            font-size: 13px; color: var(--text-muted);
+        }
+        .reply-avatar { width: 18px; height: 18px; border-radius: 50%; background: #333; margin-right: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
+        .reply-content { display: flex; flex-direction: column; overflow: hidden; flex: 1; user-select: text !important; -webkit-user-select: text !important; }
+        .reply-author { font-weight: 700; color: var(--primary-bright); margin-right: 4px; display: block; font-size: 12px; line-height: 1.2; }
+        .reply-text { color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
 
-        .message-actions { display: none; position: absolute; left: 0; top: -24px; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 5px; padding: 2px 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 30; backdrop-filter: blur(10px); }
-        .message:hover .message-actions { display: flex; gap: 5px; animation: fadeIn 0.2s; }
+        /* Action Toolbar */
+        .message-actions { display: none; position: absolute; left: 0; top: -22px; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 2px 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 30; backdrop-filter: blur(10px); }
+        .message:hover .message-actions { display: flex; gap: 2px; animation: fadeIn 0.2s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px; border-radius: 3px; transition: 0.2s; }
-        .action-btn:hover { background: rgba(255,255,255,0.1); color: white; transform: scale(1.1); }
+        .action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px 4px; border-radius: 3px; transition: 0.2s; display: flex; align-items: center; }
+        .action-btn:hover { background: rgba(255,255,255,0.1); color: white; }
+        
+        /* "..." Menu for Edit/Delete */
+        .kebab-menu { display: none; position: absolute; left: 30px; top: -22px; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 29; flex-direction: column; min-width: 120px; backdrop-filter: blur(10px); }
+        .kebab-menu.open { display: flex; }
+        .kebab-item { text-align: left; background: none; border: none; color: var(--text-muted); font-size: 14px; padding: 6px 10px; cursor: pointer; width: 100%; border-radius: 3px; font-weight: 600; }
+        .kebab-item:hover { background: rgba(255,255,255,0.1); color: white; }
+        .kebab-item.danger { color: var(--danger); }
+        .kebab-item.danger:hover { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
         /* Edit UI */
         .edit-ui-wrapper { position: absolute; left: 0; top: -35px; width: 100%; z-index: 50; display: none; flex-direction: column; background: var(--sidebar-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--glass-border); box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: popUp 0.2s; backdrop-filter: blur(10px); }
@@ -191,9 +222,14 @@
         .reaction.active .reaction-count { color: black; }
 
         .input-area { padding: 0 20px 24px 20px; background-color: var(--chat-bg); margin-top: auto; position: relative; }
-        .input-wrapper { background-color: rgba(255,255,255,0.05); border-radius: 8px; padding: 0 16px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s; }
+        .input-wrapper { background-color: rgba(20, 25, 30, 0.8); border-radius: 8px; padding: 0 16px; display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: 0.2s; }
         .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow), 0 4px 20px rgba(34, 197, 94, 0.1); }
-        #messageInput { background: transparent; border: none; color: white; font-size: 16px; width: 100%; padding: 11px 0; outline: none; font-family: 'Inter', sans-serif; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
+        
+        .input-actions-left { display: flex; align-items: center; gap: 10px; margin-right: 10px; }
+        .btn-upload { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; transition: 0.2s; }
+        .btn-upload:hover { color: var(--primary-bright); transform: scale(1.1); }
+
+        #messageInput { background: transparent; border: none; color: white; font-size: 16px; width: 100%; padding: 11px 0; outline: none; font-family: 'Inter', sans-serif; text-shadow: 0 0 2px rgba(0,0,0,0.5); user-select: text !important; -webkit-user-select: text !important; }
         .send-btn { background: transparent; border: none; color: var(--primary); cursor: pointer; font-size: 24px; margin-left: 10px; }
         .send-btn:hover { color: var(--primary-bright); transform: scale(1.1); }
 
@@ -218,7 +254,7 @@
         @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
 
         /* --- MODALS --- */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(15px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(3, 5, 7, 0.7); backdrop-filter: blur(20px); z-index: 1000; align-items: center; justify-content: center; }
         .settings-modal { background-color: var(--sidebar-bg); width: 90%; max-width: 440px; height: auto; border-radius: 20px; border: 1px solid var(--glass-border); display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,0.6); position: relative; transition: 0.3s; animation: modalPop 0.3s; backdrop-filter: blur(20px); }
         .settings-header { padding: 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); border-radius: 20px 20px 0 0; }
         .settings-title { font-weight: 900; font-size: 20px; color: white; text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 5px rgba(0,0,0,0.5); }
@@ -253,7 +289,7 @@
         .mention-item:hover { background: rgba(34, 197, 94, 0.2); color: white; }
         .mention-avatar { width: 24px; height: 24px; border-radius: 50%; background: #111; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
 
-        .context-menu { display: none; position: fixed; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 6px 0; min-width: 200px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 500; animation: fadeIn 0.1s; backdrop-filter: blur(15px); }
+        .context-menu { display: none; position: fixed; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 8px; padding: 6px 0; min-width: 200px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 500; animation: fadeIn 0.1s; backdrop-filter: blur(20px); }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         .ctx-item { display: flex; align-items: center; padding: 8px 12px; color: #b9bbbe; font-size: 14px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; transition: 0.1s; }
         .ctx-item:hover { background: rgba(34, 197, 94, 0.2); color: white; }
@@ -262,7 +298,20 @@
         .ctx-icon { margin-right: 8px; font-size: 18px; width: 24px; text-align: center; }
         .ctx-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 6px 0; }
 
-        .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; max-height: 200px; overflow-y: auto; margin-bottom: 15px; }
+        /* Emoji Picker - Lightweight Popover (Not Full Modal) */
+        #emojiPopover {
+            display: none;
+            position: absolute;
+            background: var(--sidebar-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 10px;
+            width: 280px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 100;
+            backdrop-filter: blur(20px);
+        }
+        .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; max-height: 150px; overflow-y: auto; }
         .emoji-btn { font-size: 24px; background: rgba(255,255,255,0.05); border-radius: 4px; cursor: pointer; padding: 5px; text-align: center; transition: 0.2s; border: 1px solid transparent; }
         .emoji-btn:hover { background: rgba(34, 197, 94, 0.2); border-color: var(--glass-border); }
 
@@ -295,6 +344,8 @@
     </style>
 </head>
 <body>
+
+    <canvas id="particles-canvas"></canvas>
 
     <!-- TOASTS -->
     <div id="toast-container"></div>
@@ -352,7 +403,12 @@
             <div class="mention-popup" id="mentionPopup"></div>
 
             <div class="input-area">
+                <!-- Discord Style Upload Button -->
+                <input type="file" id="hiddenFileInput" accept="image/*" style="display: none;" onchange="window.handleFileSelect(event)">
                 <div class="input-wrapper">
+                    <div class="input-actions-left">
+                        <button class="btn-upload" onclick="document.getElementById('hiddenFileInput').click()">➕</button>
+                    </div>
                     <input type="text" id="messageInput" placeholder="Написати повідомлення..." autocomplete="off">
                     <button class="send-btn" onclick="window.sendMessage()">➤</button>
                 </div>
@@ -447,13 +503,15 @@
         </div>
     </div>
 
+    <!-- Emoji Popover (Appended to body via JS later to avoid z-index issues) -->
+
     <div id="contextMenu" class="context-menu"></div>
 
     <script type="module">
         // --- IMPORTS ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, deleteDoc, getDocs, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, deleteDoc, getDocs, deleteField, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         // --- CONFIG ---
@@ -474,7 +532,7 @@
         // --- GLOBALS ---
         let currentUID = null;
         let myData = null;
-        let myRole = 'member'; // Admin or Member
+        let myRole = 'member';
         let currentChannelId = 'general';
         let messagesUnsubscribe = null;
         
@@ -526,7 +584,6 @@
         onAuthStateChanged(auth, (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             currentUID = user.uid;
-            console.log("Auth OK:", user.uid);
             window.initChat();
         });
 
@@ -537,7 +594,7 @@
                 const snap = await getDoc(doc(db, "users", currentUID));
                 if (snap.exists()) {
                     myData = snap.data();
-                    myRole = myData.role || 'member'; // Set global role
+                    myRole = myData.role || 'member'; 
                     
                     document.getElementById('sidebarName').innerText = myData.name;
                     
@@ -655,7 +712,6 @@
                 list.innerHTML = "";
                 channelsCache = [];
                 
-                // Category
                 const cat = document.createElement('div');
                 cat.className = "category-label";
                 cat.innerText = "ТЕКСТОВІ КАНАЛИ";
@@ -730,13 +786,12 @@
             await updateDoc(doc(db, "channels", id2), { channelOrder: o1 });
         };
 
-        // FIXED: Now accepts ID parameter
         window.openChannelSettings = function(id = null) {
             if (myRole !== 'admin') { 
-                window.showToast("Тільки адміни можуть налаштовувати", "error"); return; 
+                window.showToast("Тільки адміни можуть налаштовувати", "error"); 
+                return;
             }
             
-            // Use passed ID or fallback to currentChannelId
             const targetId = id || currentChannelId;
             const ch = channelsCache.find(c => c.id === targetId);
             
@@ -749,13 +804,9 @@
         };
         
         window.deleteChannelFromCtx = async function(id) {
-            // Wrapper to set target before deleting via modal
             window.settingTargetId = id;
-            // Confirm directly or open modal? User asked for button in menu. 
-            // Let's do direct delete confirmation to be fast.
             if(confirm('ВИДАЛИТИ КАНАЛ?')) {
                 await deleteDoc(doc(db, "channels", id));
-                // If we deleted current channel, switch to general
                 if (id === currentChannelId) {
                     window.switchChannel('general');
                 }
@@ -779,7 +830,6 @@
             }
         };
 
-        // --- PERMISSIONS LOGIC ---
         window.canWrite = function(channelId) {
             const ch = channelsCache.find(c => c.id === channelId);
             if (!ch) return false;
@@ -797,9 +847,20 @@
             document.getElementById('channelModal').style.display = 'flex';
         };
         window.createChannel = async function() {
-            const name = document.getElementById('newChannelName').value.trim().toLowerCase().replace(/\s/g, '-');
-            if (!name) return window.showToast('Введіть назву', "warning");
-            await addDoc(collection(db, "channels"), { name, channelOrder: Date.now(), permission: 'public_rw' });
+            let rawName = document.getElementById('newChannelName').value.trim();
+            if (!rawName) return window.showToast('Введіть назву', "warning");
+
+            const cleanName = rawName.toLowerCase().replace(/\s+/g, '-');
+            
+            // Check duplicates
+            const q = query(collection(db, "channels"), where("name", "==", cleanName));
+            const snap = await getDocs(q);
+            if(!snap.empty) {
+                window.showToast('Канал з такою назвою вже існує', "error");
+                return;
+            }
+
+            await addDoc(collection(db, "channels"), { name: cleanName, channelOrder: Date.now(), permission: 'public_rw' });
             window.closeModals('channelModal');
             document.getElementById('newChannelName').value = "";
         };
@@ -845,7 +906,7 @@
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" style="max-width:100%; max-height:300px; border-radius:8px; margin-top:5px;" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
 
-            // Reply System
+            // Reply System (Discord Style)
             let replyHTML = "";
             if (msg.replyTo) {
                 replyHTML = `
@@ -853,7 +914,7 @@
                         <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
                         <div class="reply-content">
                             <span class="reply-author">${msg.replyTo.author}</span>
-                            <span class="reply-text">${(msg.replyTo.text).substring(0, 30)}...</span>
+                            <span class="reply-text">${(msg.replyTo.text).substring(0, 40)}...</span>
                         </div>
                     </div>
                 `;
@@ -862,9 +923,16 @@
             const div = document.createElement('div');
             div.className = "message";
             div.id = `msg-${msgId}`;
-            
-            // Check if sender is admin for avatar styling
-            // Note: We need to know if the sender is admin. We can check usersCache if populated
+            // Allow context menu for copy/paste
+            div.oncontextmenu = (e) => {
+                 // Only allow if clicking text, not buttons
+                 if(e.target.tagName !== 'BUTTON' && e.target.closest('.message-actions') === null && e.target.closest('.kebab-menu') === null) {
+                     e.stopPropagation();
+                     return true; // Allow default browser menu
+                 }
+                 return false;
+            };
+
             const senderData = usersCache.find(u => u.name === msg.author);
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
@@ -880,30 +948,30 @@
                 </div>
             `;
 
-            // BUTTONS LOGIC (PERMISSIONS LIST)
+            // BUTTONS
             let btnReply = `<button class="action-btn" onclick="window.startReply('${msgId}', '${msg.author}')">↩️</button>`;
-            let btnReact = `<button class="action-btn" onclick="window.openReactionModal('${msgId}')">😀</button>`;
+            let btnReact = `<button class="action-btn" onclick="window.openEmojiPopover('${msgId}', event)">😀</button>`;
+            let btnMore = `<button class="action-btn" onclick="window.toggleKebab('${msgId}', event)">⋮</button>`; // Kebab menu trigger
+            
             let btnEdit = "";
             let btnDelete = "";
 
-            // 1. Edit: Owner Only
-            if (isSelf) {
-                btnEdit = `<button class="action-btn" onclick="window.startEdit('${msgId}')">✏️</button>`;
-            }
+            // Kebab Items (Hidden inside menu)
+            let kebabItems = "";
+            if (isSelf) kebabItems += `<button class="kebab-item" onclick="window.startEdit('${msgId}')">Редагувати</button>`;
+            if (isSelf || isAdmin) kebabItems += `<button class="kebab-item danger" onclick="window.deleteMessage('${msgId}')">Видалити</button>`;
 
-            // 2. Delete: Owner OR Admin (Foreign messages)
-            if (isSelf || isAdmin) {
-                btnDelete = `<button class="action-btn" onclick="window.deleteMessage('${msgId}')" style="color:var(--danger)">🗑</button>`;
-            }
-
+            // Actions Container
             div.innerHTML = `
                 ${replyHTML}
                 ${editUI}
                 <div class="message-actions">
                     ${btnReply}
                     ${btnReact}
-                    ${btnEdit}
-                    ${btnDelete}
+                    ${btnMore}
+                </div>
+                <div class="kebab-menu" id="kebab-${msgId}">
+                    ${kebabItems}
                 </div>
                 <div class="msg-avatar ${adminClass}" id="avatar-${msgId}" style="background-color: ${window.stringToColor(msg.author || 'User')};">${avatarInitial}</div>
                 <div class="msg-content">
@@ -949,6 +1017,16 @@
             }).join('');
         };
 
+        // --- KEBAB MENU LOGIC ---
+        window.toggleKebab = function(msgId, e) {
+            e.stopPropagation();
+            // Close all others
+            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+            
+            const menu = document.getElementById(`kebab-${msgId}`);
+            menu.classList.toggle('open');
+        };
+
         // --- REPLY SYSTEM ---
         window.startReply = function(msgId, authorName) {
             const input = document.getElementById('messageInput');
@@ -989,17 +1067,20 @@
             input.value = "";
         };
 
-        // --- EDITING (OWNER ONLY) ---
+        // --- EDITING ---
         window.startEdit = function(msgId) {
             window.editingMsgId = msgId;
             const el = document.getElementById(`msg-${msgId}`);
             const textEl = el.querySelector('.msg-text');
             const editUI = el.querySelector('.edit-ui-wrapper');
             
-            editUI.querySelector('textarea').value = textEl.innerText; // Raw text for edit
+            editUI.querySelector('textarea').value = textEl.innerText; 
             textEl.style.display = 'none';
             editUI.style.display = 'flex';
             editUI.querySelector('textarea').focus();
+            
+            // Close kebab if open
+            el.querySelector('.kebab-menu').classList.remove('open');
         };
 
         window.cancelEdit = function(msgId) {
@@ -1007,7 +1088,7 @@
             const textEl = el.querySelector('.msg-text');
             const editUI = el.querySelector('.edit-ui-wrapper');
             
-            textEl.style.display = 'block'; // Show original (which might have markdown)
+            textEl.style.display = 'block'; 
             editUI.style.display = 'none';
             window.editingMsgId = null;
         };
@@ -1027,7 +1108,7 @@
             }
         };
 
-        // --- DELETE (SELF OR ADMIN) ---
+        // --- DELETE ---
         window.deleteMessage = async function(msgId) {
             if(confirm('Видалити повідомлення?')) {
                 try {
@@ -1040,30 +1121,32 @@
             }
         };
 
-        // --- REACTIONS ---
-        const reactionModal = document.createElement('div');
-        reactionModal.className = 'modal-overlay';
-        reactionModal.innerHTML = `
-            <div class="settings-modal" style="background: var(--sidebar-bg); border: 1px solid var(--glass-border); padding: 24px; width: 90%; max-width: 440px; color: white; position: relative; backdrop-filter: blur(20px);">
-                <button class="close-modal" onclick="window.closeModals('reactionModal')">&times;</button>
-                <h2 style="text-align: center; color: white; font-weight: 700;">РЕАКЦІЇ</h2>
-                <div class="emoji-grid" id="emojiGrid"></div>
-            </div>
-        `;
-        document.body.appendChild(reactionModal);
-
-        commonEmojis.forEach(e => {
-            const btn = document.createElement('div');
-            btn.className = 'emoji-btn';
-            btn.innerText = e;
-            btn.onclick = () => { window.addReaction(currentChannelId, window.activeMsgId, e); window.closeModals('reactionModal'); };
-            reactionModal.querySelector('#emojiGrid').appendChild(btn);
-        });
-
-        window.openReactionModal = function(msgId) {
-            window.activeMsgId = msgId;
-            reactionModal.style.display = 'flex';
+        // --- EMOJI POPOVER (FIX FOR LAG) ---
+        let activePopoverMsgId = null;
+        
+        window.openEmojiPopover = function(msgId, e) {
+            e.stopPropagation();
+            activePopoverMsgId = msgId;
+            
+            const popover = document.getElementById('emojiPopover');
+            
+            // Calculate position relative to button
+            const rect = e.target.getBoundingClientRect();
+            popover.style.top = (rect.top - 150) + 'px'; // Show above
+            popover.style.left = rect.left + 'px';
+            
+            popover.style.display = 'block';
         };
+
+        // Close popover on click outside
+        document.addEventListener('click', (e) => {
+            const popover = document.getElementById('emojiPopover');
+            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('action-btn')) {
+                popover.style.display = 'none';
+            }
+            // Close Kebabs
+            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+        });
 
         window.addReaction = async function(channelId, msgId, emoji) {
             const msgRef = doc(db, "channels", channelId, "messages", msgId);
@@ -1093,7 +1176,6 @@
                 let users = [];
                 snap.forEach(d => users.push(d.data()));
                 
-                // Update cache for message rendering
                 usersCache = users;
 
                 document.getElementById('membersCount').innerText = users.length;
@@ -1125,7 +1207,7 @@
             }
         };
 
-        // --- MENTIONS (@) ---
+        // --- MENTIONS ---
         const mentionPopup = document.getElementById('mentionPopup');
         
         document.getElementById('messageInput').addEventListener('input', async function(e) {
@@ -1180,6 +1262,21 @@
             }
         });
 
+        window.handleFileSelect = function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            pendingBlob = file;
+            const objectUrl = URL.createObjectURL(file);
+            const previewImg = document.getElementById('previewImage');
+            previewImg.src = objectUrl;
+            
+            document.getElementById('previewModal').style.display = 'flex';
+            pendingInput = document.getElementById('messageInput');
+            
+            e.target.value = "";
+        };
+
         window.sendUpload = async function() {
             if (!pendingBlob) return;
             try {
@@ -1187,8 +1284,10 @@
                 await uploadBytes(storageRef, pendingBlob);
                 const url = await getDownloadURL(storageRef);
                 
+                // BUG FIX: Define afterText correctly
                 const insertPoint = pendingInput.selectionStart || pendingInput.value.length;
                 const beforeText = pendingInput.value.slice(0, insertPoint);
+                const afterText = pendingInput.value.slice(insertPoint); // Was missing before
                 const markdown = `\n![image](${url})\n`;
                 
                 pendingInput.value = beforeText + markdown + afterText;
@@ -1255,8 +1354,108 @@
         });
 
         // --- LOGOUT ---
-        window.logout = function() { signOut(auth).then(() => window.location.href = "index.html"); };
+        window.logout = function() { signOut(auth).then(() => window.location.href = "index.html")); };
 
+    </script>
+    
+    <!-- EMOJI POPOVER CONTAINER (Appended outside logic to keep it clean) -->
+    <div id="emojiPopover">
+        <div class="emoji-grid" id="emojiGrid">
+            <!-- Filled by JS -->
+        </div>
+    </div>
+    
+    <!-- PARTICLES SYSTEM SCRIPT -->
+    <script>
+        // Initialize Emojis in Grid
+        const grid = document.getElementById('emojiGrid');
+        const emojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
+        emojis.forEach(emoji => {
+            const btn = document.createElement('div');
+            btn.className = 'emoji-btn';
+            btn.innerText = emoji;
+            btn.onclick = () => { 
+                window.addReaction(currentChannelId, activePopoverMsgId, emoji); 
+                document.getElementById('emojiPopover').style.display = 'none';
+            };
+            grid.appendChild(btn);
+        });
+
+        const canvas = document.getElementById('particles-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2 + 1;
+                this.alpha = Math.random() * 0.5;
+                this.targetAlpha = Math.random() * 0.5 + 0.1;
+                this.life = Math.random() * 100;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+
+                // Twinkle effect
+                this.alpha += (this.targetAlpha - this.alpha) *0.02;
+                if (Math.abs(this.targetAlpha - this.alpha) < 0.01) {
+                    this.targetAlpha = Math.random() *0.5 + 0.1;
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size,0, Math.PI *2);
+                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`; // Green
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.floor(window.innerWidth * window.innerHeight / 15000);
+            for (let i =0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            // Draw subtle gradient background
+            const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
+            gradient.addColorStop(0, 'rgba(34, 197, 94, 0.05)');
+            gradient.addColorStop(1, 'rgba(3, 5, 7, 0.2)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        initParticles();
+        animate();
     </script>
 </body>
 </html>
