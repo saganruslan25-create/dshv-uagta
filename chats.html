@@ -2,249 +2,333 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
-    <title>ДШВ | ТАКТИЧНИЙ ЗВ'ЯЗОК</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ДШВ | DISCORD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <style>
+        /* ПАРАМЕТРИ (НАШ ГРІН) */
         :root {
-            --primary: #22c55e;
-            --primary-bright: #4ade80;
-            --bg: #030507;
-            --card-bg: #0a0c10;
-            --glass-border: rgba(34, 197, 94, 0.2);
-            --danger: #ef4444;
-            --warning: #fbbf24;
-            --mention-bg: rgba(251, 191, 36, 0.2);
-            --mention-text: #fbbf24;
+            --bg-tertiary: #202225;    /* Темний фон чату */
+            --bg-primary: #2b2d31;     /* Темний фон панелей */
+            --bg-secondary: #1e1f22;   /* Темний фон сайдбару */
+            --modifier-selected: #393c43; /* Вибраний канал */
+            --header-secondary: #111214; /* Хедер */
+            --text-normal: #dcddde;     /* Текст */
+            --text-muted: #96989d;      /* Сірий текст */
+            --interactive-normal: #b9bbbe; /* Іконки */
+            --brand-experiment: #22c55e; /* Наш зелений бренд */
+            --brand: #3ba55d;           /* Дікорд блюш */
+            --red: #ed4245;
         }
 
-        /* СТИЛІЗАЦІЯ СКРОЛБАРУ ПІД СТИЛЬ САЙТУ */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #05070a; }
-        ::-webkit-scrollbar-thumb { background: #1a1d21; border-radius: 10px; border: 1px solid #0a0c10; }
-        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-tertiary);
+            color: var(--text-normal);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: grid;
+            grid-template-columns: 72px 240px 1fr 240px; /* Сервери | Меню | Чат | Юзери */
+            overflow: hidden;
+            user-select: none;
+        }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.2s, transform 0.2s; }
+        /* 1. СЕРВЕРИ (ЛІВА СМАЖНА КОЛОНКА) */
+        .servers-nav {
+            background-color: var(--bg-primary);
+            padding-top: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-y: auto;
+        }
         
-        html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); }
-
-        body { 
-            background-image: radial-gradient(circle at 50% 0%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
-            color: white; font-family: 'Inter', sans-serif; display: flex; user-select: none;
+        .server-icon {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background-color: var(--bg-primary);
+            margin-bottom: 8px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: 0.2s;
+            color: var(--text-normal);
+            font-size: 22px;
+            position: relative;
         }
+        .server-icon:hover, .server-icon.active { border-radius: 16px; background-color: var(--brand-experiment); color: white; }
+        .server-divider { width: 32px; height: 2px; background: var(--modifier-selected); border-radius: 1px; margin-bottom: 8px; }
+        .server-home { color: var(--text-normal); background-color: var(--brand-experiment); margin-bottom: 8px; }
 
-        @keyframes highlightMsg {
-            0% { background: rgba(34, 197, 94, 0.4); border-left: 3px solid var(--primary-bright); }
-            100% { background: transparent; border-left: 3px solid transparent; }
-        }
-        .msg-highlighted { animation: highlightMsg 2s ease-out; }
-
-        /* САЙДБАР */
+        /* 2. САЙДБАР (КАНАЛИ) */
         .sidebar {
-            width: 320px; min-width: 320px; background: var(--card-bg); border-right: 1px solid var(--glass-border);
-            display: flex; flex-direction: column; padding: 25px; z-index: 1000; height: 100%; position: relative;
+            background-color: var(--bg-secondary);
+            display: flex;
+            flex-direction: column;
         }
-
-        .sidebar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .close-sidebar-btn { display: none; background: none; border: 1px solid var(--glass-border); color: white; padding: 5px 10px; border-radius: 8px; cursor: pointer; }
-
-        .dsw-title {
-            background: var(--primary); color: black; padding: 8px 15px; border-radius: 8px;
-            font-weight: 900; text-align: center; text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(34, 197, 94, 0.3); letter-spacing: 1px; flex-grow: 1;
+        .sidebar-header {
+            height: 48px;
+            padding: 0 16px;
+            display: flex; align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 0 rgba(4,4,5,0.2);
+            font-weight: 800;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
         }
-
-        .back-btn {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border);
-            color: white; padding: 14px; border-radius: 12px; text-decoration: none;
-            text-align: center; font-weight: 800; font-size: 13px; margin-bottom: 20px; display: block;
+        .channels-list {
+            flex: 1;
+            padding: 10px 8px;
+            overflow-y: auto;
         }
-        .back-btn:hover { background: var(--danger); border-color: var(--danger); }
-
-        .channel-list { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+        .category-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            display: flex; justify-content: space-between;
+            align-items: center;
+            margin: 16px 8px 8px 8px;
+            cursor: pointer;
+        }
+        .category-label:hover { color: var(--text-normal); }
         
         .channel-item {
-            padding: 12px 15px; border-radius: 12px; cursor: pointer; color: #777;
-            margin-bottom: 8px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;
-            background: rgba(255,255,255,0.02); border: 1px solid transparent;
+            display: flex; align-items: center;
+            padding: 6px 8px;
+            margin-bottom: 2px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-weight: 500;
+            transition: 0.2s;
         }
-        .channel-item:hover, .channel-item.active { background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); border-color: var(--glass-border); }
-        .channel-item.hidden-channel { opacity: 0.6; }
-
-        .channel-controls { display: flex; align-items: center; gap: 8px; }
-        .drag-handle { cursor: grab; opacity: 0.4; font-size: 18px; padding: 0 5px; }
-        .drag-handle:active { cursor: grabbing; }
-        .chan-del-btn { color: #444; font-size: 14px; cursor: pointer; }
-        .chan-del-btn:hover { color: var(--danger); }
-
-        .create-btn {
-            background: var(--primary); color: black; border: none; padding: 15px;
-            border-radius: 12px; font-weight: 900; cursor: pointer; margin-top: 20px; text-transform: uppercase;
-        }
-
-        /* ЧАТ */
-        .chat-main { flex-grow: 1; display: flex; flex-direction: column; position: relative; min-width: 0; height: 100%; }
+        .channel-item:hover { background-color: var(--modifier-selected); color: var(--text-normal); }
+        .channel-item.active { background-color: rgba(34, 197, 94, 0.2); color: white; }
         
+        .channel-icon { margin-right: 6px; font-size: 20px; color: var(--text-muted); }
+        .channel-item:hover .channel-icon { color: var(--text-normal); }
+        
+        .user-area {
+            background-color: #18191c;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--brand-experiment); display: flex; align-items: center; justify-content: center; font-weight: 700; margin-right: 8px; color: black; }
+        .user-tags { font-size: 14px; font-weight: 600; color: white; }
+        .user-username { font-size: 12px; color: var(--text-muted); display: block; }
+        .mic-icon { margin-left: auto; color: var(--text-muted); cursor: pointer; }
+        .mic-icon:hover { color: var(--text-normal); }
+
+        /* 3. ЧАТ (ЦЕНТР) */
+        .chat-area {
+            background-color: var(--bg-tertiary);
+            display: flex; flex-direction: column;
+        }
         .chat-header {
-            padding: 15px 25px; background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--glass-border); font-weight: 900; font-size: 18px; z-index: 5;
-            display: flex; align-items: center; justify-content: space-between;
+            height: 48px;
+            padding: 0 16px;
+            display: flex; align-items: center;
+            box-shadow: 0 1px 0 rgba(4,4,5,0.2);
+            background-color: var(--bg-tertiary);
+            cursor: pointer;
+        }
+        .header-hashtag { font-size: 24px; color: var(--text-muted); font-weight: 700; margin-right: 8px; }
+        .header-title { font-size: 16px; font-weight: 600; color: white; margin-right: 16px; }
+        .header-desc { font-size: 14px; color: var(--text-muted); font-weight: 500; }
+
+        .messages-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .messages-group-header {
+            font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+            margin: 24px 16px 8px 16px;
         }
 
-        .settings-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            color: white; width: 40px; height: 40px; border-radius: 10px;
-            display: none; align-items: center; justify-content: center; cursor: pointer;
+        .message {
+            display: flex;
+            margin-top: 17px;
+            padding: 0 16px;
+            position: relative;
         }
-
-        .messages-container { flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 2px; scroll-behavior: auto; }
+        .message:hover { background-color: rgba(4,4,5,0.03); } /* Світло при наведенні */
+        .message-content { display: flex; flex: 1; }
         
-        .msg { position: relative; padding: 8px 15px; border-radius: 8px; border-left: 3px solid transparent; }
-        .msg:hover { background: rgba(255, 255, 255, 0.04); }
-        .msg.grouped { padding-top: 2px; padding-bottom: 2px; }
-
-        .msg-header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; margin-top: 10px; }
-        .msg-author { font-weight: 900; color: var(--primary-bright); font-size: 14px; text-transform: uppercase; cursor: pointer; }
-        .msg-time { font-size: 11px; color: #444; }
-
-        .msg-content { line-height: 1.6; white-space: pre-wrap; word-wrap: break-word; color: #ddd; font-size: 15px; }
-
-        .reply-block {
-            border-left: 3px solid var(--warning); background: rgba(251, 191, 36, 0.1);
-            padding: 5px 10px; margin-bottom: 5px; border-radius: 4px; font-size: 12px; color: #aaa;
-            cursor: pointer; max-width: fit-content;
+        .msg-avatar {
+            width: 40px; height: 40px; border-radius: 50%; background: #111; flex-shrink: 0; margin-right: 16px; margin-top: 2px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px; color: white;
         }
         
-        .msg-image { max-width: 100%; max-height: 400px; border-radius: 12px; margin-top: 10px; cursor: zoom-in; border: 1px solid var(--glass-border); display: block;}
+        .msg-header { display: flex; align-items: baseline; margin-bottom: 4px; }
+        .msg-username { font-size: 16px; font-weight: 600; color: white; margin-right: 12px; cursor: pointer; }
+        .msg-username:hover { text-decoration: underline; color: var(--brand-experiment); }
+        .msg-timestamp { font-size: 12px; color: var(--text-muted); }
         
-        .mention { background: var(--mention-bg); color: var(--mention-text); padding: 0 4px; border-radius: 4px; font-weight: bold; }
-
-        .msg-actions {
-            position: absolute; right: 10px; top: -15px;
-            display: none; gap: 5px; z-index: 100; background: var(--card-bg);
-            padding: 4px; border-radius: 8px; border: 1px solid var(--glass-border);
-        }
-        .msg:hover .msg-actions { display: flex; }
+        .msg-text { font-size: 16px; line-height: 1.375rem; color: var(--text-normal); white-space: pre-wrap; word-break: break-word; }
         
-        .action-btn { background: transparent; border: none; color: #888; padding: 6px 10px; cursor: pointer; font-size: 14px; }
+        /* Згадка */
+        .mention { background-color: rgba(88, 101, 242, 0.3); color: #c9cdfb; padding: 0 2px; border-radius: 3px; cursor: pointer; }
+        .mention:hover { background-color: #5865f2; color: white; }
+        .mention-click { cursor: pointer; }
 
-        .typing-indicator { padding: 5px 20px; font-size: 12px; color: var(--primary-bright); font-style: italic; min-height: 22px; font-weight: 600; }
-
-        /* МЕНЮ @ */
-        #mentionBox {
-            position: absolute; bottom: 85px; left: 20px; background: #0a0c10; border: 1px solid var(--glass-border);
-            border-radius: 10px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        /* Кнопки дій над повідомленням (Відповісти, Реакції) */
+        .message-actions {
+            display: none; position: absolute; left: 0; top: -24px; background: #313338; border-radius: 5px; padding: 4px 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 10;
         }
-        .mention-item { padding: 10px 15px; cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .mention-item:hover { background: var(--primary); color: black; }
+        .message:hover .message-actions { display: flex; gap: 5px; }
+        .action-btn { background: none; border: none; color: var(--text-normal); cursor: pointer; font-size: 16px; padding: 2px; border-radius: 4px; }
+        .action-btn:hover { background: var(--interactive-normal); color: var(--text-normal); }
+        
+        /* Реакції */
+        .reactions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+        .reaction { background: #313338; padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; font-size: 14px; cursor: pointer; border: 1px solid #111; color: var(--text-muted); }
+        .reaction:hover { background: #40444b; border-color: #222; color: var(--text-normal); }
+        .reaction-count { margin-left: 6px; font-size: 12px; font-weight: 600; color: white; }
+        .reaction.active { background: var(--brand-experiment); border-color: #22c55e; color: white; }
 
-        /* ВВОД */
-        .chat-input-area { padding: 15px 20px; background: rgba(3, 5, 7, 0.95); border-top: 1px solid var(--glass-border); display: none; flex-direction: column; }
-        .preview-bar { display: none; background: rgba(34, 197, 94, 0.05); padding: 10px 15px; border-radius: 10px 10px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; justify-content: space-between; }
-        .input-wrapper { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 15px; display: flex; align-items: center; padding: 5px 15px; gap: 10px; }
-        textarea { background: none; border: none; color: white; padding: 12px; flex-grow: 1; outline: none; font-family: inherit; resize: none; max-height: 120px; font-size: 16px; }
-        .send-btn { background: var(--primary); color: black; border: none; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-weight: 900; }
-
-        /* МОДАЛКА */
-        .settings-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 2000; display: none; align-items: center; justify-content: center; }
-        .settings-content { background: var(--card-bg); border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 90%; max-width: 450px; }
-        .settings-input, .settings-select { width: 100%; background: #000; border: 1px solid #333; color: white; padding: 12px; border-radius: 8px; margin-top: 5px; outline: none; }
-        .settings-actions { display: flex; gap: 10px; margin-top: 25px; }
-
-        #lightbox { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center; z-index: 10000; cursor: zoom-out; }
-
-        @media (max-width: 768px) {
-            .sidebar { position: absolute; left: -100%; top: 0; bottom: 0; width: 85%; transition: 0.4s; }
-            .sidebar.active { left: 0; }
-            .close-sidebar-btn { display: block; }
+        /* ІНПУТ ЗОНА */
+        .input-area {
+            padding: 0 16px 24px 16px;
+            background-color: var(--bg-tertiary);
+            margin-top: auto;
         }
+        .input-wrapper {
+            background-color: #383a40;
+            border-radius: 8px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+        }
+        .add-btn { background: none; border: none; color: var(--text-muted); font-size: 24px; cursor: pointer; padding: 4px 10px; margin-right: 8px; }
+        .add-btn:hover { color: var(--text-normal); }
+        
+        #messageInput { background: transparent; border: none; color: var(--text-normal); font-size: 16px; width: 100%; padding: 11px 0; outline: none; font-family: 'Inter', sans-serif; }
+        
+        .send-btn { background: var(--brand); border: none; color: white; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; margin-left: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .send-btn:hover { background: var(--brand-experiment); }
+
+        /* ПОПАП МЕНІШН */
+        .mention-popup {
+            display: none; position: absolute; background: #18191c; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.5); width: 200px; max-height: 150px; overflow-y: auto; z-index: 100;
+        }
+        .mention-item { padding: 8px 12px; color: white; cursor: pointer; font-size: 14px; }
+        .mention-item:hover { background: #313338; }
+
+        /* 4. УЧАСНИКИ (ПРАВА) */
+        .members-sidebar {
+            background-color: var(--bg-secondary);
+            padding: 24px 16px;
+            display: flex; flex-direction: column;
+        }
+        .members-header { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 16px; }
+        .member { display: flex; align-items: center; padding: 8px; border-radius: 4px; cursor: pointer; margin-bottom: 4px; color: var(--text-muted); opacity: 0.8; }
+        .member:hover { background-color: var(--modifier-selected); color: var(--text-normal); opacity: 1; }
+        .member-avatar { width: 32px; height: 32px; border-radius: 50%; background: #111; margin-right: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; }
+        .member-name { font-weight: 600; color: var(--text-normal); font-size: 14px; }
+        .member-status { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-left: auto; }
+
+        /* МОДАЛКА (Створення каналу) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-box { background: #36393f; padding: 24px; border-radius: 5px; width: 440px; color: white; box-shadow: 0 0 20px rgba(0,0,0,0.5); animation: slideDown 0.2s; }
+        @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: white; }
+        .modal-input { width: 100%; background: #202225; border: 1px solid #202225; color: var(--text-normal); padding: 10px; border-radius: 3px; margin-bottom: 20px; font-size: 16px; outline: none; }
+        .modal-input:focus { border-color: var(--brand-experiment); }
+        .modal-btn { background: var(--brand); border: none; color: white; padding: 10px; border-radius: 3px; width: 100%; cursor: pointer; font-weight: 500; font-size: 14px; }
+        .modal-btn:hover { background: var(--brand-experiment); }
+
+        /* СКРОЛБАР */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #2e3338; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #1a1b1e; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #141517; }
+
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-    <div id="lightbox" onclick="closeLightbox()">
-        <img id="lightbox-img" src="" style="max-width:95%; max-height:90%;">
-    </div>
+    <!-- 1. СЕРВЕРИ -->
+    <nav class="servers-nav">
+        <div class="server-icon server-home" title="Додому">🛡️</div>
+        <div class="server-divider"></div>
+        <div class="server-icon" title="DSHV">🏆</div>
+    </nav>
 
-    <div id="settingsModal" class="settings-modal">
-        <div class="settings-content">
-            <h3 style="color:var(--primary); margin-bottom:20px;">НАЛАШТУВАННЯ КАНАЛУ</h3>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; color:#666;">НАЗВА КАНАЛУ</label>
-                <input type="text" id="editChannelName" class="settings-input">
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; color:#666;">ДОСТУП (ХТО БАЧИТ)</label>
-                <select id="editViewRole" class="settings-select">
-                    <option value="all">Всі Бійці</option>
-                    <option value="officer">Тільки Офіцери</option>
-                    <option value="admin">Тільки Адміністрація</option>
-                </select>
-            </div>
-            <div style="margin-bottom:15px;">
-                <label style="font-size:12px; color:#666;">ХТО МОЖЕ ПИСАТИ</label>
-                <select id="editWriteRole" class="settings-select">
-                    <option value="all">Всі</option>
-                    <option value="officer">Офіцери</option>
-                    <option value="admin">Адміни</option>
-                </select>
-            </div>
-            <div class="settings-actions">
-                <button onclick="closeSettings()" style="flex:1; padding:15px; border-radius:10px; border:none; background:#222; color:white; cursor:pointer;">СКАСУВАТИ</button>
-                <button onclick="saveChannelSettings()" style="flex:1; padding:15px; border-radius:10px; border:none; background:var(--primary); color:black; font-weight:900; cursor:pointer;">ЗБЕРЕГТИ</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="sidebar" id="sidebar">
+    <!-- 2. САЙДБАР -->
+    <aside class="sidebar">
         <div class="sidebar-header">
-            <div class="dsw-title">ДШВ КАНАЛИ</div>
-            <button class="close-sidebar-btn" onclick="toggleSidebar()">✕</button>
+            <span id="sidebarServerName">DSHV</span>
+            <span style="font-size: 20px;">⌄</span>
         </div>
-        <a href="cabinet.html" class="back-btn">⬅ КАБІНЕТ</a>
-        <div id="channelList" class="channel-list"></div>
-        <button id="adminCreateChannel" class="create-btn" style="display:none;" onclick="createChannel()">+ СТВОРИТИ КАНАЛ</button>
-    </div>
 
-    <div class="chat-main">
-        <div class="chat-header">
-            <div style="display:flex; align-items:center;">
-                <button onclick="toggleSidebar()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer; margin-right:15px;" class="mobile-toggle">☰</button>
-                <span style="color:var(--primary); margin-right:5px;">#</span> <span id="activeChannelName">ОБЕРІТЬ КАНАЛ</span>
-            </div>
-            <div id="settingsBtn" class="settings-btn" onclick="openSettings()">⚙</div>
+        <div class="channels-list" id="channelsList">
+            <!-- Список каналів -->
         </div>
-        
-        <div id="messages" class="messages-container"></div>
-        <div id="typingArea" class="typing-indicator"></div>
-        <div id="mentionBox"></div>
 
-        <div id="inputArea" class="chat-input-area">
-            <div id="previewBar" class="preview-bar">
-                <div id="replyInfo" style="display:none; font-size:13px; color:#aaa;">
-                    <span id="replyText"></span> <span onclick="cancelReply()" style="cursor:pointer; margin-left:10px; color:var(--danger)">✕</span>
-                </div>
-                <div id="imageInfo" style="display:none;">
-                    <img id="imgPreviewThumb" style="height:35px; border-radius:5px; border:1px solid var(--primary);">
-                    <span onclick="cancelImage()" style="cursor:pointer; margin-left:10px; color:var(--danger)">✕</span>
-                </div>
+        <div class="user-area">
+            <div class="user-avatar" id="myAvatar">?</div>
+            <div>
+                <div class="user-tags" id="sidebarName">...</div>
+                <div class="user-username" id="sidebarID">ID: ...</div>
             </div>
+            <div class="mic-icon" onclick="alert('Налаштування мікрофону!')">🎙</div>
+            <button onclick="logout()" style="background:none; border:none; color:var(--red); font-size:16px; cursor:pointer; margin-left: 8px;">🚪</button>
+        </div>
+    </aside>
+
+    <!-- 3. ЧАТ -->
+    <main class="chat-area">
+        <div class="chat-header" onclick="alert('Канал налаштовано!')">
+            <span class="header-hashtag">#</span>
+            <span class="header-title" id="currentChannelName">general</span>
+            <span class="header-desc" id="currentChannelTopic">Опис каналу...</span>
+        </div>
+
+        <div class="messages-wrapper" id="messagesList">
+            <div class="messages-group-header" id="todayDate">Сьогодні</div>
+            <!-- Повідомлення -->
+        </div>
+
+        <!-- Попап Менішн -->
+        <div id="mentionPopup" class="mention-popup"></div>
+
+        <div class="input-area">
+            <button class="add-btn" onclick="openChannelModal()">➕</button>
             <div class="input-wrapper">
-                <label for="imgUpload" style="cursor:pointer; font-size:20px; color:#666;">📷</label>
-                <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
-                <textarea id="msgInput" placeholder="Напишіть повідомлення..." rows="1"></textarea>
+                <input type="text" id="messageInput" placeholder="Написати повідомлення #general" autocomplete="off">
                 <button class="send-btn" onclick="sendMessage()">➤</button>
             </div>
+        </div>
+    </main>
+
+    <!-- 4. УЧАСНИКИ -->
+    <aside class="members-sidebar">
+        <div class="members-header" id="membersHeader">Учасники — 0</div>
+        <div id="membersList">
+            <!-- Учасники -->
+        </div>
+    </aside>
+
+    <!-- МОДАЛКА СТВОРЕННЯ КАНАЛУ -->
+    <div id="channelModal" class="modal-overlay">
+        <div class="modal-box">
+            <h2 class="modal-title">Створити канал</h2>
+            <input type="text" id="newChannelName" class="modal-input" placeholder="Назва каналу">
+            <button class="modal-btn" onclick="createChannel()">Створити канал</button>
+            <button onclick="document.getElementById('channelModal').style.display='none'" style="background:none; border:none; color:var(--text-muted); margin-top:10px; cursor:pointer;">Скасувати</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc, updateDoc, writeBatch, getDocs, setDoc, deleteField, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, addDoc, query, orderBy, serverTimestamp, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -259,306 +343,411 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let user = null, userData = null, activeChannelId = localStorage.getItem('lastChatID') || null;
-        let activeChannelData = null, unsubMessages = null, unsubTyping = null;
-        let replyTo = null, currentBase64Img = null, allUsers = [], typingTimeout = null;
-        let lastVisibleMsg = null, isLoadingMore = false, canLoadMore = true;
+        let currentUID = null;
+        let myData = null;
+        let currentChannelId = 'general'; // Стандартний канал
+        
+        // Локальна база каналів (щоб не читати з firestore при перезавантаженні)
+        let channelsCache = [
+            { id: 'general', name: 'general', topic: 'Загальний чат для усієї команди' },
+            { id: 'news', name: 'news', topic: 'Оновлення та новини' }
+        ];
 
-        onAuthStateChanged(auth, async (u) => {
-            if (u) {
-                user = u;
-                const snap = await getDoc(doc(db, "users", u.uid));
-                userData = snap.data();
-                if (userData.role === 'admin') {
-                    document.getElementById('adminCreateChannel').style.display = 'block';
-                    document.getElementById('settingsBtn').style.display = 'flex';
-                }
-                loadChannels();
-                loadUsersList();
-            } else { window.location.href = "index.html"; }
+        // --- АУТЕНТИФІКАЦІЯ ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = "index.html"; return; }
+            currentUID = user.uid;
+            initChat();
         });
 
-        // ПІДТРИМКА CTRL+V
-        document.getElementById('msgInput').addEventListener('paste', (e) => {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let i in items) {
-                if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) {
-                    processImage(items[i].getAsFile());
-                }
+        async function initChat() {
+            // Завантаження профілю
+            const snap = await getDoc(doc(db, "users", currentUID));
+            if (snap.exists()) {
+                myData = snap.data();
+                document.getElementById('sidebarName').innerText = myData.name;
+                document.getElementById('sidebarID').innerText = myData.gameID ? `ID: ${myData.gameID}` : "ID: ...";
+                document.getElementById('myAvatar').innerText = myData.name.charAt(0).toUpperCase();
+                
+                // Слухаємо канали з бази даних (Реальне створення каналів)
+                listenToChannels();
+                // Слухаємо повідомлення поточного каналу
+                loadMessages(currentChannelId);
+                // Слухаємо список користувачів
+                loadUsers();
             }
-        });
-
-        function processImage(file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    let w = img.width, h = img.height, max = 1280;
-                    if (w > h) { if (w > max) { h *= max/w; w = max; } }
-                    else { if (h > max) { w *= max/h; h = max; } }
-                    canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    currentBase64Img = canvas.toDataURL('image/jpeg', 0.6);
-                    document.getElementById('previewBar').style.display = 'flex';
-                    document.getElementById('imageInfo').style.display = 'flex';
-                    document.getElementById('imgPreviewThumb').src = currentBase64Img;
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
         }
 
-        async function loadUsersList() {
-            const s = await getDocs(collection(db, "users"));
-            allUsers = []; s.forEach(d => allUsers.push(d.data().name));
-        }
-
-        function loadChannels() {
-            onSnapshot(query(collection(db, "channels"), orderBy("index", "asc")), (snap) => {
-                const list = document.getElementById('channelList');
+        // --- СИСТЕМА КАНАЛІВ (DB) ---
+        function listenToChannels() {
+            const list = document.getElementById('channelsList');
+            list.innerHTML = ""; // Очистити старий HTML
+            
+            const q = query(collection(db, "channels"), orderBy("createdAt", "asc"));
+            onSnapshot(q, (snap) => {
                 list.innerHTML = "";
-                snap.forEach(d => {
-                    const ch = d.data();
-                    if (userData.role !== 'admin') {
-                        if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
-                        if (ch.viewRole === 'officer' && userData.role === 'soldier') return;
-                    }
-                    const item = document.createElement('div');
-                    item.className = `channel-item ${d.id === activeChannelId ? 'active' : ''} ${ch.viewRole !== 'all' ? 'hidden-channel' : ''}`;
-                    item.dataset.id = d.id;
-                    
-                    // ПОВЕРНУТО ЗАМОЧКИ ТА РУЧКИ ПЕРЕТЯГУВАННЯ
-                    const lockIcon = ch.viewRole !== 'all' ? '<span style="margin-right:8px; font-size:12px;">🔒</span>' : '';
-                    const dragIcon = userData.role === 'admin' ? '<span class="drag-handle">⋮⋮</span>' : '';
-                    const delBtn = userData.role === 'admin' ? `<span class="chan-del-btn" onclick="deleteChannel('${d.id}')">✕</span>` : '';
+                channelsCache = []; // Оновити кеш
+                
+                if (snap.size === 0) {
+                    // Якщо каналів немає в БД, створимо дефолтні (для прикладу)
+                    // У продакшені це можна зробити через адмінку
+                    addDoc(collection(db, "channels"), { name: 'general', topic: 'Загальний чат', createdAt: serverTimestamp() });
+                    return; 
+                }
 
-                    item.innerHTML = `<div>${lockIcon} ${ch.name}</div><div class="channel-controls">${delBtn}${dragIcon}</div>`;
-                    item.onclick = (e) => { 
-                        if(!e.target.classList.contains('chan-del-btn') && !e.target.classList.contains('drag-handle')) 
-                            selectChannel(d.id, ch); 
-                    };
+                snap.forEach(docSnap => {
+                    const ch = docSnap.data();
+                    ch.id = docSnap.id;
+                    channelsCache.push(ch);
+
+                    const isActive = ch.id === currentChannelId;
+                    
+                    const item = document.createElement('div');
+                    item.className = `channel-item ${isActive ? 'active' : ''}`;
+                    item.onclick = () => switchChannel(ch.id);
+                    item.innerHTML = `<span class="channel-icon">#</span> ${ch.name}`;
+                    
+                    if (isActive) {
+                        updateChannelHeader(ch);
+                    }
                     list.appendChild(item);
                 });
-                if (userData.role === 'admin') initSortable();
             });
         }
 
-        function selectChannel(id, chData) {
-            if (activeChannelId) updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
-            activeChannelId = id; activeChannelData = chData;
-            localStorage.setItem('lastChatID', id);
-            document.getElementById('activeChannelName').innerText = chData.name;
-            document.getElementById('inputArea').style.display = checkWritePermission(chData.writeRole) ? 'flex' : 'none';
-            lastVisibleMsg = null; canLoadMore = true;
-            document.getElementById('messages').innerHTML = "";
-            loadMessages(id); listenTyping(id);
+        function updateChannelHeader(channel) {
+            document.getElementById('currentChannelName').innerText = channel.name;
+            document.getElementById('currentChannelTopic').innerText = channel.topic || '';
+            document.getElementById('messageInput').placeholder = `Написати повідомлення #${channel.name}`;
         }
 
-        function checkWritePermission(r) {
-            if (userData.role === 'admin') return true;
-            if (r === 'admin') return false;
-            if (r === 'officer') return userData.role === 'officer';
-            return true;
-        }
-
-        // ПРАВИЛЬНА СИСТЕМА ДРУКУ
-        document.getElementById('msgInput').addEventListener('input', function() {
-            this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
-            if (this.value.trim().length > 0) {
-                setDoc(doc(db, "typing", activeChannelId), { [user.uid]: userData.name }, { merge: true });
-                clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => { updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() }); }, 3000);
-            } else { updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() }); }
-
-            // МЕНЮ @
-            const val = this.value;
-            const atPos = val.lastIndexOf('@');
-            if (atPos !== -1 && (atPos === 0 || val[atPos-1] === ' ')) {
-                const query = val.substring(atPos + 1).toLowerCase();
-                showMentionBox(query);
-            } else { document.getElementById('mentionBox').style.display = 'none'; }
-        });
-
-        function showMentionBox(q) {
-            const box = document.getElementById('mentionBox'); box.innerHTML = "";
-            const filtered = allUsers.filter(u => u.toLowerCase().includes(q));
-            if (filtered.length === 0) { box.style.display = 'none'; return; }
-            filtered.forEach(name => {
-                const d = document.createElement('div'); d.className = 'mention-item';
-                d.innerText = name;
-                d.onclick = () => {
-                    const inp = document.getElementById('msgInput');
-                    const text = inp.value;
-                    const atPos = text.lastIndexOf('@');
-                    inp.value = text.substring(0, atPos) + `@${name} `;
-                    box.style.display = 'none'; inp.focus();
-                };
-                box.appendChild(d);
+        window.switchChannel = (id) => {
+            currentChannelId = id;
+            const ch = channelsCache.find(c => c.id === id);
+            if (ch) updateChannelHeader(ch);
+            
+            // Перезавантаження повідомлень
+            loadMessages(id);
+            
+            // Візуальне оновлення меню
+            const items = document.querySelectorAll('.channel-item');
+            items.forEach(el => {
+                if(el.innerText.includes(ch.name)) el.classList.add('active');
+                else el.classList.remove('active');
             });
-            box.style.display = 'block';
-        }
+        };
 
-        function listenTyping(chid) {
-            if (unsubTyping) unsubTyping();
-            unsubTyping = onSnapshot(doc(db, "typing", chid), (d) => {
-                const data = d.data() || {};
-                const typers = Object.entries(data).filter(([uid, name]) => uid !== user.uid).map(([uid, name]) => name);
-                document.getElementById('typingArea').innerText = typers.length > 0 ? `${typers.join(', ')} пише...` : "";
+        // --- СТВОРЕННЯ КАНАЛУ ---
+        window.openChannelModal = () => document.getElementById('channelModal').style.display = 'flex';
+        window.createChannel = async () => {
+            const name = document.getElementById('newChannelName').value.trim().toLowerCase().replace(/\s/g, '-');
+            if (!name) return alert('Введіть назву');
+            if (channelsCache.some(c => c.name === name)) return alert('Канал з такою назвою вже існує');
+
+            await addDoc(collection(db, "channels"), {
+                name: name,
+                topic: 'Новий канал',
+                createdAt: serverTimestamp()
             });
-        }
 
-        // РОЗУМНЕ ПІДВАНТАЖЕННЯ (БЕЗ СТРИБКІВ)
+            document.getElementById('channelModal').style.display = 'none';
+            document.getElementById('newChannelName').value = "";
+        };
+
+        // --- ЗАВАНТАЖЕННЯ ПОВІДОМЛЕНЬ ---
         function loadMessages(channelId) {
-            if (unsubMessages) unsubMessages();
-            const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "desc"), limit(50));
-            unsubMessages = onSnapshot(q, (snap) => {
-                if (isLoadingMore) return;
-                const container = document.getElementById('messages');
-                const isAtBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
-                container.innerHTML = "";
-                const docs = [...snap.docs].reverse();
-                if (docs.length > 0) lastVisibleMsg = snap.docs[snap.docs.length - 1];
-                renderMessages(docs, container);
-                if (isAtBottom) container.scrollTop = container.scrollHeight;
+            const list = document.getElementById('messagesList');
+            // Очищаємо, крім дати ділителів
+            list.innerHTML = `<div class="messages-group-header" id="todayDate">Сьогодні</div>`;
+            
+            // Слухаємо зміни в реальному часі
+            const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"));
+            
+            // Відписуємось від старого каналу, якщо функція існує (спрощено)
+            if (window.currentListener) window.currentListener();
+            
+            window.currentListener = onSnapshot(q, (snapshot) => {
+                // Якщо це початкове завантаження, ми доповнюємо
+                // Якщо це оновлення, ми перевіряємо зміни
+                
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === "added") {
+                        const msg = change.doc.data();
+                        renderMessage(msg, change.doc.id, list);
+                    } else if (change.type === "modified") {
+                        // Оновлення реакцій
+                        const msg = change.doc.data();
+                        const el = document.getElementById('msg-' + change.doc.id);
+                        if (el) {
+                            // Перезмалювати реакції
+                            const reactionsEl = el.querySelector('.reactions');
+                            reactionsEl.innerHTML = renderReactions(msg.reactions);
+                        }
+                    }
+                });
+
+                // Автопрокрутка
+                list.scrollTop = list.scrollHeight;
             });
         }
 
-        async function loadMoreMessages() {
-            if (!canLoadMore || isLoadingMore || !lastVisibleMsg) return;
-            isLoadingMore = true;
-            const container = document.getElementById('messages');
-            const scrollPos = container.scrollHeight - container.scrollTop; // Запам'ятовуємо позицію від низу
-
-            const q = query(collection(db, "channels", activeChannelId, "messages"), orderBy("createdAt", "desc"), startAfter(lastVisibleMsg), limit(50));
-            const snap = await getDocs(q);
-            if (snap.empty) { canLoadMore = false; isLoadingMore = false; return; }
+        function renderMessage(msg, msgId, container) {
+            const isSelf = msg.uid === currentUID;
+            const avatarInitial = msg.author ? msg.author.charAt(0).toUpperCase() : '?';
+            const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('uk-UA', {hour: '2-digit', minute: '2-digit'}) : '...';
             
-            lastVisibleMsg = snap.docs[snap.docs.length - 1];
-            const newMsgs = [...snap.docs].reverse();
-            const tempDiv = document.createElement('div');
-            renderMessages(newMsgs, tempDiv);
-            container.prepend(...tempDiv.childNodes);
+            // Обробка тексту (Згадки)
+            let contentHtml = (msg.text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            contentHtml = contentHtml.replace(/<br>/g, "<br>"); // Зберігаємо перенеси
             
-            container.scrollTop = container.scrollHeight - scrollPos; // Повертаємо на ту ж точку
-            isLoadingMore = false;
-        }
-
-        document.getElementById('messages').onscroll = function() {
-            if (this.scrollTop < 50) loadMoreMessages();
-        };
-
-        function renderMessages(docs, target) {
-            let lastAuth = null, lastTime = 0;
-            docs.forEach(d => {
-                const m = d.data(); const msgTime = m.createdAt ? m.createdAt.toMillis() : 0;
-                const isGrouped = (lastAuth === m.author && (msgTime - lastTime) < 300000);
-                const div = document.createElement('div');
-                div.className = `msg ${isGrouped ? 'grouped' : ''}`; div.id = `msg-${d.id}`;
-                div.innerHTML = `
-                    ${!isGrouped ? `<div class="msg-header"><span class="msg-author" onclick="mentionUser('${m.author}')">${m.author}</span><span class="msg-time">${m.createdAt ? new Date(msgTime).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}</span></div>` : ''}
-                    ${m.replyTo ? `<div class="reply-block" onclick="scrollToMsg('${m.replyTo.id}')">↩ ${m.replyTo.author}: ${m.replyTo.text.substring(0, 35)}...</div>` : ""}
-                    <div class="msg-content">${formatMarkdown(m.text)}</div>
-                    ${m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : ""}
-                    <div class="msg-actions">
-                        <button class="action-btn" onclick="replyToMessage('${d.id}', '${m.author}', \`${m.text.replace(/`/g, "'")}\`)">↩</button>
-                        ${m.uid === user.uid ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "'")}\`)">✎</button>` : ''}
-                        ${userData.role === 'admin' ? `<button class="action-btn" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
-                    </div>`;
-                target.appendChild(div);
-                lastAuth = m.author; lastTime = msgTime;
+            // Підсвітка згадок
+            contentHtml = contentHtml.replace(/@(.*?)(?:\s|$)/g, (match, name) => {
+                return `<span class="mention-click">@${name}</span>`;
             });
-        }
-
-        window.scrollToMsg = (id) => {
-            const el = document.getElementById(`msg-${id}`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.remove('msg-highlighted'); void el.offsetWidth;
-                el.classList.add('msg-highlighted');
+            
+            // Оформлення Відповіді
+            let replyPreview = "";
+            if (msg.replyTo) {
+                replyPreview = `
+                    <div style="margin-bottom:5px; border-left: 2px solid var(--brand); padding-left: 10px; font-size: 12px; color: var(--text-muted);">
+                        <span style="color: var(--brand); font-weight: 600;">${msg.replyTo.author}</span>: ${(msg.replyTo.text).substring(0, 50)}...
+                    </div>
+                `;
             }
-        };
+
+            const div = document.createElement('div');
+            div.className = "message";
+            div.id = `msg-${msgId}`;
+            div.innerHTML = `
+                ${replyPreview}
+                <div class="message-actions">
+                    <button class="action-btn" onclick="startReply('${msgId}', '${msg.author}')" title="Відповісти">💬</button>
+                    <button class="action-btn" onclick="toggleReactionPicker('${msgId}')" title="Реакції">😀</button>
+                </div>
+                <div class="message-content">
+                    <div class="msg-avatar" style="background-color: ${stringToColor(msg.author || 'User')}">${avatarInitial}</div>
+                    <div style="width:100%;">
+                        <div class="msg-header">
+                            <span class="msg-username">${msg.author}</span>
+                            <span class="msg-timestamp">${time}</span>
+                        </div>
+                        <div class="msg-text">${contentHtml}</div>
+                        <div class="reactions">${renderReactions(msg.reactions)}</div>
+                    </div>
+                </div>
+            `;
+            
+            container.appendChild(div);
+        }
+
+        function renderReactions(reactions) {
+            if (!reactions) return "";
+            return Object.keys(reactions).map(emoji => {
+                const users = reactions[emoji];
+                const count = users.length;
+                const reacted = users.includes(currentUID);
+                return `<div class="reaction ${reacted ? 'active' : ''}" onclick="addReaction('${currentChannelId}', '${window.lastMsgId}', '${emoji}')">${emoji} <span class="reaction-count">${count}</span></div>`;
+            }).join('');
+        }
+
+        // --- НАДІСЛАННЯ ПОВІДОМЛЕННЯ ---
+        let replyingTo = null; // { id, author }
 
         window.sendMessage = async () => {
-            const input = document.getElementById('msgInput'); const text = input.value.trim();
-            if ((!text && !currentBase64Img) || !activeChannelId) return;
-            const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
-            if (replyTo) data.replyTo = replyTo; if (currentBase64Img) data.imageUrl = currentBase64Img;
+            const input = document.getElementById('messageInput');
+            let text = input.value.trim();
             
-            input.value = ""; input.style.height = 'auto'; 
-            cancelReply(); cancelImage();
-            updateDoc(doc(db, "typing", activeChannelId), { [user.uid]: deleteField() });
-            await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
-        };
+            if (!text) return;
 
-        window.openSettings = () => {
-            document.getElementById('editChannelName').value = activeChannelData.name;
-            document.getElementById('editViewRole').value = activeChannelData.viewRole || 'all';
-            document.getElementById('editWriteRole').value = activeChannelData.writeRole || 'all';
-            document.getElementById('settingsModal').style.display = 'flex';
-        };
-        window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
-        window.saveChannelSettings = async () => {
-            await updateDoc(doc(db, "channels", activeChannelId), {
-                name: document.getElementById('editChannelName').value.trim().toUpperCase(),
-                viewRole: document.getElementById('editViewRole').value,
-                writeRole: document.getElementById('editWriteRole').value
-            });
-            closeSettings();
-        };
-
-        function formatMarkdown(t) {
-            if (!t) return "";
-            return t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/@([\wа-яА-ЯёЁіІїЇєЄ ]+)/g, '<span class="mention">@$1</span>');
-        }
-
-        window.replyToMessage = (id, author, text) => {
-            replyTo = { id, author, text };
-            document.getElementById('previewBar').style.display = 'flex';
-            document.getElementById('replyInfo').style.display = 'block';
-            document.getElementById('replyText').innerText = `Відповідь користувачу ${author}`;
-            document.getElementById('msgInput').focus();
-        };
-
-        window.cancelReply = () => { replyTo = null; document.getElementById('replyInfo').style.display = 'none'; checkPreviewBar(); };
-        window.cancelImage = () => { currentBase64Img = null; document.getElementById('imageInfo').style.display = 'none'; checkPreviewBar(); };
-        function checkPreviewBar() { if (!replyTo && !currentBase64Img) document.getElementById('previewBar').style.display = 'none'; }
-        window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); };
-        window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
-        window.closeLightbox = () => document.getElementById('lightbox').style.display = 'none';
-        window.toggleSidebar = () => document.getElementById('sidebar').classList.toggle('active');
-        window.mentionUser = (n) => { const i = document.getElementById('msgInput'); i.value += `@${n} `; i.focus(); };
-        window.deleteMessage = async (id) => { if(confirm("Видалити повідомлення?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id)); };
-        
-        window.createChannel = async () => {
-            const n = prompt("Введіть назву каналу:");
-            if (n) {
-                const s = await getDocs(collection(db, "channels"));
-                await addDoc(collection(db, "channels"), { name: n.toUpperCase(), index: s.size, viewRole: 'all', writeRole: 'all' });
+            // Якщо це відповідь, додаємо префікс (для логіки)
+            if (replyingTo) {
+                text = `@${replyingTo.author}, ${text}`;
+                replyingTo = null;
+                input.placeholder = "Написати повідомлення...";
             }
-        };
-        window.deleteChannel = async (id) => { if (confirm(`Видалити цей канал назавжди?`)) await deleteDoc(doc(db, "channels", id)); };
 
-        function initSortable() {
-            const el = document.getElementById('channelList');
-            if (el.sortableInstance) el.sortableInstance.destroy();
-            el.sortableInstance = Sortable.create(el, {
-                handle: '.drag-handle', animation: 200, ghostClass: 'sortable-ghost',
-                onEnd: async () => {
-                    const batch = writeBatch(db);
-                    document.querySelectorAll('.channel-item').forEach((item, idx) => {
-                        batch.update(doc(db, "channels", item.dataset.id), { index: idx });
-                    });
-                    await batch.commit();
+            // Відправка в Firestore
+            await addDoc(collection(db, "channels", currentChannelId, "messages"), {
+                text: text,
+                uid: currentUID,
+                author: myData.name,
+                timestamp: serverTimestamp(),
+                reactions: {},
+                replyTo: null // Тут можна зберігати об'єкт відповіді, але для простоти ми зробили префікс
+            });
+
+            input.value = "";
+            input.focus();
+        };
+
+        window.startReply = (msgId, authorName) => {
+            replyingTo = { id: msgId, author: authorName };
+            const input = document.getElementById('messageInput');
+            input.placeholder = `Відповідаєте для ${authorName}...`;
+            input.focus();
+        };
+
+        // --- СИСТЕМА РЕАКЦІЙ ---
+        let activeReactionMsgId = null;
+        const commonEmojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
+
+        window.toggleReactionPicker = (msgId) => {
+            activeReactionMsgId = msgId;
+            const picker = document.createElement('div');
+            picker.style.position = 'absolute';
+            picker.style.bottom = '50px';
+            picker.style.left = '16px';
+            picker.style.background = '#18191c';
+            picker.style.borderRadius = '8px';
+            picker.style.padding = '5px';
+            picker.style.display = 'flex';
+            picker.style.flexWrap = 'wrap';
+            picker.style.gap = '5px';
+            picker.style.zIndex = '100';
+            
+            commonEmojis.forEach(emoji => {
+                const btn = document.createElement('div');
+                btn.style.cursor = 'pointer';
+                btn.style.fontSize = '20px';
+                btn.style.padding = '5px';
+                btn.style.borderRadius = '50%';
+                btn.innerText = emoji;
+                btn.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    addReaction(currentChannelId, msgId, emoji);
+                    picker.remove();
+                };
+                picker.appendChild(btn);
+            });
+
+            // Закривати при кліку поза
+            picker.addEventListener('mousedown', (e) => e.stopPropagation());
+
+            document.body.appendChild(picker);
+            
+            // Закрити по таймауту або кліку
+            setTimeout(() => { if(document.body.contains(picker)) picker.remove() }, 5000);
+        };
+
+        window.addReaction = async (channelId, msgId, emoji) => {
+            const msgRef = doc(db, "channels", channelId, "messages", msgId);
+            const snap = await getDoc(msgRef);
+            if (!snap.exists()) return;
+
+            const reactions = snap.data().reactions || {};
+            const users = reactions[emoji] || [];
+            
+            if (users.includes(currentUID)) {
+                // Видаляємо реакцію
+                const newUsers = users.filter(u => u !== currentUID);
+                if (newUsers.length === 0) delete reactions[emoji];
+                else reactions[emoji] = newUsers;
+            } else {
+                // Додаємо реакцію
+                users.push(currentUID);
+                reactions[emoji] = users;
+            }
+
+            await updateDoc(msgRef, { reactions: reactions });
+        };
+
+
+        // --- СИСТЕМА ЗГАДАК (АВТОКОМПЛЕТ) ---
+        const mentionPopup = document.getElementById('mentionPopup');
+        
+        document.getElementById('messageInput').addEventListener('input', async (e) => {
+            const val = e.target.value;
+            const lastChar = val.slice(-1);
+            const beforeLast = val.slice(-2, -1);
+            
+            // Перевірка на @ (після пробілу або на початку)
+            if (lastChar === '@' || (beforeLast !== '@' && val.includes('@') && lastChar !== ' ')) {
+                const mentionIndex = val.lastIndexOf('@');
+                const queryStr = val.slice(mentionIndex + 1).toLowerCase();
+                
+                if (queryStr.length > 0) {
+                    // Фільтруємо кеш юзерів
+                    const filtered = window.usersCache.filter(u => u.name.toLowerCase().includes(queryStr));
+                    
+                    mentionPopup.innerHTML = "";
+                    if (filtered.length > 0) {
+                        mentionPopup.style.display = 'block';
+                        filtered.forEach(u => {
+                            const item = document.createElement('div');
+                            item.className = 'mention-item';
+                            item.innerText = u.name;
+                            item.onclick = () => {
+                                const input = document.getElementById('messageInput');
+                                const beforeText = val.slice(0, mentionIndex + 1); // "@"
+                                const currentText = u.name;
+                                input.value = `${beforeText}${currentText} `;
+                                mentionPopup.style.display = 'none';
+                                input.focus();
+                            };
+                            mentionPopup.appendChild(item);
+                        });
+                    } else {
+                        mentionPopup.style.display = 'none';
+                    }
+                } else {
+                    mentionPopup.style.display = 'none';
                 }
+            } else {
+                mentionPopup.style.display = 'none';
+            }
+        });
+
+        // При кліку поза інпуту - приховати попап
+        document.addEventListener('click', (e) => {
+            if (e.target !== document.getElementById('messageInput') && e.target !== mentionPopup) {
+                mentionPopup.style.display = 'none';
+            }
+        });
+
+        // Обробка Enter
+        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                window.sendMessage();
+            }
+        });
+
+        // --- СПИСОК УЧАСНИКІВ ---
+        async function loadUsers() {
+            const list = document.getElementById('membersList');
+            const snap = await getDocs(collection(db, "users"));
+            
+            let users = [];
+            snap.forEach(d => users.push({id: d.id, ...d.data()}));
+            window.usersCache = users; // Зберігаємо для згадок
+
+            document.getElementById('membersHeader').innerText = `Учасники — ${users.length}`;
+
+            list.innerHTML = "";
+            users.forEach(u => {
+                const item = document.createElement('div');
+                item.className = "member";
+                const initial = u.name ? u.name.charAt(0).toUpperCase() : '?';
+                
+                item.innerHTML = `
+                    <div class="member-avatar" style="background-color: ${stringToColor(u.name || 'User')}">${initial}</div>
+                    <div class="member-name">${u.name}</div>
+                    <div class="member-status">Онлайн</div>
+                `;
+                list.appendChild(item);
             });
         }
 
-        document.getElementById('msgInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        });
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            let c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return '#' + "00000".substring(0, 6 - c.length) + c;
+        }
+
+        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
+
     </script>
 </body>
 </html>
