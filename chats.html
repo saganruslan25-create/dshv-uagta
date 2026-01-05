@@ -524,8 +524,12 @@
             appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
 
-        // --- GLOBALES ---
-        let app, auth, db, storage;
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // --- GLOBALS ---
         let currentUID = null;
         let myData = null;
         let myRole = 'member';
@@ -536,12 +540,16 @@
         let usersCache = [];
         const commonEmojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
 
-        // --- HELPER FUNCTIONS (REWRITE) ---
+        // --- HELPER FUNCTIONS (FIXED & LOGGED) ---
         
-        // Escape attributes safely
-        const safeAttr = (val) => String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/\)/g, '&#041;');
+        // SAFE ATTRIBUTE ESCAPER
+        const safeAttr = (val) => {
+            if (!val) return "";
+            // Replace " (quote), ' (quote), ) (paren)
+            return String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/\)/g, '&#041;');
+        };
         
-        // Escape HTML content safely
+        // SAFE TEXT ESCAPER
         const safeText = (val) => {
             if (!val) return "";
             let str = String(val);
@@ -550,15 +558,15 @@
                       .replace(/>/g, "&gt;");
         };
         
-        // Safe Initialization
+        // SAFE INITIALIZATION
         try {
             app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
             storage = getStorage(app);
-            console.log("Firebase initialized successfully");
+            console.log("✅ Firebase initialized successfully");
         } catch (e) {
-            console.error("FATAL: Firebase Initialization failed", e);
+            console.error("❌ FATAL: Firebase Initialization failed", e);
             alert("Помилка Firebase. Перевірте конфігурацію.");
         }
 
@@ -576,10 +584,11 @@
         };
 
         window.showToast = (message, type = 'success') => {
+            console.log(`[TOAST] ${type}: ${message}`);
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.textContent = message; // Safe text only
+            toast.textContent = message;
             
             const close = document.createElement('span');
             close.innerHTML = '&times;';
@@ -605,6 +614,7 @@
         onAuthStateChanged(auth, (user) => {
             console.log("Auth state changed:", user ? user.uid : "Logged out");
             if (!user) { 
+                console.log("No user, redirecting...");
                 window.location.href = "index.html"; 
                 return; 
             }
@@ -612,17 +622,18 @@
             window.initChat();
         });
 
-        // --- INIT (SYSTEM REWRITE: PROFILE) ---
+        // --- INIT (ROBUST PROFILE SYSTEM) ---
         window.initChat = async function() {
             if (!currentUID) return;
-            console.log("Starting Init Chat for UID:", currentUID);
+            console.log("🚀 Starting Init Chat for UID:", currentUID);
+            
             try {
-                // Attempt to load profile
-                console.log("Fetching profile document...");
-                const snap = await getDoc(doc(db, "users", currentUID));
+                // Set Loading State
+                document.getElementById('sidebarName').textContent = "Loading...";
                 
+                const snap = await getDoc(doc(db, "users", currentUID));
                 if (snap.exists()) {
-                    console.log("Profile document found.");
+                    console.log("✅ Profile document found.");
                     myData = snap.data();
                     myRole = myData.role || 'member'; 
                     
@@ -662,19 +673,21 @@
                     document.getElementById('profileRoleDisplay').textContent = roleText;
                     document.getElementById('profileNameInput').value = myData.name;
                 } else {
-                    console.warn("Profile document DOES NOT exist for UID:", currentUID);
-                    document.getElementById('sidebarName').textContent = "Профіль не знайдено (DB)";
-                    window.showToast("Профіль не знайдено в базі даних", "error");
+                    console.warn("⚠️ Profile document DOES NOT exist for UID:", currentUID);
+                    document.getElementById('sidebarName').textContent = "Профіль не знайдено";
+                    // CRITICAL: Do not throw error, let user see chat
                 }
                 
-                // LOAD CHATS AND MESSAGES ONLY IF PROFILE IS GOOD (OR EXISTS)
+                // ALWAYS TRY TO LOAD CHATS AND USERS
+                console.log("Loading channels...");
                 window.loadChannels();
                 window.loadMessages(currentChannelId);
                 window.loadUsersList();
                 
             } catch (error) {
-                console.error("CRITICAL: Init Chat Error:", error);
-                window.showToast("Помилка завантаження даних", "error");
+                console.error("💥 CRITICAL: Init Chat Error:", error);
+                alert("Помилка ініціалізації чату: " + error.message);
+                window.showToast("Помилка ініціалізації", "error");
             }
         };
 
@@ -691,13 +704,14 @@
             if (!newName) return window.showToast("Введіть ім'я", "warning");
 
             try {
-                console.log("Saving profile...");
                 if (newName !== myData.name) {
+                    console.log("Updating display name to:", newName);
                     await updateProfile(auth.currentUser, { displayName: newName });
                     await updateDoc(doc(db, "users", currentUID), { name: newName });
                 }
 
                 if (file) {
+                    console.log("Uploading new avatar...");
                     const storageRef = ref(storage, `avatars/${currentUID}_${file.name}`);
                     await uploadBytes(storageRef, file);
                     const url = await getDownloadURL(storageRef);
@@ -717,7 +731,7 @@
                 location.reload();
             } catch (error) {
                 console.error("Profile Save Error:", error);
-                window.showToast("Помилка: " + error, "error");
+                window.showToast("Помилка збереження: " + error.message, "error");
             }
         };
 
@@ -740,13 +754,12 @@
             }
         };
 
-        // --- CHANNELS (SYSTEM REWRITE: ALWAYS LOADS) ---
+        // --- CHANNELS (ROBUST DOM) ---
         window.loadChannels = function() {
-            console.log("Loading channels...");
             const list = document.getElementById('channelsList');
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
             
-            // Add Click Listener ONCE for sidebar channels
+            // Click Listener
             if (!list.hasAttribute('data-listener-ready')) {
                 list.addEventListener('click', (e) => {
                     const item = e.target.closest('.channel-item');
@@ -758,19 +771,18 @@
             }
             
             onSnapshot(q, (snapshot) => {
-                console.log("Channels snapshot size:", snapshot.size);
+                console.log("📺 Channels snapshot received:", snapshot.size);
                 list.innerHTML = "";
                 channelsCache = [];
                 
-                // Category
                 const cat = document.createElement('div');
                 cat.className = "category-label";
                 cat.textContent = "ТЕКСТОВІ КАНАЛИ";
                 list.appendChild(cat);
                 
-                // AUTO-REPAIR: If no channels, create 'general' immediately
+                // AUTO-REPAIR: Create 'general' if empty
                 if (snapshot.size === 0) {
-                    console.warn("No channels found. Creating 'general'...");
+                    console.log("⚠️ No channels. Creating 'general'...");
                     addDoc(collection(db, "channels"), { name: 'general', channelOrder: 0, permission: 'public_rw' }).catch(e=>console.log(e));
                     return;
                 }
@@ -780,7 +792,7 @@
                     ch.id = d.id;
                     channelsCache.push(ch);
 
-                    // SAFE CREATION (DOCUMENT ELEMENT)
+                    // SAFE CREATION
                     const item = document.createElement('div');
                     const isActive = ch.id === currentChannelId;
                     
@@ -790,13 +802,13 @@
 
                     const infoDiv = document.createElement('div');
                     infoDiv.className = 'channel-info';
-                    
+                    // Text content (Safe)
                     const iconSpan = document.createElement('span');
                     iconSpan.className = 'channel-icon';
                     iconSpan.textContent = '#';
                     
                     const nameSpan = document.createElement('span');
-                    nameSpan.textContent = ch.name; // Safe text content
+                    nameSpan.textContent = ch.name;
                     
                     infoDiv.appendChild(iconSpan);
                     infoDiv.appendChild(nameSpan);
@@ -930,44 +942,40 @@
             document.getElementById('newChannelName').value = "";
         };
 
-        // --- MESSAGES (SYSTEM REWRITE: ALWAYS LOADS) ---
+        // --- MESSAGES ---
         window.loadMessages = function(channelId) {
-            console.log("Loading messages for channel:", channelId);
+            console.log("💬 Loading messages for:", channelId);
             const list = document.getElementById('messagesList');
             list.innerHTML = `<div class="date-divider">СЬОГОДНІ</div>`;
             
-            try {
-                const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"));
-                
-                if (messagesUnsubscribe) {
-                    messagesUnsubscribe(); 
-                    console.log("Unsubscribed from previous channel");
-                }
-                
-                messagesUnsubscribe = onSnapshot(q, (snapshot) => {
-                    console.log("Messages snapshot received:", snapshot.docs.length);
-                    const isNearBottom = (list.scrollTop + list.clientHeight >= list.scrollHeight - 50);
-
-                    snapshot.docChanges().forEach((change) => {
-                        const msg = change.doc.data();
-                        const msgId = change.doc.id;
-                        if (!msg) return console.warn("Message data is null for:", msgId);
-
-                        if (change.type === "added") {
-                            window.renderMessageUI(msg, msgId, list, msgId);
-                        } else if (change.type === "modified") {
-                            window.updateMessageUI(msgId, msg);
-                        } else if (change.type === "removed") {
-                            const el = document.getElementById(`msg-${msgId}`);
-                            if (el) el.remove();
-                        }
-                    });
-
-                    if (isNearBottom) list.scrollTop = list.scrollHeight;
-                });
-            } catch (e) {
-                console.error("Error setting up message listener:", e);
+            const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"));
+            
+            if (messagesUnsubscribe) {
+                messagesUnsubscribe();
+                console.log("Unsubscribed from previous channel");
             }
+            
+            messagesUnsubscribe = onSnapshot(q, (snapshot) => {
+                console.log("Messages snapshot received:", snapshot.docs.length);
+                const isNearBottom = (list.scrollTop + list.clientHeight >= list.scrollHeight - 50);
+
+                snapshot.docChanges().forEach((change) => {
+                    const msg = change.doc.data();
+                    const msgId = change.doc.id;
+                    if (!msg) return console.warn("Message data is null for:", msgId);
+
+                    if (change.type === "added") {
+                        window.renderMessageUI(msg, msgId, list, msgId);
+                    } else if (change.type === "modified") {
+                        window.updateMessageUI(msgId, msg);
+                    } else if (change.type === "removed") {
+                        const el = document.getElementById(`msg-${msgId}`);
+                        if (el) el.remove();
+                    }
+                });
+
+                if (isNearBottom) list.scrollTop = list.scrollHeight;
+            });
         };
 
         window.renderMessageUI = function(msg, msgId, container, docId) {
@@ -977,6 +985,7 @@
             const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'}) : '...';
             
             let content = msg.text || "";
+            // XSS Prevention
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" style="max-width:100%; max-height:300px; border-radius:8px; margin-top:5px;" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
@@ -989,8 +998,8 @@
                     <div class="reply-preview">
                         <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
                         <div class="reply-content">
-                            <span class="reply-author">${msg.replyTo.author}</span>
-                            <span class="reply-text">${(msg.replyTo.text).substring(0, 40)}...</span>
+                            <span class="reply-author">${safeText(msg.replyTo.author)}</span>
+                            <span class="reply-text">${safeText(msg.replyTo.text).substring(0, 40)}...</span>
                         </div>
                     </div>
                 `;
@@ -1016,13 +1025,13 @@
                 <div class="edit-ui-wrapper" id="edit-wrapper-${msgId}">
                     <textarea id="edit-text-${msgId}" class="edit-textarea"></textarea>
                     <div class="edit-buttons">
-                        <button class="btn-edit-save" data-msg-id="${msgId}" data-action="save-edit">✅</button>
-                        <button class="btn-edit-cancel" data-msg-id="${msgId}" data-action="cancel-edit">❌</button>
+                        <button class="btn-edit-save" data-msg-id="${safeAttr(msgId)}" data-action="save-edit">✅</button>
+                        <button class="btn-edit-cancel" data-msg-id="${safeAttr(msgId)}" data-action="cancel-edit">❌</button>
                     </div>
                 </div>
             `;
 
-            // BUTTONS - DATA ATTRIBUTES ONLY
+            // BUTTONS - USING SAFE ATTRIBUTES
             let btnReply = `<button class="action-btn action-btn-reply" data-msg-id="${safeAttr(msgId)}" data-author="${safeAttr(msg.author)}">↩️</button>`;
             let btnReact = `<button class="action-btn btn-react" data-msg-id="${safeAttr(msgId)}">😀</button>`;
             let btnMore = `<button class="action-btn btn-more" data-msg-id="${safeAttr(msgId)}">⋮</button>`;
@@ -1092,27 +1101,16 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM Content Loaded. Attaching listeners.");
             
-            // CHANNEL LIST CLICK
+            // 1. CHANNEL LIST CLICK (Safe)
             document.getElementById('channelsList').addEventListener('click', (e) => {
                 const item = e.target.closest('.channel-item');
-                if (item) {
+                if (item && item.dataset.id) {
                     window.switchChannel(item.dataset.id);
                 }
             });
 
-            // CHAT HEADER CLICK
-            document.getElementById('chatHeader').addEventListener('click', () => {
-                 window.openChannelSettings(currentChannelId);
-            });
-            
-            // SETTINGS GEAR
-            document.getElementById('settingsGear').addEventListener('click', (e) => {
-                 e.stopPropagation(); 
-                 window.openChannelSettings(currentChannelId);
-            });
-
-            // MESSAGES LIST CLICK
-            document.getElementById('messagesList').addEventListener('click', async (e) => {
+            // 2. MESSAGES LIST CLICK
+            document.getElementById('messagesList').addEventListener('click', (e) => {
                 const replyBtn = e.target.closest('.action-btn-reply');
                 if (replyBtn) {
                     window.startReply(replyBtn.dataset.msgId, replyBtn.dataset.author);
@@ -1147,16 +1145,27 @@
                 if (saveEditBtn) {
                     window.saveEditFromBtn(saveEditBtn);
                 }
-                
-                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
                 if (cancelEditBtn) {
+                    const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
                     window.cancelEdit(cancelEditBtn.dataset.msgId);
                 }
             });
 
-            // CHANNEL LIST CONTEXT MENU
+            // 3. CHAT HEADER CLICK (Safe)
+            const chatHeader = document.getElementById('chatHeader');
+            const settingsGear = document.getElementById('settingsGear');
+            if(chatHeader) {
+                chatHeader.addEventListener('click', () => { window.openChannelSettings(currentChannelId); });
+            }
+            if(settingsGear) {
+                settingsGear.addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    window.openChannelSettings(currentChannelId); 
+                });
+            }
+
+            // 4. CONTEXT MENU (Safe)
             const ctxMenu = document.getElementById('contextMenu');
-            
             document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 const channelItem = e.target.closest('.channel-item');
@@ -1184,8 +1193,9 @@
                 }
             });
 
-            // CONTEXT MENU ACTION HANDLERS
+            // 5. GLOBAL ACTIONS
             document.addEventListener('click', (e) => {
+                // Context Menu Actions
                 const ctxItem = e.target.closest('.ctx-item');
                 if (ctxItem) {
                     const action = ctxItem.dataset.action;
@@ -1199,21 +1209,23 @@
                 // Close menus on outside click
                 const popover = document.getElementById('emojiPopover');
                 const mentionPopup = document.getElementById('mentionPopup');
-                if(!e.target.closest('#emojiPopover') && !e.target.closest('.btn-react') && !e.target.closest('#contextMenu')) {
+                if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react') && !e.target.closest('#contextMenu')) {
                     popover.style.display = 'none';
                     mentionPopup.style.display = 'none';
                 }
                 document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
                 
                 // UI Toggles
+                if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
+                if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
+                
+                // Profile Click
                 const userAreaBtn = document.getElementById('userAreaBtn');
                 if(e.target === userAreaBtn || userAreaBtn.contains(e.target)) {
                     window.openProfile();
                 }
-
-                if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
-                if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
             });
+        });
 
         window.toggleKebab = function(msgId, btnElement) {
             if(btnElement) btnElement.stopPropagation();
@@ -1294,7 +1306,7 @@
                     editedAt: serverTimestamp()
                 });
                 window.showToast("Повідомлення відредаговано", "success");
-                window.cancelEdit(msgId);
+                window.cancelEdit(el.querySelector('.btn-edit-cancel'));
             }
         };
 
@@ -1328,14 +1340,6 @@
             popover.style.display = 'block';
         };
 
-        document.addEventListener('click', (e) => {
-            const popover = document.getElementById('emojiPopover');
-            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
-                popover.style.display = 'none';
-            }
-            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
-        });
-
         window.addReaction = async function(channelId, msgId, emoji) {
             const msgRef = doc(db, "channels", channelId, "messages", msgId);
             const snap = await getDoc(msgRef);
@@ -1356,16 +1360,15 @@
             await updateDoc(msgRef, { reactions: reactions });
         };
 
-        // --- USERS (SYSTEM REWRITE: ALWAYS LOADS) ---
+        // --- USERS (ROBUST) ---
         window.loadUsersList = async function() {
-            console.log("Loading users list...");
             try {
                 const list = document.getElementById('membersList');
                 const snap = await getDocs(collection(db, "users"));
                 let users = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    if(data) users.push(data); // Check if data exists
+                    if(data) users.push(data); 
                 });
                 
                 console.log("Users fetched count:", users.length);
@@ -1510,29 +1513,17 @@
             input.focus();
         };
 
-        // --- EVENTS ---
-        document.addEventListener('click', (e) => {
-            mentionPopup.style.display = 'none';
-            const popover = document.getElementById('emojiPopover');
-            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
-                popover.style.display = 'none';
+        // --- LOGOUT (FIXED) ---
+        window.logout = async () => {
+            try {
+                console.log("Logging out...");
+                await signOut(auth);
+                window.location.href = "index.html";
+            } catch(e) {
+                console.error("Logout failed:", e);
+                window.location.href = "index.html";
             }
-            
-            const ctxMenu = document.getElementById('contextMenu');
-            if(!e.target.closest('#contextMenu')) {
-                ctxMenu.style.display = 'none';
-            }
-            
-            if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
-            if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
-        });
-
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') window.sendMessage();
-        });
-
-        // --- LOGOUT ---
-        window.logout = function() { signOut(auth).then(() => window.location.href = "index.html")); };
+        };
 
     </script>
     
