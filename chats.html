@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FINAL FIX)</title>
+    <title>ДШВ | DISCORD (FINAL)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -354,8 +354,7 @@
         }
         .upload-thumb:hover .remove-thumb { display: flex; }
 
-        /* EMOJI POPUP (SPLIT) */
-        /* 1. REACTION EMOJI POPUP (Inside message, absolute) */
+        /* Emoji Picker (Split) */
         #emojiPopover {
             display: none;
             position: absolute;
@@ -371,7 +370,7 @@
         .emoji-btn { font-size: 24px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; cursor: pointer; padding: 5px; text-align: center; border: 1px solid transparent; }
         .emoji-btn:hover { background: rgba(34, 197, 94, 0.2); border-color: var(--glass-border); }
 
-        /* 2. INPUT EMOJI POPOVER (Fixed, below button) */
+        /* Input Emoji Popover */
         #emojiInputPopover {
             display: none;
             position: fixed;
@@ -379,19 +378,12 @@
             border: 1px solid var(--glass-border);
             border-radius: 8px;
             padding: 8px;
-            width: 240px; /* Smaller width for input */
+            width: 240px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
             z-index: 5000;
         }
         #emojiInputPopover .emoji-btn {
-            font-size: 20px; /* Slightly smaller */
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 5px;
-            text-align: center;
-            border: 1px solid transparent;
-        }
+            font-size: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 4px; cursor: pointer; padding: 5px; text-align: center; border: 1px solid transparent; }
         #emojiInputPopover .emoji-btn:hover { background: rgba(34, 197, 94, 0.2); border-color: var(--glass-border); }
 
         /* Utils */
@@ -553,7 +545,7 @@
             <div class="settings-header"><span class="settings-title">НАЛАШТУВАННЯ</span></div>
             <div class="settings-body">
                 <input type="text" id="settingChannelName" class="settings-input" placeholder="Назва каналу">
-                <div style="color: var(--text-muted); font-size: 12px; font-weight: 700; margin: 15px 0 5px 0; border-top: 1px solid rgba(255,255,255,0.05);">ДОСТУП</div>
+                <div style="color: var(--text-muted); font-size: 12px; font-weight: 700; margin: 15px 0 5px 0; border-top: 1px solid rgba(255, 255, 255, 0.05);">ДОСТУП</div>
                 <select id="settingPermission" class="settings-select">
                     <option value="public_rw">Усі можуть читати і писати</option>
                     <option value="public_ro">Усі можуть читати, адміни писати</option>
@@ -721,6 +713,7 @@
                         avatarBig.style.backgroundColor = color;
                         avatarBig.textContent = initial;
                     }
+                    // Admin Glow Status
                     if (myRole === 'admin') avatarSmall.classList.add('admin-status');
                     
                     let roleText = "БОЄЦЬ";
@@ -852,6 +845,7 @@
                 if (isActive) {
                     document.getElementById('currentChannelName').textContent = ch.name;
                     document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
+                    document.getElementById('sidebar').style.display = 'flex';
                 }
             });
 
@@ -936,18 +930,15 @@
             document.getElementById('newChannelName').value = "";
         };
 
-        // --- MESSAGES (FIXED LOGIC 3) ---
+        // --- MESSAGES ---
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
-            // Always show loading at start of fetch
-            list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження останніх 30...</div>`;
-            
+            list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "desc"), limit(30));
             if (messagesUnsubscribe) { messagesUnsubscribe(); }
             messagesUnsubscribe = onSnapshot(q, (snapshot) => {
-                // Clear loading text immediately
-                list.innerHTML = ""; 
-
+                // FIX: IMMEDIATE CLEAR
+                list.innerHTML = "";
                 if (snapshot.empty) {
                     list.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Повідомлень немає</div>';
                     return;
@@ -958,7 +949,6 @@
                     const msgId = change.doc.id;
                     if (!msg) return;
 
-                    // Prevent duplicate DOM
                     if (document.getElementById(`msg-${msgId}`)) return;
 
                     if (change.type === "added") {
@@ -974,12 +964,10 @@
                         if (el) el.remove();
                     }
                 });
-                
-                // Handle case where snapshot wasn't empty but somehow UI is empty
-                if (list.children.length === 0) list.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Повідомлень немає</div>';
             });
         };
 
+        // --- CRITICAL FIX: DUPLICATE VARIABLES REMOVED ---
         window.renderMessageUI = function(msg, msgId, container, position) {
             const isSelf = msg.uid === currentUID;
             const isAdmin = myRole === 'admin';
@@ -990,6 +978,11 @@
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
+
+            // --- CALCULATE ONCE ---
+            const senderData = usersCache.find(u => u.name === msg.author);
+            const isSenderAdmin = senderData && senderData.role === 'admin';
+            const adminClass = isSenderAdmin ? 'admin' : '';
 
             let attachmentsHTML = "";
             if (msg.attachments && msg.attachments.length > 0) {
@@ -1036,10 +1029,6 @@
                  }
                  return false;
             };
-
-            const senderData = usersCache.find(u => u.name === msg.author);
-            const isSenderAdmin = senderData && senderData.role === 'admin';
-            const adminClass = isSenderAdmin ? 'admin' : '';
 
             // BUTTONS
             const btnReply = document.createElement('button');
@@ -1093,12 +1082,7 @@
             if (isSelf) document.getElementById(`kebab-edit-${msgId}`).onclick = () => window.startEdit(msgId);
             if (isSelf || isAdmin) document.getElementById(`kebab-del-${msgId}`).onclick = () => window.deleteMessage(msgId);
 
-            // Avatar
-            const senderData = usersCache.find(u => u.name === msg.author);
-            const isSenderAdmin = senderData && senderData.role === 'admin';
-            const adminClass = isSenderAdmin ? 'admin' : '';
-
-            // Reactions
+            // REACTIONS
             let reactionsHTML = "";
             if(msg.reactions) {
                 reactionsHTML = Object.keys(msg.reactions).map(emoji => {
@@ -1155,7 +1139,7 @@
 
             const textEl = el.querySelector('.msg-text');
             const reactionsContainer = el.querySelector('.reactions');
-            const attachmentContainer = el.querySelector('.msg-attachments') || document.createElement('div'); 
+            const attachmentContainer = el.querySelector('.msg-attachments') || document.createElement('div'); // Create if missing
             
             if (textEl && msg.text) {
                 let content = msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -1163,7 +1147,7 @@
                 content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
                 textEl.innerHTML = content;
             }
-
+            
             // Handle Attachments Update
             if (msg.attachments && msg.attachments.length > 0) {
                 let attHTML = '<div class="msg-attachments">';
@@ -1183,7 +1167,7 @@
                     if(oldAtt) oldAtt.remove();
                 }
                 attachmentContainer.innerHTML = attHTML;
-                el.insertBefore(attachmentContainer, textEl);
+                el.insertBefore(attachmentContainer, textEl); // Insert above text
             }
 
             // Refresh reactions
@@ -1218,7 +1202,7 @@
             }).join('');
         };
 
-        // --- EVENT HANDLERS ---
+        // --- GLOBAL EVENT HANDLERS ---
         document.addEventListener('DOMContentLoaded', () => {
             // CHANNEL LIST CLICK
             document.getElementById('channelsList').addEventListener('click', (e) => {
@@ -1307,7 +1291,7 @@
                 }
             });
 
-            // GLOBAL CLICK
+            // 5. GLOBAL CLICK
             document.addEventListener('click', (e) => {
                 const ctxItem = e.target.closest('.ctx-item');
                 if (ctxItem) {
@@ -1321,16 +1305,12 @@
                 
                 // Close menus
                 const popover = document.getElementById('emojiPopover');
-                const inputPopover = document.getElementById('emojiInputPopover');
                 const mentionPopup = document.getElementById('mentionPopup');
                 const replyArea = document.getElementById('replyPreviewArea');
-                
-                // Close Popovers if clicked outside
                 const emojiBtn = e.target.closest('#emojiPickerBtn');
                 
                 if(!e.target.closest('#emojiPopover') && !emojiBtn && !e.target.classList.contains('btn-react') && !e.target.closest('#contextMenu')) {
                     popover.style.display = 'none';
-                    inputPopover.style.display = 'none';
                     mentionPopup.style.display = 'none';
                 }
                 ctxMenu.style.display = 'none';
@@ -1349,20 +1329,22 @@
 
         window.toggleKebab = function(msgId, btnElement) {
             if(btnElement) btnElement.stopPropagation();
+            
             document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
             const menu = document.getElementById(`kebab-${msgId}`);
             menu.classList.toggle('open');
         };
 
-        // --- MESSAGING & ATTACHMENTS (LOGIC 4 & 5) ---
+        // --- MESSAGING & ATTACHMENTS ---
         window.sendMessage = async function() {
+            if (!myData) { alert("Помилка даних"); return; }
+            if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
             const input = document.getElementById('messageInput');
             let text = input.value.trim();
             
-            if (!myData) { alert("Помилка даних"); return; }
-            if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
             if (text.length > 500) return window.showToast("Максимум 500 символів", "error");
-            
+            if (!text && pendingBlobs.length === 0) return; 
+
             // Send text immediately, attachments later
             const docRef = await addDoc(collection(db, "channels", currentChannelId, "messages"), {
                 text: text,
@@ -1370,11 +1352,11 @@
                 author: myData.name,
                 timestamp: serverTimestamp(),
                 reactions: {},
-                replyTo: null,
+                replyTo: null, // Simplified for now
                 attachments: [],
                 createdAt: Date.now()
             });
-            
+
             // Handle attachments asynchronously
             if (pendingBlobs.length > 0) {
                 window.showToast("Надсилання фото...", "info");
@@ -1394,21 +1376,72 @@
                     await updateDoc(docRef, { attachments: newAttachments });
                     window.showToast("Фото надіслано", "success");
                     
+                    // Clear pending blobs
                     pendingBlobs = [];
                     window.renderUploadGallery();
                 } catch (err) {
                     window.showToast("Помилка фото", "error");
                 }
             }
-
+            
             input.value = "";
             window.cancelReply();
         };
 
-        // --- EMOJI POPOVER (LOGIC 1 & 5) ---
+        // --- EDITING ---
+        window.startEdit = function(msgId) {
+            const el = document.getElementById(`msg-${msgId}`);
+            const textEl = el.querySelector('.msg-text');
+            const editUI = el.querySelector('.edit-ui-wrapper');
+            
+            editUI.querySelector('textarea').value = textEl.innerText; 
+            textEl.style.display = 'none';
+            editUI.style.display = 'flex';
+            editUI.querySelector('textarea').focus();
+            
+            el.querySelector('.kebab-menu').classList.remove('open');
+        };
+
+        window.cancelEdit = function(msgId) {
+            const el = document.getElementById(`msg-${msgId}`);
+            const textEl = el.querySelector('.msg-text');
+            const editUI = el.querySelector('.edit-ui-wrapper');
+            
+            textEl.style.display = 'block'; 
+            editUI.style.display = 'none';
+        };
+
+        window.saveEditFromBtn = async function(msgId) {
+            if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
+            const el = document.getElementById(`msg-${msgId}`);
+            const textVal = el.querySelector('.edit-textarea').value;
+            
+            if (textVal.length > 500) return window.showToast("Повідомлення не може бути довше 500 символів", "error");
+
+            if (textVal.trim()) {
+                await updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
+                    text: textVal,
+                    editedAt: serverTimestamp()
+                });
+                window.showToast("Повідомлення відредаговано", "success");
+                window.cancelEdit(msgId);
+            }
+        };
+
+        // --- DELETE ---
+        window.deleteMessage = async function(msgId) {
+            if(confirm('Видалити повідомлення?')) {
+                try {
+                    await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
+                    window.showToast("Повідомлення видалено", "success");
+                } catch (e) {
+                    window.showToast("Помилка видалення", "error");
+                }
+            }
+        };
+
+        // --- EMOJI POPOVER ---
         let activePopoverMsgId = null;
-        
-        // 1. REACTION EMOJI (Inside message)
         window.openEmojiPopover = function(msgId, btnElement) {
             if(btnElement) btnElement.stopPropagation();
             activePopoverMsgId = msgId;
@@ -1423,24 +1456,6 @@
             popover.style.top = (topPos + popoverHeight > windowHeight ? rect.top - popoverHeight : topPos) + 'px'; 
             popover.style.left = rect.left + 'px';
             popover.style.display = 'block';
-        };
-
-        // 5. INPUT EMOJI (Fixed position)
-        window.toggleInputEmoji = function(btnElement) {
-            if(btnElement) btnElement.stopPropagation();
-            const popover = document.getElementById('emojiInputPopover');
-            const rect = btnElement.getBoundingClientRect();
-            
-            // Position: Below button
-            popover.style.top = (rect.bottom + 10) + 'px'; 
-            popover.style.left = rect.left + 'px';
-            
-            // Check if off-screen bottom
-            if (rect.bottom + 250 > window.innerHeight) {
-                 popover.style.top = (rect.top - 240) + 'px'; // Show above
-            }
-            
-            popover.style.display = popover.style.display === 'none' ? 'block' : 'none';
         };
 
         window.addReaction = async function(channelId, msgId, emoji) {
@@ -1460,16 +1475,19 @@
             await updateDoc(msgRef, { reactions: reactions });
         };
 
-        // --- USERS (FIXED LOGIC 4) ---
+        // --- USERS (FIXED LOGIC) ---
         window.loadUsersList = async function() {
             const list = document.getElementById('membersList');
+            // Status Loading
             list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження учасників...</div>`;
             
             try {
                 const snap = await getDocs(collection(db, "users"));
+                // Success: clear
+                list.innerHTML = "";
                 
                 if (snap.empty) {
-                    list.innerHTML = '<div style="color: var(--text-dim); padding: 10px; text-align: center;">Немає учасників</div>';
+                    list.innerHTML = '<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Немає учасників</div>';
                     return;
                 }
                 
@@ -1477,7 +1495,7 @@
                 snap.forEach(d => { if(d.data()) users.push(d.data()); });
                 usersCache = users;
                 document.getElementById('membersCount').innerText = users.length;
-                list.innerHTML = "";
+                
                 users.forEach(u => {
                     const isAdmin = u.role === 'admin';
                     const item = document.createElement('div');
@@ -1493,9 +1511,9 @@
                     list.appendChild(item);
                 });
             } catch (e) {
+                // Error: Show error message, don't crash
+                list.innerHTML = `<div style="color: red; padding: 10px; text-align: center;">Помилка завантаження</div>`;
                 window.showToast("Помилка учасників", "error");
-                list.innerHTML = `<div style="color: red; padding: 10px;">Помилка завантаження</div>`;
-                console.error(e);
             }
         };
 
@@ -1599,14 +1617,39 @@
 
         window.sendUpload = async function() {
             if (pendingBlobs.length === 0) return;
+            const input = document.getElementById('messageInput');
+            // Logic 4: Just store in pending, real send happens on message submit
+            
             window.showToast("Фото додано до черги", "success");
             window.closeModals('previewModal');
+            
+            // Add placeholder if input empty
+            if (input.value.trim() === "") {
+                input.placeholder = "Додайте текст або натисніть надіслати...";
+            }
+            input.focus();
         };
 
         window.cancelImageUpload = function() {
             window.closeModals('previewModal');
             pendingBlobs = [];
             if (document.getElementById('messageInput')) document.getElementById('messageInput').focus();
+        };
+
+        // --- EMOJI IN INPUT ---
+        window.toggleInputEmoji = function(btnElement) {
+            if(btnElement) btnElement.stopPropagation();
+            const popover = document.getElementById('emojiInputPopover');
+            const rect = btnElement.getBoundingClientRect();
+            popover.style.top = (rect.bottom + 10) + 'px'; 
+            popover.style.left = rect.left + 'px';
+            
+            // Check if off-screen bottom
+            if (rect.bottom + 250 > window.innerHeight) {
+                 popover.style.top = (rect.top - 240) + 'px'; // Show above
+            }
+            
+            popover.style.display = popover.style.display === 'none' ? 'block' : 'none';
         };
 
         // --- REPLY SYSTEM ---
@@ -1625,9 +1668,7 @@
             `;
             
             replyArea.classList.add('active');
-            const input = document.getElementById('messageInput');
-            input.value = `@${msgData.author}, `;
-            input.focus();
+            document.getElementById('messageInput').focus();
         };
 
         window.cancelReply = function() {
@@ -1649,57 +1690,6 @@
 
         window.openLink = (url) => {
              window.open(url, '_blank');
-        };
-
-        // --- EDITING ---
-        window.startEdit = function(msgId) {
-            const el = document.getElementById(`msg-${msgId}`);
-            const textEl = el.querySelector('.msg-text');
-            const editUI = el.querySelector('.edit-ui-wrapper');
-            
-            editUI.querySelector('textarea').value = textEl.innerText; 
-            textEl.style.display = 'none';
-            editUI.style.display = 'flex';
-            editUI.querySelector('textarea').focus();
-            
-            el.querySelector('.kebab-menu').classList.remove('open');
-        };
-
-        window.cancelEdit = function(msgId) {
-            const el = document.getElementById(`msg-${msgId}`);
-            const textEl = el.querySelector('.msg-text');
-            const editUI = el.querySelector('.edit-ui-wrapper');
-            textEl.style.display = 'block'; 
-            editUI.style.display = 'none';
-        };
-
-        window.saveEditFromBtn = async function(msgId) {
-            if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
-            const el = document.getElementById(`msg-${msgId}`);
-            const textVal = el.querySelector('.edit-textarea').value;
-            
-            if (textVal.length > 500) return window.showToast("Повідомлення не може бути довше 500 символів", "error");
-
-            if (textVal.trim()) {
-                await updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
-                    text: textVal,
-                    editedAt: serverTimestamp()
-                });
-                window.showToast("Повідомлення відредаговано", "success");
-                window.cancelEdit(msgId);
-            }
-        };
-
-        // --- DELETE ---
-        window.deleteMessage = async function(msgId) {
-            if(confirm('Видалити повідомлення?')) {
-                try {
-                    await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
-                    window.showToast("Повідомлення видалено", "success");
-                } catch (e) {
-                    window.showToast("Помилка видалення", "error");
-                }
-            }
         };
 
         // --- LOGOUT ---
@@ -1768,11 +1758,6 @@
             });
         }
 
-        // Bind Input Button
-        document.getElementById('emojiPickerBtn').onclick = (e) => {
-            window.toggleInputEmoji(e.currentTarget);
-        };
-
         const canvas = document.getElementById('particles-canvas');
         const ctx = canvas.getContext('2d');
         let width, height;
@@ -1789,8 +1774,8 @@
             constructor() {
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                this.vx = (Math.random() -0.5) * 0.5;
-                this.vy = (Math.random() -0.5) * 0.5;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
                 this.size = Math.random() * 2 + 1; 
                 this.alpha = Math.random() * 0.5;
                 this.targetAlpha = Math.random() * 0.5 + 0.1;
@@ -1817,7 +1802,6 @@
 
         function initParticles() {
             particles = [];
-            // Optimized count
             const particleCount = window.innerWidth < 768 ? 20 : 40; 
             for (let i =0; i < particleCount; i++) {
                 particles.push(new Particle());
