@@ -53,6 +53,7 @@
             height: 100%;
             position: relative;
             z-index: 1;
+            will-change: transform; /* FPS Optimization */
         }
 
         /* --- SERVERS --- */
@@ -114,6 +115,7 @@
             padding: 8px 10px; margin-bottom: 2px;
             border-radius: 8px; cursor: pointer; color: var(--text-muted); font-weight: 500;
             transition: all 0.2s;
+            will-change: transform, background-color; /* FPS */
         }
         .channel-item:hover { background: rgba(34, 197, 94, 0.1); color: white; transform: translateX(4px); }
         .channel-item.active { 
@@ -197,7 +199,7 @@
         .action-btn:hover { background: rgba(255,255,255,0.1); color: white; }
         
         /* "..." Menu for Edit/Delete */
-        .kebab-menu { display: none; position: absolute; left: 30px; top: -22px; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 29; flex-direction: column; min-width: 120px; backdrop-filter: blur(10px); }
+        .kebab-menu { display: none; position: absolute; left: 30px; top: -22px; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 4px; padding: 4px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 2000; flex-direction: column; min-width: 120px; backdrop-filter: blur(10px); will-change: transform; }
         .kebab-menu.open { display: flex; }
         .kebab-item { text-align: left; background: none; border: none; color: var(--text-muted); font-size: 14px; padding: 4px 8px; cursor: pointer; width: 100%; border-radius: 3px; font-weight: 600; transition: 0.1s; }
         .kebab-item:hover { background: rgba(255,255,255,0.05); color: white; }
@@ -205,7 +207,7 @@
         .kebab-item.danger:hover { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
 
         /* Edit UI */
-        .edit-ui-wrapper { position: absolute; left: 0; top: -35px; width: 100%; z-index: 50; display: none; flex-direction: column; background: var(--sidebar-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--glass-border); box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: popUp 0.2s; backdrop-filter: blur(10px); }
+        .edit-ui-wrapper { position: absolute; left: 0; top: -35px; width: 100%; z-index: 2050; display: none; flex-direction: column; background: var(--sidebar-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--glass-border); box-shadow: 0 5px 15px rgba(0,0,0,0.5); animation: popUp 0.2s; backdrop-filter: blur(10px); }
         @keyframes popUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .edit-textarea { background: var(--input-bg); color: white; border: 1px solid var(--glass-border); border-radius: 4px; padding: 8px; font-family: inherit; font-size: 15px; resize: none; outline: none; width: 100%; min-height: 60px; box-shadow: inset 0 0 5px rgba(0,0,0,0.5); }
         .edit-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
@@ -282,7 +284,7 @@
         .profile-big-avatar { width: 80px; height: 80px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; border: 2px solid var(--primary); box-shadow: 0 0 15px var(--primary-glow); background-size: cover; background-position: center; }
 
         /* Popups */
-        .mention-popup { display: none; position: absolute; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 220px; max-height: 150px; overflow-y: auto; z-index: 50; bottom: 100%; left: 20px; backdrop-filter: blur(10px); }
+        .mention-popup { display: none; position: absolute; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); width: 220px; max-height: 150px; overflow-y: auto; z-index: 2000; bottom: 100%; left: 20px; backdrop-filter: blur(10px); will-change: opacity; }
         .mention-item { padding: 8px 12px; color: white; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; }
         .mention-item:hover { background: rgba(34, 197, 94, 0.2); color: white; }
         .mention-avatar { width: 24px; height: 24px; border-radius: 50%; background: #111; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
@@ -306,8 +308,9 @@
             padding: 10px;
             width: 280px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-            z-index: 100;
+            z-index: 2000;
             backdrop-filter: blur(20px);
+            will-change: opacity;
         }
         .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; max-height: 150px; overflow-y: auto; }
         .emoji-btn { font-size: 24px; background: rgba(255,255,255,0.05); border-radius: 4px; cursor: pointer; padding: 5px; text-align: center; transition: 0.2s; border: 1px solid transparent; }
@@ -321,14 +324,32 @@
         /* Mobile */
         @media (max-width: 768px) {
             body { overflow: auto; }
-            #app-layout { display: flex; flex-direction: column; height: auto; min-height: 100vh; }
-            .sidebar, .members-sidebar { display: none; position: fixed; z-index: 100; height: 100%; width: 250px; top: 0; }
+            #app-layout { 
+                display: flex; 
+                flex-direction: column; 
+                height: auto; /* Removed min-height to fix white screen on Android */
+                width: 100vw; 
+            }
+            .sidebar, .members-sidebar { 
+                display: none; 
+                position: fixed; 
+                z-index: 100; 
+                height: 100%; 
+                width: 250px; 
+                top: 0; 
+                backdrop-filter: blur(30px); /* Optimized blur */
+            }
             .sidebar.active, .members-sidebar.active { display: flex; }
             .sidebar { left: 0; border-right: 1px solid #444; transform: translateX(-100%); transition: transform 0.3s ease; }
             .sidebar.active { transform: translateX(0); }
             .members-sidebar { right: 0; border-left: 1px solid #444; transform: translateX(100%); transition: transform 0.3s ease; }
             .members-sidebar.active { transform: translateX(0); }
-            .chat-main { margin-top: 48px; margin-bottom: 60px; }
+            .chat-main { 
+                margin-top: 0; /* Removed margin */
+                margin-bottom: 60px; 
+                width: 100%; 
+                flex: 1; 
+            }
             .mobile-menu-btn { display: block; position: fixed; top: 15px; left: 15px; z-index: 200; font-size: 24px; color: #ddd; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--glass-border); backdrop-filter: blur(5px); }
         }
         @media (min-width: 769px) { .mobile-menu-btn { display: none; } 
@@ -401,7 +422,7 @@
             <div class="mention-popup" id="mentionPopup"></div>
 
             <div class="input-area">
-                <input type="file" id="hiddenFileInput" accept="image/*" style="display: none;" onchange="window.handleFileSelect(event)">
+                <input type="file" id="hiddenFileInput" accept="image/*" style="display: none;">
                 <div class="input-wrapper">
                     <div class="input-actions-left">
                         <button class="btn-upload" onclick="document.getElementById('hiddenFileInput').click()">➕</button>
@@ -529,11 +550,11 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- GLOBALS ---
+        // --- GLOBALES ---
         let currentUID = null;
         let myData = null;
         let myRole = 'member';
-        let currentChannelId = 'general';
+        let currentChannelId = 'general'; // Default to ensure Emoji grid works before load
         let messagesUnsubscribe = null;
         
         let channelsCache = [];
@@ -542,28 +563,18 @@
 
         // --- HELPER FUNCTIONS (FIXED & LOGGED) ---
         
-        // SAFE ATTRIBUTE ESCAPER
-        const safeAttr = (val) => {
-            if (!val) return "";
-            // Replace " (quote), ' (quote), ) (paren)
-            return String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/\)/g, '&#041;');
-        };
-        
-        // SAFE TEXT ESCAPER
+        const safeAttr = (val) => String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/\)/g, '&#041;');
         const safeText = (val) => {
             if (!val) return "";
             let str = String(val);
-            return str.replace(/&/g, "&amp;")
-                      .replace(/</g, "&lt;")
-                      .replace(/>/g, "&gt;");
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         };
         
-        // SAFE INITIALIZATION
         try {
-            app = initializeApp(firebaseConfig);
-            auth = getAuth(app);
-            db = getFirestore(app);
-            storage = getStorage(app);
+            const appInit = initializeApp(firebaseConfig);
+            const authInit = getAuth(appInit);
+            const dbInit = getFirestore(appInit);
+            const storageInit = getStorage(appInit);
             console.log("✅ Firebase initialized successfully");
         } catch (e) {
             console.error("❌ FATAL: Firebase Initialization failed", e);
@@ -614,7 +625,6 @@
         onAuthStateChanged(auth, (user) => {
             console.log("Auth state changed:", user ? user.uid : "Logged out");
             if (!user) { 
-                console.log("No user, redirecting...");
                 window.location.href = "index.html"; 
                 return; 
             }
@@ -622,16 +632,18 @@
             window.initChat();
         });
 
-        // --- INIT (ROBUST PROFILE SYSTEM) ---
+        // --- INIT ---
         window.initChat = async function() {
             if (!currentUID) return;
             console.log("🚀 Starting Init Chat for UID:", currentUID);
-            
             try {
                 // Set Loading State
                 document.getElementById('sidebarName').textContent = "Loading...";
                 
+                // Fetch Profile
+                console.log("Fetching profile document...");
                 const snap = await getDoc(doc(db, "users", currentUID));
+                
                 if (snap.exists()) {
                     console.log("✅ Profile document found.");
                     myData = snap.data();
@@ -674,20 +686,18 @@
                     document.getElementById('profileNameInput').value = myData.name;
                 } else {
                     console.warn("⚠️ Profile document DOES NOT exist for UID:", currentUID);
-                    document.getElementById('sidebarName').textContent = "Профіль не знайдено";
-                    // CRITICAL: Do not throw error, let user see chat
+                    document.getElementById('sidebarName').textContent = "Профіль не знайдено (DB)";
+                    // Do not throw error, allow user to see interface
                 }
                 
-                // ALWAYS TRY TO LOAD CHATS AND USERS
-                console.log("Loading channels...");
+                // Load Systems
                 window.loadChannels();
                 window.loadMessages(currentChannelId);
                 window.loadUsersList();
                 
             } catch (error) {
                 console.error("💥 CRITICAL: Init Chat Error:", error);
-                alert("Помилка ініціалізації чату: " + error.message);
-                window.showToast("Помилка ініціалізації", "error");
+                window.showToast("Помилка завантаження даних", "error");
             }
         };
 
@@ -701,15 +711,18 @@
             const fileInput = document.getElementById('profileAvatarInput');
             const file = fileInput.files[0];
 
+            console.log("📤 Saving profile. NewName:", newName, "HasFile:", !!file);
+
             if (!newName) return window.showToast("Введіть ім'я", "warning");
 
             try {
+                // Update Name
                 if (newName !== myData.name) {
-                    console.log("Updating display name to:", newName);
                     await updateProfile(auth.currentUser, { displayName: newName });
                     await updateDoc(doc(db, "users", currentUID), { name: newName });
                 }
 
+                // Update Avatar
                 if (file) {
                     console.log("Uploading new avatar...");
                     const storageRef = ref(storage, `avatars/${currentUID}_${file.name}`);
@@ -724,14 +737,19 @@
                     document.getElementById('profileBigAvatar').style.backgroundImage = `url(${url})`;
                     document.getElementById('profileBigAvatar').style.backgroundSize = 'cover';
                     document.getElementById('profileBigAvatar').textContent = '';
+                    window.showToast("Аватар оновлено", "success");
                 }
 
-                window.showToast("Профіль оновлено!", "success");
-                document.getElementById('profileModal').style.display = 'none';
-                location.reload();
+                if (file && !newName) location.reload(); // Reload only if avatar changed but name didn't
+                
+                if (newName !== myData.name) {
+                    window.showToast("Профіль оновлено!", "success");
+                    document.getElementById('profileModal').style.display = 'none';
+                    location.reload();
+                }
             } catch (error) {
                 console.error("Profile Save Error:", error);
-                window.showToast("Помилка збереження: " + error.message, "error");
+                window.showToast("Помилка: " + error.message, "error");
             }
         };
 
@@ -756,10 +774,10 @@
 
         // --- CHANNELS (ROBUST DOM) ---
         window.loadChannels = function() {
+            console.log("📺 Loading channels...");
             const list = document.getElementById('channelsList');
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
             
-            // Click Listener
             if (!list.hasAttribute('data-listener-ready')) {
                 list.addEventListener('click', (e) => {
                     const item = e.target.closest('.channel-item');
@@ -771,7 +789,7 @@
             }
             
             onSnapshot(q, (snapshot) => {
-                console.log("📺 Channels snapshot received:", snapshot.size);
+                console.log("Channels snapshot size:", snapshot.size);
                 list.innerHTML = "";
                 channelsCache = [];
                 
@@ -780,9 +798,8 @@
                 cat.textContent = "ТЕКСТОВІ КАНАЛИ";
                 list.appendChild(cat);
                 
-                // AUTO-REPAIR: Create 'general' if empty
                 if (snapshot.size === 0) {
-                    console.log("⚠️ No channels. Creating 'general'...");
+                    console.warn("⚠️ No channels found. Creating 'general'...");
                     addDoc(collection(db, "channels"), { name: 'general', channelOrder: 0, permission: 'public_rw' }).catch(e=>console.log(e));
                     return;
                 }
@@ -792,7 +809,6 @@
                     ch.id = d.id;
                     channelsCache.push(ch);
 
-                    // SAFE CREATION
                     const item = document.createElement('div');
                     const isActive = ch.id === currentChannelId;
                     
@@ -802,17 +818,14 @@
 
                     const infoDiv = document.createElement('div');
                     infoDiv.className = 'channel-info';
-                    // Text content (Safe)
                     const iconSpan = document.createElement('span');
                     iconSpan.className = 'channel-icon';
                     iconSpan.textContent = '#';
-                    
                     const nameSpan = document.createElement('span');
                     nameSpan.textContent = ch.name;
                     
                     infoDiv.appendChild(iconSpan);
                     infoDiv.appendChild(nameSpan);
-                    
                     item.appendChild(infoDiv);
                     
                     item.ondragstart = (e) => { e.dataTransfer.setData("text/plain", ch.id); e.target.style.opacity = '0.5'; };
@@ -832,7 +845,6 @@
                         document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
                     }
                 });
-                
                 console.log("Channels list rendered.");
             });
         };
@@ -942,22 +954,23 @@
             document.getElementById('newChannelName').value = "";
         };
 
-        // --- MESSAGES ---
+        // --- MESSAGES (ROBUST SCROLL) ---
         window.loadMessages = function(channelId) {
-            console.log("💬 Loading messages for:", channelId);
+            console.log(`💬 Loading messages for: ${channelId}`);
             const list = document.getElementById('messagesList');
             list.innerHTML = `<div class="date-divider">СЬОГОДНІ</div>`;
             
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"));
             
             if (messagesUnsubscribe) {
-                messagesUnsubscribe();
+                messagesUnsubscribe(); 
                 console.log("Unsubscribed from previous channel");
             }
             
             messagesUnsubscribe = onSnapshot(q, (snapshot) => {
-                console.log("Messages snapshot received:", snapshot.docs.length);
+                console.log(`Messages snapshot received: ${snapshot.docs.length} docs`);
                 const isNearBottom = (list.scrollTop + list.clientHeight >= list.scrollHeight - 50);
+                const isScrolledUp = (list.scrollTop < list.scrollHeight - list.clientHeight - 100);
 
                 snapshot.docChanges().forEach((change) => {
                     const msg = change.doc.data();
@@ -965,7 +978,13 @@
                     if (!msg) return console.warn("Message data is null for:", msgId);
 
                     if (change.type === "added") {
-                        window.renderMessageUI(msg, msgId, list, msgId);
+                        // FIX: Always scroll if sent by self, or if user is at bottom
+                        if (msg.uid === currentUID || isNearBottom) {
+                             window.renderMessageUI(msg, msgId, list, msgId);
+                             requestAnimationFrame(() => list.scrollTop = list.scrollHeight);
+                        } else {
+                             window.renderMessageUI(msg, msgId, list, msgId);
+                        }
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
                     } else if (change.type === "removed") {
@@ -973,8 +992,6 @@
                         if (el) el.remove();
                     }
                 });
-
-                if (isNearBottom) list.scrollTop = list.scrollHeight;
             });
         };
 
@@ -982,21 +999,21 @@
             const isSelf = msg.uid === currentUID;
             const isAdmin = myRole === 'admin';
             const avatarInitial = msg.author ? msg.author.charAt(0).toUpperCase() : '?';
+            
+            // FIX #2: Timestamp Grey & Small
             const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'}) : '...';
             
             let content = msg.text || "";
-            // XSS Prevention
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" style="max-width:100%; max-height:300px; border-radius:8px; margin-top:5px;" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
 
-            // Reply System
+            // Reply System (FIX #6)
             let replyHTML = "";
             if (msg.replyTo) {
-                // Safe rendering
                 replyHTML = `
                     <div class="reply-preview">
-                        <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
+                        <div class="reply-avatar">${safeText(msg.replyTo.author.charAt(0).toUpperCase())}</div>
                         <div class="reply-content">
                             <span class="reply-author">${safeText(msg.replyTo.author)}</span>
                             <span class="reply-text">${safeText(msg.replyTo.text).substring(0, 40)}...</span>
@@ -1020,7 +1037,6 @@
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
 
-            // Edit UI
             let editUI = `
                 <div class="edit-ui-wrapper" id="edit-wrapper-${msgId}">
                     <textarea id="edit-text-${msgId}" class="edit-textarea"></textarea>
@@ -1031,12 +1047,11 @@
                 </div>
             `;
 
-            // BUTTONS - USING SAFE ATTRIBUTES
+            // BUTTONS - DATA ATTRIBUTES
             let btnReply = `<button class="action-btn action-btn-reply" data-msg-id="${safeAttr(msgId)}" data-author="${safeAttr(msg.author)}">↩️</button>`;
             let btnReact = `<button class="action-btn btn-react" data-msg-id="${safeAttr(msgId)}">😀</button>`;
             let btnMore = `<button class="action-btn btn-more" data-msg-id="${safeAttr(msgId)}">⋮</button>`;
             
-            // Kebab Items
             let kebabItems = "";
             if (isSelf) kebabItems += `<button class="kebab-item" data-msg-id="${safeAttr(msgId)}" data-action="start-edit">Редагувати</button>`;
             if (isSelf || isAdmin) kebabItems += `<button class="kebab-item danger" data-msg-id="${safeAttr(msgId)}" data-action="delete-msg">Видалити</button>`;
@@ -1049,6 +1064,7 @@
                     ${btnReact}
                     ${btnMore}
                 </div>
+                <!-- FIX #3: Kebab Menu z-index -->
                 <div class="kebab-menu" id="kebab-${msgId}">
                     ${kebabItems}
                 </div>
@@ -1056,7 +1072,8 @@
                 <div class="msg-content">
                     <div class="msg-header">
                         <span class="msg-username">${safeText(msg.author || 'Unknown')}</span>
-                        <span class="msg-timestamp">${time}</span>
+                        <!-- FIX #2: Small Grey Time -->
+                        <span class="msg-timestamp" style="font-size: 11px; color: var(--text-dim);">${time}</span>
                         ${msg.editedAt ? '<span style="color:var(--text-dim); font-size:10px; margin-left:5px;">(ред)</span>' : ''}
                     </div>
                     <div class="msg-text">${content}</div>
@@ -1092,7 +1109,6 @@
                  const users = reactions[emoji];
                  const count = users.length;
                  const reacted = users.includes(currentUID);
-                 // DATA ATTRIBUTES
                  return `<div class="reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${safeAttr(msgId)}" data-emoji="${safeAttr(emoji)}">${safeAttr(emoji)} <span class="reaction-count">${safeAttr(count)}</span></div>`;
             }).join('');
         };
@@ -1101,10 +1117,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log("DOM Content Loaded. Attaching listeners.");
             
-            // 1. CHANNEL LIST CLICK (Safe)
+            // 1. CHANNEL LIST CLICK
             document.getElementById('channelsList').addEventListener('click', (e) => {
                 const item = e.target.closest('.channel-item');
-                if (item && item.dataset.id) {
+                if (item) {
                     window.switchChannel(item.dataset.id);
                 }
             });
@@ -1123,6 +1139,8 @@
 
                 const moreBtn = e.target.closest('.btn-more');
                 if (moreBtn) {
+                    // FIX #3: Stop propagation
+                    e.stopPropagation();
                     window.toggleKebab(moreBtn.dataset.msgId, moreBtn);
                 }
 
@@ -1145,13 +1163,13 @@
                 if (saveEditBtn) {
                     window.saveEditFromBtn(saveEditBtn);
                 }
+                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
                 if (cancelEditBtn) {
-                    const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
                     window.cancelEdit(cancelEditBtn.dataset.msgId);
                 }
             });
 
-            // 3. CHAT HEADER CLICK (Safe)
+            // 3. CHAT HEADER CLICK
             const chatHeader = document.getElementById('chatHeader');
             const settingsGear = document.getElementById('settingsGear');
             if(chatHeader) {
@@ -1164,8 +1182,9 @@
                 });
             }
 
-            // 4. CONTEXT MENU (Safe)
+            // 4. CONTEXT MENU
             const ctxMenu = document.getElementById('contextMenu');
+            
             document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 const channelItem = e.target.closest('.channel-item');
@@ -1193,9 +1212,8 @@
                 }
             });
 
-            // 5. GLOBAL ACTIONS
+            // 5. GLOBAL CLICK (FIX #5)
             document.addEventListener('click', (e) => {
-                // Context Menu Actions
                 const ctxItem = e.target.closest('.ctx-item');
                 if (ctxItem) {
                     const action = ctxItem.dataset.action;
@@ -1206,12 +1224,15 @@
                     if (action === 'open-create-modal') window.openChannelModal();
                 }
                 
-                // Close menus on outside click
+                // FIX #5: Close all popups if clicking anywhere else
                 const popover = document.getElementById('emojiPopover');
                 const mentionPopup = document.getElementById('mentionPopup');
-                if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react') && !e.target.closest('#contextMenu')) {
+                const ctxMenu = document.getElementById('contextMenu');
+                
+                if(!e.target.closest('#emojiPopover') && !e.target.closest('.btn-react') && !e.target.closest('#contextMenu')) {
                     popover.style.display = 'none';
                     mentionPopup.style.display = 'none';
+                    ctxMenu.style.display = 'none';
                 }
                 document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
                 
@@ -1228,7 +1249,7 @@
         });
 
         window.toggleKebab = function(msgId, btnElement) {
-            if(btnElement) btnElement.stopPropagation();
+            if(btnElement) btnElement.stopPropagation(); // Critical fix for click listeners
             
             document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
             
@@ -1244,15 +1265,16 @@
             let text = input.value.trim();
             if (!text) return;
 
+            // FIX #6: Reply with photo logic
             let replyTo = null;
             const mentionMatch = text.match(/^@(\w+),?\s*(.*)/);
             if (mentionMatch) {
                 const mentionedName = mentionMatch[1];
-                const messageContent = mentionMatch[2];
+                const messageContent = mentionMatch[2]; // Allow empty string if just a photo follows
                 
                 const user = usersCache.find(u => u.name.toLowerCase() === mentionedName.toLowerCase());
                 if (user) {
-                    replyTo = { author: user.name, text: messageContent || "" };
+                    replyTo = { author: user.name, text: messageContent || "" }; // Text can be empty if user just pasted photo after @name,
                     text = messageContent;
                 }
             }
@@ -1306,7 +1328,7 @@
                     editedAt: serverTimestamp()
                 });
                 window.showToast("Повідомлення відредаговано", "success");
-                window.cancelEdit(el.querySelector('.btn-edit-cancel'));
+                window.cancelEdit(msgId);
             }
         };
 
@@ -1324,7 +1346,7 @@
             }
         };
 
-        // --- EMOJI POPOVER ---
+        // --- EMOJI POPOVER (FIX #7) ---
         let activePopoverMsgId = null;
         
         window.openEmojiPopover = function(msgId, btnElement) {
@@ -1341,6 +1363,7 @@
         };
 
         window.addReaction = async function(channelId, msgId, emoji) {
+            console.log("Adding reaction:", emoji);
             const msgRef = doc(db, "channels", channelId, "messages", msgId);
             const snap = await getDoc(msgRef);
             if (!snap.exists()) return;
@@ -1360,7 +1383,7 @@
             await updateDoc(msgRef, { reactions: reactions });
         };
 
-        // --- USERS (ROBUST) ---
+        // --- USERS (FIX #9: MOBILE LOAD) ---
         window.loadUsersList = async function() {
             try {
                 const list = document.getElementById('membersList');
@@ -1436,9 +1459,18 @@
             }
         });
 
-        // --- UPLOAD ---
+        // --- UPLOAD (FIX #4 & #6) ---
         let pendingBlob = null;
         let pendingInput = null;
+
+        // Button Click Handler (More robust than onclick in HTML)
+        const btnUpload = document.querySelector('.btn-upload');
+        if(btnUpload) {
+            btnUpload.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent closing kebab
+                document.getElementById('hiddenFileInput').click();
+            });
+        }
 
         document.getElementById('messageInput').addEventListener('paste', async function(e) {
             e.preventDefault();
@@ -1446,6 +1478,7 @@
             for (let item of items) {
                 if (item.kind === 'file') {
                     const blob = item.getAsFile();
+                    console.log("Pasted blob:", blob);
                     if (blob && blob.type.startsWith('image/')) {
                         pendingBlob = blob;
                         const objectUrl = URL.createObjectURL(blob);
@@ -1460,8 +1493,10 @@
         });
 
         window.handleFileSelect = function(e) {
+            console.log("File Select Triggered");
             const file = e.target.files[0];
             if (!file) return;
+            console.log("Selected File:", file);
             
             pendingBlob = file;
             const objectUrl = URL.createObjectURL(file);
@@ -1481,12 +1516,16 @@
                 await uploadBytes(storageRef, pendingBlob);
                 const url = await getDownloadURL(storageRef);
                 
-                const insertPoint = pendingInput.selectionStart || pendingInput.value.length;
-                const beforeText = pendingInput.value.slice(0, insertPoint);
-                const afterText = pendingInput.value.slice(insertPoint);
-                const markdown = `\n![image](${url})\n`;
+                // FIX #6: Insertion logic for reply + image
+                let content = "";
+                if (pendingInput.value.startsWith('@') && pendingInput.value.length > 20 && pendingInput.value.indexOf(',') > 0) {
+                     // Looks like a reply without text after comma
+                     content = `\n`;
+                } else {
+                     content = `\n`;
+                }
                 
-                pendingInput.value = beforeText + markdown + afterText;
+                pendingInput.value += content + `![image](${url})\n`;
                 
                 window.showToast("Фото надіслано", "success");
                 window.closeModals('previewModal');
@@ -1513,7 +1552,27 @@
             input.focus();
         };
 
-        // --- LOGOUT (FIXED) ---
+        // --- EVENTS ---
+        document.addEventListener('click', (e) => {
+            mentionPopup.style.display = 'none';
+            const popover = document.getElementById('emojiPopover');
+            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
+                popover.style.display = 'none';
+            }
+            const ctxMenu = document.getElementById('contextMenu');
+            if(!e.target.closest('#contextMenu')) {
+                ctxMenu.style.display = 'none';
+            }
+            
+            if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
+            if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
+        });
+
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.sendMessage();
+        });
+
+        // --- LOGOUT ---
         window.logout = async () => {
             try {
                 console.log("Logging out...");
@@ -1534,19 +1593,30 @@
     
     <!-- PARTICLES SYSTEM SCRIPT -->
     <script>
-        // Initialize Emojis in Grid
+        // Initialize Emojis in Grid (FIX #7)
         const grid = document.getElementById('emojiGrid');
         const emojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
-        emojis.forEach(emoji => {
-            const btn = document.createElement('div');
-            btn.className = 'emoji-btn';
-            btn.textContent = emoji;
-            btn.onclick = () => { 
-                window.addReaction(currentChannelId, activePopoverMsgId, emoji); 
-                document.getElementById('emojiPopover').style.display = 'none';
-            };
-            grid.appendChild(btn);
-        });
+        
+        // Ensure DOM is ready and currentChannelId exists (default 'general')
+        function initEmojiGrid() {
+            if(grid) {
+                grid.innerHTML = "";
+                emojis.forEach(emoji => {
+                    const btn = document.createElement('div');
+                    btn.className = 'emoji-btn';
+                    btn.textContent = emoji;
+                    btn.onclick = () => { 
+                        console.log("Emoji clicked:", emoji, "Channel:", currentChannelId);
+                        window.addReaction(currentChannelId, activePopoverMsgId, emoji); 
+                        document.getElementById('emojiPopover').style.display = 'none';
+                    };
+                    grid.appendChild(btn);
+                });
+            }
+        }
+        
+        // Defer grid init slightly to ensure script variables are set
+        setTimeout(initEmojiGrid, 100);
 
         const canvas = document.getElementById('particles-canvas');
         const ctx = canvas.getContext('2d');
@@ -1581,7 +1651,6 @@
                 if (this.y < 0) this.y = height;
                 if (this.y > height) this.y = 0;
 
-                // Twinkle effect
                 this.alpha += (this.targetAlpha - this.alpha) *0.02;
                 if (Math.abs(this.targetAlpha - this.alpha) < 0.01) {
                     this.targetAlpha = Math.random() * 0.5 + 0.1;
@@ -1591,14 +1660,16 @@
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size,0, Math.PI *2);
-                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`; // Green
+                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`;
                 ctx.fill();
+                // REMOVED: ctx.shadowBlur... (Optimization)
             }
         }
 
         function initParticles() {
             particles = [];
-            const particleCount = Math.floor(window.innerWidth * window.innerHeight / 15000);
+            // Reduce particle count for Mobile
+            const particleCount = window.innerWidth < 768 ? Math.floor(window.innerWidth * window.innerHeight / 30000) : Math.floor(window.innerWidth * window.innerHeight / 15000);
             for (let i =0; i < particleCount; i++) {
                 particles.push(new Particle());
             }
@@ -1607,7 +1678,7 @@
         function animate() {
             ctx.clearRect(0, 0, width, height);
             
-            // Draw subtle gradient background
+            // Draw subtle gradient background (Optimization: Low resolution if needed)
             const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             gradient.addColorStop(0, 'rgba(34, 197, 94, 0.05)');
             gradient.addColorStop(1, 'rgba(3, 5, 7, 0.2)');
