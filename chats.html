@@ -5,15 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ДШВ | DISCORD (ADMIN CONTROL)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
     <style>
-        /* --- NEON STYLE (OPTIMIZED) --- */
+        /* --- VARIABLES --- */
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
             --primary-glow: rgba(34, 197, 94, 0.5); 
             --bg: #030507;
-            --sidebar-bg: rgba(10, 12, 16, 0.95); /* Removed blur for max FPS */
+            --sidebar-bg: rgba(10, 12, 16, 0.95);
             --chat-bg: rgba(5, 7, 9, 0.95);
             --panel-bg: rgba(10, 15, 26, 0.95);
             --input-bg: #0a0c10;
@@ -25,17 +26,81 @@
             --glass-border: rgba(34, 197, 94, 0.3);
         }
 
+        /* --- RESET & BASE --- */
         body {
             margin: 0; padding: 0;
             background-color: var(--bg);
             color: var(--text-main);
             font-family: 'Inter', sans-serif;
             height: 100vh; width: 100vw;
-            overflow: hidden;
-            display: flex;
+            overflow: hidden; /* Fix for scrollbar */
+            display: flex; /* Fix for layout */
             user-select: none;
             -webkit-user-select: none;
         }
+
+        /* --- CANVAS (PARTICLES) --- */
+        #particles-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* --- MODALS (CRITICAL FIX: ABSOLUTE CENTERING) --- */
+        .modal-overlay { 
+            display: none; /* Далі відкривається через JS */
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(3, 5, 7, 0.7); 
+            backdrop-filter: blur(20px); 
+            z-index: 10000; /* Високий пріоритет */
+        }
+
+        .settings-modal { 
+            background-color: var(--sidebar-bg); 
+            width: 90%; 
+            max-width: 440px; 
+            height: auto; 
+            /* НАЙБІЛЬ НАДІЙНИЙ ЦЕНТР */
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            
+            border-radius: 20px; 
+            border: 1px solid var(--glass-border); 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.6); 
+            animation: modalPop 0.3s; 
+        }
+        
+        .settings-header { padding: 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.3); border-radius: 20px 20px 0 0; }
+        .settings-title { font-weight: 900; font-size: 20px; color: white; text-transform: uppercase; letter-spacing: 1px; }
+        .settings-body { padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .settings-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.3); border-radius: 0 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
+        
+        /* Inputs */
+        .settings-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-size: 16px; outline: none; }
+        .settings-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); }
+        .settings-select { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-size: 16px; outline: none; appearance: none; }
+        
+        /* Buttons */
+        .btn-save { background: var(--primary); color: black; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; transition: 0.2s; }
+        .btn-save:hover { background: var(--primary-bright); box-shadow: 0 0 15px var(--primary-glow); }
+        .btn-cancel { background: #2b2d31; color: #b9bbbe; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 14px; margin-right: 10px; transition: 0.2s; }
+        .btn-cancel:hover { background: #36393d; color: white; }
+        .btn-delete { background: var(--danger); color: white; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; text-transform: uppercase; font-size: 14px; transition: 0.2s; }
+        .btn-delete:hover { background: #ff5555; box-shadow: 0 0 15px var(--danger-glow); }
+        .btn-cabinet { background: #3b82f6; color: white; padding: 10px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
+        .btn-cabinet:hover { background: #2563eb; }
+        .close-modal { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; transition: 0.2s; }
+        .close-modal:hover { color: white; transform: rotate(90deg); }
+        .profile-preview { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
+        .profile-big-avatar { width: 80px; height: 80px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; border: 2px solid var(--primary); box-shadow: 0 0 15px var(--primary-glow); background-size: cover; background-position: center; }
 
         /* --- LAYOUT --- */
         #app-layout {
@@ -43,7 +108,7 @@
             width: 100%;
             height: 100%;
             position: relative;
-            z-index:1;
+            z-index: 1;
         }
 
         /* --- SERVERS --- */
@@ -67,7 +132,7 @@
             color: var(--text-main);
             font-size: 22px;
             transition: all 0.2s;
-            border:1px solid transparent;
+            border: 1px solid transparent;
         }
         .server-icon:hover, .server-icon.active {
             border-radius: 16px;
@@ -157,7 +222,6 @@
 
         .msg-mention { background-color: rgba(34, 197, 94, 0.2); color: var(--primary-bright); padding: 0 2px; border-radius: 3px; cursor: pointer; border: 1px solid var(--glass-border); }
 
-        /* Reply Preview (Discord Style) */
         .reply-preview { 
             background: rgba(34, 197, 94, 0.05); 
             border-left: 2px solid var(--primary); 
@@ -171,7 +235,6 @@
         .reply-author { font-weight: 600; color: var(--primary-bright); margin-right: 4px; display: block; line-height: 1.2; }
         .reply-text { color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
 
-        /* Action Toolbar */
         .message-actions { display: none; position: absolute; left: 0; top: -22px; background: var(--sidebar-bg); border: 1px solid var(--glass-border); border-radius: 5px; padding: 2px 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 30; }
         .message:hover .message-actions { display: flex; gap: 2px; }
         .action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 2px 4px; border-radius: 3px; transition: 0.2s; display: flex; align-items: center; }
@@ -183,7 +246,6 @@
         .kebab-item:hover { background: rgba(255,255,255,0.05); color: white; }
         .kebab-item.danger { color: var(--danger); }
 
-        /* Edit UI */
         .edit-ui-wrapper { position: absolute; left: 0; top: -35px; width: 100%; z-index: 2050; display: none; flex-direction: column; background: var(--sidebar-bg); padding: 4px; border-radius: 4px; border: 1px solid var(--glass-border); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         .edit-textarea { background: var(--input-bg); color: white; border: 1px solid var(--glass-border); border-radius: 4px; padding: 8px; font-family: inherit; font-size: 15px; resize: none; outline: none; width: 100%; min-height: 60px; }
         .edit-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
@@ -224,60 +286,9 @@
         .toast { background: var(--sidebar-bg); color: white; padding: 15px 20px; border-radius: 5px; border-left: 4px solid var(--primary); font-weight: 600; font-size: 14px; pointer-events: auto; animation: slideIn 0.4s; display: flex; align-items: center; gap: 10px; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes fadeOut { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(100%); } }
+        @keyframes modalPop { from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 
-        /* --- MODALS (FIXED CSS) --- */
-        .modal-overlay { 
-            display: none; /* IMPORTANT: MUST STAY NONE BY DEFAULT */
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(3, 5, 7, 0.7); 
-            backdrop-filter: blur(20px); 
-            z-index: 1000; 
-            /* Do NOT put display: flex here */
-        }
-
-        .settings-modal { 
-            background-color: var(--sidebar-bg); 
-            width: 90%; 
-            max-width: 440px; 
-            height: auto; 
-            /* Force centering via margins */
-            margin: 0 auto;
-            display: flex; 
-            flex-direction: column; 
-            border-radius: 20px; 
-            border: 1px solid var(--glass-border); 
-            box-shadow: 0 0 50px rgba(0,0,0,0.6); 
-            position: relative; 
-            animation: modalPop 0.3s; 
-        }
-
-        .settings-header { padding: 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.3); border-radius: 20px 20px 0 0; }
-        .settings-title { font-weight: 900; font-size: 20px; color: white; text-transform: uppercase; letter-spacing: 1px; }
-        .settings-body { padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
-        .settings-footer { padding: 16px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.3); border-radius: 0 0 20px 20px; display: flex; flex-direction: column; gap: 10px; }
-        .settings-input { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-size: 16px; outline: none; }
-        .settings-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(34, 197, 94, 0.2); }
-        .settings-select { width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-size: 16px; outline: none; appearance: none; }
-        
-        /* Buttons */
-        .btn-save { background: var(--primary); color: black; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; transition: 0.2s; }
-        .btn-save:hover { background: var(--primary-bright); box-shadow: 0 0 15px var(--primary-glow); }
-        .btn-cancel { background: #2b2d31; color: #b9bbbe; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 14px; margin-right: 10px; transition: 0.2s; }
-        .btn-cancel:hover { background: #36393d; color: white; }
-        .btn-delete { background: var(--danger); color: white; padding: 12px 20px; border: none; border-radius: 10px; cursor: pointer; font-weight: 900; text-transform: uppercase; font-size: 14px; transition: 0.2s; }
-        .btn-delete:hover { background: #ff5555; box-shadow: 0 0 15px var(--danger-glow); }
-        .btn-cabinet { background: #3b82f6; color: white; padding: 10px 15px; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
-        .btn-cabinet:hover { background: #2563eb; }
-        
-        .close-modal { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; transition: 0.2s; }
-        .close-modal:hover { color: white; transform: rotate(90deg); }
-
-        /* Profile Preview */
-        .profile-preview { display: flex; align-items: center; gap: 15px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .profile-big-avatar { width: 80px; height: 80px; border-radius: 50%; background: #222; display: flex; align-items: center; justify-content: center; font-size: 30px; color: white; border: 2px solid var(--primary); box-shadow: 0 0 15px var(--primary-glow); background-size: cover; background-position: center; }
-
+        /* Upload Gallery */
         .upload-preview-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
@@ -321,7 +332,6 @@
             border-radius: 8px;
             padding: 10px;
             width: 280px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
             z-index: 2000;
         }
         .emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
@@ -336,7 +346,7 @@
         @media (max-width: 768px) {
             body { overflow: auto; }
             #app-layout { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
-            .sidebar, .members-sidebar { display: none; position: fixed; z-index: 100; height: 100%; width: 250px; top: 0; backdrop-filter: none; /* Disable blur on mobile for speed */ background: var(--sidebar-bg); }
+            .sidebar, .members-sidebar { display: none; position: fixed; z-index: 100; height: 100%; width: 250px; top: 0; transform: translateZ(0); }
             .sidebar.active, .members-sidebar.active { display: flex; }
             .sidebar { left: 0; border-right: 1px solid #444; transform: translateX(-100%); transition: transform 0.3s ease; }
             .sidebar.active { transform: translateX(0); }
@@ -356,9 +366,10 @@
 </head>
 <body>
 
+    <!-- BACKGROUND CANVAS -->
     <canvas id="particles-canvas"></canvas>
 
-    <!-- TOASTS -->
+    <!-- TOAST NOTIFICATIONS -->
     <div id="toast-container"></div>
 
     <!-- MOBILE MENU -->
@@ -407,13 +418,13 @@
                 <span class="channel-settings-gear" id="settingsGear">⚙️</span>
             </div>
             
-            <!-- REPLY PREVIEW AREA (Discord Style) -->
+            <!-- REPLY PREVIEW AREA -->
             <div id="replyPreviewArea" class="reply-preview-area">
                 <!-- Will be populated dynamically -->
             </div>
 
             <div class="messages-wrapper" id="messagesList">
-                <div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження останніх 30...</div>
+                <div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>
             </div>
             
             <div class="mention-popup" id="mentionPopup"></div>
@@ -509,7 +520,8 @@
             <div class="settings-header"><span class="settings-title">НАДІСЛАТИ ФОТО (ДО 10 ШТ)</span></div>
             <div class="settings-body">
                 <div id="uploadPreviewContainer" class="upload-preview-container">
-                    <p id="uploadPlaceholder" style="color: var(--text-muted); text-align: center; font-size: 13px;">Виберіть фото</p>
+                    <!-- Images will be here -->
+                    <p id="uploadPlaceholder" style="color: var(--text-dim); text-align: center; font-size: 13px;">Виберіть фото</p>
                 </div>
                 <input type="text" id="photoCaption" class="settings-input" placeholder="Підпис до фото (необов'язково)">
                 <p style="color: var(--text-muted); text-align: center; font-size: 12px;">Натисніть "Прикріпити" щоб додати до повідомлення</p>
@@ -589,7 +601,6 @@
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
             toast.textContent = message;
-            
             const close = document.createElement('span');
             close.innerHTML = '&times;';
             close.style.marginLeft = '10px';
@@ -599,9 +610,7 @@
                 setTimeout(() => toast.remove(), 400);
             };
             toast.appendChild(close);
-
             container.appendChild(toast);
-            
             setTimeout(() => {
                 if (toast.parentElement) {
                     toast.style.animation = 'fadeOut 0.4s forwards';
@@ -625,7 +634,6 @@
             if (!currentUID) return;
             try {
                 document.getElementById('sidebarName').textContent = "Loading...";
-                
                 const snap = await getDoc(doc(db, "users", currentUID));
                 if (snap.exists()) {
                     myData = snap.data();
@@ -651,7 +659,6 @@
                         avatarBig.style.backgroundColor = color;
                         avatarBig.textContent = initial;
                     }
-
                     let roleText = "БОЄЦЬ";
                     if (myRole === 'admin') roleText = "КЕРІВНИЦТВО";
                     else if (myData.rank) { roleText = myData.rank.split('|')[0].trim(); }
@@ -667,7 +674,6 @@
                 window.loadChannels();
                 window.loadMessages(currentChannelId);
                 window.loadUsersList();
-                
             } catch (error) {
                 alert("Помилка ініціалізації: " + error.message);
             }
@@ -675,7 +681,7 @@
 
         // --- PROFILE ---
         window.openProfile = async function() {
-            document.getElementById('profileModal').style.display = 'flex';
+            document.getElementById('profileModal').style.display = 'block';
         };
 
         window.saveProfile = async function() {
@@ -686,26 +692,21 @@
             if (!newName) return window.showToast("Введіть ім'я", "warning");
             try {
                 if (newName !== myData.name) {
-                    await updateProfile(auth.currentUser, { displayName: newName });
-                    await updateDoc(doc(db, "users", currentUID), { name: newName });
                     try { await updateProfile(auth.currentUser, { displayName: newName }); } catch(e) {}
+                    await updateDoc(doc(db, "users", currentUID), { name: newName });
                 }
-
                 if (file) {
                     const storageRef = ref(storage, `avatars/${currentUID}_${file.name}`);
                     await uploadBytes(storageRef, file);
                     const url = await getDownloadURL(storageRef);
                     await updateDoc(doc(db, "users", currentUID), { photoURL: url });
-                    
                     document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
                     document.getElementById('myAvatar').style.backgroundSize = 'cover';
                     document.getElementById('myAvatar').textContent = '';
-                    
                     document.getElementById('profileBigAvatar').style.backgroundImage = `url(${url})`;
                     document.getElementById('profileBigAvatar').style.backgroundSize = 'cover';
                     document.getElementById('profileBigAvatar').textContent = '';
                 }
-
                 window.showToast("Профіль оновлено!", "success");
                 document.getElementById('profileModal').style.display = 'none';
                 location.reload();
@@ -761,7 +762,8 @@
                     ch.id = d.id;
                     channelsCache.push(ch);
                     const item = document.createElement('div');
-                    item.className = `channel-item ${ch.id === currentChannelId ? 'active' : ''}`;
+                    const isActive = ch.id === currentChannelId;
+                    item.className = `channel-item ${isActive ? 'active' : ''}`;
                     item.dataset.id = ch.id;
                     const infoDiv = document.createElement('div');
                     infoDiv.className = 'channel-info';
@@ -774,7 +776,7 @@
                     infoDiv.appendChild(nameSpan);
                     item.appendChild(infoDiv);
                     list.appendChild(item);
-                    if (ch.id === currentChannelId) {
+                    if (isActive) {
                         document.getElementById('currentChannelName').textContent = ch.name;
                         document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
                     }
@@ -803,9 +805,18 @@
             if (!ch) return;
             document.getElementById('settingChannelName').value = ch.name;
             document.getElementById('settingPermission').value = ch.permission || 'public_rw';
-            document.getElementById('channelSettingsModal').style.display = 'flex';
+            document.getElementById('channelSettingsModal').style.display = 'block';
             window.settingTargetId = ch.id;
         };
+        
+        window.deleteChannelFromCtx = async function(id) {
+            window.settingTargetId = id;
+            if(confirm('ВИДАЛИТИ КАНАЛ?')) {
+                await deleteDoc(doc(db, "channels", id));
+                if (id === currentChannelId) window.switchChannel('general');
+            }
+        };
+
         window.saveChannelSettings = async function() {
             const name = document.getElementById('settingChannelName').value;
             const perm = document.getElementById('settingPermission').value;
@@ -832,7 +843,7 @@
         };
         window.openChannelModal = function() {
             if (myRole !== 'admin') { window.showToast("Тільки адміни", "error"); return; }
-            document.getElementById('channelModal').style.display = 'flex';
+            document.getElementById('channelModal').style.display = 'block';
         };
         window.createChannel = async function() {
             let rawName = document.getElementById('newChannelName').value.trim();
@@ -849,14 +860,12 @@
             document.getElementById('newChannelName').value = "";
         };
 
-        // --- MESSAGES (OPTIMIZED) ---
+        // --- MESSAGES ---
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
-            list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
+            list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження останніх 30...</div>`;
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "desc"), limit(30));
-            if (messagesUnsubscribe) {
-                messagesUnsubscribe(); 
-            }
+            if (messagesUnsubscribe) { messagesUnsubscribe(); }
             messagesUnsubscribe = onSnapshot(q, (snapshot) => {
                 snapshot.docChanges().forEach((change) => {
                     const msg = change.doc.data();
@@ -880,7 +889,7 @@
             });
         };
 
-        // --- KEY FIX: DIRECT EVENTS ---
+        // --- KEY FIX: DIRECT ONCLICK BINDING ---
         window.renderMessageUI = function(msg, msgId, container, position) {
             const isSelf = msg.uid === currentUID;
             const isAdmin = myRole === 'admin';
@@ -889,7 +898,7 @@
             
             let content = msg.text || "";
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" alt="$1">');
+            content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" style="max-width:100%; max-height:300px; border-radius:8px; margin-top:5px;" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
 
             let replyHTML = "";
@@ -898,15 +907,14 @@
                 replyContent = replyContent.replace(/>/g, "&gt;");
                 const imgMatch = replyContent.match(/!\[(.*?)\]\((.*?)\)/);
                 const hasImage = !!imgMatch;
-                
                 replyHTML = `
                     <div class="reply-preview">
                         <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
                         <div class="reply-content">
                             <span class="reply-author">${safeText(msg.replyTo.author)}</span>
                             <div style="display:flex; gap:5px; align-items:center;">
-                                ${imgMatch ? `<img src="${imgMatch[2]}" class="reply-preview-img-mini">` : ''}
-                                <span class="reply-text">${replyContent.substring(0, 40)}...</span>
+                                ${hasImage ? `<img src="${imgMatch[2]}" class="reply-preview-img-mini">` : ''}
+                                <span class="reply-text">${safeText(replyContent.substring(0, 40))}...</span>
                             </div>
                         </div>
                     </div>
@@ -916,8 +924,29 @@
             const div = document.createElement('div');
             div.className = "message";
             div.id = `msg-${msgId}`;
-            
-            // Buttons
+            div.oncontextmenu = (e) => {
+                 if(e.target.tagName !== 'BUTTON' && e.target.closest('.message-actions') === null && e.target.closest('.kebab-menu') === null) {
+                     e.stopPropagation();
+                     return true; 
+                 }
+                 return false;
+            };
+
+            const senderData = usersCache.find(u => u.name === msg.author);
+            const isSenderAdmin = senderData && senderData.role === 'admin';
+            const adminClass = isSenderAdmin ? 'admin' : '';
+
+            let editUI = `
+                <div class="edit-ui-wrapper" id="edit-wrapper-${msgId}">
+                    <textarea id="edit-text-${msgId}" class="edit-textarea"></textarea>
+                    <div class="edit-buttons">
+                        <button class="btn-edit-save" id="btn-edit-save-${msgId}">✅</button>
+                        <button class="btn-edit-cancel" id="btn-edit-cancel-${msgId}">❌</button>
+                    </div>
+                </div>
+            `;
+
+            // BUTTONS
             const btnReply = document.createElement('button');
             btnReply.className = 'action-btn action-btn-reply';
             btnReply.textContent = '↩️';
@@ -946,21 +975,11 @@
                 window.toggleKebab(msgId, btnMore);
             };
 
-            // Edit UI
-            const editUI = document.createElement('div');
-            editUI.className = 'edit-ui-wrapper';
-            editUI.id = `edit-wrapper-${msgId}`;
-            editUI.innerHTML = `
-                <textarea id="edit-text-${msgId}" class="edit-textarea"></textarea>
-                <div class="edit-buttons">
-                    <button class="btn-edit-save" id="btn-edit-save-${msgId}">✅</button>
-                    <button class="btn-edit-cancel" id="btn-edit-cancel-${msgId}">❌</button>
-                </div>
-            `;
+            // Bind Edit Buttons directly
             document.getElementById(`btn-edit-save-${msgId}`).onclick = () => window.saveEditFromBtn(document.getElementById(`btn-edit-save-${msgId}`));
             document.getElementById(`btn-edit-cancel-${msgId}`).onclick = () => window.cancelEdit(msgId);
 
-            // Kebab
+            // Kebab Menu
             const kebabMenu = document.createElement('div');
             kebabMenu.className = 'kebab-menu';
             kebabMenu.id = `kebab-${msgId}`;
@@ -973,12 +992,12 @@
             if (isSelf) document.getElementById(`kebab-edit-${msgId}`).onclick = () => window.startEdit(msgId);
             if (isSelf || isAdmin) document.getElementById(`kebab-del-${msgId}`).onclick = () => window.deleteMessage(msgId);
 
-            // Avatar
+            // AVATAR
             const senderData = usersCache.find(u => u.name === msg.author);
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
 
-            // Reactions
+            // REACTIONS
             let reactionsHTML = "";
             if(msg.reactions) {
                 reactionsHTML = Object.keys(msg.reactions).map(emoji => {
@@ -998,8 +1017,12 @@
             div.innerHTML = `
                 ${replyHTML}
                 ${editUI.outerHTML}
-                <div class="message-actions"></div>
-                <div class="msg-avatar ${adminClass}" style="background-color: ${window.stringToColor(msg.author || 'User')};">${avatarInitial}</div>
+                <div class="message-actions">
+                </div>
+                <div class="kebab-menu" id="kebab-${msgId}">
+                    ${kebabHTML}
+                </div>
+                <div class="msg-avatar ${adminClass}" id="avatar-${msgId}" style="background-color: ${window.stringToColor(msg.author || 'User')};">${avatarInitial}</div>
                 <div class="msg-content">
                     <div class="msg-header">
                         <span class="msg-username">${safeText(msg.author || 'Unknown')}</span>
@@ -1011,16 +1034,18 @@
                 </div>
             `;
             
+            // Append Buttons to Toolbar
             const toolbar = div.querySelector('.message-actions');
             toolbar.appendChild(btnReply);
             toolbar.appendChild(btnReact);
             toolbar.appendChild(btnMore);
             
+            // Append Edit UI
             div.appendChild(kebabMenu);
             div.insertBefore(editUI, div.querySelector('.msg-avatar')); 
             
-            const reactionsContainer = div.querySelector('.reactions');
-            reactionsContainer.appendChild(reactionsHTML);
+            // Append Reactions
+            div.querySelector('.reactions').appendChild(reactionsHTML);
 
             container.appendChild(div);
         };
@@ -1028,16 +1053,20 @@
         window.updateMessageUI = function(msgId, msg) {
             const el = document.getElementById(`msg-${msgId}`);
             if (!el) return;
+
             const textEl = el.querySelector('.msg-text');
             const reactionsContainer = el.querySelector('.reactions');
+            
             if (textEl && msg.text) {
                 let content = msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" alt="$1">');
                 content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
                 textEl.innerHTML = content;
             }
+            // Refresh reactions (remove old, add new)
+            const reactionsContainer = el.querySelector('.reactions');
             if(reactionsContainer) {
-                reactionsContainer.innerHTML = ""; 
+                 reactionsContainer.innerHTML = "";
                  if(msg.reactions) {
                     Object.keys(msg.reactions).forEach(emoji => {
                          const users = msg.reactions[emoji];
@@ -1057,16 +1086,83 @@
             if(editUI) editUI.style.display = 'none';
         };
 
-        // --- EVENT HANDLERS ---
+        window.renderReactionsHTML = function(reactions, msgId) {
+            if (!reactions) return "";
+            return Object.keys(reactions).map(emoji => {
+                 const users = reactions[emoji];
+                 const count = users.length;
+                 const reacted = users.includes(currentUID);
+                 return `<div class="reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${safeAttr(msgId)}" data-emoji="${safeAttr(emoji)}">${safeAttr(emoji)} <span class="reaction-count">${safeAttr(count)}</span></div>`;
+            }).join('');
+        };
+
+        // --- GLOBAL EVENT DELEGATION ---
         document.addEventListener('DOMContentLoaded', () => {
+            // CHANNEL LIST CLICK
             document.getElementById('channelsList').addEventListener('click', (e) => {
                 const item = e.target.closest('.channel-item');
                 if (item) window.switchChannel(item.dataset.id);
             });
 
-            document.getElementById('chatHeader').addEventListener('click', () => { window.openChannelSettings(currentChannelId); });
-            document.getElementById('settingsGear').addEventListener('click', (e) => { e.stopPropagation(); window.openChannelSettings(currentChannelId); });
+            // MESSAGES LIST CLICK
+            document.getElementById('messagesList').addEventListener('click', (e) => {
+                const replyBtn = e.target.closest('.action-btn-reply');
+                if (replyBtn) {
+                    const msgId = replyBtn.dataset.msgId;
+                    const msgData = window.findMessageData(msgId);
+                    if(msgData) window.startReply(msgId, msgData);
+                }
 
+                const reactBtn = e.target.closest('.btn-react');
+                if (reactBtn) {
+                    window.openEmojiPopover(reactBtn.dataset.msgId, reactBtn);
+                }
+
+                const moreBtn = e.target.closest('.btn-more');
+                if (moreBtn) {
+                    e.stopPropagation();
+                    window.toggleKebab(moreBtn.dataset.msgId, moreBtn);
+                }
+
+                const kebabEdit = e.target.closest('[data-action="start-edit"]');
+                if (kebabEdit) {
+                    window.startEdit(kebabEdit.dataset.msgId);
+                }
+
+                const kebabDel = e.target.closest('[data-action="delete-msg"]');
+                if (kebabDel) {
+                    window.deleteMessage(kebabDel.dataset.msgId);
+                }
+
+                const reactionBtn = e.target.closest('.reaction-btn');
+                if (reactionBtn) {
+                    window.addReaction(currentChannelId, reactionBtn.dataset.msgId, reactionBtn.dataset.emoji);
+                }
+                
+                const saveEditBtn = e.target.closest('[data-action="save-edit"]');
+                if (saveEditBtn) {
+                    window.saveEditFromBtn(saveEditBtn);
+                }
+                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
+                if (cancelEditBtn) {
+                    window.cancelEdit(cancelEditBtn.dataset.msgId);
+                }
+            });
+
+            // CHAT HEADER CLICK
+            const chatHeader = document.getElementById('chatHeader');
+            const settingsGear = document.getElementById('settingsGear');
+            if(chatHeader) {
+                chatHeader.addEventListener('click', () => { window.openChannelSettings(currentChannelId); });
+            }
+            if(settingsGear) {
+                settingsGear.addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    window.openChannelSettings(currentChannelId); 
+                });
+            }
+
+            // CONTEXT MENU
             const ctxMenu = document.getElementById('contextMenu');
             document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
                 e.preventDefault();
@@ -1075,72 +1171,105 @@
                 ctxMenu.style.left = `${e.clientX}px`;
                 ctxMenu.style.top = `${e.clientY}px`;
                 if (channelItem) {
+                    const channelId = channelItem.dataset.id;
                     ctxMenu.innerHTML = `
-                        <div class="ctx-item" data-action="open-settings" data-channel-id="${safeAttr(channelItem.dataset.id)}">⚙️ Налаштування</div>
-                        ${myRole === 'admin' ? `<div class="ctx-divider"></div><div class="ctx-item danger" data-action="delete-channel" data-channel-id="${safeAttr(channelItem.dataset.id)}">🗑️ Видалити канал</div>` : ''}
-                        <div class="ctx-divider"></div><div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>
+                        <div class="ctx-item" data-action="open-settings" data-channel-id="${safeAttr(channelId)}">⚙️ Налаштування</div>
+                        ${myRole === 'admin' ? `
+                            <div class="ctx-divider"></div>
+                            <div class="ctx-item danger" data-action="delete-channel" data-channel-id="${safeAttr(channelId)}">🗑️ Видалити канал</div>
+                        ` : ''}
+                        <div class="ctx-divider"></div>
+                        <div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>
                     `;
                 } else {
-                    ctxMenu.innerHTML = `<div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>`;
-                }
-            });
-            ctxMenu.addEventListener('click', (e) => {
-                const ctxItem = e.target.closest('.ctx-item');
-                if (ctxItem) {
-                    const action = ctxItem.dataset.action;
-                    const id = ctxItem.dataset.channelId;
-                    if (action === 'open-settings') window.openChannelSettings(id);
-                    if (action === 'delete-channel') window.deleteChannelFromCtx(id);
-                    if (action === 'open-create-modal') window.openChannelModal();
+                    ctxMenu.innerHTML = `
+                        <div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>
+                    `;
                 }
             });
 
+            // 5. GLOBAL CLICK
             document.addEventListener('click', (e) => {
+                const ctxItem = e.target.closest('.ctx-item');
+                if (ctxItem) {
+                    const action = ctxItem.dataset.action;
+                    const channelId = ctxItem.dataset.channelId;
+                    
+                    if (action === 'open-settings') window.openChannelSettings(channelId);
+                    if (action === 'delete-channel') window.deleteChannelFromCtx(channelId);
+                    if (action === 'open-create-modal') window.openChannelModal();
+                }
+                
+                // Close menus
                 const popover = document.getElementById('emojiPopover');
                 const mentionPopup = document.getElementById('mentionPopup');
                 const replyArea = document.getElementById('replyPreviewArea');
-                if(!e.target.closest('#emojiPopover') && !e.target.closest('.btn-react')) {
+                if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react') && !e.target.closest('#contextMenu')) {
                     popover.style.display = 'none';
                     mentionPopup.style.display = 'none';
                 }
                 ctxMenu.style.display = 'none';
                 document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
                 
-                if(replyArea.classList.contains('active') && !replyArea.contains(e.target)) window.cancelReply();
-                
+                // Close reply area
+                if(replyArea.classList.contains('active') && !replyArea.contains(e.target)) {
+                    window.cancelReply();
+                }
+
+                // UI Toggles
                 if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
                 if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
                 
+                // Profile Click
                 const userAreaBtn = document.getElementById('userAreaBtn');
-                if(e.target === userAreaBtn || userAreaBtn.contains(e.target)) window.openProfile();
+                if(e.target === userAreaBtn || userAreaBtn.contains(e.target)) {
+                    window.openProfile();
+                }
             });
         });
 
         window.toggleKebab = function(msgId, btnElement) {
             if(btnElement) btnElement.stopPropagation();
+            
             document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+            
             const menu = document.getElementById(`kebab-${msgId}`);
             menu.classList.toggle('open');
         };
 
         // --- MESSAGING ---
         window.sendMessage = async function() {
+            if (!myData) { alert("Помилка даних профілю."); return; }
+            
             if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
-            if (!myData) { alert("Помилка даних"); return; }
+            
             const input = document.getElementById('messageInput');
             let text = input.value.trim();
-            if (!text) return; 
-            if (text.length > 500) return window.showToast("Максимум 500 символів", "error");
+            
+            if (text.length > 500) {
+                return window.showToast("Повідомлення не може бути довше 500 символів", "error");
+            }
+            if (!text) return; // Cannot send empty
 
+            // Reply Logic
             let replyTo = null;
-            if (activeReplyMsg) replyTo = { author: activeReplyMsg.author, text: activeReplyMsg.text || "" };
+            if (activeReplyMsg) {
+                 replyTo = { author: activeReplyMsg.author, text: activeReplyMsg.text || "" };
+            }
 
+            // Handle @mentions
             const mentionMatch = text.match(/^@(\w+),?\s*(.*)/);
             if (mentionMatch) {
                 const mentionedName = mentionMatch[1];
                 const messageContent = mentionMatch[2];
                 const user = usersCache.find(u => u.name.toLowerCase() === mentionedName.toLowerCase());
-                if (user && (!activeReplyMsg || activeReplyMsg.author === user.name)) replyTo = { author: user.name, text: messageContent || "" };
+                if (user) {
+                    if (activeReplyMsg && activeReplyMsg.author === user.name) {
+                         // Matches
+                    } else {
+                         if (!activeReplyMsg) replyTo = { author: user.name, text: messageContent || "" };
+                    }
+                }
             }
 
             await addDoc(collection(db, "channels", currentChannelId, "messages"), {
@@ -1152,19 +1281,23 @@
                 replyTo: replyTo,
                 createdAt: Date.now()
             });
+            
             input.value = "";
             window.cancelReply();
         };
 
         // --- EDITING ---
         window.startEdit = function(msgId) {
+            window.editingMsgId = msgId;
             const el = document.getElementById(`msg-${msgId}`);
             const textEl = el.querySelector('.msg-text');
             const editUI = el.querySelector('.edit-ui-wrapper');
+            
             editUI.querySelector('textarea').value = textEl.innerText; 
             textEl.style.display = 'none';
             editUI.style.display = 'flex';
             editUI.querySelector('textarea').focus();
+            
             el.querySelector('.kebab-menu').classList.remove('open');
         };
 
@@ -1172,17 +1305,21 @@
             const el = document.getElementById(`msg-${msgId}`);
             const textEl = el.querySelector('.msg-text');
             const editUI = el.querySelector('.edit-ui-wrapper');
+            
             textEl.style.display = 'block'; 
             editUI.style.display = 'none';
+            window.editingMsgId = null;
         };
 
         window.saveEditFromBtn = async function(btnElement) {
-            const msgId = btnElement.getAttribute('data-msg-id'); 
+            const msgId = btnElement.dataset.msgId;
             if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
             const el = document.getElementById(`msg-${msgId}`);
             const textVal = el.querySelector('.edit-textarea').value;
+            
+            if (textVal.length > 500) return window.showToast("Повідомлення не може бути довше 500 символів", "error");
+
             if (textVal.trim()) {
-                if (textVal.length > 500) return window.showToast("Максимум 500 символів", "error");
                 await updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
                     text: textVal,
                     editedAt: serverTimestamp()
@@ -1193,7 +1330,8 @@
         };
 
         // --- DELETE ---
-        window.deleteMessage = async function(msgId) {
+        window.deleteMessage = async function(btnElement) {
+            const msgId = btnElement.dataset.msgId;
             if(confirm('Видалити повідомлення?')) {
                 try {
                     await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
@@ -1243,6 +1381,7 @@
                 usersCache = users;
                 document.getElementById('membersCount').innerText = users.length;
                 list.innerHTML = "";
+                
                 if (users.length === 0) {
                     list.innerHTML = '<div style="color: var(--text-dim); padding: 10px;">Немає учасників</div>';
                     return;
@@ -1311,43 +1450,6 @@
             }
         });
 
-        window.renderUploadGallery = function() {
-             const container = document.getElementById('uploadPreviewContainer');
-             const fragment = document.createDocumentFragment();
-             
-             if (pendingBlobs.length > 0) {
-                 if (document.getElementById('uploadPlaceholder')) document.getElementById('uploadPlaceholder').style.display = 'none';
-                 container.innerHTML = ""; 
-                 pendingBlobs.forEach((blob, index) => {
-                     const wrapper = document.createElement('div');
-                     wrapper.style.position = 'relative';
-                     const img = document.createElement('img');
-                     img.src = URL.createObjectURL(blob); 
-                     img.className = "upload-thumb";
-                     const removeBtn = document.createElement('div');
-                     removeBtn.className = "remove-thumb";
-                     removeBtn.textContent = "✖";
-                     removeBtn.onclick = () => {
-                          pendingBlobs.splice(index, 1);
-                          window.renderUploadGallery();
-                     };
-                     wrapper.appendChild(img);
-                     wrapper.appendChild(removeBtn);
-                     fragment.appendChild(wrapper);
-                 });
-                 container.appendChild(fragment);
-             } else {
-                 container.innerHTML = "";
-                 const p = document.createElement('p');
-                 p.id = "uploadPlaceholder";
-                 p.innerText = "Виберіть фото";
-                 p.style.color = "var(--text-dim)";
-                 p.style.textAlign = "center";
-                 container.appendChild(p);
-             }
-             document.getElementById('previewModal').style.display = 'flex';
-        };
-
         window.handleFileSelect = function(e) {
             const files = Array.from(e.target.files);
             if (!files) return;
@@ -1360,6 +1462,45 @@
             });
             if (added > 0) window.renderUploadGallery();
             e.target.value = "";
+        };
+        
+        window.renderUploadGallery = function() {
+             const container = document.getElementById('uploadPreviewContainer');
+             const placeholder = document.getElementById('uploadPlaceholder');
+             const fragment = document.createDocumentFragment();
+             
+             if (pendingBlobs.length > 0) {
+                 if (placeholder) placeholder.style.display = 'none';
+                 container.innerHTML = "";
+                 
+                 pendingBlobs.forEach((blob, index) => {
+                     const wrapper = document.createElement('div');
+                     wrapper.style.position = 'relative';
+                     const img = document.createElement('img');
+                     img.src = URL.createObjectURL(blob);
+                     img.className = "upload-thumb";
+                     
+                     const removeBtn = document.createElement('div');
+                     removeBtn.className = "remove-thumb";
+                     removeBtn.textContent = "✖";
+                     removeBtn.onclick = () => {
+                          pendingBlobs.splice(index, 1);
+                          window.renderUploadGallery();
+                     };
+                     
+                     wrapper.appendChild(img);
+                     wrapper.appendChild(removeBtn);
+                     fragment.appendChild(wrapper);
+                 });
+                 container.appendChild(fragment);
+             } else {
+                 container.innerHTML = "";
+                 const p = document.createElement('p');
+                 p.id = "uploadPlaceholder";
+                 p.innerText = "Виберіть фото";
+                 container.appendChild(p);
+             }
+             document.getElementById('previewModal').style.display = 'block';
         };
 
         window.sendUpload = async function() {
@@ -1379,10 +1520,12 @@
                 
                 window.showToast("Фото надіслано", "success");
                 window.closeModals('previewModal');
+                document.getElementById('photoCaption').value = "";
                 pendingBlobs = [];
                 window.renderUploadGallery();
                 input.focus();
             } catch (err) {
+                console.warn("Upload Error:", err);
                 window.showToast("Помилка фото", "error");
             }
         };
@@ -1398,21 +1541,38 @@
             activeReplyMsg = msgData; 
             const replyArea = document.getElementById('replyPreviewArea');
             const imgMatch = msgData.text.match(/!\[(.*?)\]\((.*?)\)/);
+            const hasImage = !!imgMatch;
             
             replyArea.innerHTML = `
-                <img src="${imgMatch ? imgMatch[2] : ''}" class="reply-preview-img-mini">
-                <div class="reply-preview-text">${safeText(msgData.author)}: ${imgMatch ? 'Фото' : safeText(msgData.text).substring(0, 20)}...</div>
-                <div class="reply-cancel-btn" onclick="window.cancelReply()" style="color:var(--danger); padding:0 5px; cursor:pointer;">✖</div>
+                <div style="display:flex; gap:5px; align-items:center;">
+                    ${imgMatch ? `<img src="${imgMatch[2]}" class="reply-preview-img-mini">` : ''}
+                    <div class="reply-preview-text">${safeText(msgData.author)}: ${imgMatch ? 'Фото' : safeText(msgData.text.substring(0, 20))}...</div>
+                    <div class="reply-cancel-btn" onclick="window.cancelReply()" style="color:var(--danger); padding:0 5px; cursor:pointer;">✖</div>
+                </div>
             `;
             
-            replyArea.style.display = 'flex';
-            document.getElementById('messageInput').focus();
+            replyArea.classList.add('active');
+            
+            const input = document.getElementById('messageInput');
+            input.value = `@${msgData.author}, `;
+            input.focus();
         };
 
         window.cancelReply = function() {
             activeReplyMsg = null;
-            document.getElementById('replyPreviewArea').innerHTML = "";
-            document.getElementById('replyPreviewArea').style.display = 'none';
+            const replyArea = document.getElementById('replyPreviewArea');
+            replyArea.innerHTML = "";
+            replyArea.classList.remove('active');
+        };
+
+        window.findMessageData = function(msgId) {
+            const el = document.getElementById(`msg-${msgId}`);
+            if (el) {
+                 const author = el.querySelector('.msg-username').textContent;
+                 const text = el.querySelector('.msg-text').innerText;
+                 return { author: author, text: text };
+            }
+            return null;
         };
 
         // --- LOGOUT ---
@@ -1435,15 +1595,16 @@
     <!-- PARTICLES SYSTEM (ULTRA FAST) -->
     <script>
         const grid = document.getElementById('emojiGrid');
+        const emojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
+        
         if(grid) {
             grid.innerHTML = "";
-            const emojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
             emojis.forEach(emoji => {
                 const btn = document.createElement('div');
                 btn.className = 'emoji-btn';
                 btn.textContent = emoji;
                 btn.onclick = () => { 
-                    if(activePopoverMsgId) window.addReaction(currentChannelId, activePopoverMsgId, emoji); 
+                    window.addReaction(currentChannelId, activePopoverMsgId, emoji); 
                     document.getElementById('emojiPopover').style.display = 'none';
                 };
                 grid.appendChild(btn);
@@ -1468,9 +1629,10 @@
                 this.y = Math.random() * height;
                 this.vx = (Math.random() - 0.5) * 0.5;
                 this.vy = (Math.random() - 0.5) * 0.5;
-                this.size = Math.random() * 2 + 1; 
+                this.size = Math.random() * 2 + 1;
                 this.alpha = Math.random() * 0.5;
                 this.targetAlpha = Math.random() * 0.5 + 0.1;
+                this.life = Math.random() * 100;
             }
 
             update() {
@@ -1480,21 +1642,21 @@
                 if (this.x > width) this.x = 0;
                 if (this.y < 0) this.y = height;
                 if (this.y > height) this.y = 0;
-                this.alpha += (this.targetAlpha - this.alpha) *0.02;
+                this.alpha += (this.targetAlpha - this.alpha) * 0.02;
                 if (Math.abs(this.targetAlpha - this.alpha) < 0.01) {
                     this.targetAlpha = Math.random() * 0.5 + 0.1;
                 }
             }
 
             draw() {
-                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`; 
+                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`;
                 ctx.fillRect(this.x, this.y, this.size, this.size);
             }
         }
 
         function initParticles() {
             particles = [];
-            const particleCount = window.innerWidth < 768 ? 40 : 70; 
+            const particleCount = window.innerWidth < 768 ? 30 : 50; 
             for (let i =0; i < particleCount; i++) {
                 particles.push(new Particle());
             }
@@ -1502,6 +1664,7 @@
 
         function animate() {
             ctx.clearRect(0, 0, width, height);
+            
             const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width);
             gradient.addColorStop(0, 'rgba(34, 197, 94, 0.05)');
             gradient.addColorStop(1, 'rgba(3, 5, 7, 0.2)');
