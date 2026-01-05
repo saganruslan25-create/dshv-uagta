@@ -296,7 +296,7 @@
         .ctx-icon { margin-right: 8px; font-size: 18px; width: 24px; text-align: center; }
         .ctx-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 6px 0; }
 
-        /* Emoji Picker - Lightweight Popover (Not Full Modal) */
+        /* Emoji Picker */
         #emojiPopover {
             display: none;
             position: absolute;
@@ -371,7 +371,7 @@
             <div class="channels-list" id="channelsList"></div>
 
             <!-- USER AREA -->
-            <div class="user-area" onclick="window.openProfile()">
+            <div class="user-area" id="userAreaBtn">
                 <div class="user-avatar-small" id="myAvatar">?</div>
                 <div class="user-info-text">
                     <div class="user-name-sidebar" id="sidebarName">...</div>
@@ -388,7 +388,6 @@
 
         <!-- 3. CHAT -->
         <main class="chat-main">
-            <!-- NO ONCLICK HERE! Using Listener in JS -->
             <div class="chat-header" id="chatHeader">
                 <span class="header-hashtag">#</span>
                 <span class="header-channel-name" id="currentChannelName">general</span>
@@ -408,7 +407,7 @@
                         <button class="btn-upload" onclick="document.getElementById('hiddenFileInput').click()">➕</button>
                     </div>
                     <input type="text" id="messageInput" placeholder="Написати повідомлення..." autocomplete="off">
-                    <button class="send-btn" onclick="window.sendMessage()">➤</button>
+                    <button class="send-btn" id="sendBtn">➤</button>
                 </div>
             </div>
         </main>
@@ -541,7 +540,20 @@
         let usersCache = [];
         const commonEmojis = ['👍', '❤️', '😂', '😮', '😎', '😢', '🔥', '🚀'];
 
-        // --- WINDOW FUNCTIONS (SAFE) ---
+        // --- HELPER FUNCTIONS (REWRITE) ---
+        
+        // Escape attributes safely to prevent HTML breaks from quotes/brackets
+        const safeAttr = (val) => String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        
+        // Escape HTML content to prevent XSS and tag injection
+        const safeText = (val) => {
+            if (!val) return "";
+            let str = String(val);
+            return str.replace(/&/g, "&amp;")
+                      .replace(/</g, "&lt;")
+                      .replace(/>/g, "&gt;");
+        };
+
         window.closeModals = (id) => document.getElementById(id).style.display = 'none';
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('active'); };
         window.toggleMembers = () => { document.getElementById('membersSidebar').classList.toggle('active'); };
@@ -559,7 +571,7 @@
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
-            toast.innerHTML = message;
+            toast.textContent = message; // Safe text only
             
             const close = document.createElement('span');
             close.innerHTML = '&times;';
@@ -588,7 +600,7 @@
             window.initChat();
         });
 
-        // --- INIT ---
+        // --- INIT (PROFILE SYSTEM) ---
         window.initChat = async function() {
             if (!currentUID) return;
             try {
@@ -597,7 +609,8 @@
                     myData = snap.data();
                     myRole = myData.role || 'member'; 
                     
-                    document.getElementById('sidebarName').innerText = myData.name;
+                    // SET TEXT CONTENT ONLY (Safe)
+                    document.getElementById('sidebarName').textContent = myData.name;
                     
                     const avatarSmall = document.getElementById('myAvatar');
                     const avatarBig = document.getElementById('profileBigAvatar');
@@ -606,16 +619,16 @@
                     if (myData.photoURL && myData.photoURL !== "") {
                         avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
                         avatarSmall.style.backgroundSize = 'cover';
-                        avatarSmall.innerText = '';
+                        avatarSmall.textContent = '';
                         avatarBig.style.backgroundImage = `url(${myData.photoURL})`;
                         avatarBig.style.backgroundSize = 'cover';
-                        avatarBig.innerText = '';
+                        avatarBig.textContent = '';
                     } else {
                         const color = window.stringToColor(myData.name);
                         avatarSmall.style.backgroundColor = color;
-                        avatarSmall.innerText = initial;
+                        avatarSmall.textContent = initial;
                         avatarBig.style.backgroundColor = color;
-                        avatarBig.innerText = initial;
+                        avatarBig.textContent = initial;
                     }
 
                     let roleText = "БОЄЦЬ";
@@ -624,14 +637,14 @@
                          const parts = myData.rank.split('|');
                          roleText = parts[0].trim();
                     }
-                    document.getElementById('sidebarRole').innerText = roleText;
+                    document.getElementById('sidebarRole').textContent = roleText;
                     
-                    document.getElementById('profileNameDisplay').innerText = myData.name;
-                    document.getElementById('profileRoleDisplay').innerText = roleText;
+                    document.getElementById('profileNameDisplay').textContent = myData.name;
+                    document.getElementById('profileRoleDisplay').textContent = roleText;
                     document.getElementById('profileNameInput').value = myData.name;
                 } else {
                     console.error("User not found");
-                    document.getElementById('sidebarName').innerText = "Профіль не знайдено";
+                    document.getElementById('sidebarName').textContent = "Профіль не знайдено";
                 }
                 
                 window.loadChannels();
@@ -669,11 +682,11 @@
                     
                     document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
                     document.getElementById('myAvatar').style.backgroundSize = 'cover';
-                    document.getElementById('myAvatar').innerText = '';
+                    document.getElementById('myAvatar').textContent = '';
                     
                     document.getElementById('profileBigAvatar').style.backgroundImage = `url(${url})`;
                     document.getElementById('profileBigAvatar').style.backgroundSize = 'cover';
-                    document.getElementById('profileBigAvatar').innerText = '';
+                    document.getElementById('profileBigAvatar').textContent = '';
                 }
 
                 window.showToast("Профіль оновлено!", "success");
@@ -704,29 +717,20 @@
             }
         };
 
-        // --- CHANNELS (FIXED: CREATEELEMENT) ---
+        // --- CHANNELS (SYSTEM REWRITE: SAFE DOM CREATION) ---
         window.loadChannels = function() {
             const list = document.getElementById('channelsList');
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
             
-            // Add Click Listener ONCE for the whole list
-            if (!list.hasAttribute('data-listener-ready')) {
-                list.addEventListener('click', (e) => {
-                    const item = e.target.closest('.channel-item');
-                    if (item && item.dataset.id) {
-                        window.switchChannel(item.dataset.id);
-                    }
-                });
-                list.setAttribute('data-listener-ready', 'true');
-            }
-            
             onSnapshot(q, (snapshot) => {
+                // Preserve listener
                 list.innerHTML = "";
                 channelsCache = [];
                 
+                // Category
                 const cat = document.createElement('div');
                 cat.className = "category-label";
-                cat.innerText = "ТЕКСТОВІ КАНАЛИ";
+                cat.textContent = "ТЕКСТОВІ КАНАЛИ";
                 list.appendChild(cat);
                 
                 if (snapshot.size === 0) {
@@ -739,20 +743,27 @@
                     ch.id = d.id;
                     channelsCache.push(ch);
 
-                    const item = document.createElement('div'); // SAFE CREATION
+                    // --- SAFE CREATION (NO INNERHTML FOR CLICKABLES) ---
+                    const item = document.createElement('div');
                     const isActive = ch.id === currentChannelId;
                     
                     item.className = `channel-item ${isActive ? 'active' : ''}`;
-                    // DATA ATTRIBUTE
+                    // DATA ATTRIBUTE ONLY (Safe)
                     item.dataset.id = ch.id;
                     item.setAttribute('draggable', 'true');
 
-                    // Build inner HTML safely
                     const infoDiv = document.createElement('div');
                     infoDiv.className = 'channel-info';
-                    // ${ch.name} is safe here because it's only text content inside the div, NOT code
-                    infoDiv.innerHTML = `<span class="channel-icon">#</span><span>${ch.name}</span>`;
+                    // Text content (Safe)
+                    const iconSpan = document.createElement('span');
+                    iconSpan.className = 'channel-icon';
+                    iconSpan.textContent = '#';
                     
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = ch.name;
+                    
+                    infoDiv.appendChild(iconSpan);
+                    infoDiv.appendChild(nameSpan);
                     item.appendChild(infoDiv);
                     
                     item.ondragstart = (e) => { e.dataTransfer.setData("text/plain", ch.id); e.target.style.opacity = '0.5'; };
@@ -768,7 +779,7 @@
                     list.appendChild(item);
                     
                     if (isActive) {
-                        document.getElementById('currentChannelName').innerText = ch.name;
+                        document.getElementById('currentChannelName').textContent = ch.name;
                         document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
                     }
                 });
@@ -779,7 +790,7 @@
             currentChannelId = id;
             const ch = channelsCache.find(c => c.id === id);
             if (ch) {
-                document.getElementById('currentChannelName').innerText = ch.name;
+                document.getElementById('currentChannelName').textContent = ch.name;
                 document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
             }
             window.loadMessages(id);
@@ -879,7 +890,7 @@
             document.getElementById('newChannelName').value = "";
         };
 
-        // --- MESSAGES ---
+        // --- MESSAGES (SYSTEM REWRITE: SAFE RENDERING) ---
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
             list.innerHTML = `<div class="date-divider">СЬОГОДНІ</div>`;
@@ -916,6 +927,7 @@
             const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'}) : '...';
             
             let content = msg.text || "";
+            // XSS Prevention
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" style="max-width:100%; max-height:300px; border-radius:8px; margin-top:5px;" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
@@ -923,12 +935,13 @@
             // Reply System
             let replyHTML = "";
             if (msg.replyTo) {
+                // Safe rendering
                 replyHTML = `
                     <div class="reply-preview">
-                        <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
+                        <div class="reply-avatar">${safeText(msg.replyTo.author.charAt(0).toUpperCase())}</div>
                         <div class="reply-content">
-                            <span class="reply-author">${msg.replyTo.author}</span>
-                            <span class="reply-text">${(msg.replyTo.text).substring(0, 40)}...</span>
+                            <span class="reply-author">${safeText(msg.replyTo.author)}</span>
+                            <span class="reply-text">${safeText(msg.replyTo.text).substring(0, 40)}...</span>
                         </div>
                     </div>
                 `;
@@ -940,7 +953,7 @@
             div.oncontextmenu = (e) => {
                  if(e.target.tagName !== 'BUTTON' && e.target.closest('.message-actions') === null && e.target.closest('.kebab-menu') === null) {
                      e.stopPropagation();
-                     return true; 
+                     return true; // Allow default browser menu
                  }
                  return false;
             };
@@ -960,18 +973,19 @@
                 </div>
             `;
 
-            // BUTTONS - DATA ATTRIBUTES ONLY
-            let btnReply = `<button class="action-btn action-btn-reply" data-msg-id="${msgId}" data-author="${msg.author}">↩️</button>`;
-            let btnReact = `<button class="action-btn btn-react" data-msg-id="${msgId}">😀</button>`;
-            let btnMore = `<button class="action-btn btn-more" data-msg-id="${msgId}">⋮</button>`;
+            // BUTTONS - USING SAFE ATTRIBUTES AND DATA-ACTIONS
+            // safeAttr(id) ensures quotes " or ' don't break HTML attributes
+            let btnReply = `<button class="action-btn action-btn-reply" data-msg-id="${safeAttr(msgId)}" data-author="${safeAttr(msg.author)}">↩️</button>`;
+            let btnReact = `<button class="action-btn btn-react" data-msg-id="${safeAttr(msgId)}">😀</button>`;
+            let btnMore = `<button class="action-btn btn-more" data-msg-id="${safeAttr(msgId)}">⋮</button>`;
             
             let btnEdit = "";
             let btnDelete = "";
 
             // Kebab Items
             let kebabItems = "";
-            if (isSelf) kebabItems += `<button class="kebab-item" data-msg-id="${msgId}" data-action="start-edit">Редагувати</button>`;
-            if (isSelf || isAdmin) kebabItems += `<button class="kebab-item danger" data-msg-id="${msgId}" data-action="delete-msg">Видалити</button>`;
+            if (isSelf) kebabItems += `<button class="kebab-item" data-msg-id="${safeAttr(msgId)}" data-action="start-edit">Редагувати</button>`;
+            if (isSelf || isAdmin) kebabItems += `<button class="kebab-item danger" data-msg-id="${safeAttr(msgId)}" data-action="delete-msg">Видалити</button>`;
 
             div.innerHTML = `
                 ${replyHTML}
@@ -987,7 +1001,7 @@
                 <div class="msg-avatar ${adminClass}" id="avatar-${msgId}" style="background-color: ${window.stringToColor(msg.author || 'User')};">${avatarInitial}</div>
                 <div class="msg-content">
                     <div class="msg-header">
-                        <span class="msg-username">${msg.author || 'Unknown'}</span>
+                        <span class="msg-username">${safeText(msg.author || 'Unknown')}</span>
                         <span class="msg-timestamp">${time}</span>
                         ${msg.editedAt ? '<span style="color:var(--text-dim); font-size:10px; margin-left:5px;">(ред)</span>' : ''}
                     </div>
@@ -1024,71 +1038,85 @@
                  const users = reactions[emoji];
                  const count = users.length;
                  const reacted = users.includes(currentUID);
-                 return `<div class="reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} <span class="reaction-count">${count}</span></div>`;
+                 return `<div class="reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${safeAttr(msgId)}" data-emoji="${safeAttr(emoji)}">${safeAttr(emoji)} <span class="reaction-count">${safeAttr(count)}</span></div>`;
             }).join('');
         };
 
-        // --- GLOBAL EVENT DELEGATION ---
+        // --- GLOBAL EVENT DELEGATION (SYSTEM REWRITE) ---
         document.addEventListener('DOMContentLoaded', () => {
-            // CHANNEL LIST CLICK (Handled via Listener in loadChannels)
             
-            // CHAT HEADER CLICK (OPEN SETTINGS)
-            document.getElementById('chatHeader').addEventListener('click', () => {
-                 window.openChannelSettings(currentChannelId);
-            });
-            
-            // SETTINGS GEAR (OPEN SETTINGS)
-            document.getElementById('settingsGear').addEventListener('click', (e) => {
-                 e.stopPropagation(); // Prevent bubbling to header
-                 window.openChannelSettings(currentChannelId);
+            // 1. CHANNEL LIST CLICK (Safe)
+            document.getElementById('channelsList').addEventListener('click', (e) => {
+                const item = e.target.closest('.channel-item');
+                if (item && item.dataset.id) {
+                    window.switchChannel(item.dataset.id);
+                }
             });
 
-            // MESSAGES LIST CLICK
-            document.getElementById('messagesList').addEventListener('click', (e) => {
-                const replyBtn = e.target.closest('.action-btn-reply');
-                if (replyBtn) {
-                    window.startReply(replyBtn.dataset.msgId, replyBtn.dataset.author);
+            // 2. MESSAGES LIST CLICK (Safe)
+            document.getElementById('messagesList').addEventListener('click', async (e) => {
+                // REPLY
+                if (e.target.closest('.action-btn-reply')) {
+                    const btn = e.target.closest('.action-btn-reply');
+                    window.startReply(btn.dataset.msgId, btn.dataset.author);
                 }
 
-                const reactBtn = e.target.closest('.btn-react');
-                if (reactBtn) {
-                    window.openEmojiPopover(reactBtn.dataset.msgId, reactBtn);
+                // REACT
+                if (e.target.closest('.btn-react')) {
+                    const btn = e.target.closest('.btn-react');
+                    window.openEmojiPopover(btn.dataset.msgId, btn);
                 }
 
-                const moreBtn = e.target.closest('.btn-more');
-                if (moreBtn) {
-                    window.toggleKebab(moreBtn.dataset.msgId, moreBtn);
+                // MORE MENU
+                if (e.target.closest('.btn-more')) {
+                    const btn = e.target.closest('.btn-more');
+                    window.toggleKebab(btn.dataset.msgId, btn);
                 }
 
-                const kebabEdit = e.target.closest('[data-action="start-edit"]');
-                if (kebabEdit) {
-                    window.startEdit(kebabEdit.dataset.msgId);
+                // KEBAB EDIT
+                if (e.target.closest('[data-action="start-edit"]')) {
+                    const btn = e.target.closest('[data-action="start-edit"]');
+                    window.startEdit(btn.dataset.msgId);
                 }
 
-                const kebabDel = e.target.closest('[data-action="delete-msg"]');
-                if (kebabDel) {
-                    window.deleteMessage(kebabDel.dataset.msgId);
+                // KEBAB DELETE
+                if (e.target.closest('[data-action="delete-msg"]')) {
+                    const btn = e.target.closest('[data-action="delete-msg"]');
+                    window.deleteMessage(btn.dataset.msgId);
                 }
 
-                const reactionBtn = e.target.closest('.reaction-btn');
-                if (reactionBtn) {
-                    window.addReaction(currentChannelId, reactionBtn.dataset.msgId, reactionBtn.dataset.emoji);
+                // REACTIONS
+                if (e.target.closest('.reaction-btn')) {
+                    const btn = e.target.closest('.reaction-btn');
+                    window.addReaction(currentChannelId, btn.dataset.msgId, btn.dataset.emoji);
                 }
                 
-                const saveEditBtn = e.target.closest('[data-action="save-edit"]');
-                if (saveEditBtn) {
-                    window.saveEditFromBtn(saveEditBtn);
+                // SAVE/EDIT CANCEL
+                if (e.target.closest('[data-action="save-edit"]')) {
+                    const btn = e.target.closest('[data-action="save-edit"]');
+                    window.saveEditFromBtn(btn);
                 }
-                
-                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
-                if (cancelEditBtn) {
-                    window.cancelEdit(cancelEditBtn.dataset.msgId);
+                if (e.target.closest('[data-action="cancel-edit"]')) {
+                    const btn = e.target.closest('[data-action="cancel-edit"]');
+                    window.cancelEdit(btn.dataset.msgId);
                 }
             });
 
-            // CHANNEL LIST CONTEXT MENU
+            // 3. CHAT HEADER CLICK (Safe)
+            const chatHeader = document.getElementById('chatHeader');
+            const settingsGear = document.getElementById('settingsGear');
+            if(chatHeader) {
+                chatHeader.addEventListener('click', () => { window.openChannelSettings(currentChannelId); });
+            }
+            if(settingsGear) {
+                settingsGear.addEventListener('click', (e) => { 
+                    e.stopPropagation(); 
+                    window.openChannelSettings(currentChannelId); 
+                });
+            }
+
+            // 4. CONTEXT MENU (Safe)
             const ctxMenu = document.getElementById('contextMenu');
-            
             document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 const channelItem = e.target.closest('.channel-item');
@@ -1101,10 +1129,10 @@
                     const channelId = channelItem.dataset.id;
                     
                     ctxMenu.innerHTML = `
-                        <div class="ctx-item" data-action="open-settings" data-channel-id="${channelId}">⚙️ Налаштування</div>
+                        <div class="ctx-item" data-action="open-settings" data-channel-id="${safeAttr(channelId)}">⚙️ Налаштування</div>
                         ${myRole === 'admin' ? `
                             <div class="ctx-divider"></div>
-                            <div class="ctx-item danger" data-action="delete-channel" data-channel-id="${channelId}">🗑️ Видалити канал</div>
+                            <div class="ctx-item danger" data-action="delete-channel" data-channel-id="${safeAttr(channelId)}">🗑️ Видалити канал</div>
                         ` : ''}
                         <div class="ctx-divider"></div>
                         <div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>
@@ -1116,30 +1144,37 @@
                 }
             });
 
-            // CONTEXT MENU ACTION HANDLERS
+            // 5. GLOBAL ACTIONS
             document.addEventListener('click', (e) => {
+                // Context Menu Actions
                 const ctxItem = e.target.closest('.ctx-item');
                 if (ctxItem) {
                     const action = ctxItem.dataset.action;
-                    const channelId = ctxItem.dataset.channelId;
-                    
-                    if (action === 'open-settings') window.openChannelSettings(channelId);
-                    if (action === 'delete-channel') window.deleteChannelFromCtx(channelId);
+                    if (action === 'open-settings') window.openChannelSettings(ctxItem.dataset.channelId);
+                    if (action === 'delete-channel') window.deleteChannelFromCtx(ctxItem.dataset.channelId);
                     if (action === 'open-create-modal') window.openChannelModal();
                 }
                 
                 // Close menus on outside click
                 const popover = document.getElementById('emojiPopover');
                 const mentionPopup = document.getElementById('mentionPopup');
-                if(!e.target.closest('#emojiPopover') && !e.target.closest('.btn-react') && !e.target.closest('#contextMenu')) {
+                if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react') && !e.target.closest('#contextMenu')) {
                     popover.style.display = 'none';
                     mentionPopup.style.display = 'none';
                 }
                 document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
                 
+                // UI Toggles
                 if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
                 if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
+                
+                // Profile Click
+                const userAreaBtn = document.getElementById('userAreaBtn');
+                if(e.target === userAreaBtn || userAreaBtn.contains(e.target)) {
+                    window.openProfile();
+                }
             });
+        });
 
         window.toggleKebab = function(msgId, btnElement) {
             if(btnElement) btnElement.stopPropagation();
@@ -1148,13 +1183,6 @@
             
             const menu = document.getElementById(`kebab-${msgId}`);
             menu.classList.toggle('open');
-        };
-
-        // --- REPLY SYSTEM ---
-        window.startReply = function(msgId, author) {
-            const input = document.getElementById('messageInput');
-            input.value = `@${author}, `;
-            input.focus();
         };
 
         // --- MESSAGING ---
@@ -1261,14 +1289,6 @@
             popover.style.display = 'block';
         };
 
-        document.addEventListener('click', (e) => {
-            const popover = document.getElementById('emojiPopover');
-            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
-                popover.style.display = 'none';
-            }
-            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
-        });
-
         window.addReaction = async function(channelId, msgId, emoji) {
             const msgRef = doc(db, "channels", channelId, "messages", msgId);
             const snap = await getDoc(msgRef);
@@ -1316,7 +1336,7 @@
                     item.innerHTML = `
                         <div class="member-avatar-small" style="background-color: ${window.stringToColor(u.name)}">${initial}</div>
                         <div class="member-info">
-                            <span class="member-name">${u.name}</span>
+                            <span class="member-name">${safeText(u.name)}</span>
                         </div>
                         <div class="status-dot"></div>
                     `;
@@ -1345,7 +1365,7 @@
                 usersCache.forEach(u => {
                     const item = document.createElement('div');
                     item.className = 'mention-item';
-                    item.innerHTML = `<div class="mention-avatar" style="background-color: ${window.stringToColor(u.name)}">${u.name.charAt(0).toUpperCase()}</div> ${u.name}`;
+                    item.innerHTML = `<div class="mention-avatar" style="background-color: ${window.stringToColor(u.name)}">${u.name.charAt(0).toUpperCase()}</div> ${safeText(u.name)}`;
                     item.onclick = () => {
                         const input = document.getElementById('messageInput');
                         input.value = input.value.substring(0, input.value.lastIndexOf('@')+1) + u.name + ", ";
@@ -1430,31 +1450,22 @@
             if (pendingInput) pendingInput.focus();
         };
 
-        // --- EVENTS ---
-        document.addEventListener('click', (e) => {
-            mentionPopup.style.display = 'none';
-            const popover = document.getElementById('emojiPopover');
-            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
-                popover.style.display = 'none';
-            }
-            
-            const ctxMenu = document.getElementById('contextMenu');
-            if(!e.target.closest('#contextMenu')) {
-                ctxMenu.style.display = 'none';
-            }
-            
-            if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
-            if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
-        });
-
-        document.getElementById('messageInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') window.sendMessage();
-        });
+        // --- REPLY SYSTEM ---
+        window.startReply = function(msgId, author) {
+            const input = document.getElementById('messageInput');
+            input.value = `@${author}, `;
+            input.focus();
+        };
 
         // --- LOGOUT ---
         window.logout = function() { signOut(auth).then(() => window.location.href = "index.html")); };
 
     </script>
+    
+    <!-- EMOJI POPOVER CONTAINER -->
+    <div id="emojiPopover">
+        <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
     
     <!-- PARTICLES SYSTEM SCRIPT -->
     <script>
@@ -1464,7 +1475,7 @@
         emojis.forEach(emoji => {
             const btn = document.createElement('div');
             btn.className = 'emoji-btn';
-            btn.innerText = emoji;
+            btn.textContent = emoji;
             btn.onclick = () => { 
                 window.addReaction(currentChannelId, activePopoverMsgId, emoji); 
                 document.getElementById('emojiPopover').style.display = 'none';
@@ -1505,7 +1516,6 @@
                 if (this.y < 0) this.y = height;
                 if (this.y > height) this.y = 0;
 
-                // Twinkle effect
                 this.alpha += (this.targetAlpha - this.alpha) *0.02;
                 if (Math.abs(this.targetAlpha - this.alpha) < 0.01) {
                     this.targetAlpha = Math.random() * 0.5 + 0.1;
@@ -1515,7 +1525,7 @@
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size,0, Math.PI *2);
-                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`; // Green
+                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`;
                 ctx.fill();
             }
         }
