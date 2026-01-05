@@ -33,7 +33,7 @@
             height: 100vh; width: 100vw;
             overflow: hidden;
             display: flex;
-            user-select: none; /* Default no select */
+            user-select: none;
             -webkit-user-select: none;
         }
 
@@ -186,7 +186,7 @@
         }
         .reply-avatar { width: 16px; height: 16px; border-radius: 50%; background: #333; margin-right: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white; }
         .reply-content { display: flex; flex-direction: column; overflow: hidden; flex: 1; user-select: text !important; -webkit-user-select: text !important; }
-        .reply-author { font-weight: 600; color: var(--primary-bright); margin-right: 4px; display: block; font-size: 12px; line-height: 1.2; }
+        .reply-author { font-weight: 600; color: var(--primary-bright); margin-right: 4px; display: block; line-height: 1.2; }
         .reply-text { color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; opacity: 0.8; }
 
         /* Action Toolbar */
@@ -296,7 +296,7 @@
         .ctx-icon { margin-right: 8px; font-size: 18px; width: 24px; text-align: center; }
         .ctx-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 6px 0; }
 
-        /* Emoji Picker - Lightweight Popover */
+        /* Emoji Picker - Lightweight Popover (Not Full Modal) */
         #emojiPopover {
             display: none;
             position: absolute;
@@ -533,7 +533,7 @@
         // --- GLOBALS ---
         let currentUID = null;
         let myData = null;
-        let myRole = 'member'; // Admin or Member
+        let myRole = 'member';
         let currentChannelId = 'general';
         let messagesUnsubscribe = null;
         
@@ -548,7 +548,7 @@
         
         window.stringToColor = (str) => {
             let hash = 0;
-            for (let i = 0; i < str.length; i++) {
+            for (let i =0; i < str.length; i++) {
                 hash = str.charCodeAt(i) + ((hash << 5) - hash);
             }
             const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
@@ -704,7 +704,7 @@
             }
         };
 
-        // --- CHANNELS ---
+        // --- CHANNELS (DELEGATED EVENTS) ---
         window.loadChannels = function() {
             const list = document.getElementById('channelsList');
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
@@ -733,11 +733,13 @@
                     const isActive = ch.id === currentChannelId;
                     
                     item.className = `channel-item ${isActive ? 'active' : ''}`;
+                    // DATA ATTRIBUTE - NO ONCLICK
                     item.dataset.id = ch.id;
+                    item.dataset.action = "switch-channel";
                     item.setAttribute('draggable', 'true');
 
                     item.innerHTML = `
-                        <div class="channel-info" onclick="window.switchChannel('${ch.id}')">
+                        <div class="channel-info">
                             <span class="channel-icon">#</span>
                             <span>${ch.name}</span>
                         </div>
@@ -858,7 +860,7 @@
             const q = query(collection(db, "channels"), where("name", "==", cleanName));
             const snap = await getDocs(q);
             if(!snap.empty) {
-                window.showToast('Канал з такою назвою вже існує!', "error");
+                window.showToast('Канал з такою назвою вже існує', "error");
                 return;
             }
 
@@ -884,7 +886,7 @@
                     const msgId = change.doc.id;
 
                     if (change.type === "added") {
-                        window.renderMessageUI(msg, msgId, list, msgId);
+                        window.renderMessageUI(msg, msgId, list);
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
                     } else if (change.type === "removed") {
@@ -897,47 +899,7 @@
             });
         };
 
-        // IMPORTANT: Delegated Event Listener to handle clicks safely without inline JS
-        document.getElementById('messagesList').addEventListener('click', async (e) => {
-            // REPLY
-            if (e.target.closest('.action-btn-reply')) {
-                const btn = e.target.closest('.action-btn-reply');
-                window.startReply(btn.dataset.msgId, btn.dataset.author);
-            }
-
-            // REACT
-            if (e.target.closest('.btn-react')) {
-                const btn = e.target.closest('.btn-react');
-                window.openEmojiPopover(btn.dataset.msgId, btn);
-            }
-
-            // MORE MENU
-            if (e.target.closest('.btn-more')) {
-                const btn = e.target.closest('.btn-more');
-                window.toggleKebab(btn.dataset.msgId, btn);
-            }
-
-            // KEBAB EDIT
-            if (e.target.closest('.kebab-edit')) {
-                const btn = e.target.closest('.kebab-edit');
-                window.startEdit(btn.dataset.msgId);
-            }
-
-            // KEBAB DELETE
-            if (e.target.closest('.kebab-del')) {
-                const btn = e.target.closest('.kebab-del');
-                window.deleteMessage(btn.dataset.msgId);
-            }
-
-            // REACTIONS
-            if (e.target.closest('.reaction-btn')) {
-                const btn = e.target.closest('.reaction-btn');
-                window.addReaction(currentChannelId, btn.dataset.msgId, btn.dataset.emoji);
-            }
-        });
-
-
-        window.renderMessageUI = function(msg, msgId, container, docId) {
+        window.renderMessageUI = function(msg, msgId, container) {
             const isSelf = msg.uid === currentUID;
             const isAdmin = myRole === 'admin';
             const avatarInitial = msg.author ? msg.author.charAt(0).toUpperCase() : '?';
@@ -951,16 +913,14 @@
             // Reply System
             let replyHTML = "";
             if (msg.replyTo) {
-                // Safe rendering of user data inside reply
-                const safeReplyAuthor = msg.replyTo.author.replace(/"/g, "&quot;");
-                const safeReplyText = msg.replyTo.text.replace(/"/g, "&quot;");
-                
+                // Safe rendering using data attributes later if needed, but here HTML text content.
+                // Only author name is injected.
                 replyHTML = `
                     <div class="reply-preview">
-                        <div class="reply-avatar">${safeReplyAuthor.charAt(0).toUpperCase()}</div>
+                        <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
                         <div class="reply-content">
-                            <span class="reply-author">${safeReplyAuthor}</span>
-                            <span class="reply-text">${safeReplyText.substring(0, 40)}...</span>
+                            <span class="reply-author">${msg.replyTo.author}</span>
+                            <span class="reply-text">${(msg.replyTo.text).substring(0, 40)}...</span>
                         </div>
                     </div>
                 `;
@@ -972,7 +932,7 @@
             div.oncontextmenu = (e) => {
                  if(e.target.tagName !== 'BUTTON' && e.target.closest('.message-actions') === null && e.target.closest('.kebab-menu') === null) {
                      e.stopPropagation();
-                     return true; 
+                     return true; // Allow default browser menu for copy
                  }
                  return false;
             };
@@ -986,13 +946,13 @@
                 <div class="edit-ui-wrapper" id="edit-wrapper-${msgId}">
                     <textarea id="edit-text-${msgId}" class="edit-textarea"></textarea>
                     <div class="edit-buttons">
-                        <button class="btn-edit-save" data-msg-id="${msgId}">✅</button>
-                        <button class="btn-edit-cancel" data-msg-id="${msgId}">❌</button>
+                        <button class="btn-edit-save" data-msg-id="${msgId}" data-action="save-edit">✅</button>
+                        <button class="btn-edit-cancel" data-msg-id="${msgId}" data-action="cancel-edit">❌</button>
                     </div>
                 </div>
             `;
 
-            // BUTTONS (NO ONCLICK)
+            // BUTTONS - DATA ATTRIBUTES ONLY
             let btnReply = `<button class="action-btn action-btn-reply" data-msg-id="${msgId}" data-author="${msg.author}">↩️</button>`;
             let btnReact = `<button class="action-btn btn-react" data-msg-id="${msgId}">😀</button>`;
             let btnMore = `<button class="action-btn btn-more" data-msg-id="${msgId}">⋮</button>`;
@@ -1000,10 +960,10 @@
             let btnEdit = "";
             let btnDelete = "";
 
-            // Kebab Items (NO ONCLICK)
+            // Kebab Items - DATA ATTRIBUTES
             let kebabItems = "";
-            if (isSelf) kebabItems += `<button class="kebab-item kebab-edit" data-msg-id="${msgId}">Редагувати</button>`;
-            if (isSelf || isAdmin) kebabItems += `<button class="kebab-item kebab-del" data-msg-id="${msgId}">Видалити</button>`;
+            if (isSelf) kebabItems += `<button class="kebab-item" data-msg-id="${msgId}" data-action="start-edit">Редагувати</button>`;
+            if (isSelf || isAdmin) kebabItems += `<button class="kebab-item danger" data-msg-id="${msgId}" data-action="delete-msg">Видалити</button>`;
 
             div.innerHTML = `
                 ${replyHTML}
@@ -1056,28 +1016,117 @@
                  const users = reactions[emoji];
                  const count = users.length;
                  const reacted = users.includes(currentUID);
-                 // NO ONCLICK
-                 return `<div class="reaction reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} <span class="reaction-count">${count}</span></div>`;
+                 // DATA ATTRIBUTES
+                 return `<div class="reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${msgId}" data-emoji="${emoji}">${emoji} <span class="reaction-count">${count}</span></div>`;
             }).join('');
         };
 
-        // --- KEBAB MENU LOGIC ---
-        window.toggleKebab = function(msgId, btnElement) {
-            if(btnElement) btnElement.stopPropagation();
-            
-            // Close all others
-            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
-            
-            const menu = document.getElementById(`kebab-${msgId}`);
-            menu.classList.toggle('open');
-        };
+        // --- GLOBAL EVENT DELEGATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // CHANNEL LIST CLICK
+            document.getElementById('channelsList').addEventListener('click', (e) => {
+                const item = e.target.closest('[data-action="switch-channel"]');
+                if (item) {
+                    window.switchChannel(item.dataset.id);
+                }
+            });
 
-        // --- REPLY SYSTEM ---
-        window.startReply = function(msgId, author) {
-            const input = document.getElementById('messageInput');
-            input.value = `@${author}, `;
-            input.focus();
-        };
+            // MESSAGES LIST CLICK
+            document.getElementById('messagesList').addEventListener('click', (e) => {
+                const replyBtn = e.target.closest('.action-btn-reply');
+                if (replyBtn) {
+                    window.startReply(replyBtn.dataset.msgId, replyBtn.dataset.author);
+                }
+
+                const reactBtn = e.target.closest('.btn-react');
+                if (reactBtn) {
+                    window.openEmojiPopover(reactBtn.dataset.msgId, reactBtn);
+                }
+
+                const moreBtn = e.target.closest('.btn-more');
+                if (moreBtn) {
+                    window.toggleKebab(moreBtn.dataset.msgId, moreBtn);
+                }
+
+                const kebabEdit = e.target.closest('[data-action="start-edit"]');
+                if (kebabEdit) {
+                    window.startEdit(kebabEdit.dataset.msgId);
+                }
+
+                const kebabDel = e.target.closest('[data-action="delete-msg"]');
+                if (kebabDel) {
+                    window.deleteMessage(kebabDel.dataset.msgId);
+                }
+
+                const reactionBtn = e.target.closest('.reaction-btn');
+                if (reactionBtn) {
+                    window.addReaction(currentChannelId, reactionBtn.dataset.msgId, reactionBtn.dataset.emoji);
+                }
+                
+                // Save/Cancel Edit buttons
+                const saveEditBtn = e.target.closest('[data-action="save-edit"]');
+                if (saveEditBtn) {
+                    window.saveEditFromBtn(saveEditBtn);
+                }
+                
+                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
+                if (cancelEditBtn) {
+                    window.cancelEdit(cancelEditBtn.dataset.msgId);
+                }
+            });
+
+            // CHANNEL LIST CONTEXT MENU
+            const ctxMenu = document.getElementById('contextMenu');
+            
+            document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                const channelItem = e.target.closest('.channel-item');
+                
+                ctxMenu.style.display = 'block';
+                ctxMenu.style.left = `${e.clientX}px`;
+                ctxMenu.style.top = `${e.clientY}px`;
+
+                if (channelItem) {
+                    const channelId = channelItem.dataset.id;
+                    
+                    ctxMenu.innerHTML = `
+                        <div class="ctx-item" data-action="open-settings" data-channel-id="${channelId}">⚙️ Налаштування</div>
+                        ${myRole === 'admin' ? `
+                            <div class="ctx-divider"></div>
+                            <div class="ctx-item danger" data-action="delete-channel" data-channel-id="${channelId}">🗑️ Видалити канал</div>
+                        ` : ''}
+                        <div class="ctx-divider"></div>
+                        <div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>
+                    `;
+                } else {
+                    ctxMenu.innerHTML = `
+                        <div class="ctx-item" data-action="open-create-modal">➕ Створити канал</div>
+                    `;
+                }
+            });
+
+            // CONTEXT MENU ACTION HANDLERS
+            document.addEventListener('click', (e) => {
+                const ctxItem = e.target.closest('.ctx-item');
+                if (ctxItem) {
+                    const action = ctxItem.dataset.action;
+                    if (action === 'open-settings') window.openChannelSettings(ctxItem.dataset.channelId);
+                    if (action === 'delete-channel') window.deleteChannelFromCtx(ctxItem.dataset.channelId);
+                    if (action === 'open-create-modal') window.openChannelModal();
+                }
+                
+                // Close menus on outside click
+                const popover = document.getElementById('emojiPopover');
+                const mentionPopup = document.getElementById('mentionPopup');
+                if(!e.target.closest('#emojiPopover') && !e.target.closest('.btn-react') && !e.target.closest('#contextMenu')) {
+                    popover.style.display = 'none';
+                    mentionPopup.style.display = 'none';
+                }
+                document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+                
+                if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
+                if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
+            });
 
         // --- MESSAGING ---
         window.sendMessage = async function() {
@@ -1124,7 +1173,6 @@
             editUI.style.display = 'flex';
             editUI.querySelector('textarea').focus();
             
-            // Close kebab if open
             el.querySelector('.kebab-menu').classList.remove('open');
         };
 
@@ -1138,7 +1186,7 @@
             window.editingMsgId = null;
         };
 
-        window.saveEdit = async function(btnElement) {
+        window.saveEditFromBtn = async function(btnElement) {
             const msgId = btnElement.dataset.msgId;
             if (!window.canWrite(currentChannelId)) return window.showToast("Недостатньо прав", "error");
             const el = document.getElementById(`msg-${msgId}`);
@@ -1150,13 +1198,12 @@
                     editedAt: serverTimestamp()
                 });
                 window.showToast("Повідомлення відредаговано", "success");
-                window.cancelEdit(el.querySelector('.btn-edit-cancel'));
+                window.cancelEdit(msgId);
             }
         };
 
         // --- DELETE ---
-        window.deleteMessage = async function(btnElement) {
-            const msgId = btnElement.dataset.msgId;
+        window.deleteMessage = async function(msgId) {
             if(confirm('Видалити повідомлення?')) {
                 try {
                     await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
@@ -1177,21 +1224,12 @@
             
             const popover = document.getElementById('emojiPopover');
             
-            // Calculate position
             const rect = btnElement.getBoundingClientRect();
-            popover.style.top = (rect.top - 150) + 'px'; // Show above
+            popover.style.top = (rect.top - 150) + 'px';
             popover.style.left = rect.left + 'px';
             
             popover.style.display = 'block';
         };
-
-        document.addEventListener('click', (e) => {
-            const popover = document.getElementById('emojiPopover');
-            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
-                popover.style.display = 'none';
-            }
-            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
-        });
 
         window.addReaction = async function(channelId, msgId, emoji) {
             const msgRef = doc(db, "channels", channelId, "messages", msgId);
@@ -1355,44 +1393,23 @@
             if (pendingInput) pendingInput.focus();
         };
 
-        // --- EVENTS ---
-        document.addEventListener('click', (e) => {
-            mentionPopup.style.display = 'none';
-            const ctxMenu = document.getElementById('contextMenu');
-            if (ctxMenu) ctxMenu.style.display = 'none';
-            if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
-            if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
-        });
+        // --- REPLY SYSTEM ---
+        window.startReply = function(msgId, author) {
+            const input = document.getElementById('messageInput');
+            input.value = `@${author}, `;
+            input.focus();
+        };
 
-        const ctxMenu = document.getElementById('contextMenu');
-        
-        document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            const channelItem = e.target.closest('.channel-item');
+        // --- KEBAB MENU LOGIC ---
+        window.toggleKebab = function(msgId, btnElement) {
+            if(btnElement) btnElement.stopPropagation();
             
-            ctxMenu.style.display = 'block';
-            ctxMenu.style.left = `${e.clientX}px`;
-            ctxMenu.style.top = `${e.clientY}px`;
-
-            if (channelItem) {
-                const channelId = channelItem.dataset.id;
-                const ch = channelsCache.find(c => c.id === channelId);
-                
-                ctxMenu.innerHTML = `
-                    <div class="ctx-item" onclick="window.openChannelSettings('${channelId}')">⚙️ Налаштування</div>
-                    ${myRole === 'admin' ? `
-                        <div class="ctx-divider"></div>
-                        <div class="ctx-item danger" onclick="window.deleteChannelFromCtx('${channelId}')">🗑️ Видалити канал</div>
-                    ` : ''}
-                    <div class="ctx-divider"></div>
-                    <div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>
-                `;
-            } else {
-                ctxMenu.innerHTML = `
-                    <div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>
-                `;
-            }
-        });
+            // Close all others
+            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+            
+            const menu = document.getElementById(`kebab-${msgId}`);
+            menu.classList.toggle('open');
+        };
 
         document.getElementById('messageInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') window.sendMessage();
@@ -1402,11 +1419,6 @@
         window.logout = function() { signOut(auth).then(() => window.location.href = "index.html")); };
 
     </script>
-    
-    <!-- EMOJI POPOVER CONTAINER -->
-    <div id="emojiPopover">
-        <div class="emoji-grid" id="emojiGrid"></div>
-    </div>
     
     <!-- PARTICLES SYSTEM SCRIPT -->
     <script>
