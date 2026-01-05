@@ -372,9 +372,9 @@
 
             <!-- USER AREA -->
             <div class="user-area" id="userAreaBtn">
-                <div class="user-avatar-small" id="myAvatar">?</div>
+                <div class="user-avatar-small" id="myAvatar">...</div>
                 <div class="user-info-text">
-                    <div class="user-name-sidebar" id="sidebarName">...</div>
+                    <div class="user-name-sidebar" id="sidebarName">Loading...</div>
                     <div class="user-status-sidebar" id="sidebarRole">...</div>
                 </div>
                 <div style="font-size: 20px; color: var(--text-dim);">👤</div>
@@ -390,7 +390,7 @@
         <main class="chat-main">
             <div class="chat-header" id="chatHeader">
                 <span class="header-hashtag">#</span>
-                <span class="header-channel-name" id="currentChannelName">general</span>
+                <span class="header-channel-name" id="currentChannelName">Loading...</span>
                 <span class="channel-settings-gear" id="settingsGear">⚙️</span>
             </div>
             
@@ -524,12 +524,8 @@
             appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const storage = getStorage(app);
-
-        // --- GLOBALS ---
+        // --- GLOBALES ---
+        let app, auth, db, storage;
         let currentUID = null;
         let myData = null;
         let myRole = 'member';
@@ -542,10 +538,10 @@
 
         // --- HELPER FUNCTIONS (REWRITE) ---
         
-        // Escape attributes safely to prevent HTML breaks from quotes/brackets
-        const safeAttr = (val) => String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+        // Escape attributes safely
+        const safeAttr = (val) => String(val).replace(/"/g, '&quot;').replace(/'/g, '&#039;').replace(/\)/g, '&#041;');
         
-        // Escape HTML content to prevent XSS and tag injection
+        // Escape HTML content safely
         const safeText = (val) => {
             if (!val) return "";
             let str = String(val);
@@ -553,6 +549,18 @@
                       .replace(/</g, "&lt;")
                       .replace(/>/g, "&gt;");
         };
+        
+        // Safe Initialization
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            storage = getStorage(app);
+            console.log("Firebase initialized successfully");
+        } catch (e) {
+            console.error("FATAL: Firebase Initialization failed", e);
+            alert("Помилка Firebase. Перевірте конфігурацію.");
+        }
 
         window.closeModals = (id) => document.getElementById(id).style.display = 'none';
         window.toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('active'); };
@@ -595,21 +603,32 @@
 
         // --- AUTH ---
         onAuthStateChanged(auth, (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
+            console.log("Auth state changed:", user ? user.uid : "Logged out");
+            if (!user) { 
+                window.location.href = "index.html"; 
+                return; 
+            }
             currentUID = user.uid;
             window.initChat();
         });
 
-        // --- INIT (PROFILE SYSTEM) ---
+        // --- INIT (SYSTEM REWRITE: PROFILE) ---
         window.initChat = async function() {
             if (!currentUID) return;
+            console.log("Starting Init Chat for UID:", currentUID);
             try {
+                // Attempt to load profile
+                console.log("Fetching profile document...");
                 const snap = await getDoc(doc(db, "users", currentUID));
+                
                 if (snap.exists()) {
+                    console.log("Profile document found.");
                     myData = snap.data();
                     myRole = myData.role || 'member'; 
                     
-                    // SET TEXT CONTENT ONLY (Safe)
+                    console.log("User Data:", myData);
+                    
+                    // UPDATE DOM (Safe)
                     document.getElementById('sidebarName').textContent = myData.name;
                     
                     const avatarSmall = document.getElementById('myAvatar');
@@ -643,16 +662,19 @@
                     document.getElementById('profileRoleDisplay').textContent = roleText;
                     document.getElementById('profileNameInput').value = myData.name;
                 } else {
-                    console.error("User not found");
-                    document.getElementById('sidebarName').textContent = "Профіль не знайдено";
+                    console.warn("Profile document DOES NOT exist for UID:", currentUID);
+                    document.getElementById('sidebarName').textContent = "Профіль не знайдено (DB)";
+                    window.showToast("Профіль не знайдено в базі даних", "error");
                 }
                 
+                // LOAD CHATS AND MESSAGES ONLY IF PROFILE IS GOOD (OR EXISTS)
                 window.loadChannels();
                 window.loadMessages(currentChannelId);
                 window.loadUsersList();
+                
             } catch (error) {
-                console.error("Init Chat Error:", error);
-                window.showToast("Помилка ініціалізації", "error");
+                console.error("CRITICAL: Init Chat Error:", error);
+                window.showToast("Помилка завантаження даних", "error");
             }
         };
 
@@ -669,6 +691,7 @@
             if (!newName) return window.showToast("Введіть ім'я", "warning");
 
             try {
+                console.log("Saving profile...");
                 if (newName !== myData.name) {
                     await updateProfile(auth.currentUser, { displayName: newName });
                     await updateDoc(doc(db, "users", currentUID), { name: newName });
@@ -693,7 +716,7 @@
                 document.getElementById('profileModal').style.display = 'none';
                 location.reload();
             } catch (error) {
-                console.error("Profile Error:", error);
+                console.error("Profile Save Error:", error);
                 window.showToast("Помилка: " + error, "error");
             }
         };
@@ -717,13 +740,25 @@
             }
         };
 
-        // --- CHANNELS (SYSTEM REWRITE: SAFE DOM CREATION) ---
+        // --- CHANNELS (SYSTEM REWRITE: ALWAYS LOADS) ---
         window.loadChannels = function() {
+            console.log("Loading channels...");
             const list = document.getElementById('channelsList');
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
             
+            // Add Click Listener ONCE for sidebar channels
+            if (!list.hasAttribute('data-listener-ready')) {
+                list.addEventListener('click', (e) => {
+                    const item = e.target.closest('.channel-item');
+                    if (item && item.dataset.id) {
+                        window.switchChannel(item.dataset.id);
+                    }
+                });
+                list.setAttribute('data-listener-ready', 'true');
+            }
+            
             onSnapshot(q, (snapshot) => {
-                // Preserve listener
+                console.log("Channels snapshot size:", snapshot.size);
                 list.innerHTML = "";
                 channelsCache = [];
                 
@@ -733,7 +768,9 @@
                 cat.textContent = "ТЕКСТОВІ КАНАЛИ";
                 list.appendChild(cat);
                 
+                // AUTO-REPAIR: If no channels, create 'general' immediately
                 if (snapshot.size === 0) {
+                    console.warn("No channels found. Creating 'general'...");
                     addDoc(collection(db, "channels"), { name: 'general', channelOrder: 0, permission: 'public_rw' }).catch(e=>console.log(e));
                     return;
                 }
@@ -743,27 +780,27 @@
                     ch.id = d.id;
                     channelsCache.push(ch);
 
-                    // --- SAFE CREATION (NO INNERHTML FOR CLICKABLES) ---
+                    // SAFE CREATION (DOCUMENT ELEMENT)
                     const item = document.createElement('div');
                     const isActive = ch.id === currentChannelId;
                     
                     item.className = `channel-item ${isActive ? 'active' : ''}`;
-                    // DATA ATTRIBUTE ONLY (Safe)
                     item.dataset.id = ch.id;
                     item.setAttribute('draggable', 'true');
 
                     const infoDiv = document.createElement('div');
                     infoDiv.className = 'channel-info';
-                    // Text content (Safe)
+                    
                     const iconSpan = document.createElement('span');
                     iconSpan.className = 'channel-icon';
                     iconSpan.textContent = '#';
                     
                     const nameSpan = document.createElement('span');
-                    nameSpan.textContent = ch.name;
+                    nameSpan.textContent = ch.name; // Safe text content
                     
                     infoDiv.appendChild(iconSpan);
                     infoDiv.appendChild(nameSpan);
+                    
                     item.appendChild(infoDiv);
                     
                     item.ondragstart = (e) => { e.dataTransfer.setData("text/plain", ch.id); e.target.style.opacity = '0.5'; };
@@ -783,10 +820,13 @@
                         document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
                     }
                 });
+                
+                console.log("Channels list rendered.");
             });
         };
 
         window.switchChannel = function(id) {
+            console.log("Switching to channel:", id);
             currentChannelId = id;
             const ch = channelsCache.find(c => c.id === id);
             if (ch) {
@@ -890,34 +930,44 @@
             document.getElementById('newChannelName').value = "";
         };
 
-        // --- MESSAGES (SYSTEM REWRITE: SAFE RENDERING) ---
+        // --- MESSAGES (SYSTEM REWRITE: ALWAYS LOADS) ---
         window.loadMessages = function(channelId) {
+            console.log("Loading messages for channel:", channelId);
             const list = document.getElementById('messagesList');
             list.innerHTML = `<div class="date-divider">СЬОГОДНІ</div>`;
             
-            const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"));
-            
-            if (messagesUnsubscribe) messagesUnsubscribe();
-            
-            messagesUnsubscribe = onSnapshot(q, (snapshot) => {
-                const isNearBottom = (list.scrollTop + list.clientHeight >= list.scrollHeight - 50);
+            try {
+                const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"));
+                
+                if (messagesUnsubscribe) {
+                    messagesUnsubscribe(); 
+                    console.log("Unsubscribed from previous channel");
+                }
+                
+                messagesUnsubscribe = onSnapshot(q, (snapshot) => {
+                    console.log("Messages snapshot received:", snapshot.docs.length);
+                    const isNearBottom = (list.scrollTop + list.clientHeight >= list.scrollHeight - 50);
 
-                snapshot.docChanges().forEach((change) => {
-                    const msg = change.doc.data();
-                    const msgId = change.doc.id;
+                    snapshot.docChanges().forEach((change) => {
+                        const msg = change.doc.data();
+                        const msgId = change.doc.id;
+                        if (!msg) return console.warn("Message data is null for:", msgId);
 
-                    if (change.type === "added") {
-                        window.renderMessageUI(msg, msgId, list, msgId);
-                    } else if (change.type === "modified") {
-                        window.updateMessageUI(msgId, msg);
-                    } else if (change.type === "removed") {
-                        const el = document.getElementById(`msg-${msgId}`);
-                        if (el) el.remove();
-                    }
+                        if (change.type === "added") {
+                            window.renderMessageUI(msg, msgId, list, msgId);
+                        } else if (change.type === "modified") {
+                            window.updateMessageUI(msgId, msg);
+                        } else if (change.type === "removed") {
+                            const el = document.getElementById(`msg-${msgId}`);
+                            if (el) el.remove();
+                        }
+                    });
+
+                    if (isNearBottom) list.scrollTop = list.scrollHeight;
                 });
-
-                if (isNearBottom) list.scrollTop = list.scrollHeight;
-            });
+            } catch (e) {
+                console.error("Error setting up message listener:", e);
+            }
         };
 
         window.renderMessageUI = function(msg, msgId, container, docId) {
@@ -927,7 +977,6 @@
             const time = msg.timestamp ? new Date(msg.timestamp.toDate()).toLocaleTimeString('uk-UA', {hour:'2-digit', minute:'2-digit'}) : '...';
             
             let content = msg.text || "";
-            // XSS Prevention
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" style="max-width:100%; max-height:300px; border-radius:8px; margin-top:5px;" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
@@ -938,10 +987,10 @@
                 // Safe rendering
                 replyHTML = `
                     <div class="reply-preview">
-                        <div class="reply-avatar">${safeText(msg.replyTo.author.charAt(0).toUpperCase())}</div>
+                        <div class="reply-avatar">${msg.replyTo.author.charAt(0).toUpperCase()}</div>
                         <div class="reply-content">
-                            <span class="reply-author">${safeText(msg.replyTo.author)}</span>
-                            <span class="reply-text">${safeText(msg.replyTo.text).substring(0, 40)}...</span>
+                            <span class="reply-author">${msg.replyTo.author}</span>
+                            <span class="reply-text">${(msg.replyTo.text).substring(0, 40)}...</span>
                         </div>
                     </div>
                 `;
@@ -973,15 +1022,11 @@
                 </div>
             `;
 
-            // BUTTONS - USING SAFE ATTRIBUTES AND DATA-ACTIONS
-            // safeAttr(id) ensures quotes " or ' don't break HTML attributes
+            // BUTTONS - DATA ATTRIBUTES ONLY
             let btnReply = `<button class="action-btn action-btn-reply" data-msg-id="${safeAttr(msgId)}" data-author="${safeAttr(msg.author)}">↩️</button>`;
             let btnReact = `<button class="action-btn btn-react" data-msg-id="${safeAttr(msgId)}">😀</button>`;
             let btnMore = `<button class="action-btn btn-more" data-msg-id="${safeAttr(msgId)}">⋮</button>`;
             
-            let btnEdit = "";
-            let btnDelete = "";
-
             // Kebab Items
             let kebabItems = "";
             if (isSelf) kebabItems += `<button class="kebab-item" data-msg-id="${safeAttr(msgId)}" data-action="start-edit">Редагувати</button>`;
@@ -1038,85 +1083,80 @@
                  const users = reactions[emoji];
                  const count = users.length;
                  const reacted = users.includes(currentUID);
+                 // DATA ATTRIBUTES
                  return `<div class="reaction-btn ${reacted ? 'active' : ''}" data-msg-id="${safeAttr(msgId)}" data-emoji="${safeAttr(emoji)}">${safeAttr(emoji)} <span class="reaction-count">${safeAttr(count)}</span></div>`;
             }).join('');
         };
 
-        // --- GLOBAL EVENT DELEGATION (SYSTEM REWRITE) ---
+        // --- GLOBAL EVENT DELEGATION ---
         document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM Content Loaded. Attaching listeners.");
             
-            // 1. CHANNEL LIST CLICK (Safe)
+            // CHANNEL LIST CLICK
             document.getElementById('channelsList').addEventListener('click', (e) => {
                 const item = e.target.closest('.channel-item');
-                if (item && item.dataset.id) {
+                if (item) {
                     window.switchChannel(item.dataset.id);
                 }
             });
 
-            // 2. MESSAGES LIST CLICK (Safe)
+            // CHAT HEADER CLICK
+            document.getElementById('chatHeader').addEventListener('click', () => {
+                 window.openChannelSettings(currentChannelId);
+            });
+            
+            // SETTINGS GEAR
+            document.getElementById('settingsGear').addEventListener('click', (e) => {
+                 e.stopPropagation(); 
+                 window.openChannelSettings(currentChannelId);
+            });
+
+            // MESSAGES LIST CLICK
             document.getElementById('messagesList').addEventListener('click', async (e) => {
-                // REPLY
-                if (e.target.closest('.action-btn-reply')) {
-                    const btn = e.target.closest('.action-btn-reply');
-                    window.startReply(btn.dataset.msgId, btn.dataset.author);
+                const replyBtn = e.target.closest('.action-btn-reply');
+                if (replyBtn) {
+                    window.startReply(replyBtn.dataset.msgId, replyBtn.dataset.author);
                 }
 
-                // REACT
-                if (e.target.closest('.btn-react')) {
-                    const btn = e.target.closest('.btn-react');
-                    window.openEmojiPopover(btn.dataset.msgId, btn);
+                const reactBtn = e.target.closest('.btn-react');
+                if (reactBtn) {
+                    window.openEmojiPopover(reactBtn.dataset.msgId, reactBtn);
                 }
 
-                // MORE MENU
-                if (e.target.closest('.btn-more')) {
-                    const btn = e.target.closest('.btn-more');
-                    window.toggleKebab(btn.dataset.msgId, btn);
+                const moreBtn = e.target.closest('.btn-more');
+                if (moreBtn) {
+                    window.toggleKebab(moreBtn.dataset.msgId, moreBtn);
                 }
 
-                // KEBAB EDIT
-                if (e.target.closest('[data-action="start-edit"]')) {
-                    const btn = e.target.closest('[data-action="start-edit"]');
-                    window.startEdit(btn.dataset.msgId);
+                const kebabEdit = e.target.closest('[data-action="start-edit"]');
+                if (kebabEdit) {
+                    window.startEdit(kebabEdit.dataset.msgId);
                 }
 
-                // KEBAB DELETE
-                if (e.target.closest('[data-action="delete-msg"]')) {
-                    const btn = e.target.closest('[data-action="delete-msg"]');
-                    window.deleteMessage(btn.dataset.msgId);
+                const kebabDel = e.target.closest('[data-action="delete-msg"]');
+                if (kebabDel) {
+                    window.deleteMessage(kebabDel.dataset.msgId);
                 }
 
-                // REACTIONS
-                if (e.target.closest('.reaction-btn')) {
-                    const btn = e.target.closest('.reaction-btn');
-                    window.addReaction(currentChannelId, btn.dataset.msgId, btn.dataset.emoji);
+                const reactionBtn = e.target.closest('.reaction-btn');
+                if (reactionBtn) {
+                    window.addReaction(currentChannelId, reactionBtn.dataset.msgId, reactionBtn.dataset.emoji);
                 }
                 
-                // SAVE/EDIT CANCEL
-                if (e.target.closest('[data-action="save-edit"]')) {
-                    const btn = e.target.closest('[data-action="save-edit"]');
-                    window.saveEditFromBtn(btn);
+                const saveEditBtn = e.target.closest('[data-action="save-edit"]');
+                if (saveEditBtn) {
+                    window.saveEditFromBtn(saveEditBtn);
                 }
-                if (e.target.closest('[data-action="cancel-edit"]')) {
-                    const btn = e.target.closest('[data-action="cancel-edit"]');
-                    window.cancelEdit(btn.dataset.msgId);
+                
+                const cancelEditBtn = e.target.closest('[data-action="cancel-edit"]');
+                if (cancelEditBtn) {
+                    window.cancelEdit(cancelEditBtn.dataset.msgId);
                 }
             });
 
-            // 3. CHAT HEADER CLICK (Safe)
-            const chatHeader = document.getElementById('chatHeader');
-            const settingsGear = document.getElementById('settingsGear');
-            if(chatHeader) {
-                chatHeader.addEventListener('click', () => { window.openChannelSettings(currentChannelId); });
-            }
-            if(settingsGear) {
-                settingsGear.addEventListener('click', (e) => { 
-                    e.stopPropagation(); 
-                    window.openChannelSettings(currentChannelId); 
-                });
-            }
-
-            // 4. CONTEXT MENU (Safe)
+            // CHANNEL LIST CONTEXT MENU
             const ctxMenu = document.getElementById('contextMenu');
+            
             document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 const channelItem = e.target.closest('.channel-item');
@@ -1144,37 +1184,36 @@
                 }
             });
 
-            // 5. GLOBAL ACTIONS
+            // CONTEXT MENU ACTION HANDLERS
             document.addEventListener('click', (e) => {
-                // Context Menu Actions
                 const ctxItem = e.target.closest('.ctx-item');
                 if (ctxItem) {
                     const action = ctxItem.dataset.action;
-                    if (action === 'open-settings') window.openChannelSettings(ctxItem.dataset.channelId);
-                    if (action === 'delete-channel') window.deleteChannelFromCtx(ctxItem.dataset.channelId);
+                    const channelId = ctxItem.dataset.channelId;
+                    
+                    if (action === 'open-settings') window.openChannelSettings(channelId);
+                    if (action === 'delete-channel') window.deleteChannelFromCtx(channelId);
                     if (action === 'open-create-modal') window.openChannelModal();
                 }
                 
                 // Close menus on outside click
                 const popover = document.getElementById('emojiPopover');
                 const mentionPopup = document.getElementById('mentionPopup');
-                if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react') && !e.target.closest('#contextMenu')) {
+                if(!e.target.closest('#emojiPopover') && !e.target.closest('.btn-react') && !e.target.closest('#contextMenu')) {
                     popover.style.display = 'none';
                     mentionPopup.style.display = 'none';
                 }
                 document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
                 
                 // UI Toggles
-                if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
-                if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
-                
-                // Profile Click
                 const userAreaBtn = document.getElementById('userAreaBtn');
                 if(e.target === userAreaBtn || userAreaBtn.contains(e.target)) {
                     window.openProfile();
                 }
+
+                if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
+                if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
             });
-        });
 
         window.toggleKebab = function(msgId, btnElement) {
             if(btnElement) btnElement.stopPropagation();
@@ -1255,7 +1294,7 @@
                     editedAt: serverTimestamp()
                 });
                 window.showToast("Повідомлення відредаговано", "success");
-                window.cancelEdit(el.querySelector('.btn-edit-cancel'));
+                window.cancelEdit(msgId);
             }
         };
 
@@ -1289,6 +1328,14 @@
             popover.style.display = 'block';
         };
 
+        document.addEventListener('click', (e) => {
+            const popover = document.getElementById('emojiPopover');
+            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
+                popover.style.display = 'none';
+            }
+            document.querySelectorAll('.kebab-menu.open').forEach(m => m.classList.remove('open'));
+        });
+
         window.addReaction = async function(channelId, msgId, emoji) {
             const msgRef = doc(db, "channels", channelId, "messages", msgId);
             const snap = await getDoc(msgRef);
@@ -1309,14 +1356,19 @@
             await updateDoc(msgRef, { reactions: reactions });
         };
 
-        // --- USERS ---
+        // --- USERS (SYSTEM REWRITE: ALWAYS LOADS) ---
         window.loadUsersList = async function() {
+            console.log("Loading users list...");
             try {
                 const list = document.getElementById('membersList');
                 const snap = await getDocs(collection(db, "users"));
                 let users = [];
-                snap.forEach(d => users.push(d.data()));
+                snap.forEach(d => {
+                    const data = d.data();
+                    if(data) users.push(data); // Check if data exists
+                });
                 
+                console.log("Users fetched count:", users.length);
                 usersCache = users;
 
                 document.getElementById('membersCount').innerText = users.length;
@@ -1342,6 +1394,7 @@
                     `;
                     list.appendChild(item);
                 });
+                console.log("Users list rendered.");
             } catch (e) {
                 console.error("Users Load Error:", e);
                 window.showToast("Помилка учасників", "error");
@@ -1457,6 +1510,27 @@
             input.focus();
         };
 
+        // --- EVENTS ---
+        document.addEventListener('click', (e) => {
+            mentionPopup.style.display = 'none';
+            const popover = document.getElementById('emojiPopover');
+            if(!e.target.closest('#emojiPopover') && !e.target.classList.contains('btn-react')) {
+                popover.style.display = 'none';
+            }
+            
+            const ctxMenu = document.getElementById('contextMenu');
+            if(!e.target.closest('#contextMenu')) {
+                ctxMenu.style.display = 'none';
+            }
+            
+            if (!e.target.closest('.sidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('sidebar').classList.remove('active');
+            if (!e.target.closest('.membersSidebar') && !e.target.closest('.mobile-menu-btn')) document.getElementById('membersSidebar').classList.remove('active');
+        });
+
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') window.sendMessage();
+        });
+
         // --- LOGOUT ---
         window.logout = function() { signOut(auth).then(() => window.location.href = "index.html")); };
 
@@ -1516,6 +1590,7 @@
                 if (this.y < 0) this.y = height;
                 if (this.y > height) this.y = 0;
 
+                // Twinkle effect
                 this.alpha += (this.targetAlpha - this.alpha) *0.02;
                 if (Math.abs(this.targetAlpha - this.alpha) < 0.01) {
                     this.targetAlpha = Math.random() * 0.5 + 0.1;
@@ -1525,7 +1600,7 @@
             draw() {
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size,0, Math.PI *2);
-                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`;
+                ctx.fillStyle = `rgba(74, 222, 128, ${this.alpha})`; // Green
                 ctx.fill();
             }
         }
