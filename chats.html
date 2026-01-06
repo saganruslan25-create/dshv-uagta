@@ -652,10 +652,8 @@
                     document.getElementById('sidebarName').textContent = "Профіль не знайдено";
                 }
                 
-                // Load Channels first, then Users, then Typing
                 window.loadChannels(true);
                 window.loadUsersList();
-                window.setupTyping(currentChannelId);
 
                 const sendBtn = document.getElementById('sendBtn');
                 const msgInput = document.getElementById('messageInput');
@@ -669,11 +667,13 @@
                     this.style.height = 'auto';
                     this.style.height = (this.scrollHeight) + 'px';
                     if(this.value === '') this.style.height = 'auto';
-                    // Typing logic
-                    window.sendTyping(currentChannelId);
+                    window.sendTyping(currentChannelId); // Typing logic
                 });
                 
                 if(msgInput) {
+                    msgInput.addEventListener('blur', () => {
+                        window.stopTyping();
+                    });
                     msgInput.addEventListener('keypress', (e) => {
                         // SHIFT+ENTER FOR NEW LINE, ENTER FOR SAVE
                         if (e.key === 'Enter' && !e.shiftKey) {
@@ -725,21 +725,21 @@
                     return;
                 }
                 const storageRef = ref(storage, `avatars/${currentUID}_crop.jpg`);
-                uploadBytes(storageRef, blob).then(() => {
-                    return getDownloadURL(storageRef);
-                }).then((url) => {
-                    updateDoc(doc(db, "users", currentUID), { photoURL: url }).then(() => {
-                        document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
-                        document.getElementById('myAvatar').style.backgroundSize = 'cover';
-                        
-                        window.showToast("Профіль оновлено!", "success");
-                        document.getElementById('profileModal').style.display = 'none';
-                        location.reload();
-                    }).catch((err) => {
-                        console.error(err);
-                        window.showToast("Помилка фото: " + err.message, "error"); 
-                    });
-                }).catch((err) => {
+                
+                uploadBytes(storageRef, blob)
+                .then(() => getDownloadURL(storageRef))
+                .then((url) => {
+                    return updateDoc(doc(db, "users", currentUID), { photoURL: url });
+                })
+                .then(() => {
+                    document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
+                    document.getElementById('myAvatar').style.backgroundSize = 'cover';
+                    
+                    window.showToast("Профіль оновлено!", "success");
+                    document.getElementById('profileModal').style.display = 'none';
+                    location.reload();
+                })
+                .catch((err) => { 
                     console.error(err);
                     window.showToast("Помилка фото: " + err.message, "error"); 
                 });
@@ -767,7 +767,7 @@
                     const item = e.target.closest('.channel-item');
                     if (item && item.dataset.id) {
                         // Stop old typing listener
-                        window.stopTyping(currentChannelId);
+                        window.stopTyping();
                         currentChannelId = item.dataset.id;
                         window.switchChannel(item.dataset.id);
                         window.setupTyping(currentChannelId);
@@ -779,7 +779,7 @@
             
             onSnapshot(q, (snap) => {
                 if (snap.empty) {
-                    addDoc(collection(db, "channels"), { name: 'general', channelOrder: 0, permission: 'public_rw' }).catch((e) => {});
+                    try { addDoc(collection(db, "channels"), { name: 'general', channelOrder: 0, permission: 'public_rw' }).catch((e) => {}); } catch(e) {}
                     return;
                 }
                 
@@ -837,7 +837,7 @@
             document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
             const active = document.querySelector(`.channel-item[data-id="${id}"]`);
             if(active) active.classList.add('active');
-            if(window.innerWidth <=768) toggleSidebar();
+            if(window.innerWidth <= 768) toggleSidebar();
         };
 
         window.openChannelSettings = function(id = null) {
@@ -904,16 +904,12 @@
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
             list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
-            const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"), limit(50));
+            const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"), limit(50)); // ASC = Bottom first
             if (messagesUnsubscribe) { messagesUnsubscribe(); }
             
             messagesUnsubscribe = onSnapshot(q, (snapshot) => {
                 // Only clear list if it's initial load
                 if (list.innerText.includes('Завантаження')) list.innerHTML = "";
-                
-                // Handle added: appendChild (Bottom)
-                // Handle modified: update DOM
-                // Handle removed: remove DOM
                 
                 snapshot.docChanges().forEach((change) => {
                     const msg = change.doc.data();
@@ -922,7 +918,7 @@
 
                     if (change.type === "added") {
                         if (!document.getElementById(`msg-${msgId}`)) {
-                            // Append to bottom
+                            // Append to bottom (CSS handles visual flow)
                             window.renderMessageUI(msg, msgId, list, "append");
                             
                             // Auto scroll if it's my message or near bottom
@@ -951,7 +947,6 @@
             
             let content = msg.text || "";
             content = content.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            // Remove Markdown images for now or handle them simple
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
 
@@ -960,7 +955,7 @@
             const adminClass = isSenderAdmin ? 'admin' : '';
 
             let attachmentsHTML = "";
-            if (msg.attachments && msg.attachments.length >0) {
+            if (msg.attachments && msg.attachments.length > 0) {
                 attachmentsHTML += '<div class="msg-attachments">';
                 msg.attachments.forEach(att => {
                     attachmentsHTML += `
@@ -1088,7 +1083,7 @@
             
             textEl.style.display = 'none';
             editTA.style.display = 'block';
-            editTA.value = textEl.innerText; // Get plain text
+            editTA.value = textEl.innerText;
             editTA.focus();
         };
 
@@ -1138,7 +1133,7 @@
                 uid: currentUID,
                 author: myData.name,
                 timestamp: serverTimestamp(),
-                reactions: {}, // REMOVED EMOJI
+                reactions: {},
                 replyTo: activeReplyMsg,
                 attachments: [],
                 createdAt: Date.now()
@@ -1176,26 +1171,34 @@
         window.sendTyping = function(channelId) {
             // Debounce sending typing
             if(typingTimeout) clearTimeout(typingTimeout);
+            
+            // Path: typing/channelID/users/UID (4 segments = Valid Document)
+            const typingRef = doc(db, "typing", channelId, "users", currentUID);
+            typingRef.set({ lastTyped: serverTimestamp() });
+
+            // Auto-clear after 3 seconds so others stop seeing "typing" if you crash
             typingTimeout = setTimeout(() => {
-                const typingRef = doc(db, "typing", channelId, currentUID);
-                typingRef.set({ lastTyped: serverTimestamp() });
-            }, 300);
+                deleteDoc(typingRef).catch((e) => {});
+            }, 3000);
         };
 
         window.stopTyping = function() {
             if(typingTimeout) clearTimeout(typingTimeout);
+            const typingRef = doc(db, "typing", currentChannelId, "users", currentUID);
+            deleteDoc(typingRef).catch((e) => {});
         };
 
         window.setupTyping = function(channelId) {
             if(typingUnsubscribe) typingUnsubscribe();
             
-            const typingRef = doc(db, "typing", channelId, currentUID);
             // Remove own entry on unload
             window.addEventListener('beforeunload', () => {
-                deleteObject(typingRef).catch(() => {});
+                const typingRef = doc(db, "typing", channelId, "users", currentUID);
+                deleteDoc(typingRef).catch((e) => {});
             });
 
-            const q = query(collection(db, "typing", channelId), orderBy("lastTyped", "desc"), limit(5));
+            // Path: typing/channelID/users
+            const q = query(collection(db, "typing", channelId, "users"), orderBy("lastTyped", "desc"), limit(5));
             
             typingUnsubscribe = onSnapshot(q, (snap) => {
                 const indicator = document.getElementById('typingIndicator');
@@ -1229,7 +1232,6 @@
             list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
             
             // Query all channels for my messages. 
-            // Limit to 100 for performance in this demo
             const channels = channelsCache.map(c => c.id);
             const promises = channels.map(chId => {
                 const q = query(collection(db, "channels", chId, "messages"), where("uid", "==", currentUID), orderBy("timestamp", "desc"), limit(50));
@@ -1318,8 +1320,7 @@
                     item.innerHTML = `<div class="mention-avatar-small" style="background:${window.stringToColor(u.name)}">${initial}</div> ${safeText(u.name)}`;
                     item.onclick = () => {
                         const input = document.getElementById('messageInput');
-                        const text = input.value;
-                        input.value = text.substring(0, text.lastIndexOf('@')+1) + u.name + " ";
+                        input.value = input.value.substring(0, input.value.lastIndexOf('@')+1) + u.name + " ";
                         mentionPopup.style.display = 'none';
                         input.focus();
                     };
@@ -1344,10 +1345,8 @@
                             compressed.name = "image_pasted.jpg";
                             pendingBlobs.push(compressed);
                             window.renderUploadGallery();
-                        });
+                        }).catch((err) => {});
                     }
-                } else if (item.kind === 'text' || item.kind === 'string') {
-                     // Allow text pasting via the paste button or fallback
                 }
             }
         });
