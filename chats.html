@@ -728,8 +728,29 @@
                     document.getElementById('sidebarName').textContent = "Профіль не знайдено";
                 }
                 
-                await window.loadChannels(true); 
+                await window.loadChannels(true);
+                await window.loadUsersList(); // <-- FIX: Load users now
                 
+                // FIX: Bind Send Button and Enter Key
+                const sendBtn = document.getElementById('sendBtn');
+                const msgInput = document.getElementById('messageInput');
+                
+                if(sendBtn) {
+                    sendBtn.onclick = (e) => {
+                        e.preventDefault();
+                        window.sendMessage();
+                    };
+                }
+                
+                if(msgInput) {
+                    msgInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            window.sendMessage();
+                        }
+                    });
+                }
+
             } catch (error) {
                 alert("Помилка ініціалізації: " + error.message);
             }
@@ -967,7 +988,6 @@
             });
         };
 
-        // --- CRITICAL FIX: DUPLICATE VARIABLES REMOVED ---
         window.renderMessageUI = function(msg, msgId, container, position) {
             const isSelf = msg.uid === currentUID;
             const isAdmin = myRole === 'admin';
@@ -1352,7 +1372,7 @@
                 author: myData.name,
                 timestamp: serverTimestamp(),
                 reactions: {},
-                replyTo: null, // Simplified for now
+                replyTo: activeReplyMsg, // Now active
                 attachments: [],
                 createdAt: Date.now()
             });
@@ -1756,6 +1776,15 @@
                 };
                 inputGrid.appendChild(btn);
             });
+        }
+
+        // Bind Emoji Input Button
+        const emojiBtnInput = document.getElementById('emojiPickerBtn');
+        if(emojiBtnInput) {
+            emojiBtnInput.onclick = (e) => {
+                e.stopPropagation();
+                window.toggleInputEmoji(emojiBtnInput);
+            };
         }
 
         const canvas = document.getElementById('particles-canvas');
