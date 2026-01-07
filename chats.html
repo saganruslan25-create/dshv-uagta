@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FIXED SYNTAX)</title>
+    <title>ДШВ | DISCORD (CLEANED)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -55,7 +55,7 @@
         }
         .server-icon {
             width: 48px; height: 48px; border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.05); margin-bottom: 8px;
+            background-color: rgba(255,255, 255, 0.05); margin-bottom: 8px;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer; color: var(--text-main); font-size: 22px;
             transition: all 0.2s; border: 1px solid transparent;
@@ -198,7 +198,7 @@
         }
 
         .input-wrapper { 
-            background-color: rgba(20, 25, 30, 0.8); border-radius: 8px; padding: 0 16px; display: flex; align-items: center; border: 1px solid rgba(255,255,255, 0.08); transition: 0.2s; 
+            background-color: rgba(20, 25, 30, 0.8); border-radius: 8px; padding: 0 16px; display: flex; align-items: center; border: 1px solid rgba(255, 255, 255, 0.08); transition: 0.2s; 
         }
         .input-wrapper:focus-within { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
         
@@ -318,6 +318,7 @@
             
             .input-wrapper { padding: 8px; border-radius: 24px; }
             .input-actions-left { gap: 8px; }
+            .btn-upload { font-size: 24px; padding: 8px; background: var(--glass-border); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
             .btn-upload-mobile { display: flex; }
             .btn-upload { display: none; }
         }
@@ -380,14 +381,15 @@
             </div>
 
             <div class="preview-bar">
-                <div id="replyInfo" style="display:none; flex:1; align-items:center; gap:10px;">
+                <div id="replyInfo" style="display:none; align-items:center; gap:10px;">
                     <span style="color:var(--primary); font-weight:bold;">Відповідь:</span>
                     <span id="replyInputText" style="color:white;">...</span>
                 </div>
-                <div id="imageInfo" style="display:none; flex:1; flex-direction: column; gap: 5px;">
+                <div id="imageInfo" style="display:none; flex: 1; flex-direction: column; gap: 5px;">
                     <span style="color:var(--primary); font-weight:bold;">Фото до відправки:</span>
                     <div class="upload-preview-container" id="uploadPreviewContainer"></div>
                 </div>
+                <button id="previewCancelBtn" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>
             </div>
 
             <div class="input-area">
@@ -504,8 +506,10 @@
         let usersCache = [];
         let activeReplyMsg = null; 
         
+        // ROBUST UPLOAD STATE
         let pendingUploadFiles = []; 
 
+        // --- DOM ELEMENTS (DECLARED ONCE AT TOP) ---
         const messageInput = document.getElementById('messageInput');
         const sidebar = document.getElementById('sidebar');
         const membersSidebar = document.getElementById('membersSidebar');
@@ -521,9 +525,31 @@
         const canvas = document.getElementById('cropCanvas');
         const ctx = canvas.getContext('2d');
         const cropArea = document.getElementById('cropArea');
+        const btnSaveProfile = document.getElementById('btnSaveProfile');
 
+        // --- ROBUST HELPERS ---
+        const safeText = (val) => {
+            if (!val) return "";
+            let str = String(val);
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;");
+        };
+        
+        window.closeModals = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; };
+        window.toggleSidebar = () => { if(sidebar) sidebar.classList.toggle('active'); };
+        window.toggleMembers = () => { if(membersSidebar) membersSidebar.classList.toggle('active'); };
+        window.stringToColor = (str) => {
+            let hash = 0;
+            for (let i =0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+            return '#' + "00000".substring(0, 6 - c.length) + c;
+        };
+
+        // --- ROBUST IMAGE PROCESSOR ---
         function processImage(file) {
             return new Promise((resolve) => {
+                if (file instanceof Blob) { resolve(file); return; }
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = (event) => {
@@ -545,67 +571,7 @@
             });
         }
 
-        const safeText = (val) => {
-            if (!val) return "";
-            let str = String(val);
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&#39;");
-        };
-        
-        window.closeModals = (id) => { const el = document.getElementById(id); if(el) el.style.display = 'none'; };
-        window.toggleSidebar = () => { if(sidebar) sidebar.classList.toggle('active'); };
-        window.toggleMembers = () => { if(membersSidebar) membersSidebar.classList.toggle('active'); };
-        window.stringToColor = (str) => {
-            let hash = 0;
-            for (let i =0; i < str.length; i++) {
-                hash = str.charCodeAt(i) + ((hash << 5) - hash);
-            }
-            const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-            return '#' + "00000".substring(0, 6 - c.length) + c;
-        };
-
-        let cropImg = new Image();
-        let cropX = 0, cropY = 0, cropScale = 1;
-        let isDragging = false;
-        let lastMouseX = 0, lastMouseY = 0;
-
-        function drawCrop() {
-            if (!myData || !myData.photoURL) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#333"; ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#666"; ctx.font = "30px Arial"; ctx.textAlign = "center"; ctx.fillText("NO IMG", 125, 130);
-                return;
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.clip();
-            ctx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
-            ctx.restore();
-            ctx.fillStyle = "rgba(0,0,0,0.5)";
-            ctx.beginPath(); ctx.rect(0, 0, canvas.width, canvas.height);
-            ctx.arc(125, 125, 125, 0, Math.PI * 2, true); 
-            ctx.fill();
-            ctx.strokeStyle = "rgba(255,255,255,0.3)";
-            ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.stroke();
-        }
-
-        if(canvas) {
-            canvas.addEventListener('mousedown', (e) => { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
-        }
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const dx = e.clientX - lastMouseX; const dy = e.clientY - lastMouseY;
-            cropX += dx; cropY += dy; lastMouseX = e.clientX; lastMouseY = e.clientY;
-            drawCrop();
-        });
-        window.addEventListener('mouseup', () => isDragging = false);
-        if(canvas) {
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault(); const scaleAmount = -e.deltaY * 0.001;
-                cropScale = Math.min(Math.max(0.5, cropScale + scaleAmount), 3);
-                drawCrop();
-            });
-        }
-
+        // --- AUTH & INIT ---
         onAuthStateChanged(auth, (user) => {
             if (!user) { window.location.href = "index.html"; return; }
             currentUID = user.uid;
@@ -629,16 +595,22 @@
                 if (myData.photoURL && myData.photoURL !== "") {
                     avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
                     avatarSmall.style.backgroundSize = 'cover'; avatarSmall.textContent = '';
-                    cropImg.crossOrigin = "Anonymous"; cropImg.src = myData.photoURL;
+                    
+                    let cropImg = new Image();
+                    cropImg.crossOrigin = "Anonymous";
                     cropImg.onload = () => {
-                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                        cropX = (250 - cropImg.width * cropScale) / 2;
-                        cropY = (250 - cropImg.height * cropScale) / 2;
-                        drawCrop();
+                         let scale = Math.max(250/cropImg.width, 250/cropImg.height);
+                         let x = (250 - cropImg.width * scale) / 2;
+                         let y = (250 - cropImg.height * scale) / 2;
+                         ctx.clearRect(0, 0, canvas.width, canvas.height);
+                         ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.clip();
+                         ctx.drawImage(cropImg, x, y, cropImg.width * scale, cropImg.height * scale);
+                         ctx.restore();
                     };
+                    cropImg.src = myData.photoURL;
                 } else {
                     const color = window.stringToColor(myData.name);
-                    avatarSmall.style.backgroundColor = color; avatarSmall.style.backgroundImage = 'none'; avatarSmall.textContent = initial; drawCrop();
+                    avatarSmall.style.backgroundColor = color; avatarSmall.textContent = initial; 
                 }
                 
                 if (myRole === 'admin') avatarSmall.classList.add('admin-status');
@@ -678,6 +650,7 @@
             }
         };
 
+        // --- PROFILE ---
         window.openProfile = () => {
             const modal = document.getElementById('profileModal');
             if(modal) modal.style.display = 'flex';
@@ -688,16 +661,24 @@
             profileAvatarInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                const url = URL.createObjectURL(file);
-                avatarPreview.src = url;
-                avatarPreview.style.display = 'block';
+                // Just load into canvas for preview
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                     ctx.clearRect(0, 0, canvas.width, canvas.height);
+                     let scale = Math.max(250/img.width, 250/img.height);
+                     let x = (250 - img.width * scale) / 2;
+                     let y = (250 - img.height * scale) / 2;
+                     ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.clip();
+                     ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                     ctx.restore();
+                };
             });
         }
 
-        // --- PROFILE (FIXED SYNTAX) ---
         window.saveProfile = async function() {
-            const newNameInput = document.getElementById('profileNameInput');
-            const newName = newNameInput ? newNameInput.value.trim() : "";
+            const newName = document.getElementById('profileNameInput').value.trim();
+            
             if (!newName) return alert("Введіть ім'я");
             
             if (newName !== myData.name) {
@@ -706,47 +687,61 @@
                 myData.name = newName; 
             }
 
+            // Avatar Update
             const file = document.getElementById('profileAvatarInput').files[0];
-            
             if (file) {
                 try {
-                    // 1. Draw to Canvas (Crop)
+                    if(btnSaveProfile) { btnSaveProfile.textContent = "Завантаження..."; btnSaveProfile.disabled = true; btnSaveProfile.classList.add('btn-loading'); }
+                    
+                    // 1. Compress & Crop
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 250; tempCanvas.height = 250;
                     const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.beginPath(); tempCtx.arc(125, 125, 125, 0, Math.PI * 2); tempCtx.clip();
-                    tempCtx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
                     
-                    // 2. Convert to Blob
-                    const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
-                    
-                    // 3. Upload
-                    const storageRef = ref(storage, `avatars/${currentUID}_final.jpg`);
-                    await uploadBytes(storageRef, blob);
-                    const url = await getDownloadURL(storageRef);
-                    
-                    // 4. Save DB
-                    await updateDoc(doc(db, "users", currentUID), { photoURL: url });
-                    
-                    // 5. UI Update
-                    const myAvatar = document.getElementById('myAvatar');
-                    if(myAvatar) {
-                        myAvatar.style.backgroundImage = `url(${url})`;
-                        myAvatar.style.backgroundSize = 'cover';
-                        myAvatar.textContent = '';
-                    }
-                    
-                    alert("Профіль оновлено!");
-                    window.closeModals('profileModal');
-                    location.reload();
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    img.onload = async () => {
+                        tempCtx.beginPath(); tempCtx.arc(125, 125, 125, 0, Math.PI * 2); tempCtx.clip();
+                        let scale = Math.max(250/img.width, 250/img.height);
+                        let x = (250 - img.width * scale) / 2;
+                        let y = (250 - img.height * scale) / 2;
+                        tempCtx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                        
+                        // 2. Convert to Blob
+                        const blob = await new Promise((r) => tempCanvas.toBlob(r, 'image/jpeg', 0.9));
+                        
+                        // 3. Upload
+                        const storageRef = ref(storage, `avatars/${currentUID}_final.jpg`);
+                        await uploadBytes(storageRef, blob);
+                        const url = await getDownloadURL(storageRef);
+                        
+                        // 4. Save DB
+                        await updateDoc(doc(db, "users", currentUID), { photoURL: url });
+                        
+                        // 5. UI Update
+                        const myAvatar = document.getElementById('myAvatar');
+                        if(myAvatar) {
+                            myAvatar.style.backgroundImage = `url(${url})`;
+                            myAvatar.style.backgroundSize = 'cover';
+                            myAvatar.textContent = '';
+                        }
+                        
+                        if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-loading'); }
+                        window.closeModals('profileModal');
+                        location.reload();
+                    };
                 } catch (err) { 
                     console.error(err);
-                    alert("Помилка фото: " + err.message); 
+                    alert("Помилка фото: " + err.message);
+                    if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-loading'); }
                 }
             } else {
-                 alert("Ім'я оновлено!");
-                 window.closeModals('profileModal');
-                 location.reload();
+                if(btnSaveProfile) { btnSaveProfile.textContent = "Завантаження..."; btnSaveProfile.classList.add('btn-loading'); }
+                setTimeout(() => {
+                    if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.classList.remove('btn-loading'); }
+                    window.closeModals('profileModal');
+                    location.reload();
+                }, 500);
             }
         };
 
@@ -763,6 +758,7 @@
             } catch (error) { alert("Помилка видалення: " + error.message); }
         };
 
+        // --- CHANNELS ---
         window.loadChannels = function(initMode = false) {
             if (channelsList && !channelsList.hasAttribute('data-listener-ready')) {
                 channelsList.addEventListener('click', (e) => {
@@ -912,6 +908,7 @@
             if(newNameInput) newNameInput.value = "";
         };
 
+        // --- MESSAGES ---
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
             if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
@@ -1087,6 +1084,7 @@
             }
             
             if (editTA && editTA.style.display !== 'none') {
+                // Don't overwrite
             }
         };
 
@@ -1129,6 +1127,7 @@
             window.cancelInlineEdit(msgId);
         };
 
+        // --- MESSAGING (ROBUST ASYNC UPLOAD) ---
         window.sendMessage = async function() {
             if (!myData) { alert("Помилка даних"); return; }
             if (!window.canWrite(currentChannelId)) { alert("Недостатньо прав"); return; }
@@ -1145,13 +1144,13 @@
                         const storageRef = ref(storage, `chat_images/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
                         await uploadBytes(storageRef, item.file);
                         const url = await getDownloadURL(storageRef);
-                        return { url: url, name: `image.jpg` };
+                        return { url: url, name: `image.jpg` }; 
                     });
                     
                     const uploaded = await Promise.all(uploadPromises);
                     finalAttachments = finalAttachments.concat(uploaded);
                 } catch(e) {
-                    alert("Помилка фото: " + e.message);
+                    alert("Помилка завантаження фото: " + e.message);
                     return;
                 }
             }
@@ -1182,6 +1181,7 @@
             await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
         };
 
+        // --- TYPING ---
         window.sendTyping = function(channelId) {
             const typingRef = doc(db, "typing", channelId, "users", currentUID);
             typingRef.set({ lastTyped: serverTimestamp() }).catch(() => {});
@@ -1223,6 +1223,7 @@
             });
         };
 
+        // --- USERS ---
         window.loadUsersList = function() {
             const list = document.getElementById('membersList');
             if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
@@ -1249,7 +1250,7 @@
             }).catch((e) => { if(list) list.innerHTML = `<div style="color:red; text-align:center;">Помилка</div>`; });
         };
 
-        const mentionPopup = document.getElementById('mentionPopup');
+        // --- MENTIONS ---
         if(messageInput) {
             messageInput.addEventListener('input', function(e) {
                 const val = e.target.value;
@@ -1286,20 +1287,21 @@
             });
         }
 
+        // --- UPLOAD LOGIC (Simplified & Robust) ---
         const hiddenFileInput = document.getElementById('hiddenFileInput');
-        const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
-        const imageInfo = document.getElementById('imageInfo');
-        const replyInfo = document.getElementById('replyInfo');
-        const replyInputText = document.getElementById('replyInputText');
 
+        // File Input Event
         if(hiddenFileInput) {
             hiddenFileInput.addEventListener('change', async (e) => {
                 const files = Array.from(e.target.files);
                 if(files.length > 0) {
                     window.cancelReply();
                     const processPromises = files.map(async (file) => {
-                        const blob = await processImage(file);
-                        return { file: blob, previewUrl: URL.createObjectURL(blob) };
+                         const blob = await processImage(file);
+                         return {
+                            file: blob,
+                            previewUrl: URL.createObjectURL(blob)
+                         };
                     });
                     Promise.all(processPromises).then((processedFiles) => {
                         pendingUploadFiles = processedFiles;
@@ -1309,6 +1311,7 @@
             });
         }
 
+        // Paste Listener (Ctrl+V)
         if(messageInput) {
             messageInput.addEventListener('paste', async function(e) {
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -1322,7 +1325,10 @@
                             window.cancelReply();
                             
                             const processedBlob = await processImage(blob);
-                            pendingUploadFiles.push({ file: processedBlob, previewUrl: URL.createObjectURL(processedBlob) });
+                            pendingUploadFiles.push({
+                                file: processedBlob,
+                                previewUrl: URL.createObjectURL(processedBlob)
+                            });
                             updatePreviewBar();
                         }
                     }
@@ -1332,16 +1338,7 @@
             });
         }
 
-        window.scrollToReply = function(msgId) {
-            const el = document.getElementById(`msg-${msgId}`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.add('highlight-message');
-                setTimeout(() => el.classList.remove('highlight-message'), 2000);
-                if(messageInput) messageInput.focus();
-            }
-        };
-
+        // --- PREVIEW RENDERER ---
         function updatePreviewBar() {
             if(!replyInfo || !imageInfo || !uploadPreviewContainer) return;
             
@@ -1362,44 +1359,59 @@
         }
 
         window.renderUploadGallery = function() {
-            if(!uploadPreviewContainer) return;
-            if (pendingUploadFiles.length > 0) {
-                uploadPreviewContainer.innerHTML = ""; 
-                pendingUploadFiles.forEach((item, index) => {
-                    const wrapper = document.createElement('div');
-                    wrapper.style.position = 'relative';
-                    const img = document.createElement('img');
-                    img.src = item.previewUrl; 
-                    img.className = "upload-thumb";
-                    const removeBtn = document.createElement('div');
-                    removeBtn.className = "remove-thumb";
-                    removeBtn.textContent = "✖";
-                    removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
-                    wrapper.appendChild(img);
-                    wrapper.appendChild(removeBtn);
-                    uploadPreviewContainer.appendChild(wrapper);
-                });
-            } else {
-                uploadPreviewContainer.innerHTML = "";
-            }
+             if(!uploadPreviewContainer) return;
+             
+             if (pendingUploadFiles.length > 0) {
+                 uploadPreviewContainer.innerHTML = ""; 
+                 pendingUploadFiles.forEach((item, index) => {
+                     const wrapper = document.createElement('div');
+                     wrapper.style.position = 'relative';
+                     const img = document.createElement('img');
+                     img.src = item.previewUrl; 
+                     img.className = "upload-thumb";
+                     const removeBtn = document.createElement('div');
+                     removeBtn.className = "remove-thumb";
+                     removeBtn.textContent = "✖";
+                     removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
+                     wrapper.appendChild(img);
+                     wrapper.appendChild(removeBtn);
+                     uploadPreviewContainer.appendChild(wrapper);
+                 });
+             } else {
+                 uploadPreviewContainer.innerHTML = "";
+             }
         };
         
+        // --- CANCEL UPLOAD ---
         window.cancelUploadFiles = function() {
             pendingUploadFiles = [];
             updatePreviewBar();
             if(messageInput) messageInput.focus();
         };
 
+        // --- REPLY SYSTEM ---
         window.startReply = function(msgId, msg) {
             activeReplyMsg = { author: msg.author, text: msg.text, id: msgId }; 
             updatePreviewBar();
             if(messageInput) messageInput.focus();
         };
+        // FIX 3: Scroll to reply
+        window.scrollToReply = function(msgId) {
+            const el = document.getElementById(`msg-${msgId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('highlight-message');
+                setTimeout(() => el.classList.remove('highlight-message'), 2000);
+                if(messageInput) messageInput.focus();
+            }
+        };
+
         window.cancelReply = () => {
             activeReplyMsg = null; 
             updatePreviewBar();
         };
 
+        // --- GLOBAL CLICKS ---
         if(previewBar) {
             previewBar.addEventListener('click', (e) => {
                 if (!e.target.id.includes('Cancel') && !e.target.tagName === 'IMG') {
@@ -1442,29 +1454,28 @@
             if(e.target.id === 'chatHeader' || e.target.closest('#settingsGear')) window.openChannelSettings(currentChannelId);
         });
 
-        const ctxMenu = document.getElementById('contextMenu');
+        // --- CONTEXT MENU ---
         if(channelsList) {
             channelsList.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
                 const channelItem = e.target.closest('.channel-item');
-                if(ctxMenu) {
-                    ctxMenu.style.display = 'block';
-                    void ctxMenu.offsetWidth;
-                    ctxMenu.classList.add('show');
-                    
-                    ctxMenu.style.left = `${e.clientX}px`;
-                    ctxMenu.style.top = `${e.clientY}px`;
-                    
-                    if (channelItem) {
-                        ctxMenu.innerHTML = `
-                            <div class="ctx-item" onclick="window.openChannelSettings('${channelItem.dataset.id}')">⚙️ Налаштування</div>
-                            ${myRole==='admin'?`<div class="ctx-item danger" onclick="window.deleteChannelFromCtx('${channelItem.dataset.id}')">🗑️ Видалити канал</div>`:''}
-                            <div class="ctx-divider"></div>
-                            <div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>
-                        `;
-                    } else {
-                        ctxMenu.innerHTML = `<div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>`;
-                    }
+                
+                ctxMenu.style.display = 'block';
+                void ctxMenu.offsetWidth;
+                ctxMenu.classList.add('show');
+                
+                ctxMenu.style.left = `${e.clientX}px`;
+                ctxMenu.style.top = `${e.clientY}px`;
+                
+                if (channelItem) {
+                    ctxMenu.innerHTML = `
+                        <div class="ctx-item" onclick="window.openChannelSettings('${channelItem.dataset.id}')">⚙️ Налаштування</div>
+                        ${myRole==='admin'?`<div class="ctx-item danger" onclick="window.deleteChannelFromCtx('${channelItem.dataset.id}')">🗑️ Видалити канал</div>`:''}
+                        <div class="ctx-divider"></div>
+                        <div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>
+                    `;
+                } else {
+                    ctxMenu.innerHTML = `<div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>`;
                 }
             });
         }
