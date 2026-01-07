@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FULL FIX)</title>
+    <title>ДШВ | DISCORD (STABLE V3)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -43,6 +43,7 @@
             50% { background-color: rgba(34, 197, 94, 0.2); box-shadow: 0 0 15px rgba(34, 197, 94, 0.2); border-radius: 8px; }
             100% { background-color: transparent; }
         }
+        @keyframes glowPulse { 0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } 50% { box-shadow: 0 0 10px 0 rgba(34, 197, 94, 0.2); } 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); } }
         
         #app-layout { display: flex; width: 100%; height: 100%; position: relative; z-index: 1; flex-grow: 1; }
         #particles-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; opacity: 0.3; }
@@ -107,10 +108,9 @@
         }
         
         .message { display: flex; margin-top: 17px; padding: 0 20px; position: relative; }
-        /* FIX 3: Highlight Animation Class */
+        .message:hover { background-color: rgba(255, 255, 255, 0.02); }
         .message.highlight-message { animation: flashHighlight 2s ease-in-out; }
         
-        .message:hover { background-color: rgba(255, 255, 255, 0.02); }
         .msg-avatar { width: 40px; height: 40px; background: #1a1a1a; border-radius: 50%; flex-shrink: 0; margin-right: 16px; margin-left: 16px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: white; background-size: cover; border: 2px solid transparent; transition: 0.2s; cursor: pointer; }
         .msg-avatar:hover { transform: scale(1.05); }
         .msg-avatar.admin { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
@@ -140,7 +140,7 @@
             transition: 0.2s;
         }
         .msg-reply-card:hover { background: rgba(34, 197, 94, 0.15); border-color: var(--glass-border); }
-        .msg-reply-icon { font-size: 20px; margin-top: 2px; color: var(--text-muted); }
+        .msg-reply-icon { font-size: 20px; margin-top: 2px; color: var(--text-muted); cursor: pointer;}
         .msg-reply-content { flex: 1; overflow: hidden; }
         .msg-reply-author { color: var(--primary-bright); font-weight: 600; font-size: 12px; margin-bottom: 2px; display: block; text-transform: uppercase; }
         .msg-reply-text { color: #ccc; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -179,14 +179,19 @@
         }
         .reply-info, .image-info { display: none; font-size: 13px; color: #ccc; overflow: hidden; width: 100%; }
         .reply-info { display: flex; align-items: center; gap: 10px; }
-        .image-info { display: flex; align-items: center; gap: 10px; }
+        .image-info { display: flex; flex-direction: column; gap: 5px; }
         .img-preview-thumb { height: 35px; border-radius: 5px; border: 1px solid var(--primary); }
-        
-        /* Gallery for multiple photos */
+
+        /* --- GALLERY PREVIEW (Fixed CSS) --- */
         .upload-preview-container {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 8px;
-            max-height: 120px; overflow-y: auto; padding: 5px;
-            background: rgba(0,0,0,0.2); border-radius: 8px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
         }
         .upload-thumb {
             width: 50px; height: 50px; border-radius: 4px; object-fit: cover; cursor: pointer;
@@ -348,6 +353,7 @@
             </div>
             <div class="channels-list" id="channelsList"></div>
 
+            <!-- USER AREA (PROFILE BUTTON) -->
             <div class="user-area" id="userAreaBtn" onclick="window.openProfile()">
                 <div class="user-avatar-small" id="myAvatar">...</div>
                 <div class="user-info-text">
@@ -380,9 +386,9 @@
                     <span style="color:var(--primary); font-weight:bold;">Відповідь:</span>
                     <span id="replyInputText" style="color:white;">...</span>
                 </div>
-                <!-- MULTIPLE PHOTO GALLERY -->
-                <div id="imageInfo" style="display:none; flex:1; flex-direction: column; gap: 5px;">
-                    <span style="color:var(--primary); font-weight:bold;">Фото завантажено:</span>
+                <!-- GALLERY & INFO -->
+                <div id="imageInfo" style="display:none; flex: 1; flex-direction: column; gap: 5px;">
+                    <span style="color:var(--primary); font-weight:bold;">Фото до відправки:</span>
                     <div class="upload-preview-container" id="uploadPreviewContainer"></div>
                 </div>
                 <button id="previewCancelBtn" style="background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>
@@ -423,7 +429,7 @@
                 <div style="margin-top:20px; text-align:center;">
                     <label style="color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 8px; display: block;">АВАТАР (Клікніть, щоб змінити)</label>
                     
-                    <!-- FIXED AVATAR SYSTEM (CROPPER) -->
+                    <!-- AVATAR CROPPER -->
                     <div class="crop-container" id="cropArea" onclick="document.getElementById('profileAvatarInput').click()">
                         <canvas id="cropCanvas" width="250" height="250"></canvas>
                         <div class="crop-overlay">Перетягніть або прокрутіть</div>
@@ -505,10 +511,11 @@
         let channelsCache = [];
         let usersCache = [];
         let activeReplyMsg = null; 
-        let pendingUploadFiles = []; // Array of {file, previewUrl}
-        let currentBase64Img = null; // For Paste only
+        
+        // UNIFIED UPLOAD STATE
+        let pendingUploadFiles = []; // Array of { file: Blob, previewUrl: string }
 
-        // --- CANVAS PROCESSOR (Helper) ---
+        // --- HELPER: PROCESS IMAGE ---
         function processImage(file) {
             return new Promise((resolve) => {
                 const reader = new FileReader();
@@ -524,7 +531,7 @@
                         canvas.width = w; canvas.height = h;
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, w, h);
-                        const blob = canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.6);
+                        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.6);
                     };
                     img.onerror = () => resolve(file);
                 };
@@ -551,6 +558,94 @@
             return '#' + "00000".substring(0, 6 - c.length) + c;
         };
         window.showToast = (message) => { alert(message); }; 
+
+        // --- AUTH & INIT ---
+        onAuthStateChanged(auth, (user) => {
+            if (!user) { window.location.href = "index.html"; return; }
+            currentUID = user.uid;
+            window.initChat();
+        });
+
+        window.initChat = async function() {
+            if (!currentUID) return;
+            
+            const snap = await getDoc(doc(db, "users", currentUID));
+            if (snap.exists()) {
+                myData = snap.data();
+                myRole = myData.role || 'member'; 
+                
+                document.getElementById('sidebarName').textContent = myData.name;
+                const avatarSmall = document.getElementById('myAvatar');
+                const initial = myData.name.charAt(0).toUpperCase();
+                
+                if (myData.photoURL && myData.photoURL !== "") {
+                    // FIX 1: Ensure background-image is set correctly
+                    avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
+                    avatarSmall.style.backgroundSize = 'cover'; 
+                    avatarSmall.style.backgroundRepeat = 'no-repeat';
+                    avatarSmall.style.backgroundColor = 'transparent';
+                    avatarSmall.textContent = '';
+                } else {
+                    const color = window.stringToColor(myData.name);
+                    avatarSmall.style.backgroundColor = color;
+                    avatarSmall.style.backgroundImage = 'none';
+                    avatarSmall.textContent = initial; 
+                }
+                
+                if (myRole === 'admin') avatarSmall.classList.add('admin-status');
+                
+                let roleText = "БОЄЦЬ";
+                if (myRole === 'admin') roleText = "КЕРІВНИЦТВО";
+                else if (myData.rank) roleText = myData.rank.split('|')[0].trim();
+                document.getElementById('sidebarRole').textContent = roleText;
+                
+                document.getElementById('profileNameInput').value = myData.name;
+            } else {
+                document.getElementById('sidebarName').textContent = "Профіль не знайдено";
+            }
+            
+            window.loadChannels(true);
+            window.loadUsersList();
+
+            const sendBtn = document.getElementById('sendBtn');
+            const msgInput = document.getElementById('messageInput');
+            
+            if(sendBtn) sendBtn.onclick = () => window.sendMessage();
+
+            if(msgInput) {
+                msgInput.addEventListener('input', function() {
+                    this.style.height = 'auto';
+                    this.style.height = (this.scrollHeight) + 'px';
+                    if(this.value === '') this.style.height = 'auto';
+                });
+                
+                msgInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); 
+                        window.sendMessage();
+                    }
+                });
+            }
+        };
+
+        // --- PROFILE ---
+        window.openProfile = () => {
+            const modal = document.getElementById('profileModal');
+            if(modal) modal.style.display = 'flex';
+        };
+
+        const profileAvatarInput = document.getElementById('profileAvatarInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        
+        if(profileAvatarInput) {
+            profileAvatarInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const url = URL.createObjectURL(file);
+                avatarPreview.src = url;
+                avatarPreview.style.display = 'block';
+            });
+        }
 
         // --- AVATAR CROPPER LOGIC ---
         let cropImg = new Image();
@@ -598,102 +693,6 @@
             });
         }
 
-        // --- AUTH & INIT ---
-        onAuthStateChanged(auth, (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
-            currentUID = user.uid;
-            window.initChat();
-        });
-
-        window.initChat = async function() {
-            if (!currentUID) return;
-            
-            const snap = await getDoc(doc(db, "users", currentUID));
-            if (snap.exists()) {
-                myData = snap.data();
-                myRole = myData.role || 'member'; 
-                
-                document.getElementById('sidebarName').textContent = myData.name;
-                const avatarSmall = document.getElementById('myAvatar');
-                const initial = myData.name.charAt(0).toUpperCase();
-                
-                if (myData.photoURL && myData.photoURL !== "") {
-                    avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
-                    avatarSmall.style.backgroundSize = 'cover'; avatarSmall.textContent = '';
-                    cropImg.crossOrigin = "Anonymous"; cropImg.src = myData.photoURL;
-                    cropImg.onload = () => {
-                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                        cropX = (250 - cropImg.width * cropScale) / 2;
-                        cropY = (250 - cropImg.height * cropScale) / 2;
-                        drawCrop();
-                    };
-                } else {
-                    const color = window.stringToColor(myData.name);
-                    avatarSmall.style.backgroundColor = color; avatarSmall.textContent = initial; drawCrop();
-                }
-                
-                if (myRole === 'admin') avatarSmall.classList.add('admin-status');
-                
-                let roleText = "БОЄЦЬ";
-                if (myRole === 'admin') roleText = "КЕРІВНИЦТВО";
-                else if (myData.rank) roleText = myData.rank.split('|')[0].trim();
-                document.getElementById('sidebarRole').textContent = roleText;
-                
-                document.getElementById('profileNameInput').value = myData.name;
-            } else {
-                document.getElementById('sidebarName').textContent = "Профіль не знайдено";
-            }
-            
-            window.loadChannels(true);
-            window.loadUsersList();
-
-            const sendBtn = document.getElementById('sendBtn');
-            const msgInput = document.getElementById('messageInput');
-            
-            if(sendBtn) sendBtn.onclick = () => window.sendMessage();
-
-            if(msgInput) {
-                msgInput.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = (this.scrollHeight) + 'px';
-                    if(this.value === '') this.style.height = 'auto';
-                });
-                
-                msgInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault(); 
-                        window.sendMessage();
-                    }
-                });
-            }
-        };
-
-        // --- PROFILE (WITH CROPPER) ---
-        window.openProfile = () => {
-            const modal = document.getElementById('profileModal');
-            if(modal) modal.style.display = 'flex';
-        };
-
-        const profileAvatarInput = document.getElementById('profileAvatarInput');
-        if(profileAvatarInput) {
-            profileAvatarInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    cropImg = new Image();
-                    cropImg.onload = () => {
-                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                        cropX = (250 - cropImg.width * cropScale) / 2;
-                        cropY = (250 - cropImg.height * cropScale) / 2;
-                        drawCrop();
-                    };
-                    cropImg.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        }
-
         window.saveProfile = async function() {
             const newName = document.getElementById('profileNameInput').value.trim();
             if (!newName) return alert("Введіть ім'я");
@@ -716,24 +715,24 @@
                     tempCtx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
                     
                     // 2. Convert to Blob
-                    const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
+                    const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, 'image/jpeg', 0.8));
                     
                     // 3. Upload
-                    const storageRef = ref(storage, `avatars/${currentUID}_crop.jpg`);
+                    const storageRef = ref(storage, `avatars/${currentUID}_final.jpg`);
                     await uploadBytes(storageRef, blob);
                     const url = await getDownloadURL(storageRef);
                     
-                    // 4. Save DB
+                    // 4. Save to DB
                     await updateDoc(doc(db, "users", currentUID), { photoURL: url });
                     
-                    // 5. UI Update
+                    // 5. Update UI
                     document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
                     document.getElementById('myAvatar').style.backgroundSize = 'cover';
                     document.getElementById('myAvatar').textContent = '';
                     
                     alert("Профіль оновлено!");
                     window.closeModals('profileModal');
-                    location.reload();
+                    location.reload(); 
                 } catch (err) { 
                     console.error(err);
                     alert("Помилка фото: " + err.message); 
@@ -867,14 +866,17 @@
                 });
             }
         };
-        window.deleteChannelForever = async function() {
+        window.deleteChannelForever = function() {
             if(!confirm('ВИДАЛИТИ КАНАЛ?')) return;
             const messagesRef = collection(db, "channels", window.settingTargetId, "messages");
-            const snap = await getDocs(messagesRef);
-            snap.forEach((docSnap) => deleteDoc(docSnap.ref));
-            await deleteDoc(doc(db, "channels", window.settingTargetId));
-            window.closeModals('channelSettingsModal');
-            window.switchChannel('general');
+            getDocs(messagesRef).then((snap) => {
+                snap.forEach((docSnap) => deleteDoc(docSnap.ref));
+            }).then(() => {
+                deleteDoc(doc(db, "channels", window.settingTargetId)).then(() => {
+                    window.closeModals('channelSettingsModal');
+                    window.switchChannel('general');
+                });
+            });
         };
         window.canWrite = function(channelId) {
             const ch = channelsCache.find(c => c.id === channelId);
@@ -936,7 +938,7 @@
                     if (change.type === "added") {
                         if (!document.getElementById(`msg-${msgId}`)) {
                             window.renderMessageUI(msg, msgId, list, "append");
-                            requestAnimationFrame(() => list.scrollTop = list.scrollHeight);
+                            list.scrollTop = list.scrollHeight;
                         }
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
@@ -965,7 +967,6 @@
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
 
-            // Attachments
             let attachmentsHTML = "";
             if (msg.attachments && msg.attachments.length > 0) {
                 attachmentsHTML += '<div class="msg-attachments">';
@@ -987,14 +988,13 @@
                 const imgMatch = replyContent.match(/!\[(.*?)\]\((.*?)\)/);
                 const hasImage = !!imgMatch;
                 
-                let thumbHTML = `<div class="msg-reply-icon">🗨️</div>`;
+                let thumbHTML = `<div class="msg-reply-icon" onclick="window.scrollToReply('${msgId}')" style="cursor:pointer">🗨️</div>`;
                 if (hasImage) {
                     thumbHTML = `<img src="${imgMatch[2]}" class="msg-reply-thumb-mini" onerror="this.style.display='none'">`;
                 }
                 
                 replyHTML = `
                     <div class="msg-reply-card">
-                        <div class="msg-reply-icon" onclick="window.scrollToReply('${msgId}')" style="cursor:pointer">🗨️</div>
                         <div class="msg-reply-content">
                             <div class="msg-reply-author">${safeText(msg.replyTo.author)}</div>
                             <div class="msg-reply-text">${safeText(replyContent.substring(0, 50))}</div>
@@ -1126,7 +1126,7 @@
             window.cancelInlineEdit(msgId);
         };
 
-        // --- MESSAGING (MULTIPLE PHOTOS + FIX 4) ---
+        // --- MESSAGING (ASYNC UPLOAD + UNIFIED ARRAY) ---
         window.sendMessage = async function() {
             if (!myData) { alert("Помилка даних"); return; }
             if (!window.canWrite(currentChannelId)) { alert("Недостатньо прав"); return; }
@@ -1134,51 +1134,25 @@
             let text = input.value.trim();
             
             if (text.length > 500) return alert("Максимум 500 символів");
-            if (!text && !currentBase64Img && pendingUploadFiles.length === 0) return; 
+            if (!text && pendingUploadFiles.length === 0) return; 
 
             let finalAttachments = [];
             
-            // 1. Handle Paste (Single Base64 -> Blob -> Upload)
-            if (currentBase64Img) {
-                try {
-                    const byteCharacters = atob(currentBase64Img.split(',')[1]);
-                    const arrayBuffer = new ArrayBuffer(byteCharacters.length);
-                    const byteArray = new Uint8Array(arrayBuffer);
-                    for (let i =0; i < byteCharacters.length; i++) {
-                        byteArray[i] = byteCharacters.charCodeAt(i);
-                    }
-                    const blob = new Blob([byteArray], {type: 'image/jpeg'});
-                    
-                    const storageRef = ref(storage, `chat_images/${Date.now()}_paste.jpg`);
-                    const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
-                    finalAttachments.push({url: url, name: "image.jpg"});
-                } catch(e) {
-                    alert("Помилка фото: " + e.message);
-                    return;
-                }
-            } 
-            
-            // 2. Handle File Inputs (Array -> Upload Each)
-            else if (pendingUploadFiles.length > 0) {
-                try {
-                    // Upload sequentially or in parallel
+            // Handle All Files (From Paste or Input)
+            try {
+                if (pendingUploadFiles.length > 0) {
+                    // Upload ALL files in parallel
                     const uploadPromises = pendingUploadFiles.map(async (item) => {
-                        const blob = await processImage(item.file);
                         const storageRef = ref(storage, `chat_images/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
-                        const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
-                        return { url: url, name: item.file.name || "image.jpg" };
+                        const url = await uploadBytes(storageRef, item.file).then(() => getDownloadURL(storageRef));
+                        return { url: url, name: `image.${item.file.type.split('/')[1]}` };
                     });
                     
                     const uploaded = await Promise.all(uploadPromises);
                     finalAttachments = finalAttachments.concat(uploaded);
-                } catch(e) {
-                    alert("Помилка фото: " + e.message);
-                    return;
                 }
-            }
 
-            // 3. AddDoc
-            try {
+                // AddDoc
                 await addDoc(collection(db, "channels", currentChannelId, "messages"), {
                     text: text,
                     uid: currentUID,
@@ -1194,15 +1168,15 @@
                 if(input) input.value = ""; 
                 if(input) input.style.height = 'auto';
                 window.cancelReply();
-                window.cancelImage();
-            } catch(e) {
+                window.cancelUploadFiles(); // Renamed function for clarity
+            } catch (e) {
                 alert("Помилка відправки: " + e.message);
             }
         };
 
-        window.deleteMessage = function(msgId) {
+        window.deleteMessage = async function(msgId) {
             if(!confirm('Видалити повідомлення?')) return;
-            deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
+            await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
         };
 
         // --- TYPING INDICATOR ---
@@ -1314,12 +1288,34 @@
             });
         }
 
-        // --- UPLOAD LOGIC (MULTIPLE + PREVIEW + FIX 8) ---
+        // --- UPLOAD LOGIC (UNIFIED) ---
         const hiddenFileInput = document.getElementById('hiddenFileInput');
         const previewBar = document.querySelector('.preview-bar');
+        const messageInput = document.getElementById('messageInput');
 
+        // File Input Listener (Click +)
+        if(hiddenFileInput) {
+            hiddenFileInput.addEventListener('change', async (e) => {
+                const files = Array.from(e.target.files);
+                if(files.length > 0) {
+                    window.cancelReply();
+                    
+                    for(let file of files) {
+                        // Compress immediately
+                        const blob = await processImage(file);
+                        pendingUploadFiles.push({
+                            file: blob,
+                            previewUrl: URL.createObjectURL(blob)
+                        });
+                    }
+                    updatePreviewBar();
+                }
+            });
+        }
+
+        // Paste Listener (Ctrl+V) -> Add to Same Array
         if(messageInput) {
-            messageInput.addEventListener('paste', function(e) {
+            messageInput.addEventListener('paste', async function(e) {
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
                 let hasImage = false;
                 
@@ -1330,14 +1326,12 @@
                             hasImage = true;
                             window.cancelReply();
                             
-                            processImage(blob).then((processedBlob) => {
-                                const reader = new FileReader();
-                                reader.readAsDataURL(processedBlob);
-                                reader.onload = (evt) => {
-                                    currentBase64Img = evt.target.result;
-                                    updatePreviewBar();
-                                };
-                            }).catch((err) => {});
+                            const processedBlob = await processImage(blob);
+                            pendingUploadFiles.push({
+                                file: processedBlob,
+                                previewUrl: URL.createObjectURL(processedBlob)
+                            });
+                            updatePreviewBar();
                         }
                     }
                 }
@@ -1346,18 +1340,7 @@
             });
         }
 
-        // FIX 3: Scroll to reply and highlight
-        window.scrollToReply = function(msgId) {
-            const el = document.getElementById(`msg-${msgId}`);
-            if (el) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                el.classList.add('highlight-message');
-                setTimeout(() => el.classList.remove('highlight-message'), 2000);
-                const input = document.getElementById('messageInput');
-                if(input) input.focus();
-            }
-        };
-
+        // --- PREVIEW RENDERER (FIXED & UNIFIED) ---
         function updatePreviewBar() {
             const replyInfo = document.getElementById('replyInfo');
             const imageInfo = document.getElementById('imageInfo');
@@ -1368,21 +1351,11 @@
                 if(replyInfo) replyInfo.style.display = 'none';
                 if(imageInfo) imageInfo.style.display = 'flex';
                 window.renderUploadGallery();
-            } else if (currentBase64Img) {
-                if(previewBar) previewBar.style.display = 'flex';
-                if(replyInfo) replyInfo.style.display = 'none';
-                if(imageInfo) imageInfo.style.display = 'none';
-                if(container) container.innerHTML = "";
-                // Create temp gallery for single paste
-                const tempWrap = document.createElement('div');
-                tempWrap.className = 'upload-preview-container';
-                tempWrap.innerHTML = `<div class="upload-thumb"><img src="${currentBase64Img}" style="width:100%; height:100%; object-fit:cover;"><div class="remove-thumb" onclick="window.cancelImage()">✖</div></div>`;
-                if(container) container.appendChild(tempWrap);
             } else if (activeReplyMsg) {
                 if(previewBar) previewBar.style.display = 'flex';
                 if(replyInfo) replyInfo.style.display = 'flex';
                 if(imageInfo) imageInfo.style.display = 'none';
-                if(container) container.innerHTML = "";
+                if(container) container.innerHTML = ""; // Clear gallery if text only
                 const replyText = document.getElementById('replyInputText');
                 if(replyText) replyText.textContent = `${activeReplyMsg.author}: ${activeReplyMsg.text.substring(0, 30)}...`;
             } else {
@@ -1391,56 +1364,44 @@
         }
 
         window.renderUploadGallery = function() {
-            const container = document.getElementById('uploadPreviewContainer');
-            if(!container) return;
-            
-            if (pendingUploadFiles.length > 0) {
-                container.innerHTML = ""; 
-                pendingUploadFiles.forEach((item, index) => {
-                    const wrapper = document.createElement('div');
-                    wrapper.style.position = 'relative';
-                    const img = document.createElement('img');
-                    img.src = item.previewUrl; 
-                    img.className = "upload-thumb";
-                    const removeBtn = document.createElement('div');
-                    removeBtn.className = "remove-thumb";
-                    removeBtn.textContent = "✖";
-                    removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
-                    wrapper.appendChild(img);
-                    wrapper.appendChild(removeBtn);
-                    container.appendChild(wrapper);
-                });
-            } else {
-                container.innerHTML = "";
-            }
+             const container = document.getElementById('uploadPreviewContainer');
+             if(!container) return;
+             
+             if (pendingUploadFiles.length > 0) {
+                 container.innerHTML = ""; 
+                 pendingUploadFiles.forEach((item, index) => {
+                     const wrapper = document.createElement('div');
+                     wrapper.style.position = 'relative';
+                     const img = document.createElement('img');
+                     img.src = item.previewUrl; 
+                     img.className = "upload-thumb";
+                     const removeBtn = document.createElement('div');
+                     removeBtn.className = "remove-thumb";
+                     removeBtn.textContent = "✖";
+                     removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
+                     wrapper.appendChild(img);
+                     wrapper.appendChild(removeBtn);
+                     container.appendChild(wrapper);
+                 });
+             } else {
+                 container.innerHTML = "";
+                 const modal = document.getElementById('previewModal');
+                 if(modal) modal.style.display = 'none';
+             }
         };
         
-        // FIX 8: Single function name for clarity
-        window.cancelImage = function() {
-            currentBase64Img = null;
+        // RENAMED & FIXED CANCEL FUNCTION
+        window.cancelUploadFiles = function() {
             pendingUploadFiles = [];
             updatePreviewBar();
             const input = document.getElementById('messageInput');
             if(input) input.focus();
         };
 
-        // File Input Event
-        if(hiddenFileInput) {
-            hiddenFileInput.addEventListener('change', function(e) {
-                const files = Array.from(e.target.files);
-                if(files.length > 0) {
-                    window.cancelReply();
-                    
-                    files.forEach(file => {
-                        pendingUploadFiles.push({
-                            file: file,
-                            previewUrl: URL.createObjectURL(file)
-                        });
-                    });
-                    updatePreviewBar();
-                }
-            });
-        }
+        window.cancelReply = () => {
+            activeReplyMsg = null; 
+            updatePreviewBar();
+        };
 
         // --- REPLY SYSTEM ---
         window.startReply = function(msgId, msg) {
@@ -1449,9 +1410,16 @@
             const input = document.getElementById('messageInput');
             if(input) input.focus();
         };
-        window.cancelReply = () => {
-            activeReplyMsg = null; 
-            updatePreviewBar();
+        // FIX 3: Scroll to reply
+        window.scrollToReply = function(msgId) {
+            const el = document.getElementById(`msg-${msgId}`);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('highlight-message');
+                setTimeout(() => el.classList.remove('highlight-message'), 2000);
+                const input = document.getElementById('messageInput');
+                if(input) input.focus();
+            }
         };
 
         // --- GLOBAL CLICKS ---
@@ -1468,7 +1436,7 @@
         if(previewCancelBtn) {
             previewCancelBtn.onclick = () => {
                  window.cancelReply();
-                 window.cancelImage();
+                 window.cancelUploadFiles();
             };
         }
 
@@ -1503,6 +1471,7 @@
         // --- CONTEXT MENU ---
         const ctxMenu = document.getElementById('contextMenu');
         const channelsList = document.getElementById('channelsList');
+        
         if(channelsList) {
             channelsList.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
