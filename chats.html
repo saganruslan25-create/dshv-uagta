@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FIXED)</title>
+    <title>ДШВ | DISCORD (FIXED ASYNC)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -150,7 +150,7 @@
 
         .input-area { padding: 0 20px 24px 20px; background-color: var(--chat-bg); margin-top: auto; position: relative; display: flex; flex-direction: column; }
         
-        /* --- UNIFIED PREVIEW BAR (RAW CODE STYLE) --- */
+        /* --- UNIFIED PREVIEW BAR (Raw Code Style) --- */
         .preview-bar {
             display: none;
             background: var(--sidebar-bg);
@@ -438,7 +438,6 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- GLOBAL VARIABLES (FIXED) ---
         let currentUID = null;
         let myData = null;
         let myRole = 'member';
@@ -449,9 +448,6 @@
         let activeReplyMsg = null; 
         let pendingBlobs = []; 
         let currentBase64Img = null;
-        let typingTimeout = null;
-        // FIX: Explicitly declared here
-        let typingUnsubscribe = null;
 
         // --- CANVAS PROCESSOR (Raw Code Logic) ---
         function processImage(file) {
@@ -551,104 +547,104 @@
             window.initChat();
         });
 
-        window.initChat = function() {
+        window.initChat = async function() {
             if (!currentUID) return;
             
-            const snap = getDoc(doc(db, "users", currentUID)).then((snap) => {
-                if (snap.exists()) {
-                    myData = snap.data();
-                    myRole = myData.role || 'member'; 
-                    
-                    document.getElementById('sidebarName').textContent = myData.name;
-                    const avatarSmall = document.getElementById('myAvatar');
-                    const initial = myData.name.charAt(0).toUpperCase();
-                    
-                    if (myData.photoURL && myData.photoURL !== "") {
-                        avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
-                        avatarSmall.style.backgroundSize = 'cover'; avatarSmall.textContent = '';
-                        cropImg.crossOrigin = "Anonymous"; cropImg.src = myData.photoURL;
-                        cropImg.onload = () => {
-                            cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                            cropX = (250 - cropImg.width * cropScale) / 2;
-                            cropY = (250 - cropImg.height * cropScale) / 2;
-                            drawCrop();
-                        };
-                    } else {
-                        const color = window.stringToColor(myData.name);
-                        avatarSmall.style.backgroundColor = color; avatarSmall.textContent = initial; drawCrop();
-                    }
-                    
-                    if (myRole === 'admin') avatarSmall.classList.add('admin-status');
-                    
-                    let roleText = "БОЄЦЬ";
-                    if (myRole === 'admin') roleText = "КЕРІВНИЦТВО";
-                    else if (myData.rank) roleText = myData.rank.split('|')[0].trim();
-                    document.getElementById('sidebarRole').textContent = roleText;
-                    
-                    document.getElementById('profileNameInput').value = myData.name;
+            const snap = await getDoc(doc(db, "users", currentUID));
+            if (snap.exists()) {
+                myData = snap.data();
+                myRole = myData.role || 'member'; 
+                
+                document.getElementById('sidebarName').textContent = myData.name;
+                const avatarSmall = document.getElementById('myAvatar');
+                const initial = myData.name.charAt(0).toUpperCase();
+                
+                if (myData.photoURL && myData.photoURL !== "") {
+                    avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
+                    avatarSmall.style.backgroundSize = 'cover'; avatarSmall.textContent = '';
+                    cropImg.crossOrigin = "Anonymous"; cropImg.src = myData.photoURL;
+                    cropImg.onload = () => {
+                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
+                        cropX = (250 - cropImg.width * cropScale) / 2;
+                        cropY = (250 - cropImg.height * cropScale) / 2;
+                        drawCrop();
+                    };
                 } else {
-                    document.getElementById('sidebarName').textContent = "Профіль не знайдено";
+                    const color = window.stringToColor(myData.name);
+                    avatarSmall.style.backgroundColor = color; avatarSmall.textContent = initial; drawCrop();
                 }
                 
-                window.loadChannels(true);
-                window.loadUsersList();
-
-                const sendBtn = document.getElementById('sendBtn');
-                const msgInput = document.getElementById('messageInput');
+                if (myRole === 'admin') avatarSmall.classList.add('admin-status');
                 
-                if(sendBtn) sendBtn.onclick = () => window.sendMessage();
+                let roleText = "БОЄЦЬ";
+                if (myRole === 'admin') roleText = "КЕРІВНИЦТВО";
+                else if (myData.rank) roleText = myData.rank.split('|')[0].trim();
+                document.getElementById('sidebarRole').textContent = roleText;
+                
+                document.getElementById('profileNameInput').value = myData.name;
+            } else {
+                document.getElementById('sidebarName').textContent = "Профіль не знайдено";
+            }
+            
+            window.loadChannels(true);
+            window.loadUsersList();
 
-                // Auto-resize input
+            const sendBtn = document.getElementById('sendBtn');
+            const msgInput = document.getElementById('messageInput');
+            
+            if(sendBtn) sendBtn.onclick = () => window.sendMessage();
+
+            // Auto-resize input
+            if(msgInput) {
                 msgInput.addEventListener('input', function() {
                     this.style.height = 'auto';
                     this.style.height = (this.scrollHeight) + 'px';
                     if(this.value === '') this.style.height = 'auto';
                 });
                 
-                if(msgInput) {
-                    msgInput.addEventListener('keypress', (e) => {
-                        // SHIFT+ENTER FOR NEW LINE, ENTER FOR SAVE
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault(); 
-                            window.sendMessage();
-                        }
-                    });
-                }
-
-            }).catch((error) => { alert("Помилка ініціалізації: " + error.message); });
+                msgInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault(); 
+                        window.sendMessage();
+                    }
+                });
+            }
         };
 
         // --- PROFILE ---
         window.openProfile = () => {
             const modal = document.getElementById('profileModal');
-            modal.style.display = 'flex'; // Use flex to align content
+            if(modal) modal.style.display = 'flex';
         };
 
-        document.getElementById('profileAvatarInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                cropImg = new Image();
-                cropImg.onload = () => {
-                    cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                    cropX = (250 - cropImg.width * cropScale) / 2;
-                    cropY = (250 - cropImg.height * cropScale) / 2;
-                    drawCrop();
+        const profileAvatarInput = document.getElementById('profileAvatarInput');
+        if(profileAvatarInput) {
+            profileAvatarInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    cropImg = new Image();
+                    cropImg.onload = () => {
+                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
+                        cropX = (250 - cropImg.width * cropScale) / 2;
+                        cropY = (250 - cropImg.height * cropScale) / 2;
+                        drawCrop();
+                    };
+                    cropImg.src = event.target.result;
                 };
-                cropImg.src = event.target.result;
-            };
-            reader.readAsDataURL(file);
-        });
+                reader.readAsDataURL(file);
+            });
+        }
 
-        window.saveProfile = function() {
+        // FIX: Added async here because of 'await' inside
+        window.saveProfile = async function() {
             const newName = document.getElementById('profileNameInput').value.trim();
             if (!newName) return alert("Введіть ім'я");
             
             if (newName !== myData.name) {
-                updateProfile(auth.currentUser, { displayName: newName }).then(() => {
-                    return updateDoc(doc(db, "users", currentUID), { name: newName });
-                }).catch((e) => {});
+                await updateProfile(auth.currentUser, { displayName: newName });
+                await updateDoc(doc(db, "users", currentUID), { name: newName });
             }
 
             if(!canvas || !myData) return alert("Помилка даних");
@@ -658,49 +654,47 @@
             
             const storageRef = ref(storage, `avatars/${currentUID}_crop.jpg`);
             
-            uploadBytes(storageRef, blob)
-            .then(() => {
-                return getDownloadURL(storageRef);
-            })
-            .then((url) => {
-                return updateDoc(doc(db, "users", currentUID), { photoURL: url });
-            })
-            .then(() => {
-                document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
-                document.getElementById('myAvatar').style.backgroundSize = 'cover';
+            try {
+                const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
+                await updateDoc(doc(db, "users", currentUID), { photoURL: url });
+                
+                const myAvatar = document.getElementById('myAvatar');
+                if(myAvatar) {
+                    myAvatar.style.backgroundImage = `url(${url})`;
+                    myAvatar.style.backgroundSize = 'cover';
+                }
                 
                 alert("Профіль оновлено!");
-                document.getElementById('profileModal').style.display = 'none';
+                const modal = document.getElementById('profileModal');
+                if(modal) modal.style.display = 'none';
                 location.reload();
-            })
-            .catch((err) => { 
+            } catch (err) { 
                 console.error(err);
                 alert("Помилка фото: " + err.message); 
-            });
+            }
         };
 
-        window.deleteAvatar = function() {
+        // FIX: Added async here
+        window.deleteAvatar = async function() {
             if(!confirm('Видалити аватар?')) return;
             try {
-                updateDoc(doc(db, "users", currentUID), { photoURL: null }).then(() => {
-                    if (myData.photoURL) { 
-                        const pathRef = ref(storage, myData.photoURL); 
-                        deleteObject(pathRef).catch((e) => {}); 
-                    }
-                    alert("Аватар видалено");
-                    location.reload();
-                });
+                await updateDoc(doc(db, "users", currentUID), { photoURL: null });
+                if (myData.photoURL) { 
+                    const pathRef = ref(storage, myData.photoURL); 
+                    await deleteObject(pathRef); 
+                }
+                alert("Аватар видалено");
+                location.reload();
             } catch (error) { alert("Помилка видалення: " + error.message); }
         };
 
         // --- CHANNELS ---
         window.loadChannels = function(initMode = false) {
             const list = document.getElementById('channelsList');
-            if (!list.hasAttribute('data-listener-ready')) {
+            if (list && !list.hasAttribute('data-listener-ready')) {
                 list.addEventListener('click', (e) => {
                     const item = e.target.closest('.channel-item');
                     if (item && item.dataset.id) {
-                        // Stop old typing listener
                         window.stopTyping(currentChannelId);
                         currentChannelId = item.dataset.id;
                         window.switchChannel(item.dataset.id);
@@ -720,10 +714,10 @@
                 channelsCache = [];
                 snap.forEach((d) => { if(d.data()) channelsCache.push({...d.data(), id: d.id}); });
 
-                list.innerHTML = "";
+                if(list) list.innerHTML = "";
                 const cat = document.createElement('div');
                 cat.className = "category-label"; cat.textContent = "ТЕКСТОВІ КАНАЛИ";
-                list.appendChild(cat);
+                if(list) list.appendChild(cat);
 
                 channelsCache.forEach(ch => {
                     const item = document.createElement('div');
@@ -737,11 +731,12 @@
                     nameSpan.textContent = ch.name;
                     infoDiv.appendChild(iconSpan); infoDiv.appendChild(nameSpan);
                     item.appendChild(infoDiv);
-                    list.appendChild(item);
+                    if(list) list.appendChild(item);
                     
                     if (ch.id === currentChannelId) {
                         document.getElementById('currentChannelName').textContent = ch.name;
-                        document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
+                        const msgInput = document.getElementById('messageInput');
+                        if(msgInput) msgInput.placeholder = `Написати в #${ch.name}`;
                     }
                 });
 
@@ -763,7 +758,8 @@
             const ch = channelsCache.find(c => c.id === id);
             if (ch) {
                 document.getElementById('currentChannelName').textContent = ch.name;
-                document.getElementById('messageInput').placeholder = `Написати в #${ch.name}`;
+                const msgInput = document.getElementById('messageInput');
+                if(msgInput) msgInput.placeholder = `Написати в #${ch.name}`;
             }
             window.loadMessages(id);
             window.setupTyping(id);
@@ -771,7 +767,10 @@
             document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
             const active = document.querySelector(`.channel-item[data-id="${id}"]`);
             if(active) active.classList.add('active');
-            if(window.innerWidth <= 768) toggleSidebar();
+            if(window.innerWidth <= 768) {
+                const sidebar = document.getElementById('sidebar');
+                if(sidebar) toggleSidebar();
+            }
         };
 
         window.openChannelSettings = function(id = null) {
@@ -779,9 +778,13 @@
             const targetId = id || currentChannelId;
             const ch = channelsCache.find(c => c.id === targetId);
             if (!ch) return;
-            document.getElementById('settingChannelName').value = ch.name;
-            document.getElementById('settingPermission').value = ch.permission || 'public_rw';
-            document.getElementById('channelSettingsModal').style.display = 'flex';
+            const settingName = document.getElementById('settingChannelName');
+            const settingPerm = document.getElementById('settingPermission');
+            const modal = document.getElementById('channelSettingsModal');
+            
+            if(settingName) settingName.value = ch.name;
+            if(settingPerm) settingPerm.value = ch.permission || 'public_rw';
+            if(modal) modal.style.display = 'flex';
             window.settingTargetId = ch.id;
         };
         window.saveChannelSettings = function() {
@@ -816,32 +819,30 @@
         };
         window.openChannelModal = function() {
             if (myRole !== 'admin') { alert("Тільки адміни"); return; }
-            document.getElementById('channelModal').style.display = 'flex';
+            const modal = document.getElementById('channelModal');
+            if(modal) modal.style.display = 'flex';
         };
-        window.createChannel = function() {
-            let rawName = document.getElementById('newChannelName').value.trim();
+        window.createChannel = async function() {
+            const newNameInput = document.getElementById('newChannelName');
+            let rawName = newNameInput ? newNameInput.value.trim() : "";
             if (!rawName) return alert('Введіть назву');
             const cleanName = rawName.toLowerCase().replace(/\s+/g, '-');
             const q = query(collection(db, "channels"), where("name", "==", cleanName));
-            getDocs(q).then((snap) => {
-                if(!snap.empty) { alert('Канал з такою назвою вже існує'); return; }
-                addDoc(collection(db, "channels"), { name: cleanName, channelOrder: Date.now(), permission: 'public_rw' }).then(() => {
-                    window.closeModals('channelModal');
-                    document.getElementById('newChannelName').value = "";
-                });
-            });
+            const snap = await getDocs(q);
+            if(!snap.empty) { alert('Канал з такою назвою вже існує'); return; }
+            await addDoc(collection(db, "channels"), { name: cleanName, channelOrder: Date.now(), permission: 'public_rw' });
+            window.closeModals('channelModal');
+            if(newNameInput) newNameInput.value = "";
         };
 
-        // --- MESSAGES (FIX SCROLL) ---
+        // --- MESSAGES ---
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
-            list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
+            if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"), limit(50));
-            // FIX: Use `messagesUnsubscribe` safely
-            if (messagesUnsubscribe && typeof messagesUnsubscribe === 'function') { messagesUnsubscribe(); }
+            if (messagesUnsubscribe) { messagesUnsubscribe(); }
             
             messagesUnsubscribe = onSnapshot(q, (snapshot) => {
-                // Fake User Logic
                 if (snapshot.empty) {
                     const sysQ = query(collection(db, "channels", channelId, "messages"), where("uid", "==", "system"));
                     getDocs(sysQ).then((sysSnap) => {
@@ -857,7 +858,7 @@
                     });
                 }
 
-                if (list.innerText.includes('Завантаження')) list.innerHTML = "";
+                if(list && list.innerText.includes('Завантаження')) list.innerHTML = "";
                 
                 snapshot.docChanges().forEach((change) => {
                     const msg = change.doc.data();
@@ -868,7 +869,6 @@
                         if (!document.getElementById(`msg-${msgId}`)) {
                             window.renderMessageUI(msg, msgId, list, "append");
                             
-                            // FIX: Always scroll to bottom initially or near bottom
                             list.scrollTop = list.scrollHeight;
                         }
                     } else if (change.type === "modified") {
@@ -912,7 +912,6 @@
                 attachmentsHTML += '</div>';
             }
 
-            // Reply Preview (Card Style)
             let replyHTML = "";
             if (msg.replyTo) {
                 let replyContent = msg.replyTo.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -945,12 +944,10 @@
                  return false;
             };
 
-            // BUTTONS (NO EMOJIS)
             const btnReply = document.createElement('button');
             btnReply.className = 'action-btn'; btnReply.innerHTML = '↩️';
             btnReply.onclick = (e) => { e.stopPropagation(); window.startReply(msgId, msg); };
 
-            // EDIT/DELETE LOGIC
             const toolbar = document.createElement('div');
             toolbar.className = 'message-actions';
 
@@ -970,7 +967,6 @@
 
             toolbar.appendChild(btnReply);
 
-            // Inline Edit UI (Hidden)
             const editUI = `
                 <textarea id="edit-inline-${msgId}" class="edit-textarea-inline"></textarea>
                 <div id="edit-actions-${msgId}" class="edit-actions-inline">
@@ -1042,7 +1038,7 @@
             actions.style.display = 'none';
         };
 
-        window.saveInlineEdit = function(msgId) {
+        window.saveInlineEdit = async function(msgId) {
             const el = document.getElementById(`msg-${msgId}`);
             const editTA = el.querySelector(`#edit-inline-${msgId}`);
             const textVal = editTA.value.trim();
@@ -1050,7 +1046,7 @@
             if (!textVal) return;
             if (textVal.length > 500) return alert("Занадто довго");
 
-            updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
+            await updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
                 text: textVal,
                 editedAt: serverTimestamp()
             });
@@ -1058,19 +1054,18 @@
             window.cancelInlineEdit(msgId);
         };
 
-        // --- MESSAGING & ATTACHMENTS (ASYNC UPLOAD) ---
+        // --- MESSAGING & ATTACHMENTS (ASYNC) ---
         window.sendMessage = async function() {
             if (!myData) { alert("Помилка даних"); return; }
             if (!window.canWrite(currentChannelId)) { alert("Недостатньо прав"); return; }
             const input = document.getElementById('messageInput');
-            let text = input.value.trim();
+            let text = input ? input.value.trim() : "";
             
             if (text.length > 500) return alert("Максимум 500 символів");
             if (!text && !currentBase64Img && pendingBlobs.length === 0) return; 
 
             let finalAttachments = [];
             
-            // Process Image (Wait for compression)
             if (currentBase64Img) {
                 const byteCharacters = atob(currentBase64Img.split(',')[1]);
                 const arrayBuffer = new ArrayBuffer(byteCharacters.length);
@@ -1079,12 +1074,15 @@
                     byteArray[i] = byteCharacters.charCodeAt(i);
                 }
                 const blob = new Blob([byteArray], {type: 'image/jpeg'});
-                const storageRef = ref(storage, `chat_images/${Date.now()}_upload.jpg`);
+                const storageRef = ref(storage, `chat_images/${Date.now()}_img.jpg`);
                 const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
                 finalAttachments = [{url: url, name: "image.jpg"}];
             }
 
-            // Send text + attachments
+            // FIX: Ensure input exists before resetting
+            if(input) input.value = ""; 
+            if(input) input.style.height = 'auto';
+
             await addDoc(collection(db, "channels", currentChannelId, "messages"), {
                 text: text,
                 uid: currentUID,
@@ -1095,18 +1093,15 @@
                 attachments: finalAttachments,
                 createdAt: Date.now()
             });
-
-            // Clear Input
-            input.value = "";
-            input.style.height = 'auto'; 
+            
+            // Clear State
             window.cancelReply();
             window.cancelImage();
         };
 
-        window.deleteMessage = function(msgId) {
-            if(confirm('Видалити повідомлення?')) {
-                deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId)).catch((e) => {});
-            }
+        window.deleteMessage = async function(msgId) {
+            if(!confirm('Видалити повідомлення?')) return;
+            await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
         };
 
         // --- TYPING INDICATOR ---
@@ -1119,7 +1114,6 @@
             if(typingTimeout) clearTimeout(typingTimeout);
         };
 
-        // FIX: Added explicit variable declaration at top
         window.setupTyping = function(channelId) {
             if(typingUnsubscribe && typeof typingUnsubscribe === 'function') typingUnsubscribe();
             
@@ -1155,14 +1149,15 @@
         // --- USERS ---
         window.loadUsersList = function() {
             const list = document.getElementById('membersList');
-            list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
+            if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
             getDocs(collection(db, "users")).then((snap) => {
-                list.innerHTML = "";
-                if (snap.empty) { list.innerHTML = '<div style="text-align: center;">Немає</div>'; return; }
+                if(list) list.innerHTML = "";
+                if (snap.empty) { if(list) list.innerHTML = '<div style="text-align: center;">Немає</div>'; return; }
                 let users = [];
                 snap.forEach((d) => { if(d.data()) users.push(d.data()); });
                 usersCache = users;
-                document.getElementById('membersCount').innerText = users.length;
+                const membersCount = document.getElementById('membersCount');
+                if(membersCount) membersCount.innerText = users.length;
                 
                 users.forEach((u) => {
                     const item = document.createElement('div');
@@ -1173,90 +1168,102 @@
                         <div class="member-info"><span class="member-name">${safeText(u.name)}</span></div>
                         <div class="status-dot"></div>
                     `;
-                    list.appendChild(item);
+                    if(list) list.appendChild(item);
                 });
-            }).catch((e) => { list.innerHTML = `<div style="color:red; text-align:center;">Помилка</div>`; });
+            }).catch((e) => { if(list) list.innerHTML = `<div style="color:red; text-align:center;">Помилка</div>`; });
         };
 
         // --- MENTIONS ---
         const mentionPopup = document.getElementById('mentionPopup');
-        document.getElementById('messageInput').addEventListener('input', function(e) {
-            const val = e.target.value;
-            const lastChar = val.slice(-1);
-            if (lastChar === '@') {
-                if(usersCache.length === 0) {
-                    getDocs(collection(db, "users")).then((s) => {
-                        s.forEach((d) => usersCache.push(d.data()));
-                    });
-                }
-                const inputRect = e.target.getBoundingClientRect();
-                mentionPopup.style.left = inputRect.left + 'px';
-                mentionPopup.style.top = (inputRect.bottom + window.scrollY +5) + 'px';
-                
-                mentionPopup.innerHTML = "";
-                usersCache.forEach((u) => {
-                    const item = document.createElement('div');
-                    item.className = 'mention-item';
-                    const initial = u.name.charAt(0).toUpperCase();
-                    item.innerHTML = `<div class="mention-avatar-small" style="background:${window.stringToColor(u.name)}">${initial}</div> ${safeText(u.name)}`;
-                    item.onclick = () => {
-                        const input = document.getElementById('messageInput');
-                        input.value = input.value.substring(0, input.value.lastIndexOf('@')+1) + u.name + " ";
-                        mentionPopup.style.display = 'none';
-                        input.focus();
-                    };
-                    mentionPopup.appendChild(item);
-                });
-                mentionPopup.style.display = 'block';
-            } else {
-                mentionPopup.style.display = 'none';
-            }
-        });
+        const messageInput = document.getElementById('messageInput');
 
-        // --- UPLOAD (PASTE FIX) ---
-        document.getElementById('messageInput').addEventListener('paste', function(e) {
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            let hasImage = false;
-            
-            for (let item of items) {
-                if (item.kind === 'file') {
-                    const blob = item.getAsFile();
-                    if (blob) {
-                        hasImage = true;
-                        processImage(blob).then((processedBlob) => {
-                            // Process Image returns a blob. 
-                            // Raw Code Style: Use Base64 for immediate preview
-                            const reader = new FileReader();
-                            reader.readAsDataURL(processedBlob);
-                            reader.onload = (evt) => {
-                                currentBase64Img = evt.target.result;
-                                updatePreviewBar();
-                            };
-                        }).catch((err) => {});
+        if(messageInput) {
+            messageInput.addEventListener('input', function(e) {
+                const val = e.target.value;
+                const lastChar = val.slice(-1);
+                if (lastChar === '@') {
+                    if(usersCache.length === 0) {
+                        getDocs(collection(db, "users")).then((s) => {
+                            s.forEach((d) => usersCache.push(d.data()));
+                        });
+                    }
+                    const inputRect = e.target.getBoundingClientRect();
+                    if(mentionPopup) mentionPopup.style.left = inputRect.left + 'px';
+                    if(mentionPopup) mentionPopup.style.top = (inputRect.bottom + window.scrollY +5) + 'px';
+                    
+                    if(mentionPopup) mentionPopup.innerHTML = "";
+                    usersCache.forEach((u) => {
+                        const item = document.createElement('div');
+                        item.className = 'mention-item';
+                        const initial = u.name.charAt(0).toUpperCase();
+                        item.innerHTML = `<div class="mention-avatar-small" style="background:${window.stringToColor(u.name)}">${initial}</div> ${safeText(u.name)}`;
+                        item.onclick = () => {
+                            if(messageInput) {
+                                messageInput.value = messageInput.value.substring(0, messageInput.value.lastIndexOf('@')+1) + u.name + " ";
+                                mentionPopup.style.display = 'none';
+                                messageInput.focus();
+                            }
+                        };
+                        if(mentionPopup) mentionPopup.appendChild(item);
+                    });
+                    if(mentionPopup) mentionPopup.style.display = 'block';
+                } else {
+                    if(mentionPopup) mentionPopup.style.display = 'none';
+                }
+            });
+        }
+
+        // --- UPLOAD (RAW CODE LOGIC + FIX 1) ---
+        const hiddenFileInput = document.getElementById('hiddenFileInput');
+        const previewBar = document.querySelector('.preview-bar');
+
+        if(messageInput) {
+            messageInput.addEventListener('paste', function(e) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                let hasImage = false;
+                
+                for (let item of items) {
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        if (blob) {
+                            hasImage = true;
+                            // FIX: When pasting, clear reply state
+                            window.cancelReply();
+                            
+                            processImage(blob).then((processedBlob) => {
+                                const reader = new FileReader();
+                                reader.readAsDataURL(processedBlob);
+                                reader.onload = (evt) => {
+                                    currentBase64Img = evt.target.result;
+                                    updatePreviewBar();
+                                };
+                            }).catch((err) => {});
+                        }
                     }
                 }
-            }
-            
-            if (hasImage) e.preventDefault();
-        });
+                
+                if (hasImage) e.preventDefault();
+            });
+        }
 
         function updatePreviewBar() {
-            const bar = document.querySelector('.preview-bar');
             const replyInfo = document.getElementById('replyInfo');
             const imageInfo = document.getElementById('imageInfo');
 
             if (currentBase64Img) {
-                bar.style.display = 'flex';
-                replyInfo.style.display = 'none';
-                imageInfo.style.display = 'flex';
-                document.getElementById('imgPreviewThumb').src = currentBase64Img;
+                if(previewBar) previewBar.style.display = 'flex';
+                if(replyInfo) replyInfo.style.display = 'none';
+                if(imageInfo) imageInfo.style.display = 'flex';
+                const thumb = document.getElementById('imgPreviewThumb');
+                if(thumb) thumb.src = currentBase64Img;
             } else if (activeReplyMsg) {
-                bar.style.display = 'flex';
-                replyInfo.style.display = 'flex';
-                imageInfo.style.display = 'none';
-                document.getElementById('replyInputText').textContent = `${activeReplyMsg.author}: ${activeReplyMsg.text.substring(0, 30)}...`;
+                if(previewBar) previewBar.style.display = 'flex';
+                if(replyInfo) replyInfo.style.display = 'flex';
+                if(imageInfo) imageInfo.style.display = 'none';
+                const replyText = document.getElementById('replyInputText');
+                if(replyText) replyText.textContent = `${activeReplyMsg.author}: ${activeReplyMsg.text.substring(0, 30)}...`;
             } else {
-                bar.style.display = 'none';
+                if(previewBar) previewBar.style.display = 'none';
             }
         }
 
@@ -1265,7 +1272,7 @@
              const placeholder = document.getElementById('uploadPlaceholder');
              if (pendingBlobs.length > 0) {
                  if (placeholder) placeholder.style.display = 'none';
-                 container.innerHTML = ""; 
+                 if(container) container.innerHTML = ""; 
                  pendingBlobs.forEach((blob, index) => {
                      const wrapper = document.createElement('div');
                      wrapper.style.position = 'relative';
@@ -1278,33 +1285,39 @@
                      removeBtn.onclick = () => { pendingBlobs.splice(index, 1); window.renderUploadGallery(); };
                      wrapper.appendChild(img);
                      wrapper.appendChild(removeBtn);
-                     container.appendChild(wrapper);
+                     if(container) container.appendChild(wrapper);
                  });
              } else {
-                 container.innerHTML = "";
+                 if(container) container.innerHTML = "";
                  const p = document.createElement('p');
                  p.id = "uploadPlaceholder";
                  p.innerText = "Виберіть фото";
                  p.style.color = "var(--text-muted)";
                  p.style.textAlign = "center";
-                 container.appendChild(p);
-                 document.getElementById('previewModal').style.display = 'none';
+                 if(container) container.appendChild(p);
+                 const modal = document.getElementById('previewModal');
+                 if(modal) modal.style.display = 'none';
              }
-             if(pendingBlobs.length > 0) document.getElementById('previewModal').style.display = 'flex';
+             const modal = document.getElementById('previewModal');
+             if(pendingBlobs.length > 0 && modal) modal.style.display = 'flex';
         };
+        
         window.sendUpload = () => { window.closeModals('previewModal'); const input = document.getElementById('messageInput'); if(input) input.focus(); };
         window.cancelImageUpload = () => { 
             currentBase64Img = null; 
             updatePreviewBar();
-            document.getElementById('previewModal').style.display = 'none';
-            document.getElementById('messageInput').focus(); 
+            const modal = document.getElementById('previewModal');
+            if(modal) modal.style.display = 'none';
+            const input = document.getElementById('messageInput');
+            if(input) input.focus(); 
         };
 
         // --- REPLY SYSTEM (Raw Code Style) ---
         window.startReply = function(msgId, msg) {
             activeReplyMsg = { author: msg.author, text: msg.text, id: msgId }; 
             updatePreviewBar();
-            document.getElementById('messageInput').focus();
+            const input = document.getElementById('messageInput');
+            if(input) input.focus();
         };
         window.cancelReply = () => {
             activeReplyMsg = null; 
@@ -1312,25 +1325,30 @@
         };
 
         // --- GLOBAL CLICKS (CLOSE MENUS + FIX 3) ---
-        document.getElementById('previewBar').addEventListener('click', (e) => {
-            if (!e.target.id.includes('Cancel') && !e.target.tagName === 'IMG') {
-                document.getElementById('messageInput').focus();
-            }
-        });
+        if(previewBar) {
+            previewBar.addEventListener('click', (e) => {
+                if (!e.target.id.includes('Cancel') && !e.target.tagName === 'IMG') {
+                    const input = document.getElementById('messageInput');
+                    if(input) input.focus();
+                }
+            });
+        }
         
         // Cancel button in preview bar
-        document.getElementById('previewCancelBtn').onclick = () => {
-             window.cancelReply();
-             window.cancelImageUpload();
-        };
+        const previewCancelBtn = document.getElementById('previewCancelBtn');
+        if(previewCancelBtn) {
+            previewCancelBtn.onclick = () => {
+                 window.cancelReply();
+                 window.cancelImageUpload();
+            };
+        }
 
         document.addEventListener('click', (e) => {
             const target = e.target;
             
-            // FIX 3: Profile Click (Fixed to use closest)
+            // FIX 3: Profile Click
             if(e.target.closest('#userAreaBtn')) window.openProfile();
             
-            // Check if clicked inside any popup/modal
             const isInsideModal = target.closest('.settings-modal');
             const isInsideOverlay = target.closest('.modal-overlay');
             const isInsidePopup = target.closest('#mentionPopup');
@@ -1341,12 +1359,14 @@
             const isInsideMembers = target.closest('.members-sidebar');
             const isInsideSidebar = target.closest('.sidebar');
 
-            // Close everything if click is NOT inside them AND NOT a trigger button
             if (!isInsideModal && !isInsideOverlay && !isInsidePopup && !isInsideContext && !isInsidePreviewBar && !isInsideTextarea && !isInsideChannelList && !isInsideMembers && !isInsideSidebar) {
                  document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
-                 document.getElementById('mentionPopup').style.display = 'none';
-                 document.getElementById('contextMenu').style.display = 'none';
-                 document.getElementById('contextMenu').classList.remove('show');
+                 if(mentionPopup) mentionPopup.style.display = 'none';
+                 const ctx = document.getElementById('contextMenu');
+                 if(ctx) {
+                     ctx.classList.remove('show');
+                     setTimeout(() => ctx.style.display = 'none', 200);
+                 }
             }
 
             if(e.target.id === 'chatHeader' || e.target.closest('#settingsGear')) window.openChannelSettings(currentChannelId);
@@ -1354,34 +1374,38 @@
 
         // Context Menu Logic
         const ctxMenu = document.getElementById('contextMenu');
-        document.getElementById('channelsList').addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-            const channelItem = e.target.closest('.channel-item');
-            ctxMenu.style.display = 'block';
-            void ctxMenu.offsetWidth;
-            ctxMenu.classList.add('show');
-            
-            ctxMenu.style.left = `${e.clientX}px`;
-            ctxMenu.style.top = `${e.clientY}px`;
-            
-            if (channelItem) {
-                ctxMenu.innerHTML = `
-                    <div class="ctx-item" onclick="window.openChannelSettings('${channelItem.dataset.id}')">⚙️ Налаштування</div>
-                    ${myRole==='admin'?`<div class="ctx-item danger" onclick="window.deleteChannelFromCtx('${channelItem.dataset.id}')">🗑️ Видалити канал</div>`:''}
-                    <div class="ctx-divider"></div>
-                    <div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>
-                `;
-            } else {
-                ctxMenu.innerHTML = `<div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>`;
-            }
-        });
-        window.deleteChannelFromCtx = function(id) {
-            if(confirm('ВИДАЛИТИ КАНАЛ?')) {
-                deleteDoc(doc(db, "channels", id)).then(() => {
-                    document.getElementById('contextMenu').style.display = 'none';
-                    window.switchChannel('general');
-                });
-            }
+        const channelsList = document.getElementById('channelsList');
+        if(channelsList) {
+            channelsList.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                const channelItem = e.target.closest('.channel-item');
+                if(ctxMenu) {
+                    ctxMenu.style.display = 'block';
+                    void ctxMenu.offsetWidth;
+                    ctxMenu.classList.add('show');
+                    
+                    ctxMenu.style.left = `${e.clientX}px`;
+                    ctxMenu.style.top = `${e.clientY}px`;
+                    
+                    if (channelItem) {
+                        ctxMenu.innerHTML = `
+                            <div class="ctx-item" onclick="window.openChannelSettings('${channelItem.dataset.id}')">⚙️ Налаштування</div>
+                            ${myRole==='admin'?`<div class="ctx-item danger" onclick="window.deleteChannelFromCtx('${channelItem.dataset.id}')">🗑️ Видалити канал</div>`:''}
+                            <div class="ctx-divider"></div>
+                            <div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>
+                        `;
+                    } else {
+                        ctxMenu.innerHTML = `<div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>`;
+                    }
+                }
+            });
+        }
+        
+        window.deleteChannelFromCtx = async function(id) {
+            if(!confirm('ВИДАЛИТИ КАНАЛ?')) return;
+            await deleteDoc(doc(db, "channels", id));
+            if(ctxMenu) ctxMenu.style.display = 'none';
+            window.switchChannel('general');
         };
 
         window.openLink = (url) => { window.open(url, '_blank'); };
@@ -1394,7 +1418,13 @@
         const particlesCtx = particlesCanvas.getContext('2d');
         let width, height, particles = [];
         function resize() { width = particlesCanvas.width = window.innerWidth; height = particlesCanvas.height = window.innerHeight; }
-        window.addEventListener('resize', resize); resize();
+        if(window) {
+            window.addEventListener('resize', resize); 
+            resize();
+        } else {
+            width = window.innerWidth;
+            height = window.innerHeight;
+        }
         class Particle {
             constructor() { this.x = Math.random() * width; this.y = Math.random() * height; this.vx = (Math.random() -0.5) * 0.5; this.vy = (Math.random() -0.5) * 0.5; this.size = Math.random() * 2 + 1; this.alpha = Math.random() * 0.5; this.targetAlpha = Math.random() * 0.5 + 0.1; }
             update() { this.x += this.vx; this.y += this.vy; if (this.x < 0) this.x = width; if (this.x > width) this.x = 0; if (this.y < 0) this.y = height; if (this.y > height) this.y = 0; this.alpha += (this.targetAlpha - this.alpha) * 0.02; if (Math.abs(this.targetAlpha - this.alpha) < 0.01) this.targetAlpha = Math.random() * 0.5 + 0.1; }
