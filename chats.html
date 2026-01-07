@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FINAL FIX)</title>
+    <title>ДШВ | DISCORD (STABLE V2)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -23,7 +23,6 @@
             --danger: #ef4444;
             --danger-glow: rgba(239, 68, 68, 0.4);
             --glass-border: rgba(34, 197, 94, 0.2);
-            --glass-highlight: rgba(255, 255, 255, 0.05);
         }
 
         body {
@@ -78,7 +77,7 @@
         .user-area { background: rgba(0, 0, 0, 0.3); padding: 8px; display: flex; align-items: center; border-top: 1px solid rgba(255, 255, 255, 0.05); flex-shrink: 0; cursor: pointer; position: relative; transition: 0.2s; }
         .user-area:hover { background: rgba(34, 197, 94, 0.1); }
         
-        .user-avatar-small { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 8px; color: black; font-weight: 700; border: 2px solid transparent; background-size: cover; transition: 0.2s; position: relative; }
+        .user-avatar-small { width: 32px; height: 32px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 14px; margin-right: 8px; color: black; font-weight: 700; border: 2px solid transparent; background-size: cover; transition: 0.2s; position: relative; object-fit: cover; }
         .user-avatar-small.admin-status::after { content: ''; position: absolute; top: -2px; right: -2px; bottom: -2px; left: -2px; border-radius: 50%; border: 2px solid var(--primary); animation: glowPulse 2s infinite; pointer-events: none; }
         .user-area:hover .user-avatar-small { border-color: var(--primary-bright); }
         
@@ -93,7 +92,15 @@
         .channel-settings-gear { color: var(--text-dim); font-size: 20px; cursor: pointer; transition: 0.2s; margin-left: auto; }
         .channel-settings-gear:hover { color: var(--primary-bright); transform: rotate(45deg); }
 
-        .messages-wrapper { flex: 1; padding: 20px 0; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+        .messages-wrapper { 
+            flex: 1; 
+            padding: 20px 0; 
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 0; 
+            position: relative; 
+        }
         
         .message { display: flex; margin-top: 17px; padding: 0 20px; position: relative; }
         .message:hover { background-color: rgba(255, 255, 255, 0.02); }
@@ -112,6 +119,7 @@
         }
         .msg-attachment:hover { background: rgba(40, 40, 40, 1); border-color: var(--text-muted); }
 
+        /* --- REPLY CARD STYLE --- */
         .msg-reply-card {
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--glass-border);
@@ -225,13 +233,27 @@
         .close-modal { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer; transition: 0.2s; }
         .close-modal:hover { color: white; transform: rotate(90deg); }
 
-        .crop-container { position: relative; width: 250px; height: 250px; margin: 0 auto; border-radius: 50%; overflow: hidden; border: 2px solid var(--glass-border); cursor: move; background: #000; }
-        #cropCanvas { display: block; width: 100%; height: 100%; }
-        .upload-preview-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); gap: 10px; max-height: 200px; overflow-y: auto; margin-bottom: 15px; border: 1px solid var(--glass-border); padding: 10px; border-radius: 8px; }
-        .upload-thumb { width: 60px; height: 60px; object-fit: cover; border-radius: 4px; cursor: pointer; border: 2px solid transparent; position: relative; }
-        .upload-thumb:hover { border-color: var(--primary); }
-        .upload-thumb .remove-thumb { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; width: 16px; height: 16px; display: none; align-items: center; justify-content: center; font-size: 10px; }
-        .upload-thumb:hover .remove-thumb { display: flex; }
+        /* --- NEW SIMPLE AVATAR PREVIEW --- */
+        .avatar-preview-wrapper {
+            position: relative;
+            width: 120px; height: 120px;
+            margin: 0 auto;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid var(--glass-border);
+            cursor: pointer;
+            background-color: #333;
+        }
+        .avatar-preview-wrapper:hover { border-color: var(--primary); }
+        .avatar-preview-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .avatar-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 30px;
+            background: rgba(0,0,0,0.6); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; opacity: 0; transition: 0.2s;
+        }
+        .avatar-preview-wrapper:hover .avatar-overlay { opacity: 1; }
+        .avatar-input { display: none; }
 
         #mentionPopup { display: none; position: absolute; background: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 5px; width: 200px; max-height: 200px; overflow-y: auto; z-index: 5000; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); }
         .mention-item { padding: 8px 10px; cursor: pointer; display: flex; align-items: center; gap: 10px; color: var(--text-main); }
@@ -318,7 +340,7 @@
                 <div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>
             </div>
 
-            <!-- UNIFIED PREVIEW BAR (RAW CODE STYLE) -->
+            <!-- PREVIEW BAR -->
             <div class="preview-bar">
                 <div id="replyInfo" style="display:none; flex:1; display:flex; align-items:center; gap:10px;">
                     <span style="color:var(--primary); font-weight:bold;">Відповідь:</span>
@@ -366,11 +388,13 @@
                 
                 <div style="margin-top:20px; text-align:center;">
                     <label style="color: var(--text-muted); font-size: 12px; font-weight: 700; margin-bottom: 8px; display: block;">АВАТАР (Клікніть щоб змінити)</label>
-                    <div class="crop-container" id="cropArea" onclick="document.getElementById('profileAvatarInput').click()">
-                        <canvas id="cropCanvas" width="250" height="250"></canvas>
-                        <div style="position:absolute; bottom:10px; left:0; width:100%; text-align:center; color:white; font-size:12px; pointer-events:none; text-shadow:0 0 5px black;">Перетягніть фото</div>
+                    
+                    <!-- SIMPLE AVATAR SYSTEM -->
+                    <div class="avatar-preview-wrapper" onclick="document.getElementById('profileAvatarInput').click()">
+                        <img id="avatarPreview" src="" alt="No Avatar" style="display:none;">
+                        <div class="avatar-overlay">Змінити</div>
                     </div>
-                    <input type="file" id="profileAvatarInput" class="settings-input" style="display:none;" accept="image/*">
+                    <input type="file" id="profileAvatarInput" class="avatar-input" accept="image/*">
                 </div>
             </div>
             <div class="settings-footer">
@@ -436,47 +460,21 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // --- GLOBAL VARIABLES (DECLARED FIRST) ---
+        // --- GLOBAL VARIABLES ---
         let currentUID = null;
         let myData = null;
         let myRole = 'member';
         let currentChannelId = 'general';
-        // FIX: typingUnsubscribe declared at top level, before usage
+        let messagesUnsubscribe = null;
         let typingUnsubscribe = null;
         let typingTimeout = null;
-        let messagesUnsubscribe = null;
         let channelsCache = [];
         let usersCache = [];
         let activeReplyMsg = null; 
-        let pendingBlobs = []; 
-        let currentBase64Img = null;
-
-        // --- CANVAS PROCESSOR ---
-        function processImage(file) {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        let w = img.width, h = img.height, max = 1280;
-                        if (w > h) { if (w > max) { h *= max/w; w = max; } }
-                        else { if (h > max) { w *= max/h; h = max; } }
-                        canvas.width = w; canvas.height = h;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(img, 0, 0, w, h);
-                        const blob = canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.6);
-                    };
-                    img.onerror = () => resolve(file);
-                };
-                reader.onerror = () => resolve(file);
-            });
-        }
+        let currentBase64Img = null; // Used for Paste preview only
+        let pendingUploadFile = null; // Used for actual file upload
 
         // --- HELPERS ---
-        const safeAttr = (val) => String(val).replace(/"/g, '&quot;');
         const safeText = (val) => {
             if (!val) return "";
             let str = String(val);
@@ -494,53 +492,6 @@
             const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
             return '#' + "00000".substring(0, 6 - c.length) + c;
         };
-        window.showToast = (message) => { alert(message); }; 
-
-        // --- AVATAR CROPPER ---
-        let cropImg = new Image();
-        let cropX = 0, cropY = 0, cropScale = 1;
-        let isDragging = false;
-        let lastMouseX = 0, lastMouseY = 0;
-        const canvas = document.getElementById('cropCanvas');
-        const ctx = canvas.getContext('2d');
-
-        function drawCrop() {
-            if (!myData || !myData.photoURL) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "#333"; ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI*2); ctx.fill();
-                ctx.fillStyle = "#666"; ctx.font = "30px Arial"; ctx.textAlign = "center"; ctx.fillText("NO IMG", 125, 130);
-                return;
-            }
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.save();
-            ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.clip();
-            ctx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
-            ctx.restore();
-            ctx.fillStyle = "rgba(0,0,0,0.5)";
-            ctx.beginPath(); ctx.rect(0, 0, canvas.width, canvas.height);
-            ctx.arc(125, 125, 125, 0, Math.PI * 2, true); 
-            ctx.fill();
-            ctx.strokeStyle = "rgba(255,255,255,0.3)";
-            ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.stroke();
-        }
-
-        if(canvas) {
-            canvas.addEventListener('mousedown', (e) => { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
-        }
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const dx = e.clientX - lastMouseX; const dy = e.clientY - lastMouseY;
-            cropX += dx; cropY += dy; lastMouseX = e.clientX; lastMouseY = e.clientY;
-            drawCrop();
-        });
-        window.addEventListener('mouseup', () => isDragging = false);
-        if(canvas) {
-            canvas.addEventListener('wheel', (e) => {
-                e.preventDefault(); const scaleAmount = -e.deltaY * 0.001;
-                cropScale = Math.min(Math.max(0.5, cropScale + scaleAmount), 3);
-                drawCrop();
-            });
-        }
 
         // --- AUTH & INIT ---
         onAuthStateChanged(auth, (user) => {
@@ -559,21 +510,18 @@
                 
                 document.getElementById('sidebarName').textContent = myData.name;
                 const avatarSmall = document.getElementById('myAvatar');
-                const initial = myData.name.charAt(0).toUpperCase();
                 
                 if (myData.photoURL && myData.photoURL !== "") {
                     avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
                     avatarSmall.style.backgroundSize = 'cover'; avatarSmall.textContent = '';
-                    cropImg.crossOrigin = "Anonymous"; cropImg.src = myData.photoURL;
-                    cropImg.onload = () => {
-                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                        cropX = (250 - cropImg.width * cropScale) / 2;
-                        cropY = (250 - cropImg.height * cropScale) / 2;
-                        drawCrop();
-                    };
+                    
+                    // Set preview image
+                    const preview = document.getElementById('avatarPreview');
+                    preview.src = myData.photoURL;
+                    preview.style.display = 'block';
                 } else {
                     const color = window.stringToColor(myData.name);
-                    avatarSmall.style.backgroundColor = color; avatarSmall.textContent = initial; drawCrop();
+                    avatarSmall.style.backgroundColor = color; avatarSmall.textContent = myData.name.charAt(0).toUpperCase();
                 }
                 
                 if (myRole === 'admin') avatarSmall.classList.add('admin-status');
@@ -602,7 +550,6 @@
                     this.style.height = (this.scrollHeight) + 'px';
                     if(this.value === '') this.style.height = 'auto';
                 });
-                
                 msgInput.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault(); 
@@ -612,29 +559,47 @@
             }
         };
 
-        // --- PROFILE ---
+        // --- PROFILE (NEW SYSTEM) ---
         window.openProfile = () => {
             const modal = document.getElementById('profileModal');
             if(modal) modal.style.display = 'flex';
         };
 
         const profileAvatarInput = document.getElementById('profileAvatarInput');
+        const avatarPreview = document.getElementById('avatarPreview');
+        
         if(profileAvatarInput) {
             profileAvatarInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
+                const url = URL.createObjectURL(file);
+                avatarPreview.src = url;
+                avatarPreview.style.display = 'block';
+            });
+        }
+
+        // Helper to compress image before upload
+        function compressImage(file) {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
-                reader.onload = function(event) {
-                    cropImg = new Image();
-                    cropImg.onload = () => {
-                        cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
-                        cropX = (250 - cropImg.width * cropScale) / 2;
-                        cropY = (250 - cropImg.height * cropScale) / 2;
-                        drawCrop();
-                    };
-                    cropImg.src = event.target.result;
-                };
                 reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        // Max dimensions
+                        let w = img.width, h = img.height, max = 800;
+                        if (w > h) { if (w > max) { h *= max/w; w = max; } }
+                        else { if (h > max) { w *= max/h; h = max; } }
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        canvas.toBlob(resolve, 'image/jpeg', 0.8);
+                    };
+                    img.onerror = () => resolve(file); // Fallback
+                };
+                reader.onerror = () => resolve(file);
             });
         }
 
@@ -642,49 +607,67 @@
             const newName = document.getElementById('profileNameInput').value.trim();
             if (!newName) return alert("Введіть ім'я");
             
+            // Update Name
             if (newName !== myData.name) {
                 await updateProfile(auth.currentUser, { displayName: newName });
                 await updateDoc(doc(db, "users", currentUID), { name: newName });
+                // Update local cache immediately for UI responsiveness
+                myData.name = newName; 
             }
 
-            if(!canvas || !myData) return alert("Помилка даних");
-
-            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-            if (!blob) { alert("Помилка створення зображення"); return; }
-            
-            const storageRef = ref(storage, `avatars/${currentUID}_crop.jpg`);
-            
-            try {
-                const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
-                await updateDoc(doc(db, "users", currentUID), { photoURL: url });
-                
-                const myAvatar = document.getElementById('myAvatar');
-                if(myAvatar) {
-                    myAvatar.style.backgroundImage = `url(${url})`;
-                    myAvatar.style.backgroundSize = 'cover';
+            // Update Avatar
+            const file = document.getElementById('profileAvatarInput').files[0];
+            if (file) {
+                try {
+                    // 1. Compress
+                    const blob = await compressImage(file);
+                    // 2. Upload
+                    const storageRef = ref(storage, `avatars/${currentUID}_v2.jpg`);
+                    await uploadBytes(storageRef, blob);
+                    // 3. Get URL
+                    const url = await getDownloadURL(storageRef);
+                    // 4. Save to DB
+                    await updateDoc(doc(db, "users", currentUID), { photoURL: url });
+                    
+                    // 5. Update UI
+                    document.getElementById('myAvatar').style.backgroundImage = `url(${url})`;
+                    document.getElementById('myAvatar').style.backgroundSize = 'cover';
+                    document.getElementById('myAvatar').textContent = '';
+                    
+                    alert("Профіль оновлено!");
+                    window.closeModals('profileModal');
+                    location.reload();
+                } catch (err) {
+                    console.error(err);
+                    alert("Помилка завантаження фото: " + err.message);
                 }
-                
-                alert("Профіль оновлено!");
-                const modal = document.getElementById('profileModal');
-                if(modal) modal.style.display = 'none';
-                location.reload();
-            } catch (err) { 
-                console.error(err);
-                alert("Помилка фото: " + err.message); 
+            } else {
+                 // Just saved name
+                 alert("Ім'я оновлено!");
+                 window.closeModals('profileModal');
             }
         };
 
         window.deleteAvatar = async function() {
             if(!confirm('Видалити аватар?')) return;
             try {
+                // 1. Update DB
                 await updateDoc(doc(db, "users", currentUID), { photoURL: null });
-                if (myData.photoURL) { 
+                // 2. Delete from Storage (Best Effort)
+                if (myData.photoURL) {
                     const pathRef = ref(storage, myData.photoURL); 
-                    await deleteObject(pathRef); 
+                    try {
+                        await deleteObject(pathRef); 
+                    } catch(e) {
+                        console.log("Storage delete error (ignorable):", e);
+                    }
                 }
                 alert("Аватар видалено");
                 location.reload();
-            } catch (error) { alert("Помилка видалення: " + error.message); }
+            } catch (error) { 
+                console.error(error);
+                alert("Помилка видалення: " + error.message); 
+            }
         };
 
         // --- CHANNELS ---
@@ -766,10 +749,7 @@
             document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
             const active = document.querySelector(`.channel-item[data-id="${id}"]`);
             if(active) active.classList.add('active');
-            if(window.innerWidth <= 768) {
-                const sidebar = document.getElementById('sidebar');
-                if(sidebar) toggleSidebar();
-            }
+            if(window.innerWidth <= 768) toggleSidebar();
         };
 
         window.openChannelSettings = function(id = null) {
@@ -796,14 +776,17 @@
                 });
             }
         };
-        window.deleteChannelForever = async function() {
+        window.deleteChannelForever = function() {
             if(!confirm('ВИДАЛИТИ КАНАЛ?')) return;
             const messagesRef = collection(db, "channels", window.settingTargetId, "messages");
-            const snap = await getDocs(messagesRef);
-            snap.forEach((docSnap) => deleteDoc(docSnap.ref));
-            await deleteDoc(doc(db, "channels", window.settingTargetId));
-            window.closeModals('channelSettingsModal');
-            window.switchChannel('general');
+            getDocs(messagesRef).then((snap) => {
+                snap.forEach((docSnap) => deleteDoc(docSnap.ref));
+            }).then(() => {
+                deleteDoc(doc(db, "channels", window.settingTargetId)).then(() => {
+                    window.closeModals('channelSettingsModal');
+                    window.switchChannel('general');
+                });
+            });
         };
         window.canWrite = function(channelId) {
             const ch = channelsCache.find(c => c.id === channelId);
@@ -840,6 +823,7 @@
             if (messagesUnsubscribe && typeof messagesUnsubscribe === 'function') { messagesUnsubscribe(); }
             
             messagesUnsubscribe = onSnapshot(q, (snapshot) => {
+                // Fake User Logic
                 if (snapshot.empty) {
                     const sysQ = query(collection(db, "channels", channelId, "messages"), where("uid", "==", "system"));
                     getDocs(sysQ).then((sysSnap) => {
@@ -865,7 +849,12 @@
                     if (change.type === "added") {
                         if (!document.getElementById(`msg-${msgId}`)) {
                             window.renderMessageUI(msg, msgId, list, "append");
-                            list.scrollTop = list.scrollHeight;
+                            
+                            // FIX: Scroll to bottom properly
+                            // Use requestAnimationFrame to ensure element is painted before scrolling
+                            requestAnimationFrame(() => {
+                                list.scrollTop = list.scrollHeight;
+                            });
                         }
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
@@ -894,6 +883,7 @@
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
 
+            // Attachments (Images)
             let attachmentsHTML = "";
             if (msg.attachments && msg.attachments.length > 0) {
                 attachmentsHTML += '<div class="msg-attachments">';
@@ -908,6 +898,7 @@
                 attachmentsHTML += '</div>';
             }
 
+            // Reply Preview
             let replyHTML = "";
             if (msg.replyTo) {
                 let replyContent = msg.replyTo.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -940,6 +931,7 @@
                  return false;
             };
 
+            // Buttons
             const btnReply = document.createElement('button');
             btnReply.className = 'action-btn'; btnReply.innerHTML = '↩️';
             btnReply.onclick = (e) => { e.stopPropagation(); window.startReply(msgId, msg); };
@@ -963,6 +955,7 @@
 
             toolbar.appendChild(btnReply);
 
+            // Edit UI
             const editUI = `
                 <textarea id="edit-inline-${msgId}" class="edit-textarea-inline"></textarea>
                 <div id="edit-actions-${msgId}" class="edit-actions-inline">
@@ -1050,55 +1043,166 @@
             window.cancelInlineEdit(msgId);
         };
 
-        // --- MESSAGING & ATTACHMENTS (ASYNC) ---
+        // --- MESSAGING (FIXED: Async Upload) ---
         window.sendMessage = async function() {
             if (!myData) { alert("Помилка даних"); return; }
             if (!window.canWrite(currentChannelId)) { alert("Недостатньо прав"); return; }
             const input = document.getElementById('messageInput');
-            let text = input.value.trim();
+            const text = input ? input.value.trim() : "";
             
             if (text.length > 500) return alert("Максимум 500 символів");
-            if (!text && !currentBase64Img && pendingBlobs.length === 0) return; 
+            if (!text && !currentBase64Img && !pendingUploadFile) return; 
 
             let finalAttachments = [];
             
+            // 1. Handle Paste (Base64 -> Blob -> Upload)
             if (currentBase64Img) {
-                const byteCharacters = atob(currentBase64Img.split(',')[1]);
-                const arrayBuffer = new ArrayBuffer(byteCharacters.length);
-                const byteArray = new Uint8Array(arrayBuffer);
-                for (let i =0; i < byteCharacters.length; i++) {
-                    byteArray[i] = byteCharacters.charCodeAt(i);
+                try {
+                    // Convert Base64 back to Blob
+                    const byteCharacters = atob(currentBase64Img.split(',')[1]);
+                    const arrayBuffer = new ArrayBuffer(byteCharacters.length);
+                    const byteArray = new Uint8Array(arrayBuffer);
+                    for (let i =0; i < byteCharacters.length; i++) {
+                        byteArray[i] = byteCharacters.charCodeAt(i);
+                    }
+                    const blob = new Blob([byteArray], {type: 'image/jpeg'});
+                    
+                    // Upload
+                    const storageRef = ref(storage, `chat_images/${Date.now()}_paste.jpg`);
+                    const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
+                    finalAttachments = [{url: url, name: "image.jpg"}];
+                } catch(e) {
+                    alert("Помилка фото: " + e.message);
+                    return;
                 }
-                const blob = new Blob([byteArray], {type: 'image/jpeg'});
-                const storageRef = ref(storage, `chat_images/${Date.now()}_upload.jpg`);
-                const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
-                finalAttachments = [{url: url, name: "image.jpg"}];
+            } 
+            // 2. Handle File Input (Compress -> Upload)
+            else if (pendingUploadFile) {
+                try {
+                    const blob = await compressImage(pendingUploadFile);
+                    const storageRef = ref(storage, `chat_images/${Date.now()}_file.jpg`);
+                    const url = await uploadBytes(storageRef, blob).then(() => getDownloadURL(storageRef));
+                    finalAttachments = [{url: url, name: pendingUploadFile.name || "image.jpg"}];
+                } catch(e) {
+                    alert("Помилка фото: " + e.message);
+                    return;
+                }
             }
 
-            if(input) input.value = ""; 
-            if(input) input.style.height = 'auto';
-
-            await addDoc(collection(db, "channels", currentChannelId, "messages"), {
-                text: text,
-                uid: currentUID,
-                author: myData.name,
-                timestamp: serverTimestamp(),
-                reactions: {},
-                replyTo: activeReplyMsg,
-                attachments: finalAttachments,
-                createdAt: Date.now()
-            });
-            
-            window.cancelReply();
-            window.cancelImage();
+            // AddDoc
+            try {
+                await addDoc(collection(db, "channels", currentChannelId, "messages"), {
+                    text: text,
+                    uid: currentUID,
+                    author: myData.name,
+                    timestamp: serverTimestamp(),
+                    reactions: {},
+                    replyTo: activeReplyMsg,
+                    attachments: finalAttachments,
+                    createdAt: Date.now()
+                });
+                
+                // Clear UI
+                if(input) input.value = ""; 
+                if(input) input.style.height = 'auto';
+                window.cancelReply();
+                window.cancelImage();
+                pendingUploadFile = null;
+            } catch(e) {
+                alert("Помилка відправки: " + e.message);
+            }
         };
 
-        window.deleteMessage = async function(msgId) {
+        window.deleteMessage = function(msgId) {
             if(!confirm('Видалити повідомлення?')) return;
-            await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
+            deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
         };
 
-        // --- TYPING INDICATOR ---
+        // --- UPLOAD LOGIC (PASTE & FILE) ---
+        function updatePreviewBar() {
+            const bar = document.querySelector('.preview-bar');
+            const replyInfo = document.getElementById('replyInfo');
+            const imageInfo = document.getElementById('imageInfo');
+            const thumb = document.getElementById('imgPreviewThumb');
+
+            if (currentBase64Img) {
+                if(bar) bar.style.display = 'flex';
+                if(replyInfo) replyInfo.style.display = 'none';
+                if(imageInfo) imageInfo.style.display = 'flex';
+                if(thumb) thumb.src = currentBase64Img;
+            } else if (activeReplyMsg) {
+                if(bar) bar.style.display = 'flex';
+                if(replyInfo) replyInfo.style.display = 'flex';
+                if(imageInfo) imageInfo.style.display = 'none';
+                const replyText = document.getElementById('replyInputText');
+                if(replyText) replyText.textContent = `${activeReplyMsg.author}: ${activeReplyMsg.text.substring(0, 30)}...`;
+            } else {
+                if(bar) bar.style.display = 'none';
+            }
+        }
+
+        window.cancelImage = () => {
+            currentBase64Img = null;
+            pendingUploadFile = null;
+            updatePreviewBar();
+            const input = document.getElementById('messageInput');
+            if(input) input.focus();
+        };
+
+        const hiddenFileInput = document.getElementById('hiddenFileInput');
+        if(hiddenFileInput) {
+            hiddenFileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    window.cancelReply();
+                    pendingUploadFile = file;
+                    // Preview for File Input
+                    const bar = document.querySelector('.preview-bar');
+                    const replyInfo = document.getElementById('replyInfo');
+                    const imageInfo = document.getElementById('imageInfo');
+                    const thumb = document.getElementById('imgPreviewThumb');
+                    
+                    if(bar) bar.style.display = 'flex';
+                    if(replyInfo) replyInfo.style.display = 'none';
+                    if(imageInfo) imageInfo.style.display = 'flex';
+                    if(thumb) thumb.src = URL.createObjectURL(file);
+                }
+            });
+        }
+
+        const messageInput = document.getElementById('messageInput');
+        if(messageInput) {
+            messageInput.addEventListener('paste', function(e) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                let hasImage = false;
+                
+                for (let item of items) {
+                    if (item.kind === 'file') {
+                        const blob = item.getAsFile();
+                        if (blob) {
+                            hasImage = true;
+                            window.cancelReply();
+                            
+                            processImage(blob).then((processedBlob) => {
+                                // Process Image returns a blob. 
+                                // Raw Code Style: Use Base64 for immediate preview
+                                const reader = new FileReader();
+                                reader.readAsDataURL(processedBlob);
+                                reader.onload = (evt) => {
+                                    currentBase64Img = evt.target.result;
+                                    pendingUploadFile = null; // Clear file input if paste used
+                                    updatePreviewBar();
+                                };
+                            }).catch((err) => {});
+                        }
+                    }
+                }
+                
+                if (hasImage) e.preventDefault();
+            });
+        }
+
+        // --- TYPING ---
         window.sendTyping = function(channelId) {
             const typingRef = doc(db, "typing", channelId, "users", currentUID);
             typingRef.set({ lastTyped: serverTimestamp() }).catch(() => {});
@@ -1169,8 +1273,6 @@
 
         // --- MENTIONS ---
         const mentionPopup = document.getElementById('mentionPopup');
-        const messageInput = document.getElementById('messageInput');
-
         if(messageInput) {
             messageInput.addEventListener('input', function(e) {
                 const val = e.target.value;
@@ -1207,104 +1309,7 @@
             });
         }
 
-        // --- UPLOAD (PASTE FIX) ---
-        const hiddenFileInput = document.getElementById('hiddenFileInput');
-        const previewBar = document.querySelector('.preview-bar');
-
-        if(messageInput) {
-            messageInput.addEventListener('paste', function(e) {
-                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-                let hasImage = false;
-                
-                for (let item of items) {
-                    if (item.kind === 'file') {
-                        const blob = item.getAsFile();
-                        if (blob) {
-                            hasImage = true;
-                            window.cancelReply();
-                            
-                            processImage(blob).then((processedBlob) => {
-                                const reader = new FileReader();
-                                reader.readAsDataURL(processedBlob);
-                                reader.onload = (evt) => {
-                                    currentBase64Img = evt.target.result;
-                                    updatePreviewBar();
-                                };
-                            }).catch((err) => {});
-                        }
-                    }
-                }
-                
-                if (hasImage) e.preventDefault();
-            });
-        }
-
-        function updatePreviewBar() {
-            const replyInfo = document.getElementById('replyInfo');
-            const imageInfo = document.getElementById('imageInfo');
-
-            if (currentBase64Img) {
-                if(previewBar) previewBar.style.display = 'flex';
-                if(replyInfo) replyInfo.style.display = 'none';
-                if(imageInfo) imageInfo.style.display = 'flex';
-                const thumb = document.getElementById('imgPreviewThumb');
-                if(thumb) thumb.src = currentBase64Img;
-            } else if (activeReplyMsg) {
-                if(previewBar) previewBar.style.display = 'flex';
-                if(replyInfo) replyInfo.style.display = 'flex';
-                if(imageInfo) imageInfo.style.display = 'none';
-                const replyText = document.getElementById('replyInputText');
-                if(replyText) replyText.textContent = `${activeReplyMsg.author}: ${activeReplyMsg.text.substring(0, 30)}...`;
-            } else {
-                if(previewBar) previewBar.style.display = 'none';
-            }
-        }
-
-        window.renderUploadGallery = function() {
-             const container = document.getElementById('uploadPreviewContainer');
-             const placeholder = document.getElementById('uploadPlaceholder');
-             if (pendingBlobs.length > 0) {
-                 if (placeholder) placeholder.style.display = 'none';
-                 if(container) container.innerHTML = ""; 
-                 pendingBlobs.forEach((blob, index) => {
-                     const wrapper = document.createElement('div');
-                     wrapper.style.position = 'relative';
-                     const img = document.createElement('img');
-                     img.src = URL.createObjectURL(blob); 
-                     img.className = "upload-thumb";
-                     const removeBtn = document.createElement('div');
-                     removeBtn.className = "remove-thumb";
-                     removeBtn.textContent = "✖";
-                     removeBtn.onclick = () => { pendingBlobs.splice(index, 1); window.renderUploadGallery(); };
-                     wrapper.appendChild(img);
-                     wrapper.appendChild(removeBtn);
-                     if(container) container.appendChild(wrapper);
-                 });
-             } else {
-                 if(container) container.innerHTML = "";
-                 const p = document.createElement('p');
-                 p.id = "uploadPlaceholder";
-                 p.innerText = "Виберіть фото";
-                 p.style.color = "var(--text-muted)";
-                 p.style.textAlign = "center";
-                 if(container) container.appendChild(p);
-                 const modal = document.getElementById('previewModal');
-                 if(modal) modal.style.display = 'none';
-             }
-             const modal = document.getElementById('previewModal');
-             if(pendingBlobs.length > 0 && modal) modal.style.display = 'flex';
-        };
-        window.sendUpload = () => { window.closeModals('previewModal'); const input = document.getElementById('messageInput'); if(input) input.focus(); };
-        window.cancelImageUpload = () => { 
-            currentBase64Img = null; 
-            updatePreviewBar();
-            const modal = document.getElementById('previewModal');
-            if(modal) modal.style.display = 'none';
-            const input = document.getElementById('messageInput');
-            if(input) input.focus(); 
-        };
-
-        // --- REPLY SYSTEM (RAW CODE STYLE) ---
+        // --- REPLY SYSTEM ---
         window.startReply = function(msgId, msg) {
             activeReplyMsg = { author: msg.author, text: msg.text, id: msgId }; 
             updatePreviewBar();
@@ -1316,21 +1321,18 @@
             updatePreviewBar();
         };
 
-        // --- GLOBAL CLICKS (CLOSE MENUS + FIX 3) ---
-        if(previewBar) {
-            previewBar.addEventListener('click', (e) => {
-                if (!e.target.id.includes('Cancel') && !e.target.tagName === 'IMG') {
-                    const input = document.getElementById('messageInput');
-                    if(input) input.focus();
-                }
-            });
-        }
-        
+        // --- GLOBAL CLICKS ---
+        document.getElementById('previewBar').addEventListener('click', (e) => {
+            if (!e.target.id.includes('Cancel') && !e.target.tagName === 'IMG') {
+                const input = document.getElementById('messageInput');
+                if(input) input.focus();
+            }
+        });
         const previewCancelBtn = document.getElementById('previewCancelBtn');
         if(previewCancelBtn) {
             previewCancelBtn.onclick = () => {
                  window.cancelReply();
-                 window.cancelImageUpload();
+                 window.cancelImage();
             };
         }
 
@@ -1339,6 +1341,7 @@
             
             if(e.target.closest('#userAreaBtn')) window.openProfile();
             
+            // Close Menus logic
             const isInsideModal = target.closest('.settings-modal');
             const isInsideOverlay = target.closest('.modal-overlay');
             const isInsidePopup = target.closest('#mentionPopup');
@@ -1350,9 +1353,7 @@
             const isInsideSidebar = target.closest('.sidebar');
 
             if (!isInsideModal && !isInsideOverlay && !isInsidePopup && !isInsideContext && !isInsidePreviewBar && !isInsideTextarea && !isInsideChannelList && !isInsideMembers && !isInsideSidebar) {
-                 document.querySelectorAll('.modal-overlay').forEach(el => {
-                     if(e.target.closest(el) === null) el.style.display = 'none';
-                 });
+                 document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
                  if(mentionPopup) mentionPopup.style.display = 'none';
                  const ctx = document.getElementById('contextMenu');
                  if(ctx) {
@@ -1393,12 +1394,11 @@
             });
         }
         window.deleteChannelFromCtx = function(id) {
-            if(confirm('ВИДАЛИТИ КАНАЛ?')) {
-                deleteDoc(doc(db, "channels", id)).then(() => {
-                    if(ctxMenu) ctxMenu.style.display = 'none';
-                    window.switchChannel('general');
-                });
-            }
+            if(!confirm('ВИДАЛИТИ КАНАЛ?')) return;
+            deleteDoc(doc(db, "channels", id)).then(() => {
+                if(ctxMenu) ctxMenu.style.display = 'none';
+                window.switchChannel('general');
+            });
         };
 
         window.openLink = (url) => { window.open(url, '_blank'); };
