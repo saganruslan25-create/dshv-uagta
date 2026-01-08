@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FIXED FINAL)</title>
+    <title>ДШВ | DISCORD (STABLE)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -507,7 +507,6 @@
         let usersCache = [];
         let activeReplyMsg = null; 
         let isEditingMode = false; 
-        let avatarModified = false; 
 
         let pendingUploadFiles = []; 
 
@@ -604,6 +603,7 @@
                 
                 if (sidebarName) sidebarName.textContent = myData.name;
                 
+                // FIX 1: Avatar Rendering
                 if (myData.photoURL && myData.photoURL !== "") {
                     if(myAvatar) {
                         myAvatar.style.backgroundImage = `url(${myData.photoURL})`;
@@ -611,7 +611,6 @@
                         myAvatar.textContent = '';
                     }
                     
-                    // Load into cropper
                     let cropImg = new Image();
                     cropImg.crossOrigin = "Anonymous";
                     cropImg.onload = () => {
@@ -735,36 +734,37 @@
             profileAvatarInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                avatarModified = true; 
                 
+                // FIX 1: Immediate Preview
                 const url = URL.createObjectURL(file);
                 cropImg.src = url;
             });
         }
 
-        // --- PROFILE SAVE (FIXED) ---
+        // --- FIX 2: PROFILE SAVE (STABLE) ---
         window.saveProfile = async function() {
             const newName = profileNameInput ? profileNameInput.value.trim() : "";
-            if (!newName) { btnSaveProfile.textContent = "Ім'я?"; return; } // Minimal validation feedback
+            if (!newName) { btnSaveProfile.textContent = "Ім'я?"; return; } 
 
-            // Feedback
-            const originalText = btnSaveProfile.textContent;
-            btnSaveProfile.textContent = "Збереження..."; 
-            btnSaveProfile.disabled = true;
-            
-            try {
-                // 1. Save Name
-                if (newName !== myData.name) {
-                    await updateProfile(auth.currentUser, { displayName: newName });
-                    await updateDoc(doc(db, "users", currentUID), { name: newName });
-                    myData.name = newName; 
-                    if(sidebarName) sidebarName.textContent = newName;
-                }
+            // Save Name
+            if (newName !== myData.name) {
+                await updateProfile(auth.currentUser, { displayName: newName });
+                await updateDoc(doc(db, "users", currentUID), { name: newName });
+                myData.name = newName; 
+                if(sidebarName) sidebarName.textContent = newName;
+            }
 
-                // 2. Save Avatar (Always try if modified or new file)
-                const file = profileAvatarInput.files[0];
-                if (file || avatarModified) {
-                    // Draw from Canvas (Crop)
+            // Save Avatar
+            const file = profileAvatarInput.files[0];
+            if (file) {
+                const originalText = btnSaveProfile.textContent;
+                
+                try {
+                    btnSaveProfile.textContent = "⏳"; 
+                    btnSaveProfile.style.color = "#ccc";
+                    btnSaveProfile.disabled = true;
+
+                    // 1. Draw to Canvas (Crop)
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 250; tempCanvas.height = 250;
                     const tempCtx = tempCanvas.getContext('2d');
@@ -772,17 +772,17 @@
                     
                     tempCtx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
                     
-                    // Convert to Blob
-                    const blob = await new Promise((r) => tempCanvas.toBlob(r, 'image/jpeg', 0.9));
+                    // 2. Convert to Blob
+                    const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
                     
-                    // Upload
+                    // 3. Upload
                     const storageRef = ref(storage, `avatars/${currentUID}_final.jpg`);
                     await uploadBytes(storageRef, blob);
                     const url = await getDownloadURL(storageRef);
                     
-                    // Save DB
+                    // 4. Save DB
                     await updateDoc(doc(db, "users", currentUID), { photoURL: url });
-                    myData.photoURL = url; // Update local cache
+                    myData.photoURL = url; 
                     
                     // UI Update
                     if(myAvatar) {
@@ -791,19 +791,19 @@
                         myAvatar.textContent = '';
                     }
                     
-                    avatarModified = false;
                     window.loadUsersList(); 
                     window.closeModals('profileModal');
-                } else {
-                    // Just name change (or nothing)
-                    window.closeModals('profileModal');
+                    location.reload();
+                } catch (err) { 
+                    console.error(err); 
+                    // Fix 2: Always reset button in catch
+                    btnSaveProfile.textContent = originalText;
+                    btnSaveProfile.style.color = "";
+                    btnSaveProfile.disabled = false;
                 }
-            } catch (err) { 
-                console.error(err);
-                btnSaveProfile.textContent = "Помилка!";
-                setTimeout(() => btnSaveProfile.textContent = originalText, 2000);
-            } finally {
-                btnSaveProfile.disabled = false;
+            } else {
+                // No file, no change? Close.
+                window.closeModals('profileModal');
             }
         };
 
@@ -815,31 +815,67 @@
                     const pathRef = ref(storage, myData.photoURL); 
                     await deleteObject(pathRef); 
                 }
-                myData.photoURL = null;
-                
-                if(myAvatar) {
-                    myAvatar.style.backgroundImage = 'none';
-                    myAvatar.style.backgroundColor = window.stringToColor(myData.name);
-                    myAvatar.textContent = myData.name.charAt(0).toUpperCase();
-                }
-                
-                window.loadUsersList();
+                location.reload();
             } catch (error) { }
         };
 
         window.loadChannels = function(initMode = false) {
-            if (channelsList && !channelsList.hasAttribute('data-listener-ready')) {
-                channelsList.addEventListener('click', (e) => {
+            // FIX 3: Delegation on Sidebar (Container is stable)
+            const channelListContainer = document.getElementById('channelsList');
+            
+            // Remove old listener if exists (basic approach)
+            const newChannelsList = document.createElement('div');
+            newChannelsList.className = 'channels-list';
+            newChannelsList.id = 'channelsList';
+            if(channelListContainer.parentNode) {
+                channelListContainer.parentNode.replaceChild(newChannelsList, channelListContainer);
+            }
+
+            newChannelsList.addEventListener('click', (e) => {
+                const item = e.target.closest('.channel-item');
+                if (item && item.dataset.id) {
+                    window.stopTyping(currentChannelId);
+                    currentChannelId = item.dataset.id;
+                    window.switchChannel(item.dataset.id);
+                    window.setupTyping(currentChannelId);
+                }
+            });
+
+            // Attach context menu listener to SIDEBAR to prevent wipes
+            const sidebarEl = document.getElementById('sidebar');
+            if(sidebarEl && !sidebarEl.hasAttribute('ctx-listener')) {
+                sidebarEl.addEventListener('contextmenu', (e) => {
                     const item = e.target.closest('.channel-item');
-                    if (item && item.dataset.id) {
-                        window.stopTyping(currentChannelId);
-                        currentChannelId = item.dataset.id;
-                        window.switchChannel(item.dataset.id);
-                        window.setupTyping(currentChannelId);
+                    // FIX 3: Show Context Menu
+                    if (item || e.target.closest('.channels-list')) {
+                        e.preventDefault(); 
+                        e.stopPropagation();
+                        
+                        const targetId = item ? item.dataset.id : null;
+                        const targetName = item ? item.textContent.trim() : '';
+                        
+                        if(ctxMenu) {
+                            ctxMenu.style.display = 'block';
+                            void ctxMenu.offsetWidth;
+                            ctxMenu.classList.add('show');
+                            
+                            ctxMenu.style.left = `${e.clientX}px`;
+                            ctxMenu.style.top = `${e.clientY}px`;
+                            
+                            let html = "";
+                            if (item && myRole === 'admin') {
+                                html += `<div class="ctx-item" onclick="window.openChannelSettings('${item.dataset.id}')">⚙️ Налаштування</div>`;
+                                html += `<div class="ctx-item danger" onclick="window.deleteChannelFromCtx('${item.dataset.id}')">🗑️ Видалити канал</div>`;
+                                html += `<div class="ctx-divider"></div>`;
+                            }
+                            html += `<div class="ctx-item" onclick="window.openChannelModal()">➕ Створити канал</div>`;
+                            ctxMenu.innerHTML = html;
+                        }
                     }
                 });
-                channelsList.setAttribute('data-listener-ready', 'true');
+                sidebarEl.setAttribute('ctx-listener', 'true');
             }
+
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
             
             onSnapshot(q, (snap) => {
@@ -851,10 +887,20 @@
                 channelsCache = [];
                 snap.forEach((d) => { if(d.data()) channelsCache.push({...d.data(), id: d.id}); });
 
-                if(channelsList) channelsList.innerHTML = "";
+                // FIX 3: Clear only items, not container
+                const list = document.getElementById('channelsList');
+                if(list) {
+                    // Remove items except category label
+                    Array.from(list.children).forEach(child => {
+                        if (!child.classList.contains('category-label')) {
+                            list.removeChild(child);
+                        }
+                    });
+                }
+
                 const cat = document.createElement('div');
                 cat.className = "category-label"; cat.textContent = "ТЕКСТОВІ КАНАЛИ";
-                if(channelsList) channelsList.appendChild(cat);
+                if(list) list.appendChild(cat);
 
                 channelsCache.forEach(ch => {
                     const item = document.createElement('div');
@@ -868,7 +914,7 @@
                     nameSpan.textContent = ch.name;
                     infoDiv.appendChild(iconSpan); infoDiv.appendChild(nameSpan);
                     item.appendChild(infoDiv);
-                    if(channelsList) channelsList.appendChild(item);
+                    if(list) list.appendChild(item);
                     
                     if (ch.id === currentChannelId) {
                         if(currentChannelName) currentChannelName.textContent = ch.name;
@@ -899,9 +945,10 @@
             window.loadMessages(id);
             window.setupTyping(id);
             
-            if(channelsList) {
-                channelsList.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-                const active = channelsList.querySelector(`.channel-item[data-id="${id}"]`);
+            const list = document.getElementById('channelsList');
+            if(list) {
+                list.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
+                const active = list.querySelector(`.channel-item[data-id="${id}"]`);
                 if(active) active.classList.add('active');
             }
             
@@ -975,12 +1022,9 @@
             if(newNameInput) newNameInput.value = "";
         };
 
-        // --- FIX 2: LOAD MESSAGES (ROBUST) ---
         window.loadMessages = function(channelId) {
-            if(!messagesList) return;
-            
-            // Clear container properly on load
-            messagesList.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
+            const list = messagesList || document.getElementById('messagesList');
+            if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
             
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"), limit(50));
             
@@ -1002,14 +1046,9 @@
                     });
                 }
 
-                // Clear loading state if first batch
-                if (messagesList && messagesList.children.length > 0) {
-                    const loadingText = messagesList.innerText || "";
-                    if (loadingText.includes("Завантаження")) {
-                        messagesList.innerHTML = "";
-                    }
-                }
-
+                // FIX 3: Clear loading state safely
+                if (list && list.innerText.includes('Завантаження')) list.innerHTML = "";
+                
                 snapshot.docChanges().forEach((change) => {
                     const msg = change.doc.data();
                     const msgId = change.doc.id;
@@ -1017,10 +1056,8 @@
 
                     if (change.type === "added") {
                         if (!document.getElementById(`msg-${msgId}`)) {
-                            window.renderMessageUI(msg, msgId, messagesList, "append");
-                            // Only scroll if we are at bottom or near bottom (new message)
-                            const isNearBottom = messagesList.scrollHeight - messagesList.scrollTop < messagesList.clientHeight + 100;
-                            if (isNearBottom) messagesList.scrollTop = messagesList.scrollHeight;
+                            window.renderMessageUI(msg, msgId, list, "append");
+                            list.scrollTop = list.scrollHeight;
                         }
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
@@ -1045,7 +1082,7 @@
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" onerror="this.style.display=\'none\'" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
 
-            const senderData = usersCache.find(u => u.id === msg.uid);
+            const senderData = usersCache.find(u => u.id === msg.uid); 
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
 
@@ -1090,19 +1127,11 @@
             div.className = "message";
             div.id = `msg-${msgId}`;
             
-            // FIX 3: Avatar Logic
+            // FIX 3: Avatar Style
             let avatarStyle = `background-color: ${window.stringToColor(msg.author || 'User')};`;
             if (senderData && senderData.photoURL) {
                 avatarStyle = `background-image: url('${senderData.photoURL}'); background-size: cover;`;
             }
-
-            const editUI = `
-                <textarea id="edit-inline-${msgId}" class="edit-textarea-inline"></textarea>
-                <div id="edit-actions-${msgId}" class="edit-actions-inline">
-                    <button class="btn-save" style="padding:5px 10px; font-size:12px;" onclick="window.saveInlineEdit('${msgId}')">Зберегти</button>
-                    <button class="btn-cancel" style="padding:5px 10px; font-size:12px;" onclick="window.cancelInlineEdit('${msgId}')">Скасувати</button>
-                </div>
-            `;
 
             div.innerHTML = `
                 ${attachmentsHTML}
@@ -1116,13 +1145,12 @@
                     </div>
                     <div class="msg-text">${content}</div>
                 </div>
-                ${editUI}
             `;
 
-            // Attach toolbar manually
+            // Toolbar
             const toolbar = document.createElement('div');
             toolbar.className = 'message-actions';
-            
+
             const btnReply = document.createElement('button');
             btnReply.className = 'action-btn'; btnReply.innerHTML = '↩️';
             btnReply.onclick = (e) => { e.stopPropagation(); window.startReply(msgId, msg); };
@@ -1144,16 +1172,18 @@
             toolbar.appendChild(btnReply);
             div.appendChild(toolbar);
 
+            const editUI = `
+                <textarea id="edit-inline-${msgId}" class="edit-textarea-inline"></textarea>
+                <div id="edit-actions-${msgId}" class="edit-actions-inline">
+                    <button class="btn-save" style="padding:5px 10px; font-size:12px;" onclick="window.saveInlineEdit('${msgId}')">Зберегти</button>
+                    <button class="btn-cancel" style="padding:5px 10px; font-size:12px;" onclick="window.cancelInlineEdit('${msgId}')">Скасувати</button>
+                </div>
+            `;
+            const msgContent = div.querySelector('.msg-content');
+            msgContent.insertAdjacentHTML('beforeend', editUI);
+            
             if (position === "append") container.appendChild(div);
             else container.insertBefore(div, container.firstChild);
-            
-            // FIX 2: Context menu
-            div.oncontextmenu = (e) => {
-                 if(e.target.tagName !== 'BUTTON') {
-                     e.stopPropagation(); return true; 
-                 }
-                 return false;
-            };
         };
 
         window.updateMessageUI = function(msgId, msg) {
@@ -1161,7 +1191,6 @@
             if (!el) return;
 
             const textEl = el.querySelector('.msg-text');
-            const editTA = el.querySelector(`#edit-inline-${msgId}`);
             
             if (textEl && msg.text) {
                 let content = msg.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -1169,17 +1198,12 @@
                 content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
                 textEl.innerHTML = content;
             }
-            
-            if (editTA && editTA.style.display !== 'none') {
-                // Don't overwrite
-            }
         };
 
         window.startInlineEdit = function(msgId) {
             const el = document.getElementById(`msg-${msgId}`);
             const textEl = el.querySelector('.msg-text');
             const editTA = el.querySelector(`#edit-inline-${msgId}`);
-            const actions = el.querySelector(`#edit-actions-${msgId}`);
             
             isEditingMode = true; 
 
@@ -1200,11 +1224,9 @@
             const el = document.getElementById(`msg-${msgId}`);
             const textEl = el.querySelector('.msg-text');
             const editTA = el.querySelector(`#edit-inline-${msgId}`);
-            const actions = el.querySelector(`#edit-actions-${msgId}`);
             
             textEl.style.display = 'block';
             editTA.style.display = 'none';
-            actions.style.display = 'none';
         };
 
         window.saveInlineEdit = async function(msgId) {
@@ -1213,7 +1235,7 @@
             const textVal = editTA.value.trim();
             
             if (!textVal) return;
-            if (textVal.length > 500) return alert("Занадто довго");
+            if (textVal.length > 500) return;
 
             await updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
                 text: textVal,
@@ -1222,7 +1244,7 @@
             window.cancelInlineEdit(msgId);
         };
 
-        // --- SEND MESSAGE (INSTANT) ---
+        // --- FIX 4: STABLE SEND MESSAGE ---
         window.sendMessage = async function() {
             if (!myData) { return; }
             if (!window.canWrite(currentChannelId)) { return; }
@@ -1231,44 +1253,44 @@
             if (text.length > 500) return alert("Максимум 500 символів");
             if (!text && pendingUploadFiles.length === 0) return; 
 
-            // 1. SEND MESSAGE INSTANTLY
-            const docRef = await addDoc(collection(db, "channels", currentChannelId, "messages"), {
-                text: text,
-                uid: currentUID,
-                author: myData.name,
-                timestamp: serverTimestamp(),
-                attachments: [], 
-                reactions: {},
-                replyTo: activeReplyMsg ? { ...activeReplyMsg, id: activeReplyMsg.id } : null,
-                createdAt: Date.now()
-            });
-
-            // Clear Input
-            if(messageInput) messageInput.value = ""; 
-            if(messageInput) messageInput.style.height = 'auto';
-            window.cancelReply();
-            window.cancelUploadFiles();
-
-            // 2. BACKGROUND UPLOAD
+            // Strategy: If photo exists -> Wait for Upload (Spinner). Else -> Instant.
+            let finalAttachments = [];
+            
             if (pendingUploadFiles.length > 0) {
+                // 1. Show Spinner
                 if(sendBtn) {
-                    sendBtn.textContent = "⏳"; 
+                    const originalContent = sendBtn.textContent;
+                    sendBtn.textContent = "⏳"; // Spinner
                     sendBtn.style.color = "#ccc";
                 }
 
                 try {
-                    let urls = [];
                     for (let item of pendingUploadFiles) {
-                        const storageRef = ref(storage, `chat_images/${docRef.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
+                        const storageRef = ref(storage, `chat_images/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
                         await uploadBytes(storageRef, item.file);
                         const url = await getDownloadURL(storageRef);
-                        urls.push({ url: url, name: `image.jpg` });
+                        finalAttachments.push({ url: url, name: `image.jpg` });
                     }
                     
-                    // Update message with URLs
-                    await updateDoc(docRef, { attachments: urls });
+                    // 2. Send Message with URL
+                    await addDoc(collection(db, "channels", currentChannelId, "messages"), {
+                        text: text,
+                        uid: currentUID,
+                        author: myData.name,
+                        timestamp: serverTimestamp(),
+                        reactions: {},
+                        replyTo: activeReplyMsg ? { ...activeReplyMsg, id: activeReplyMsg.id } : null,
+                        attachments: finalAttachments,
+                        createdAt: Date.now()
+                    });
+
+                    // 3. Clear UI
+                    if(messageInput) messageInput.value = ""; 
+                    if(messageInput) messageInput.style.height = 'auto';
+                    window.cancelReply();
+                    window.cancelUploadFiles();
                 } catch (e) {
-                    console.error("Upload error", e);
+                    alert("Помилка завантаження: " + e.message);
                 } finally {
                     // Reset Button
                     if(sendBtn) {
@@ -1276,6 +1298,23 @@
                         sendBtn.style.color = "";
                     }
                 }
+
+            } else {
+                // Instant Text Send
+                addDoc(collection(db, "channels", currentChannelId, "messages"), {
+                    text: text,
+                    uid: currentUID,
+                    author: myData.name,
+                    timestamp: serverTimestamp(),
+                    reactions: {},
+                    replyTo: activeReplyMsg ? { ...activeReplyMsg, id: activeReplyMsg.id } : null,
+                    attachments: [],
+                    createdAt: Date.now()
+                });
+                
+                if(messageInput) messageInput.value = ""; 
+                if(messageInput) messageInput.style.height = 'auto';
+                window.cancelReply();
             }
         };
 
@@ -1342,14 +1381,12 @@
                     const item = document.createElement('div');
                     item.className = `member ${u.role === 'admin' ? 'admin' : ''}`;
                     
-                    // Avatar Logic
-                    let initial = u.name ? u.name.charAt(0).toUpperCase() : '?';
-                    let avatarHTML = initial;
+                    let avatarHTML = u.name.charAt(0).toUpperCase();
                     if (u.photoURL && u.photoURL !== "") {
                         avatarHTML = `<div class="member-avatar-small" style="background-image: url('${u.photoURL}'); background-size: cover; background-color: transparent;"></div>`;
                     } else {
                         const color = window.stringToColor(u.name);
-                        avatarHTML = `<div class="member-avatar-small" style="background-color: ${color};">${initial}</div>`;
+                        avatarHTML = `<div class="member-avatar-small" style="background-color: ${color};">${avatarHTML}</div>`;
                     }
                     
                     item.innerHTML = `
@@ -1367,7 +1404,7 @@
                 const val = e.target.value;
                 const lastChar = val.slice(-1);
                 
-                if (isEditingMode) return;
+                if (isEditingMode) return; // CRITICAL
 
                 if (lastChar === '@') {
                     if(usersCache.length === 0) {
@@ -1482,7 +1519,7 @@
                      const removeBtn = document.createElement('div');
                      removeBtn.className = "remove-thumb";
                      removeBtn.textContent = "✖";
-                     removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
+                     removeBtn.onclick = () => { pendingUploadFiles.splice(index,1); window.renderUploadGallery(); };
                      wrapper.appendChild(img);
                      wrapper.appendChild(removeBtn);
                      uploadPreviewContainer.appendChild(wrapper);
@@ -1534,7 +1571,6 @@
             };
         }
 
-        // --- GLOBAL CLICK (FIX 4 & 5) ---
         document.addEventListener('click', (e) => {
             const target = e.target;
             
