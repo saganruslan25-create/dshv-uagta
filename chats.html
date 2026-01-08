@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FINAL FIXES)</title>
+    <title>ДШВ | DISCORD (CLEANED CODE)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -319,8 +319,8 @@
             
             .input-wrapper { padding: 8px; border-radius: 24px; }
             .input-actions-left { gap: 8px; }
-            .btn-upload-mobile { display: flex; }
             .btn-upload { display: none; }
+            .btn-upload-mobile { display: flex; }
         }
         @media (min-width: 769px) { 
             .mobile-menu-btn { display: none; } 
@@ -381,7 +381,7 @@
             </div>
 
             <div class="preview-bar">
-                <div id="replyInfo" style="display:none; align-items:center; gap:10px;">
+                <div id="replyInfo" style="display:none; flex:1; align-items:center; gap:10px;">
                     <span style="color:var(--primary); font-weight:bold;">Відповідь:</span>
                     <span id="replyInputText" style="color:white;">...</span>
                 </div>
@@ -504,15 +504,18 @@
         let channelsCache = [];
         let usersCache = [];
         let activeReplyMsg = null; 
+        
+        // ROBUST UPLOAD STATE
         let pendingUploadFiles = []; 
-        let currentCropImg = new Image(); // Holds current image for avatar
-        let cropX = 0, cropY = 0, cropScale = 1;
 
-        // --- DOM ELEMENTS ---
+        // --- GLOBAL DOM ELEMENTS (DECLARED ONCE AT TOP TO FIX SYNTAX ERROR) ---
         const messageInput = document.getElementById('messageInput');
         const sidebar = document.getElementById('sidebar');
         const membersSidebar = document.getElementById('membersSidebar');
         const previewBar = document.querySelector('.preview-bar');
+        const previewCancelBtn = document.getElementById('previewCancelBtn');
+        const ctxMenu = document.getElementById('contextMenu');
+        const channelsList = document.getElementById('channelsList');
         const uploadPreviewContainer = document.getElementById('uploadPreviewContainer');
         const imageInfo = document.getElementById('imageInfo');
         const replyInfo = document.getElementById('replyInfo');
@@ -523,9 +526,8 @@
         const cropArea = document.getElementById('cropArea');
         const btnSaveProfile = document.getElementById('btnSaveProfile');
         const profileAvatarInput = document.getElementById('profileAvatarInput');
-        const previewCancelBtn = document.getElementById('previewCancelBtn');
 
-        // --- HELPERS ---
+        // --- ROBUST HELPERS ---
         const safeText = (val) => {
             if (!val) return "";
             let str = String(val);
@@ -568,9 +570,14 @@
             });
         }
 
-        // --- AVATAR CROPPER DRAW ---
+        // --- AVATAR CROPPER LOGIC ---
+        let cropImg = new Image();
+        let cropX = 0, cropY = 0, cropScale = 1;
+        let isDragging = false;
+        let lastMouseX = 0, lastMouseY = 0;
+
         function drawCrop() {
-            if (!currentCropImg.src) {
+            if (!cropImg.src) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#333"; ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI*2); ctx.fill();
                 ctx.fillStyle = "#666"; ctx.font = "30px Arial"; ctx.textAlign = "center"; ctx.fillText("NO IMG", 125, 130);
@@ -579,7 +586,7 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.save();
             ctx.beginPath(); ctx.arc(125, 125, 125, 0, Math.PI * 2); ctx.clip();
-            ctx.drawImage(currentCropImg, cropX, cropY, currentCropImg.width * cropScale, currentCropImg.height * cropScale);
+            ctx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
             ctx.restore();
             ctx.fillStyle = "rgba(0,0,0,0.5)";
             ctx.beginPath(); ctx.rect(0, 0, canvas.width, canvas.height);
@@ -622,6 +629,7 @@
                 myData = snap.data();
                 myRole = myData.role || 'member'; 
                 
+                if (sidebarName) sidebarName.textContent = myData.name;
                 const sidebarName = document.getElementById('sidebarName');
                 const avatarSmall = document.getElementById('myAvatar');
                 const initial = myData.name.charAt(0).toUpperCase();
@@ -631,19 +639,17 @@
                 if (myData.photoURL && myData.photoURL !== "") {
                     avatarSmall.style.backgroundImage = `url(${myData.photoURL})`;
                     avatarSmall.style.backgroundSize = 'cover'; avatarSmall.textContent = '';
-                    
-                    // Load into cropper
-                    currentCropImg.crossOrigin = "Anonymous";
-                    currentCropImg.src = myData.photoURL;
-                    currentCropImg.onload = () => {
-                        cropScale = Math.max(250/currentCropImg.width, 250/currentCropImg.height);
-                        cropX = (250 - currentCropImg.width * cropScale) / 2;
-                        cropY = (250 - currentCropImg.height * cropScale) / 2;
-                        drawCrop();
+                    cropImg.crossOrigin = "Anonymous";
+                    cropImg.src = myData.photoURL;
+                    cropImg.onload = () => {
+                         cropScale = Math.max(250/cropImg.width, 250/cropImg.height);
+                         cropX = (250 - cropImg.width * cropScale) / 2;
+                         cropY = (250 - cropImg.height * cropScale) / 2;
+                         drawCrop();
                     };
                 } else {
                     const color = window.stringToColor(myData.name);
-                    avatarSmall.style.backgroundColor = color; avatarSmall.style.backgroundImage = 'none'; avatarSmall.textContent = initial; drawCrop();
+                    avatarSmall.style.backgroundColor = color; avatarSmall.textContent = initial; drawCrop();
                 }
                 
                 if (myRole === 'admin') avatarSmall.classList.add('admin-status');
@@ -683,7 +689,6 @@
             }
         };
 
-        // --- PROFILE (FIXED PREVIEW & SAVE) ---
         window.openProfile = () => {
             const modal = document.getElementById('profileModal');
             if(modal) modal.style.display = 'flex';
@@ -693,26 +698,16 @@
             profileAvatarInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
-                
-                // Read and draw to canvas IMMEDIATELY
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        currentCropImg = img;
-                        cropScale = Math.max(250/currentCropImg.width, 250/currentCropImg.height);
-                        cropX = (250 - currentCropImg.width * cropScale) / 2;
-                        cropY = (250 - currentCropImg.height * cropScale) / 2;
-                        drawCrop();
-                    };
-                    img.src = event.target.result;
-                };
+                // Just load into canvas for preview
+                const url = URL.createObjectURL(file);
+                cropImg.src = url;
             });
         }
 
         window.saveProfile = async function() {
-            const newName = document.getElementById('profileNameInput').value.trim();
+            const profileNameInput = document.getElementById('profileNameInput');
+            const newName = profileNameInput ? profileNameInput.value.trim() : "";
+            
             if (!newName) return alert("Введіть ім'я");
             
             if (newName !== myData.name) {
@@ -721,18 +716,18 @@
                 myData.name = newName; 
             }
 
+            // Avatar Update
             const file = document.getElementById('profileAvatarInput').files[0];
             if (file) {
                 try {
-                    if(btnSaveProfile) { btnSaveProfile.textContent = "Завантаження..."; btnSaveProfile.disabled = true; btnSaveProfile.classList.add('btn-saving'); }
+                    if(btnSaveProfile) { btnSaveProfile.textContent = "Завантаження..."; btnSaveProfile.disabled = true; btnSaveProfile.classList.add('btn-loading'); }
                     
-                    // 1. Draw CURRENT CANVAS STATE to Blob
+                    // 1. Draw to Canvas (Crop)
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 250; tempCanvas.height = 250;
                     const tempCtx = tempCanvas.getContext('2d');
-                    
                     tempCtx.beginPath(); tempCtx.arc(125, 125, 125, 0, Math.PI * 2); tempCtx.clip();
-                    tempCtx.drawImage(currentCropImg, cropX, cropY, currentCropImg.width * cropScale, currentCropImg.height * cropScale);
+                    tempCtx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
                     
                     // 2. Convert to Blob
                     const blob = await new Promise((resolve) => tempCanvas.toBlob(resolve, 'image/jpeg', 0.9));
@@ -753,22 +748,18 @@
                         myAvatar.textContent = '';
                     }
                     
-                    if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-saving'); }
-                    alert("Аватар оновлено!");
+                    alert("Профіль оновлено!");
                     window.closeModals('profileModal');
                     location.reload();
                 } catch (err) { 
                     console.error(err);
-                    alert("Помилка фото: " + err.message);
-                    if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-saving'); }
+                    alert("Помилка фото: " + err.message); 
+                    if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-loading'); }
                 }
             } else {
-                if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = true; btnSaveProfile.classList.add('btn-saving'); }
-                setTimeout(() => {
-                    if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-saving'); }
-                    window.closeModals('profileModal');
-                    location.reload();
-                }, 500);
+                if(btnSaveProfile) { btnSaveProfile.textContent = "ЗБЕРЕГТИ"; btnSaveProfile.disabled = false; btnSaveProfile.classList.remove('btn-loading'); }
+                window.closeModals('profileModal');
+                location.reload();
             }
         };
 
@@ -785,11 +776,9 @@
             } catch (error) { alert("Помилка видалення: " + error.message); }
         };
 
-        // --- CHANNELS ---
         window.loadChannels = function(initMode = false) {
-            const list = document.getElementById('channelsList');
-            if (list && !list.hasAttribute('data-listener-ready')) {
-                list.addEventListener('click', (e) => {
+            if (channelsList && !channelsList.hasAttribute('data-listener-ready')) {
+                channelsList.addEventListener('click', (e) => {
                     const item = e.target.closest('.channel-item');
                     if (item && item.dataset.id) {
                         window.stopTyping(currentChannelId);
@@ -798,7 +787,7 @@
                         window.setupTyping(currentChannelId);
                     }
                 });
-                list.setAttribute('data-listener-ready', 'true');
+                channelsList.setAttribute('data-listener-ready', 'true');
             }
             const q = query(collection(db, "channels"), orderBy("channelOrder", "asc"));
             
@@ -811,10 +800,10 @@
                 channelsCache = [];
                 snap.forEach((d) => { if(d.data()) channelsCache.push({...d.data(), id: d.id}); });
 
-                if(list) list.innerHTML = "";
+                if(channelsList) channelsList.innerHTML = "";
                 const cat = document.createElement('div');
                 cat.className = "category-label"; cat.textContent = "ТЕКСТОВІ КАНАЛИ";
-                if(list) list.appendChild(cat);
+                if(channelsList) channelsList.appendChild(cat);
 
                 channelsCache.forEach(ch => {
                     const item = document.createElement('div');
@@ -828,7 +817,7 @@
                     nameSpan.textContent = ch.name;
                     infoDiv.appendChild(iconSpan); infoDiv.appendChild(nameSpan);
                     item.appendChild(infoDiv);
-                    if(list) list.appendChild(item);
+                    if(channelsList) channelsList.appendChild(item);
                     
                     if (ch.id === currentChannelId) {
                         const headerName = document.getElementById('currentChannelName');
@@ -936,7 +925,6 @@
             if(newNameInput) newNameInput.value = "";
         };
 
-        // --- MESSAGES ---
         window.loadMessages = function(channelId) {
             const list = document.getElementById('messagesList');
             if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
@@ -970,7 +958,7 @@
                     if (change.type === "added") {
                         if (!document.getElementById(`msg-${msgId}`)) {
                             window.renderMessageUI(msg, msgId, list, "append");
-                            list.scrollTop = list.scrollHeight;
+                            requestAnimationFrame(() => list.scrollTop = list.scrollHeight);
                         }
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
@@ -1112,6 +1100,7 @@
             }
             
             if (editTA && editTA.style.display !== 'none') {
+                // Don't overwrite
             }
         };
 
@@ -1125,14 +1114,6 @@
             editTA.style.display = 'block';
             editTA.value = textEl.innerText;
             editTA.focus();
-
-            // FIX 4: Add Enter Key Listener
-            editTA.onkeydown = (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    window.saveInlineEdit(msgId);
-                }
-            };
         };
 
         window.cancelInlineEdit = function(msgId) {
@@ -1162,7 +1143,6 @@
             window.cancelInlineEdit(msgId);
         };
 
-        // --- MESSAGING (SEQUENTIAL UPLOAD FIX) ---
         window.sendMessage = async function() {
             if (!myData) { alert("Помилка даних"); return; }
             if (!window.canWrite(currentChannelId)) { alert("Недостатньо прав"); return; }
@@ -1173,30 +1153,23 @@
 
             let finalAttachments = [];
             
-            // Indicate Loading
-            if(sendBtn) {
-                sendBtn.textContent = "🚫"; 
-                sendBtn.classList.add('btn-saving');
-            }
-
-            // Handle Files (Sequential Upload)
             if (pendingUploadFiles.length > 0) {
                 try {
-                    // Upload ONE BY ONE
+                    // Indicate Loading
+                    if(sendBtn) { sendBtn.textContent = "🚫"; sendBtn.classList.add('btn-saving'); }
+
+                    // Upload ONE BY ONE (Sequential)
                     for (let item of pendingUploadFiles) {
                         const storageRef = ref(storage, `chat_images/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
-                        await uploadBytes(storageRef, item.file); // Wait for each
-                        const url = await getDownloadURL(storageRef); // Wait for URL
+                        await uploadBytes(storageRef, item.file);
+                        const url = await getDownloadURL(storageRef);
                         finalAttachments.push({ url: url, name: `image.jpg` });
                     }
                 } catch(e) {
                     console.error(e);
                     alert("Помилка завантаження фото: " + e.message);
-                    if(sendBtn) {
-                        sendBtn.textContent = "➤";
-                        sendBtn.classList.remove('btn-saving');
-                    }
-                    return; // Stop if upload fails
+                    if(sendBtn) { sendBtn.textContent = "➤"; sendBtn.classList.remove('btn-saving'); }
+                    return;
                 }
             }
 
@@ -1213,22 +1186,14 @@
                     createdAt: Date.now()
                 });
                 
-                // Clear UI
                 if(messageInput) messageInput.value = ""; 
                 if(messageInput) messageInput.style.height = 'auto';
                 window.cancelReply();
                 window.cancelUploadFiles();
             } catch(e) {
                 alert("Помилка відправки: " + e.message);
-                if(sendBtn) {
-                    sendBtn.textContent = "➤";
-                    sendBtn.classList.remove('btn-saving');
-                }
             } finally {
-                if(sendBtn) {
-                    sendBtn.textContent = "➤";
-                    sendBtn.classList.remove('btn-saving');
-                }
+                if(sendBtn) { sendBtn.textContent = "➤"; sendBtn.classList.remove('btn-saving'); }
             }
         };
 
@@ -1237,7 +1202,6 @@
             await deleteDoc(doc(db, "channels", currentChannelId, "messages", msgId));
         };
 
-        // --- TYPING ---
         window.sendTyping = function(channelId) {
             const typingRef = doc(db, "typing", channelId, "users", currentUID);
             typingRef.set({ lastTyped: serverTimestamp() }).catch(() => {});
@@ -1279,7 +1243,6 @@
             });
         };
 
-        // --- USERS ---
         window.loadUsersList = function() {
             const list = document.getElementById('membersList');
             if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
@@ -1306,8 +1269,6 @@
             }).catch((e) => { if(list) list.innerHTML = `<div style="color:red; text-align:center;">Помилка</div>`; });
         };
 
-        // --- MENTIONS ---
-        const mentionPopup = document.getElementById('mentionPopup');
         if(messageInput) {
             messageInput.addEventListener('input', function(e) {
                 const val = e.target.value;
@@ -1344,31 +1305,28 @@
             });
         }
 
-        // --- UPLOAD LOGIC ---
         const hiddenFileInput = document.getElementById('hiddenFileInput');
-        const ctxMenu = document.getElementById('contextMenu');
-        const channelsList = document.getElementById('channelsList');
 
-        // File Input Listener
         if(hiddenFileInput) {
             hiddenFileInput.addEventListener('change', async (e) => {
                 const files = Array.from(e.target.files);
                 if(files.length > 0) {
                     window.cancelReply();
-                    
-                    for(let file of files) {
+                    const processPromises = files.map(async (file) => {
                         const blob = await processImage(file);
-                        pendingUploadFiles.push({
+                        return {
                             file: blob,
                             previewUrl: URL.createObjectURL(blob)
-                        });
-                    }
-                    updatePreviewBar();
+                        };
+                    });
+                    Promise.all(processPromises).then((processedFiles) => {
+                        pendingUploadFiles = processedFiles;
+                        updatePreviewBar();
+                    });
                 }
             });
         }
 
-        // Paste Listener
         if(messageInput) {
             messageInput.addEventListener('paste', async function(e) {
                 const items = (e.clipboardData || e.originalEvent.clipboardData).items;
@@ -1395,7 +1353,6 @@
             });
         }
 
-        // --- PREVIEW RENDERER ---
         function updatePreviewBar() {
             if(!replyInfo || !imageInfo || !uploadPreviewContainer) return;
             
@@ -1416,26 +1373,27 @@
         }
 
         window.renderUploadGallery = function() {
-            if(!uploadPreviewContainer) return;
-            if (pendingUploadFiles.length > 0) {
-                uploadPreviewContainer.innerHTML = ""; 
-                pendingUploadFiles.forEach((item, index) => {
-                    const wrapper = document.createElement('div');
-                    wrapper.style.position = 'relative';
-                    const img = document.createElement('img');
-                    img.src = item.previewUrl; 
-                    img.className = "upload-thumb";
-                    const removeBtn = document.createElement('div');
-                    removeBtn.className = "remove-thumb";
-                    removeBtn.textContent = "✖";
-                    removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
-                    wrapper.appendChild(img);
-                    wrapper.appendChild(removeBtn);
-                    uploadPreviewContainer.appendChild(wrapper);
-                });
-            } else {
-                uploadPreviewContainer.innerHTML = "";
-            }
+             if(!uploadPreviewContainer) return;
+             
+             if (pendingUploadFiles.length > 0) {
+                 uploadPreviewContainer.innerHTML = ""; 
+                 pendingUploadFiles.forEach((item, index) => {
+                     const wrapper = document.createElement('div');
+                     wrapper.style.position = 'relative';
+                     const img = document.createElement('img');
+                     img.src = item.previewUrl; 
+                     img.className = "upload-thumb";
+                     const removeBtn = document.createElement('div');
+                     removeBtn.className = "remove-thumb";
+                     removeBtn.textContent = "✖";
+                     removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
+                     wrapper.appendChild(img);
+                     wrapper.appendChild(removeBtn);
+                     uploadPreviewContainer.appendChild(wrapper);
+                 });
+             } else {
+                 uploadPreviewContainer.innerHTML = "";
+             }
         };
         
         window.cancelUploadFiles = function() {
@@ -1444,14 +1402,12 @@
             if(messageInput) messageInput.focus();
         };
 
-        // --- REPLY SYSTEM ---
         window.startReply = function(msgId, msg) {
             activeReplyMsg = { author: msg.author, text: msg.text, id: msgId }; 
             updatePreviewBar();
             if(messageInput) messageInput.focus();
         };
         
-        // FIX 3: Scroll to reply with delay
         window.scrollToReply = function(msgId) {
             const el = document.getElementById(`msg-${msgId}`);
             if (el) {
@@ -1467,7 +1423,6 @@
             updatePreviewBar();
         };
 
-        // --- GLOBAL CLICKS ---
         if(previewBar) {
             previewBar.addEventListener('click', (e) => {
                 if (!e.target.id.includes('Cancel') && !e.target.tagName === 'IMG') {
@@ -1510,7 +1465,6 @@
             if(e.target.id === 'chatHeader' || e.target.closest('#settingsGear')) window.openChannelSettings(currentChannelId);
         });
 
-        // --- CONTEXT MENU ---
         if(channelsList) {
             channelsList.addEventListener('contextmenu', function(e) {
                 e.preventDefault();
