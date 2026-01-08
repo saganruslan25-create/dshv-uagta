@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ДШВ | DISCORD (FIXED AVATAR & MESSAGES)</title>
+    <title>ДШВ | DISCORD (FIXED FINAL)</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z/C/HgAGgwIH/lQrAAAAAElFTkSuQmCC">
     
@@ -230,7 +230,7 @@
             display: none; 
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(3, 5, 7, 0.7); backdrop-filter: blur(20px); 
-            z-index: 10000; /* Issue 5: High z-index */
+            z-index: 10000; 
             align-items: center; justify-content: center; 
         }
 
@@ -507,6 +507,7 @@
         let usersCache = [];
         let activeReplyMsg = null; 
         let isEditingMode = false; 
+        let avatarModified = false; 
 
         let pendingUploadFiles = []; 
 
@@ -603,7 +604,6 @@
                 
                 if (sidebarName) sidebarName.textContent = myData.name;
                 
-                // FIX 1 & 3: Avatar rendering in sidebar & chat
                 if (myData.photoURL && myData.photoURL !== "") {
                     if(myAvatar) {
                         myAvatar.style.backgroundImage = `url(${myData.photoURL})`;
@@ -611,6 +611,7 @@
                         myAvatar.textContent = '';
                     }
                     
+                    // Load into cropper
                     let cropImg = new Image();
                     cropImg.crossOrigin = "Anonymous";
                     cropImg.onload = () => {
@@ -666,7 +667,7 @@
                     this.style.height = (this.scrollHeight) + 'px';
                     if(this.value === '') this.style.height = 'auto';
                     
-                    isEditingMode = false; // Reset edit mode
+                    isEditingMode = false;
                 });
                 
                 messageInput.addEventListener('keypress', (e) => {
@@ -679,19 +680,18 @@
         };
 
         window.openProfile = () => {
-            const modal = document.getElementById('profileModal');
-            if(modal) {
-                modal.style.display = 'flex';
-                // Issue 4: Stop propagation so click listener doesn't close it immediately
-                event.stopPropagation(); 
+            if(ctxMenu) {
+                ctxMenu.classList.remove('show');
+                setTimeout(() => ctxMenu.style.display = 'none', 200);
             }
+            const modal = document.getElementById('profileModal');
+            if(modal) modal.style.display = 'flex';
         };
 
         let cropImg = new Image();
         let cropX = 0, cropY = 0, cropScale = 1;
         let isDragging = false;
         let lastMouseX = 0, lastMouseY = 0;
-        let avatarModified = false; // FIX 1
 
         function drawCrop() {
             if (!cropImg.src) {
@@ -721,7 +721,6 @@
             const dx = e.clientX - lastMouseX; const dy = e.clientY - lastMouseY;
             cropX += dx; cropY += dy; lastMouseX = e.clientX; lastMouseY = e.clientY;
             drawCrop();
-            avatarModified = true;
         });
         window.addEventListener('mouseup', () => isDragging = false);
         if(canvas) {
@@ -729,7 +728,6 @@
                 e.preventDefault(); const scaleAmount = -e.deltaY * 0.001;
                 cropScale = Math.min(Math.max(0.5, cropScale + scaleAmount), 3);
                 drawCrop();
-                avatarModified = true;
             });
         }
 
@@ -737,38 +735,44 @@
             profileAvatarInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
+                avatarModified = true; 
                 
-                // FIX 1: Immediate Preview & Mark Modified
                 const url = URL.createObjectURL(file);
                 cropImg.src = url;
-                avatarModified = true;
             });
         }
 
-        // --- PROFILE SAVE (FIX 1) ---
+        // --- PROFILE SAVE (FIXED) ---
         window.saveProfile = async function() {
             const newName = profileNameInput ? profileNameInput.value.trim() : "";
-            if (!newName) return; // Silent validation
+            if (!newName) { btnSaveProfile.textContent = "Ім'я?"; return; } // Minimal validation feedback
 
-            // 1. Update Name
-            if (newName !== myData.name) {
-                await updateProfile(auth.currentUser, { displayName: newName });
-                await updateDoc(doc(db, "users", currentUID), { name: newName });
-                myData.name = newName; 
-                if(sidebarName) sidebarName.textContent = newName;
-            }
+            // Feedback
+            const originalText = btnSaveProfile.textContent;
+            btnSaveProfile.textContent = "Збереження..."; 
+            btnSaveProfile.disabled = true;
+            
+            try {
+                // 1. Save Name
+                if (newName !== myData.name) {
+                    await updateProfile(auth.currentUser, { displayName: newName });
+                    await updateDoc(doc(db, "users", currentUID), { name: newName });
+                    myData.name = newName; 
+                    if(sidebarName) sidebarName.textContent = newName;
+                }
 
-            // 2. Save Avatar (Only if modified or new file)
-            const file = profileAvatarInput.files[0];
-            if (file || avatarModified) {
-                try {
+                // 2. Save Avatar (Always try if modified or new file)
+                const file = profileAvatarInput.files[0];
+                if (file || avatarModified) {
                     // Draw from Canvas (Crop)
                     const tempCanvas = document.createElement('canvas');
                     tempCanvas.width = 250; tempCanvas.height = 250;
                     const tempCtx = tempCanvas.getContext('2d');
                     tempCtx.beginPath(); tempCtx.arc(125, 125, 125, 0, Math.PI * 2); tempCtx.clip();
+                    
                     tempCtx.drawImage(cropImg, cropX, cropY, cropImg.width * cropScale, cropImg.height * cropScale);
                     
+                    // Convert to Blob
                     const blob = await new Promise((r) => tempCanvas.toBlob(r, 'image/jpeg', 0.9));
                     
                     // Upload
@@ -780,25 +784,26 @@
                     await updateDoc(doc(db, "users", currentUID), { photoURL: url });
                     myData.photoURL = url; // Update local cache
                     
-                    // UI Update (Sidebar & Users List)
+                    // UI Update
                     if(myAvatar) {
                         myAvatar.style.backgroundImage = `url(${url})`;
                         myAvatar.style.backgroundSize = 'cover';
                         myAvatar.textContent = '';
                     }
                     
-                    // Force refresh of other avatars
+                    avatarModified = false;
                     window.loadUsersList(); 
-                    
                     window.closeModals('profileModal');
-                    location.reload(); // FIX 1: Reload to ensure global state update
-                } catch (err) { 
-                    console.error(err); 
-                    // Silent fail
+                } else {
+                    // Just name change (or nothing)
+                    window.closeModals('profileModal');
                 }
-            } else {
-                // Just name change? Or no change? Close modal.
-                window.closeModals('profileModal');
+            } catch (err) { 
+                console.error(err);
+                btnSaveProfile.textContent = "Помилка!";
+                setTimeout(() => btnSaveProfile.textContent = originalText, 2000);
+            } finally {
+                btnSaveProfile.disabled = false;
             }
         };
 
@@ -810,7 +815,15 @@
                     const pathRef = ref(storage, myData.photoURL); 
                     await deleteObject(pathRef); 
                 }
-                location.reload();
+                myData.photoURL = null;
+                
+                if(myAvatar) {
+                    myAvatar.style.backgroundImage = 'none';
+                    myAvatar.style.backgroundColor = window.stringToColor(myData.name);
+                    myAvatar.textContent = myData.name.charAt(0).toUpperCase();
+                }
+                
+                window.loadUsersList();
             } catch (error) { }
         };
 
@@ -898,7 +911,7 @@
         };
 
         window.openChannelSettings = function(id = null, e) {
-            if (e) e.stopPropagation(); // Issue 4: Stop global click
+            if (e) e.stopPropagation(); 
             if (myRole !== 'admin') { return; }
             const targetId = id || currentChannelId;
             const ch = channelsCache.find(c => c.id === targetId);
@@ -944,7 +957,7 @@
             return true;
         };
         window.openChannelModal = function(e) {
-            if (e) e.stopPropagation(); // Issue 4
+            if (e) e.stopPropagation(); 
             if (myRole !== 'admin') { return; }
             const modal = document.getElementById('channelModal');
             if(modal) modal.style.display = 'flex';
@@ -962,10 +975,12 @@
             if(newNameInput) newNameInput.value = "";
         };
 
+        // --- FIX 2: LOAD MESSAGES (ROBUST) ---
         window.loadMessages = function(channelId) {
-            // FIX 3: Ensure list variable is correct
-            const list = messagesList || document.getElementById('messagesList');
-            if(list) list.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
+            if(!messagesList) return;
+            
+            // Clear container properly on load
+            messagesList.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-dim); font-size: 14px;">Завантаження...</div>`;
             
             const q = query(collection(db, "channels", channelId, "messages"), orderBy("timestamp", "asc"), limit(50));
             
@@ -987,18 +1002,25 @@
                     });
                 }
 
-                if(list && list.innerText.includes('Завантаження')) list.innerHTML = "";
-                
+                // Clear loading state if first batch
+                if (messagesList && messagesList.children.length > 0) {
+                    const loadingText = messagesList.innerText || "";
+                    if (loadingText.includes("Завантаження")) {
+                        messagesList.innerHTML = "";
+                    }
+                }
+
                 snapshot.docChanges().forEach((change) => {
                     const msg = change.doc.data();
                     const msgId = change.doc.id;
-                    // FIX 3: Validate msgId
-                    if (!msg || !msgId) return;
+                    if (!msg) return;
 
                     if (change.type === "added") {
                         if (!document.getElementById(`msg-${msgId}`)) {
-                            window.renderMessageUI(msg, msgId, list, "append");
-                            list.scrollTop = list.scrollHeight;
+                            window.renderMessageUI(msg, msgId, messagesList, "append");
+                            // Only scroll if we are at bottom or near bottom (new message)
+                            const isNearBottom = messagesList.scrollHeight - messagesList.scrollTop < messagesList.clientHeight + 100;
+                            if (isNearBottom) messagesList.scrollTop = messagesList.scrollHeight;
                         }
                     } else if (change.type === "modified") {
                         window.updateMessageUI(msgId, msg);
@@ -1023,12 +1045,12 @@
             content = content.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" class="msg-img" onerror="this.style.display=\'none\'" alt="$1">');
             content = content.replace(/@(.*?)(?:\s|$)/g, '<span class="msg-mention">@$1</span>');
 
-            const senderData = usersCache.find(u => u.id === msg.uid); // FIX 3: Find by UID, not name
+            const senderData = usersCache.find(u => u.id === msg.uid);
             const isSenderAdmin = senderData && senderData.role === 'admin';
             const adminClass = isSenderAdmin ? 'admin' : '';
 
             let attachmentsHTML = "";
-            if (msg.attachments && msg.attachments.length >0) {
+            if (msg.attachments && msg.attachments.length > 0) {
                 attachmentsHTML += '<div class="msg-attachments">';
                 msg.attachments.forEach(att => {
                     attachmentsHTML += `
@@ -1041,15 +1063,16 @@
                 attachmentsHTML += '</div>';
             }
 
+            // FIX 2: Reply Logic
             let replyHTML = "";
             if (msg.replyTo && msg.replyTo.id) {
                 let replyContent = msg.replyTo.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 const imgMatch = replyContent.match(/!\[(.*?)\]\((.*?)\)/);
                 const hasImage = !!imgMatch;
                 
-                let thumbHTML = `<img src="${imgMatch[2]}" class="msg-reply-thumb-mini" onclick="window.scrollToReply('${msg.replyTo.id}')">`;
-                if (!hasImage) {
-                    thumbHTML = `<div class="msg-reply-icon" onclick="window.scrollToReply('${msg.replyTo.id}')" style="cursor:pointer">🗨️</div>`;
+                let thumbHTML = `<div class="msg-reply-icon" onclick="window.scrollToReply('${msg.replyTo.id}')" style="cursor:pointer">🗨️</div>`;
+                if (hasImage) {
+                    thumbHTML = `<img src="${imgMatch[2]}" class="msg-reply-thumb-mini" onclick="window.scrollToReply('${msg.replyTo.id}')">`;
                 }
                 
                 replyHTML = `
@@ -1066,19 +1089,43 @@
             const div = document.createElement('div');
             div.className = "message";
             div.id = `msg-${msgId}`;
-            div.oncontextmenu = (e) => {
-                 if(e.target.tagName !== 'BUTTON') {
-                     e.stopPropagation(); return true; 
-                 }
-                 return false;
-            };
+            
+            // FIX 3: Avatar Logic
+            let avatarStyle = `background-color: ${window.stringToColor(msg.author || 'User')};`;
+            if (senderData && senderData.photoURL) {
+                avatarStyle = `background-image: url('${senderData.photoURL}'); background-size: cover;`;
+            }
 
+            const editUI = `
+                <textarea id="edit-inline-${msgId}" class="edit-textarea-inline"></textarea>
+                <div id="edit-actions-${msgId}" class="edit-actions-inline">
+                    <button class="btn-save" style="padding:5px 10px; font-size:12px;" onclick="window.saveInlineEdit('${msgId}')">Зберегти</button>
+                    <button class="btn-cancel" style="padding:5px 10px; font-size:12px;" onclick="window.cancelInlineEdit('${msgId}')">Скасувати</button>
+                </div>
+            `;
+
+            div.innerHTML = `
+                ${attachmentsHTML}
+                ${replyHTML}
+                <div class="msg-avatar ${adminClass}" id="avatar-${msgId}" style="${avatarStyle}">${avatarInitial}</div>
+                <div class="msg-content">
+                    <div class="msg-header">
+                        <span class="msg-username" style="font-weight:700; font-size:15px; margin-right:5px;">${safeText(msg.author || 'Unknown')}</span>
+                        <span class="msg-timestamp" style="font-size: 11px; color: var(--text-dim);">${time}</span>
+                        ${msg.editedAt ? '<span style="color:var(--text-dim); font-size:10px; margin-left:5px;">(ред)</span>' : ''}
+                    </div>
+                    <div class="msg-text">${content}</div>
+                </div>
+                ${editUI}
+            `;
+
+            // Attach toolbar manually
+            const toolbar = document.createElement('div');
+            toolbar.className = 'message-actions';
+            
             const btnReply = document.createElement('button');
             btnReply.className = 'action-btn'; btnReply.innerHTML = '↩️';
             btnReply.onclick = (e) => { e.stopPropagation(); window.startReply(msgId, msg); };
-
-            const toolbar = document.createElement('div');
-            toolbar.className = 'message-actions';
 
             if (isSelf) {
                 const btnEdit = document.createElement('button');
@@ -1095,43 +1142,18 @@
             }
 
             toolbar.appendChild(btnReply);
-
-            const editUI = `
-                <textarea id="edit-inline-${msgId}" class="edit-textarea-inline"></textarea>
-                <div id="edit-actions-${msgId}" class="edit-actions-inline">
-                    <button class="btn-save" style="padding:5px 10px; font-size:12px;" onclick="window.saveInlineEdit('${msgId}')">Зберегти</button>
-                    <button class="btn-cancel" style="padding:5px 10px; font-size:12px;" onclick="window.cancelInlineEdit('${msgId}')">Скасувати</button>
-                </div>
-            `;
-
-            // FIX 3: Avatar Logic
-            let avatarHTML = initial;
-            if (senderData && senderData.photoURL) {
-                avatarHTML = '';
-                const style = `background-image: url('${senderData.photoURL}'); background-size: cover; background-color: ${window.stringToColor(msg.author || 'User')};`;
-            } else {
-                const style = `background-color: ${window.stringToColor(msg.author || 'User')};`;
-            }
-
-            div.innerHTML = `
-                ${attachmentsHTML}
-                ${replyHTML}
-                <div class="msg-avatar ${adminClass}" id="avatar-${msgId}" style="${style}">${avatarHTML}</div>
-                <div class="msg-content">
-                    <div class="msg-header">
-                        <span class="msg-username" style="font-weight:700; font-size:15px; margin-right:5px;">${safeText(msg.author || 'Unknown')}</span>
-                        <span class="msg-timestamp" style="font-size: 11px; color: var(--text-dim);">${time}</span>
-                        ${msg.editedAt ? '<span style="color:var(--text-dim); font-size:10px; margin-left:5px;">(ред)</span>' : ''}
-                    </div>
-                    <div class="msg-text">${content}</div>
-                </div>
-                ${editUI}
-            `;
-            
             div.appendChild(toolbar);
 
             if (position === "append") container.appendChild(div);
             else container.insertBefore(div, container.firstChild);
+            
+            // FIX 2: Context menu
+            div.oncontextmenu = (e) => {
+                 if(e.target.tagName !== 'BUTTON') {
+                     e.stopPropagation(); return true; 
+                 }
+                 return false;
+            };
         };
 
         window.updateMessageUI = function(msgId, msg) {
@@ -1191,7 +1213,7 @@
             const textVal = editTA.value.trim();
             
             if (!textVal) return;
-            if (textVal.length > 500) return;
+            if (textVal.length > 500) return alert("Занадто довго");
 
             await updateDoc(doc(db, "channels", currentChannelId, "messages", msgId), {
                 text: textVal,
@@ -1200,7 +1222,7 @@
             window.cancelInlineEdit(msgId);
         };
 
-        // --- ISSUE 2 & 3: SEND MESSAGE ---
+        // --- SEND MESSAGE (INSTANT) ---
         window.sendMessage = async function() {
             if (!myData) { return; }
             if (!window.canWrite(currentChannelId)) { return; }
@@ -1210,43 +1232,50 @@
             if (!text && pendingUploadFiles.length === 0) return; 
 
             // 1. SEND MESSAGE INSTANTLY
-            try {
-                const docRef = await addDoc(collection(db, "channels", currentChannelId, "messages"), {
-                    text: text,
-                    uid: currentUID,
-                    author: myData.name,
-                    timestamp: serverTimestamp(),
-                    reactions: {},
-                    replyTo: activeReplyMsg ? { ...activeReplyMsg, id: activeReplyMsg.id } : null,
-                    attachments: [], // Start empty
-                    createdAt: Date.now()
-                });
-                
-                // Clear Input
-                if(messageInput) messageInput.value = ""; 
-                if(messageInput) messageInput.style.height = 'auto';
-                window.cancelReply();
-                
-                // 2. BACKGROUND UPLOAD (No alerts, console only)
-                if (pendingUploadFiles.length > 0) {
-                    try {
-                        let urls = [];
-                        for (let item of pendingUploadFiles) {
-                            const storageRef = ref(storage, `chat_images/${docRef.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
-                            await uploadBytes(storageRef, item.file);
-                            const url = await getDownloadURL(storageRef);
-                            urls.push({ url: url, name: `image.jpg` });
-                        }
-                        
-                        // Update message with URLs
-                        await updateDoc(docRef, { attachments: urls });
-                    } catch (e) {
-                        console.error("Upload error", e);
+            const docRef = await addDoc(collection(db, "channels", currentChannelId, "messages"), {
+                text: text,
+                uid: currentUID,
+                author: myData.name,
+                timestamp: serverTimestamp(),
+                attachments: [], 
+                reactions: {},
+                replyTo: activeReplyMsg ? { ...activeReplyMsg, id: activeReplyMsg.id } : null,
+                createdAt: Date.now()
+            });
+
+            // Clear Input
+            if(messageInput) messageInput.value = ""; 
+            if(messageInput) messageInput.style.height = 'auto';
+            window.cancelReply();
+            window.cancelUploadFiles();
+
+            // 2. BACKGROUND UPLOAD
+            if (pendingUploadFiles.length > 0) {
+                if(sendBtn) {
+                    sendBtn.textContent = "⏳"; 
+                    sendBtn.style.color = "#ccc";
+                }
+
+                try {
+                    let urls = [];
+                    for (let item of pendingUploadFiles) {
+                        const storageRef = ref(storage, `chat_images/${docRef.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
+                        await uploadBytes(storageRef, item.file);
+                        const url = await getDownloadURL(storageRef);
+                        urls.push({ url: url, name: `image.jpg` });
+                    }
+                    
+                    // Update message with URLs
+                    await updateDoc(docRef, { attachments: urls });
+                } catch (e) {
+                    console.error("Upload error", e);
+                } finally {
+                    // Reset Button
+                    if(sendBtn) {
+                        sendBtn.textContent = "➤";
+                        sendBtn.style.color = "";
                     }
                 }
-            } catch (e) {
-                console.error("Send error", e);
-                alert("Помилка відправки");
             }
         };
 
@@ -1313,12 +1342,14 @@
                     const item = document.createElement('div');
                     item.className = `member ${u.role === 'admin' ? 'admin' : ''}`;
                     
-                    // FIX 3: Avatar Rendering
-                    let avatarHTML = u.name.charAt(0).toUpperCase();
+                    // Avatar Logic
+                    let initial = u.name ? u.name.charAt(0).toUpperCase() : '?';
+                    let avatarHTML = initial;
                     if (u.photoURL && u.photoURL !== "") {
                         avatarHTML = `<div class="member-avatar-small" style="background-image: url('${u.photoURL}'); background-size: cover; background-color: transparent;"></div>`;
                     } else {
-                        avatarHTML = `<div class="member-avatar-small" style="background-color: ${window.stringToColor(u.name)};">${avatarHTML}</div>`;
+                        const color = window.stringToColor(u.name);
+                        avatarHTML = `<div class="member-avatar-small" style="background-color: ${color};">${initial}</div>`;
                     }
                     
                     item.innerHTML = `
@@ -1336,7 +1367,7 @@
                 const val = e.target.value;
                 const lastChar = val.slice(-1);
                 
-                if (isEditingMode) return; // CRITICAL
+                if (isEditingMode) return;
 
                 if (lastChar === '@') {
                     if(usersCache.length === 0) {
@@ -1370,7 +1401,6 @@
             });
         }
 
-        // --- UPLOAD LOGIC ---
         const hiddenFileInput = document.getElementById('hiddenFileInput');
 
         if(hiddenFileInput) {
@@ -1452,7 +1482,7 @@
                      const removeBtn = document.createElement('div');
                      removeBtn.className = "remove-thumb";
                      removeBtn.textContent = "✖";
-                     removeBtn.onclick = () => { pendingUploadFiles.splice(index,1); window.renderUploadGallery(); };
+                     removeBtn.onclick = () => { pendingUploadFiles.splice(index, 1); window.renderUploadGallery(); };
                      wrapper.appendChild(img);
                      wrapper.appendChild(removeBtn);
                      uploadPreviewContainer.appendChild(wrapper);
@@ -1504,7 +1534,7 @@
             };
         }
 
-        // --- ISSUE 4: GLOBAL CLICK ---
+        // --- GLOBAL CLICK (FIX 4 & 5) ---
         document.addEventListener('click', (e) => {
             const target = e.target;
             
