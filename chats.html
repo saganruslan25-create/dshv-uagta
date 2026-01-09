@@ -9,11 +9,11 @@
     
     <style>
         :root {
-            /* СТИЛИ CABINET.HTML */
+            /* STYLES CABINET.HTML */
             --primary: #22c55e;
             --primary-bright: #4ade80;
             --bg: #030507;
-            --card-bg: rgba(10, 12, 16, 0.8); /* Стекло */
+            --card-bg: rgba(10, 12, 16, 0.8);
             --glass-border: rgba(34, 197, 94, 0.2);
             --danger: #ef4444;
             --text-gray: #94a3b8;
@@ -30,7 +30,7 @@
         
         html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; }
 
-        /* MAIN LAYOUT (3 COLS) */
+        /* MAIN LAYOUT */
         .app-layout { display: flex; height: 100vh; width: 100vw; }
 
         /* LEFT SIDEBAR (CHANNELS) */
@@ -51,36 +51,56 @@
         
         .channels-list { flex: 1; overflow-y: auto; padding: 20px 10px; }
 
-        /* CATEGORIES & ITEMS */
+        /* CATEGORIES */
         .category-label {
             display: flex; align-items: center; color: var(--text-gray);
             font-size: 11px; font-weight: 800; text-transform: uppercase;
             margin-bottom: 8px; padding-left: 10px;
-            cursor: pointer;
+            cursor: pointer; user-select: none;
         }
+        .category-label:hover { color: white; }
+        .category-arrow { margin-right: 8px; font-size: 10px; transition: 0.2s; }
+        .category-label.collapsed .category-arrow { transform: rotate(-90deg); }
+
+        /* CHANNELS LIST (Sortable container) */
+        .channels-group {
+            margin-bottom: 16px;
+            transition: opacity 0.3s;
+        }
+        .channels-group.hidden { display: none; }
 
         .channel-item {
             display: flex; align-items: center;
             padding: 8px 12px; margin-bottom: 2px;
             border-radius: 8px; color: #777;
             cursor: pointer; font-size: 14px; font-weight: 600;
-            position: relative;
+            position: relative; /* Для иконок ПКМ */
         }
         .channel-item:hover { background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); }
         .channel-item.active { background: rgba(34, 197, 94, 0.1); color: white; border: 1px solid var(--glass-border); }
-        .channel-icon { margin-right: 10px; font-size: 16px; opacity: 0.8; }
-        
-        /* CONTEXT MENU ICON (GEAR) */
+        .channel-icon { margin-right: 10px; font-size: 16px; opacity: 0.8; pointer-events: none;}
+        .drag-handle { cursor: grab; opacity: 0; margin-left: auto; font-size: 12px; color: #444; padding: 0 5px;}
+        .channel-item:hover .drag-handle { opacity: 1; }
+        .drag-handle:active { cursor: grabbing; }
+
         .channel-context-btn {
             margin-left: auto; opacity: 0; color: var(--text-gray);
             padding: 4px; border-radius: 4px; cursor: pointer;
         }
         .channel-item:hover .channel-context-btn { opacity: 1; }
-        .channel-context-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+        .channel-item:hover .channel-context-btn:hover { color: white; background: rgba(255,255,255,0.1); }
+
+        /* ADMIN FOOTER */
+        .sidebar-footer { padding: 10px; border-top: 1px solid var(--glass-border); }
+        .btn-create-cat {
+            width: 100%; background: transparent; border: 1px dashed #444;
+            color: #666; padding: 10px; border-radius: 8px; cursor: pointer;
+            font-size: 12px; font-weight: 700; text-transform: uppercase;
+        }
+        .btn-create-cat:hover { border-color: var(--primary); color: var(--primary); }
 
         /* MIDDLE (CHAT) */
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-width: 0; position: relative; }
-
         .chat-header {
             height: 60px; padding: 0 25px;
             display: flex; align-items: center;
@@ -93,45 +113,24 @@
 
         /* MESSAGES */
         .messages-container { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; scroll-behavior: smooth; }
-        
-        .msg { 
-            padding: 4px 20px; margin-top: 8px; position: relative; 
-            animation: fadeIn 0.2s ease;
-        }
+        .msg { padding: 4px 20px; margin-top: 8px; position: relative; animation: fadeIn 0.2s ease; }
         .msg:hover { background: rgba(255,255,255,0.02); }
         .msg.grouped { padding-top: 0; margin-top: 0; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes highlightAnim {
-            0% { background: rgba(34, 197, 94, 0.3); border-left: 3px solid var(--primary); }
-            100% { background: transparent; border-left: 3px solid transparent; }
-        }
+        @keyframes highlightAnim { 0% { background: rgba(34, 197, 94, 0.3); border-left: 3px solid var(--primary); } 100% { background: transparent; border-left: 3px solid transparent; } }
         .msg-highlighted { animation: highlightAnim 2s ease-out; }
-
         .msg-header { display: flex; align-items: baseline; margin-bottom: 4px; margin-top: 10px; }
         .msg-author { font-weight: 800; color: var(--primary-bright); margin-right: 10px; cursor: pointer; text-transform: uppercase; font-size: 13px; }
         .msg-time { font-size: 10px; color: #555; font-weight: 700; }
         .msg-content { color: #ddd; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; line-height: 1.4; }
-        
         .mention { background: rgba(34, 197, 94, 0.15); color: var(--primary-bright); padding: 0 4px; border-radius: 4px; font-weight: 700; cursor: pointer; }
         .mention:hover { background: var(--primary); color: black; }
-        
-        .reply-block {
-            border-left: 3px solid var(--primary); background: rgba(34, 197, 94, 0.05);
-            padding: 4px 10px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; color: #aaa;
-            cursor: pointer; max-width: fit-content;
-        }
+        .reply-block { border-left: 3px solid var(--primary); background: rgba(34, 197, 94, 0.05); padding: 4px 10px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; max-width: fit-content; }
         .reply-block:hover { background: rgba(34, 197, 94, 0.1); }
-
         .msg-image { max-width: 400px; max-height: 300px; border-radius: 8px; margin-top: 10px; display: block; cursor: zoom-in; border: 1px solid var(--glass-border); }
 
-        /* MESSAGE ACTIONS (HOVER) */
-        .msg-actions {
-            position: absolute; right: 20px; top: -15px;
-            display: none; gap: 8px; z-index: 100; 
-            background: #0a0c10; padding: 4px 8px;
-            border-radius: 6px; border: 1px solid var(--glass-border);
-        }
+        /* MESSAGE ACTIONS */
+        .msg-actions { position: absolute; right: 20px; top: -15px; display: none; gap: 8px; z-index: 100; background: #0a0c10; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--glass-border); }
         .msg:hover .msg-actions { display: flex; }
         .action-btn { background: transparent; border: none; color: #666; font-size: 14px; cursor: pointer; padding: 2px; }
         .action-btn:hover { color: var(--primary-bright); }
@@ -145,16 +144,11 @@
             padding: 20px 10px; overflow-y: auto;
             backdrop-filter: blur(20px);
         }
-        .members-title {
-            text-transform: uppercase; font-size: 11px; font-weight: 800; color: var(--text-gray);
-            margin-bottom: 15px; padding-left: 10px;
-        }
-        .member-item {
-            display: flex; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; opacity: 0.8;
-        }
+        .members-title { text-transform: uppercase; font-size: 11px; font-weight: 800; color: var(--text-gray); margin-bottom: 15px; padding-left: 10px; }
+        .member-item { display: flex; align-items: center; padding: 8px; border-radius: 8px; cursor: pointer; opacity: 0.9; }
         .member-item:hover { background: rgba(34, 197, 94, 0.05); opacity: 1; }
         .member-avatar {
-            width: 32px; height: 32px; border-radius: 50%; background: var(--primary);
+            width: 32px; height: 32px; border-radius: 50%; 
             display: flex; align-items: center; justify-content: center;
             font-weight: 900; color: black; margin-right: 10px; font-size: 12px; flex-shrink: 0;
         }
@@ -162,87 +156,51 @@
         .member-name { font-weight: 700; color: white; font-size: 13px; text-transform: uppercase; }
         .member-role { font-size: 10px; color: var(--text-gray); font-weight: 600; }
 
-        /* INPUT AREA (FIXED BUG) */
+        /* INPUT AREA */
         .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; }
-        
-        /* Preview Bar for Image */
-        .preview-bar {
-            display: none; background: rgba(10, 12, 16, 0.8);
-            padding: 8px; border-radius: 12px 12px 0 0;
-            border: 1px solid var(--glass-border); border-bottom: none;
-            align-items: center; justify-content: space-between;
-            margin-bottom: 0;
-        }
+        .preview-bar { display: none; background: rgba(10, 12, 16, 0.8); padding: 8px; border-radius: 12px 12px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; justify-content: space-between; margin-bottom: 0; }
         .preview-content { display: flex; align-items: center; gap: 10px; }
         .preview-thumb { height: 40px; border-radius: 4px; border: 1px solid var(--primary); }
         .preview-close { color: var(--danger); cursor: pointer; font-weight: 800; padding: 4px; }
         .preview-close:hover { background: var(--danger); color: white; border-radius: 4px; }
-
-        .input-box {
-            background: rgba(10, 12, 16, 0.6); border: 1px solid var(--glass-border);
-            border-radius: 0 0 12px 12px; padding: 10px 15px;
-            display: flex; align-items: flex-start;
-        }
+        .input-box { background: rgba(10, 12, 16, 0.6); border: 1px solid var(--glass-border); border-radius: 0 0 12px 12px; padding: 10px 15px; display: flex; align-items: flex-start; }
         .input-box:focus-within { border-color: var(--primary); box-shadow: var(--neon-glow); }
-        
-        textarea {
-            background: transparent; border: none; color: white;
-            width: 100%; height: 24px; max-height: 150px; resize: none;
-            outline: none; font-family: inherit; font-size: 14px; line-height: 24px; padding: 0;
-        }
+        textarea { background: transparent; border: none; color: white; width: 100%; height: 24px; max-height: 150px; resize: none; outline: none; font-family: inherit; font-size: 14px; line-height: 24px; padding: 0; }
         .input-icons { display: flex; color: var(--text-gray); margin-left: 10px; gap: 12px; margin-top: 2px; }
-        .icon-btn { cursor: pointer; font-size: 18px; }
-        .icon-btn:hover { color: var(--primary-bright); }
+        .icon-btn { cursor: pointer; font-size: 22px; color: #666; transition: 0.2s; }
+        .icon-btn:hover { color: var(--text-gray); }
 
-        /* CONTEXT MENU (Discord Style but Neon) */
-        #contextMenu {
-            position: fixed; width: 200px; background: #0a0c10;
-            border: 1px solid var(--glass-border); border-radius: 8px;
-            padding: 8px 0; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
-            display: none; z-index: 5000; font-size: 13px;
-        }
-        .context-item {
-            padding: 10px 15px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600;
-        }
+        /* CONTEXT MENU */
+        #contextMenu { position: fixed; width: 200px; background: #0a0c10; border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 0; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: none; z-index: 5000; font-size: 13px; }
+        .context-item { padding: 10px 15px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; }
         .context-item:hover { background: var(--primary); color: black; }
         .context-item.danger { color: var(--danger); }
         .context-item.danger:hover { background: var(--danger); color: white; }
         .context-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 4px 0; }
 
         /* MENTION BOX */
-        #mentionBox {
-            position: absolute; bottom: 90px; left: 30px; background: #0a0c10;
-            border: 1px solid var(--glass-border); border-radius: 8px; width: 220px;
-            max-height: 200px; overflow-y: auto; display: none; z-index: 1000;
-            padding: 8px 0; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
-        }
+        #mentionBox { position: absolute; bottom: 90px; left: 30px; background: #0a0c10; border: 1px solid var(--glass-border); border-radius: 8px; width: 220px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000; padding: 8px 0; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
         .mention-item { padding: 8px 15px; cursor: pointer; color: #ccc; font-size: 13px; display: flex; align-items: center; gap: 10px;}
         .mention-item:hover { background: var(--primary); color: black; }
         .mention-avatar { width: 20px; height: 20px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; color: white;}
 
         /* MODALS */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 3000;
-            display: none; align-items: center; justify-content: center;
-        }
-        .modal-content {
-            background: #0a0c10; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px;
-            border: 1px solid var(--glass-border); box-shadow: 0 0 50px rgba(34, 197, 94, 0.2);
-        }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 3000; display: none; align-items: center; justify-content: center; }
+        .modal-content { background: #0a0c10; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid var(--glass-border); box-shadow: 0 0 50px rgba(34, 197, 94, 0.2); }
         .modal-header { color: var(--primary-bright); font-weight: 900; margin-bottom: 20px; font-size: 18px; text-transform: uppercase; }
         .modal-label { color: var(--text-gray); font-size: 12px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: block; }
-        .modal-input, .modal-select {
-            width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid #333;
-            color: white; border-radius: 8px; margin-bottom: 20px; outline: none; font-family: inherit;
-        }
+        .modal-input, .modal-select { width: 100%; padding: 12px; background: rgba(0,0,0,0.5); border: 1px solid #333; color: white; border-radius: 8px; margin-bottom: 20px; outline: none; font-family: inherit; }
         .modal-input:focus { border-color: var(--primary); }
         .btn-group { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
         .btn-modal { padding: 10px 20px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 13px; text-transform: uppercase; }
         .btn-cancel { background: transparent; color: var(--text-gray); border: 1px solid #333; }
         .btn-save { background: var(--primary); color: black; }
         
-        /* LIGHTBOX */
+        /* Category Manage List */
+        .cat-manage-item { display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px; margin-bottom: 8px; }
+        .cat-btn { background: none; border: none; cursor: pointer; font-size: 14px; margin-left: 5px; opacity: 0.6; }
+        .cat-btn:hover { opacity: 1; }
+
         #lightbox { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 10000; display:none; align-items:center; justify-content:center; cursor:zoom-out; }
         #lightbox-img { max-width:95%; max-height:95%; border: 1px solid var(--glass-border); border-radius: 10px; }
     </style>
@@ -257,6 +215,10 @@
             <a href="cabinet.html" style="color:var(--text-gray); font-size:20px; text-decoration:none; cursor:pointer;">←</a>
         </div>
         <div class="channels-list" id="channelListContainer"></div>
+        
+        <div class="sidebar-footer" id="adminFooter" style="display:none;">
+            <button class="btn-create-cat" onclick="openCatManager()">⚙ КЕРУВАННЯ КАТЕГОРІЯМИ</button>
+        </div>
     </nav>
 
     <!-- MAIN: CHAT -->
@@ -270,7 +232,6 @@
         <div id="messages" class="messages-container"></div>
         
         <div class="input-area-wrapper">
-            <!-- PREVIEW BAR (Фото превью) -->
             <div id="previewBar" class="preview-bar">
                 <div class="preview-content">
                     <img id="previewThumb" class="preview-thumb" src="">
@@ -280,14 +241,13 @@
             </div>
 
             <div class="input-box">
-                <label for="imgUpload" style="cursor:pointer; margin-top:2px; color:var(--text-gray); font-size:18px;">➕</label>
+                <label for="imgUpload" style="cursor:pointer; margin-top:2px; color:#666; font-size:22px;">+</label>
                 <input type="file" id="imgUpload" accept="image/*" style="display:none;" onchange="handleImageSelect(this)">
                 <textarea id="msgInput" placeholder="Написати повідомлення..." rows="1"></textarea>
                 <div class="input-icons">
                     <div class="icon-btn" onclick="document.getElementById('imgUpload').click()">📷</div>
                 </div>
             </div>
-            <!-- MENTION BOX -->
             <div id="mentionBox"></div>
         </div>
     </main>
@@ -307,19 +267,16 @@
         <div class="modal-header">НАЛАШТУВАННЯ КАНАЛУ</div>
         <label class="modal-label">НАЗВА КАНАЛУ</label>
         <input type="text" id="editChannelName" class="modal-input">
-        
-        <label class="modal-label">ХТО МОЖЕ БАЧИТИ КАНАЛ</label>
+        <label class="modal-label">ХТО МОЖЕ БАЧИТИ</label>
         <select id="editViewRole" class="modal-select">
             <option value="all">Всі</option>
             <option value="admin">Тільки Адміни</option>
         </select>
-
         <label class="modal-label">ХТО МОЖЕ ПИСАТИ</label>
         <select id="editWriteRole" class="modal-select">
             <option value="all">Всі</option>
             <option value="admin">Тільки Адміни</option>
         </select>
-
         <div class="btn-group">
             <button class="btn-modal btn-cancel" onclick="closeSettings()">Скасувати</button>
             <button class="btn-modal btn-save" onclick="saveSettings()">Зберегти</button>
@@ -333,13 +290,26 @@
         <div class="modal-header">СТВОРИТИ КАНАЛ</div>
         <label class="modal-label">НАЗВА КАНАЛУ</label>
         <input type="text" id="newChannelName" class="modal-input" placeholder="новий-канал">
-        
         <label class="modal-label">КАТЕГОРІЯ</label>
-        <input type="text" id="newChannelCat" class="modal-input" value="НОВІ" placeholder="Наприклад: ТАКТИКА">
-
+        <select id="newChannelCat" class="modal-select"></select>
         <div class="btn-group">
             <button class="btn-modal btn-cancel" onclick="closeCreate()">Скасувати</button>
             <button class="btn-modal btn-save" onclick="createNewChannel()">Створити</button>
+        </div>
+    </div>
+</div>
+
+<!-- CATEGORY MANAGER MODAL -->
+<div id="catManagerModal" class="modal-overlay">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">УПРАВЛІННЯ КАТЕГОРІЯМИ</div>
+        <div style="display:flex; gap:5px; margin-bottom:20px;">
+            <input type="text" id="newCatNameInput" class="modal-input" placeholder="Назва нової категорії" style="margin:0;">
+            <button class="btn-modal btn-save" onclick="createCategory()">+</button>
+        </div>
+        <div id="catListManage" style="max-height: 300px; overflow-y: auto;"></div>
+        <div class="btn-group">
+            <button class="btn-modal btn-cancel" onclick="closeCatManager()">Закрити</button>
         </div>
     </div>
 </div>
@@ -351,7 +321,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, writeBatch, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -371,6 +341,16 @@
     let unsubMessages = null;
     let replyTo = null, currentBase64Img = null, allUsers = [];
     let contextMenuTarget = null; 
+    let categoriesMap = {}; // Store categories for easy access
+
+    // COLORS FOR MEMBERS
+    const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'];
+    function getUserColor(name) {
+        if (!name) return '#333';
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        return colors[Math.abs(hash) % colors.length];
+    }
 
     // AUTH
     onAuthStateChanged(auth, async (u) => {
@@ -380,22 +360,22 @@
             userData = snap.data();
             loadChannels();
             loadMembers();
-            loadUsersList(); // For mentions
+            loadUsersList();
         } else { window.location.href = "index.html"; }
     });
 
-    // --- 1. MEMBERS LIST ---
+    // --- 1. MEMBERS (SORTED) ---
     async function loadMembers() {
         const list = document.getElementById('membersList');
-        list.innerHTML = '<div class="members-title">ОСОБОВИЙ СКЛАД</div>';
         
         onSnapshot(collection(db, "users"), (snap) => {
-            let members = [];
+            let admins = [], fighters = [];
             snap.forEach(d => {
                 const u = d.data();
+                const color = u.role === 'admin' ? 'var(--primary)' : getUserColor(u.name);
                 const item = `
                     <div class="member-item" onclick="mentionUser('${u.name}')">
-                        <div class="member-avatar" style="background:${u.role === 'admin' ? 'var(--primary)' : '#333'}">
+                        <div class="member-avatar" style="background:${color}">
                             ${u.name.charAt(0).toUpperCase()}
                         </div>
                         <div class="member-info">
@@ -403,60 +383,160 @@
                             <div class="member-role">${u.rank}</div>
                         </div>
                     </div>`;
-                members.push(item);
+                if(u.role === 'admin') admins.push(item);
+                else fighters.push(item);
             });
-            list.innerHTML = '<div class="members-title">ОСОБОВИЙ СКЛАД</div>' + members.join('');
+
+            // Sort alphabetically
+            admins.sort();
+            fighters.sort();
+
+            list.innerHTML = '<div class="members-title">АДМІНІСТРАЦІЯ — ' + admins.length + '</div>' + admins.join('') + 
+                             '<div class="members-title" style="margin-top:20px;">БІЙЦІ — ' + fighters.length + '</div>' + fighters.join('');
         });
     }
 
-    // --- 2. CHANNELS (LOGIC WITHOUT OFFICERS) ---
+    // --- 2. CHANNELS & CATEGORIES ---
     async function loadChannels() {
         const container = document.getElementById('channelListContainer');
-        
+        const savedCat = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
+        const savedChannel = localStorage.getItem('lastChatID'); // Try to remember
+
         onSnapshot(query(collection(db, "channels"), orderBy("index", "asc")), (snap) => {
+            // Group channels by category
             const groups = {};
+            const uniqueCats = new Set();
+            
             snap.forEach(d => {
                 const ch = d.data();
-                if (!groups[ch.category || 'ГЕНЕРАЛЬНІ']) groups[ch.category || 'ГЕНЕРАЛЬНІ'] = [];
-                groups[ch.category || 'ГЕНЕРАЛЬНІ'].push({ id: d.id, ...ch });
+                const catName = ch.category || 'ГЕНЕРАЛЬНІ';
+                if (!groups[catName]) groups[catName] = [];
+                groups[catName].push({ id: d.id, ...ch });
+                uniqueCats.add(catName);
             });
 
+            categoriesMap = Array.from(uniqueCats); // Store for creation modal
+
+            // Build HTML
             let html = "";
+            let firstAvailableChannelId = null;
+
             for (const [catName, channels] of Object.entries(groups)) {
-                html += `<div class="category-label">📂 ${catName}</div>`;
+                const isCollapsed = savedCat.includes(catName);
+                const arrowClass = isCollapsed ? 'collapsed' : '';
+                
+                html += `<div class="category-label ${arrowClass}" onclick="window.toggleCat('${catName}')">
+                            <span class="category-arrow">▼</span> ${catName}
+                         </div>`;
+                html += `<ul class="channels-group" data-cat="${catName}" style="${isCollapsed ? 'display:none' : ''}">`;
+
                 channels.forEach(ch => {
-                    // УБРАНО ОФІЦЕРІВ, ТІЛЬКИ ADMIN
                     if (userData.role !== 'admin') {
                         if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
-                        if (ch.writeRole === 'admin' && userData.role !== 'admin') return; // Read only check if implemented
+                        if (ch.writeRole === 'admin' && userData.role !== 'admin') return;
                     }
+
+                    if (!firstAvailableChannelId) firstAvailableChannelId = ch.id;
 
                     const isActive = activeChannelId === ch.id ? 'active' : '';
                     const lockIcon = ch.viewRole === 'admin' ? '🔒' : '';
                     
                     html += `
-                        <div class="channel-item ${isActive}" data-id="${ch.id}">
+                        <li class="channel-item ${isActive}" data-id="${ch.id}" data-category="${catName}">
                             <span class="channel-icon">#</span>
                             <span>${ch.name}</span>
                             <span style="margin-left:auto; font-size:10px;">${lockIcon}</span>
-                            <div class="channel-context-btn" onmousedown="event.stopPropagation(); openContext('${ch.id}', '${ch.category}')">⚙</div>
-                        </div>
-                    `;
+                            <span class="channel-context-btn" onmousedown="event.stopPropagation(); openContext('${ch.id}', '${catName}')">⚙</span>
+                            <span class="drag-handle">⋮⋮</span>
+                        </li>`;
                 });
+                html += `</ul>`;
             }
-            if(userData.role === 'admin') {
-                 html += `
-                    <div class="channel-item" style="color:var(--text-gray); margin-top:10px;" onclick="openCreate()">
-                        <span class="channel-icon">+</span> Створити канал
-                    </div>`;
-            }
+
             container.innerHTML = html;
 
+            // Admin Footer
+            if (userData.role === 'admin') {
+                document.getElementById('adminFooter').style.display = 'block';
+            }
+
+            // Initialize Drag & Drop
+            initSortable();
+
+            // Initial Channel Selection Logic
+            if (!activeChannelId) {
+                // First load attempt
+                const targetId = savedChannel && document.querySelector(`.channel-item[data-id="${savedChannel}"]`) ? savedChannel : firstAvailableChannelId;
+                if (targetId) selectChannel(targetId);
+            }
+
+            // Bind Clicks
             container.querySelectorAll('.channel-item[data-id]').forEach(el => {
                 el.onclick = (e) => {
-                    if(e.target.classList.contains('channel-context-btn')) return;
+                    if(e.target.classList.contains('channel-context-btn') || e.target.classList.contains('drag-handle')) return;
                     selectChannel(el.dataset.id);
                 };
+            });
+        });
+    }
+
+    window.toggleCat = (name) => {
+        let collapsed = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
+        const idx = collapsed.indexOf(name);
+        if (idx > -1) {
+            collapsed.splice(idx, 1);
+        } else {
+            collapsed.push(name);
+        }
+        localStorage.setItem('collapsedCats', JSON.stringify(collapsed));
+        
+        // Update UI
+        const label = document.querySelector(`.category-label[onclick="window.toggleCat('${name}')"]`);
+        const group = document.querySelector(`.channels-group[data-cat="${name}"]`);
+        
+        if (label && group) {
+            if (idx > -1) { // Was collapsed, now open
+                label.classList.remove('collapsed');
+                group.style.display = 'block';
+            } else { // Was open, now collapse
+                label.classList.add('collapsed');
+                group.style.display = 'none';
+            }
+        }
+    };
+
+    // DRAG AND DROP LOGIC
+    function initSortable() {
+        document.querySelectorAll('.channels-group').forEach(el => {
+            if (el.sortableInstance) el.sortableInstance.destroy();
+            el.sortableInstance = Sortable.create(el, {
+                group: 'shared', // Allow moving between lists (categories)
+                animation: 150,
+                handle: '.drag-handle', // Only drag by handle
+                ghostClass: 'sortable-ghost',
+                delay: 100, // Prevent accidental drags
+                onEnd: async (evt) => {
+                    const itemEl = evt.item;
+                    const newIndex = evt.newIndex;
+                    const oldIndex = evt.oldIndex;
+                    const newCatList = evt.to; // UL element
+                    const oldCatList = evt.from; // UL element
+                    const newCatName = newCatList.dataset.cat;
+                    const channelId = itemEl.dataset.id;
+
+                    // 1. Update Category if moved
+                    if (newCatList !== oldCatList) {
+                        await updateDoc(doc(db, "channels", channelId), { category: newCatName });
+                    }
+
+                    // 2. Re-index ALL channels in the new category
+                    const batch = writeBatch(db);
+                    const allItems = Array.from(newCatList.children);
+                    allItems.forEach((li, idx) => {
+                        batch.update(doc(db, "channels", li.dataset.id), { index: idx }); // Simple index, not global
+                    });
+                    await batch.commit();
+                }
             });
         });
     }
@@ -488,7 +568,6 @@
         contextMenu.innerHTML = html;
     });
 
-    // Закриття меню при кліку в будь-яке місце
     document.addEventListener('click', () => {
         contextMenu.style.display = 'none';
         document.getElementById('mentionBox').style.display = 'none';
@@ -497,13 +576,14 @@
     // --- 3. CHANNEL LOGIC ---
     window.selectChannel = async (id) => {
         activeChannelId = id;
+        localStorage.setItem('lastChatID', id); // Save persistence
         const snap = await getDoc(doc(db, "channels", id));
         if(!snap.exists()) return;
         const ch = snap.data();
         activeChannelData = ch;
 
         document.getElementById('activeChannelName').innerText = ch.name.toUpperCase();
-        document.getElementById('activeChannelDesc').innerText = `Канал категорії: ${ch.category || 'ГЕНЕРАЛЬНІ'}`;
+        document.getElementById('activeChannelDesc').innerText = `Категорія: ${ch.category || 'ГЕНЕРАЛЬНІ'}`;
         
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         const activeItem = document.querySelector(`.channel-item[data-id="${id}"]`);
@@ -512,7 +592,7 @@
         loadMessages(id);
     };
 
-    // --- MESSAGES & HIGHLIGHTS ---
+    // --- MESSAGES ---
     function loadMessages(channelId) {
         if (unsubMessages) unsubMessages();
         const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -538,7 +618,6 @@
                         <div class="msg-content">${formatText(m.text)}</div>
                         ${m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : ""}
                         
-                        <!-- ДІЇ НАВЕДЕННЯ -->
                         <div class="msg-actions">
                             <button class="action-btn" onclick="startReply('${d.id}', '${m.author.replace(/'/g, "\\'")}', \`${m.text.replace(/`/g, "\\`")}\`)">↩</button>
                             ${m.uid === user.uid ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "\\`")}\`)">✎</button>` : ''}
@@ -554,26 +633,21 @@
         });
     }
 
-    // ПІДСВІЧУВАННЯ ПРИ СКРОЛІ (2 СЕКУНДИ)
     window.scrollToMsg = (id) => {
         const el = document.getElementById(`msg-${id}`);
         if(el) {
             el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.remove('msg-highlighted');
-            void el.offsetWidth; // Trigger reflow
+            el.classList.remove('msg-highlighted'); void el.offsetWidth;
             el.classList.add('msg-highlighted');
         }
     };
 
-    // --- INPUT & MENTIONS & IMAGE ---
+    // --- INPUT & MENTIONS ---
     const msgInput = document.getElementById('msgInput');
     const mentionBox = document.getElementById('mentionBox');
 
-    // Обробка введення тексту (МЕНШІЇ)
     msgInput.addEventListener('input', function() {
         this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
-        
-        // Логіка @
         const val = this.value;
         const atPos = val.lastIndexOf('@');
         if (atPos !== -1 && (atPos === 0 || val[atPos-1] === ' ')) {
@@ -585,12 +659,11 @@
     function showMentions(q) {
         const filtered = allUsers.filter(u => u.toLowerCase().includes(q));
         if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
-        
         let html = '';
         filtered.forEach(name => {
             html += `
                 <div class="mention-item" onclick="selectMention('${name}')">
-                    <div class="mention-avatar">${name[0]}</div>
+                    <div class="mention-avatar" style="background:${getUserColor(name)}">${name[0]}</div>
                     <span>${name}</span>
                 </div>`;
         });
@@ -606,7 +679,6 @@
         msgInput.focus();
     };
 
-    // CTRL+V (ФОТО)
     msgInput.addEventListener('paste', (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let i in items) {
@@ -616,21 +688,19 @@
         }
     });
 
-    // СИСТЕМА РЕДАГУВАННЯ ТА ВІДПОВІДІ
+    // --- EDIT/REPLY/SEND ---
     let editModeId = null;
     window.startReply = (id, author, text) => {
         replyTo = { id, author, text };
         msgInput.placeholder = `Відповідь для ${author}`;
         msgInput.focus();
     };
-
     window.editMessage = (id, text) => {
         editModeId = id;
         msgInput.value = text;
         msgInput.placeholder = "Редагування повідомлення...";
         msgInput.focus();
     };
-
     window.deleteMessage = async (id) => {
         if(confirm("Видалити назавжди?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id));
     };
@@ -638,10 +708,8 @@
     window.sendMessage = async () => {
         const text = msgInput.value.trim();
         if ((!text && !currentBase64Img) || !activeChannelId) return;
-
         const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
-        if(replyTo) data.replyTo = replyTo; 
-        if(currentBase64Img) data.imageUrl = currentBase64Img;
+        if(replyTo) data.replyTo = replyTo; if(currentBase64Img) data.imageUrl = currentBase64Img;
 
         if (editModeId) {
             await updateDoc(doc(db, "channels", activeChannelId, "messages", editModeId), { text, imageUrl: currentBase64Img || null, edited: true });
@@ -649,33 +717,26 @@
         } else {
             await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
         }
-
-        // Reset
         msgInput.value = ""; msgInput.style.height = 'auto'; msgInput.placeholder = "Написати повідомлення...";
-        replyTo = null;
-        cancelImage();
+        replyTo = null; cancelImage();
     };
 
-    // ФОТО (РОЗМІРЕННЯ + ПРЕВЬЮ)
+    // --- IMAGES ---
     async function loadUsersList() {
         const s = await getDocs(collection(db, "users"));
         allUsers = []; s.forEach(d => allUsers.push(d.data().name));
     }
-
     function processImage(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height, max = 1000; // Обмеження розміру
-                if (w > h) { if (w > max) { h *= max/w; w = max; } }
-                else { if (h > max) { w *= max/h; h = max; } }
+                let w = img.width, h = img.height, max = 1000;
+                if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                 currentBase64Img = canvas.toDataURL('image/jpeg', 0.7);
-                
-                // Show Preview Bar
                 document.getElementById('previewBar').style.display = 'flex';
                 document.getElementById('previewThumb').src = currentBase64Img;
             };
@@ -683,24 +744,17 @@
         };
         reader.readAsDataURL(file);
     }
-
     window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); };
     window.cancelImage = () => { currentBase64Img = null; document.getElementById('previewBar').style.display = 'none'; };
-
-    // --- UTILS ---
     function formatText(t) {
         if(!t) return "";
-        return t.replace(/</g, "&lt;").replace(/>/g, "&gt;")
-                .replace(/@([\wа-яА-ЯёЁіІїЇєЄ ]+)/g, '<span class="mention">@$1</span>');
+        return t.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/@([\wа-яА-ЯёЁіІїЇєЄ ]+)/g, '<span class="mention">@$1</span>');
     }
     window.mentionUser = (n) => { msgInput.value += `@${n} `; msgInput.focus(); };
     window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
-    
-    msgInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-    });
+    msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 
-    // --- MODALS (Settings / Create) ---
+    // --- MODALS ---
     window.openSettings = (id) => {
         getDoc(doc(db, "channels", id)).then(snap => {
             const ch = snap.data();
@@ -723,15 +777,16 @@
     window.deleteChannel = async (id) => { if(confirm("Видалити канал?")) await deleteDoc(doc(db, "channels", id)); };
 
     window.openCreate = () => {
+        const select = document.getElementById('newChannelCat');
+        select.innerHTML = categoriesMap.map(c => `<option value="${c}">${c}</option>`).join('');
         document.getElementById('newChannelName').value = "";
-        document.getElementById('newChannelCat').value = "НОВІ";
         document.getElementById('createModal').style.display = 'flex';
     };
     window.closeCreate = () => document.getElementById('createModal').style.display = 'none';
     
     window.createNewChannel = async () => {
         const name = document.getElementById('newChannelName').value.trim();
-        const cat = document.getElementById('newChannelCat').value.trim();
+        const cat = document.getElementById('newChannelCat').value;
         if(!name) return alert("Введіть назву");
         const s = await getDocs(collection(db, "channels"));
         await addDoc(collection(db, "channels"), {
@@ -742,6 +797,69 @@
             writeRole: 'all'
         });
         closeCreate();
+    };
+
+    // --- CATEGORY MANAGEMENT ---
+    window.openCatManager = () => {
+        renderCatList();
+        document.getElementById('catManagerModal').style.display = 'flex';
+    };
+    window.closeCatManager = () => document.getElementById('catManagerModal').style.display = 'none';
+    
+    function renderCatList() {
+        const list = document.getElementById('catListManage');
+        list.innerHTML = categoriesMap.map(cat => `
+            <div class="cat-manage-item">
+                <span>${cat}</span>
+                <div>
+                    <button class="cat-btn" onclick="renameCat('${cat}')">✎</button>
+                    <button class="cat-btn" style="color:var(--danger)" onclick="deleteCat('${cat}')">✕</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.createCategory = async () => {
+        const name = document.getElementById('newCatNameInput').value.trim().toUpperCase();
+        if(!name) return;
+        // Logic: just create a dummy channel with this category to make it appear, or trust the user to create one.
+        // Better: Just add to the map? No, map is derived from channels.
+        // Simplest: Create a placeholder channel or alert user to create channel.
+        alert(`Категорія "${name}" додана. Тепер створіть канал і виберіть цю категорію.`);
+        closeCatManager();
+        // To actually make it appear in the list immediately, we'd need a separate 'categories' collection, 
+        // but for current structure, we'll just assume user creates a channel.
+        // Wait, let's force a channel creation so the category exists.
+        const s = await getDocs(collection(db, "channels"));
+        await addDoc(collection(db, "channels"), {
+            name: "ОПИСАНИЕ КАТЕГОРИИ",
+            index: s.size + 1,
+            category: name,
+            viewRole: 'admin', // Hidden for now
+            writeRole: 'admin'
+        });
+        document.getElementById('newCatNameInput').value = "";
+        closeCatManager();
+    };
+
+    window.renameCat = async (oldName) => {
+        const newName = prompt(`Перейменувати "${oldName}" на:`, oldName);
+        if(newName && newName !== oldName) {
+            const snap = await getDocs(query(collection(db, "channels"), where("category", "==", oldName)));
+            const batch = writeBatch(db);
+            snap.forEach(d => batch.update(doc(db, "channels", d.id), { category: newName }));
+            await batch.commit();
+            renderCatList();
+        }
+    };
+
+    window.deleteCat = async (catName) => {
+        if(!confirm(`Видалити категорію "${catName}"? Всі канали в ній будуть видалені!`)) return;
+        const snap = await getDocs(query(collection(db, "channels"), where("category", "==", catName)));
+        const batch = writeBatch(db);
+        snap.forEach(d => batch.delete(doc(db, "channels", d.id)));
+        await batch.commit();
+        renderCatList();
     };
 
 </script>
