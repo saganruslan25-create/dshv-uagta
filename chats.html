@@ -9,7 +9,6 @@
     
     <style>
         :root {
-            /* STYLES CABINET.HTML */
             --primary: #22c55e;
             --primary-bright: #4ade80;
             --bg: #030507;
@@ -28,7 +27,6 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.2s, border-color 0.2s; }
         
-        /* FIX MOBILE: Dynamic Viewport Height */
         html, body { height: 100dvh; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; }
 
         /* MAIN LAYOUT */
@@ -47,7 +45,7 @@
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 1px solid var(--glass-border);
             background: rgba(3, 5, 7, 0.5);
-            flex-shrink: 0; /* Не стискати шапку */
+            flex-shrink: 0;
         }
         .server-title { color: var(--primary-bright); font-weight: 900; text-transform: uppercase; letter-spacing: 1px; font-size: 14px; }
         
@@ -78,19 +76,21 @@
         .channel-item:hover { background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); }
         .channel-item.active { background: rgba(34, 197, 94, 0.1); color: white; border: 1px solid var(--glass-border); }
         .channel-icon { margin-right: 10px; font-size: 16px; opacity: 0.8; pointer-events: none;}
-        .drag-handle { cursor: grab; opacity: 0; margin-left: auto; font-size: 12px; color: #444; padding: 0 5px;}
-        .channel-item:hover .drag-handle { opacity: 1; }
+        
+        /* Only show context btn and drag handle for admins */
+        .drag-handle { cursor: grab; display: none; margin-left: auto; font-size: 12px; color: #444; padding: 0 5px;}
+        .channel-item:hover .drag-handle { display: block; }
         .drag-handle:active { cursor: grabbing; }
 
         .channel-context-btn {
-            margin-left: auto; opacity: 0; color: var(--text-gray);
+            margin-left: auto; display: none; color: var(--text-gray);
             padding: 4px; border-radius: 4px; cursor: pointer;
         }
-        .channel-item:hover .channel-context-btn { opacity: 1; }
+        .channel-item:hover .channel-context-btn { display: block; }
         .channel-item:hover .channel-context-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
         /* ADMIN FOOTER */
-        .sidebar-footer { padding: 15px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-footer { padding: 15px; border-top: 1px solid var(--glass-border); display: none; flex-direction: column; gap: 8px; } /* Hidden by default, shown via JS */
         .btn-admin { 
             width: 100%; background: rgba(34, 197, 94, 0.05); border: 1px dashed var(--glass-border);
             color: #666; padding: 8px 10px; border-radius: 6px; cursor: pointer;
@@ -106,10 +106,10 @@
             display: flex; align-items: center;
             border-bottom: 1px solid var(--glass-border);
             background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
-            flex-shrink: 0; /* Фиксируем высоту */
+            flex-shrink: 0;
         }
         .chat-header-hash { font-size: 24px; color: var(--primary); margin-right: 12px; }
-        .chat-header-name { color: white; font-weight: 800; font-size: 16px; text-transform: uppercase; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
+        .chat-header-name { color: white; font-weight: 800; font-size: 16px; text-transform: uppercase; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
         .chat-header-desc { color: var(--text-gray); font-size: 12px; font-weight: 600; margin-left: 15px; border-left: 1px solid #333; padding-left: 15px; display: none; }
         
         /* HEADER BUTTONS */
@@ -123,6 +123,7 @@
             display: none;
         }
         .btn-forum-create:hover { background: var(--primary-bright); transform: translateY(-1px); }
+        
         .btn-back {
             background: #333; color: #999;
             padding: 6px 15px; border-radius: 6px;
@@ -183,7 +184,7 @@
         .member-role { font-size: 10px; color: var(--text-gray); font-weight: 600; }
 
         /* INPUT AREA */
-        .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
+        .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; flex-shrink: 0; }
         .input-read-only { text-align: center; color: var(--text-gray); font-size: 12px; font-style: italic; margin-bottom: 5px; }
         .preview-bar { display: none; background: rgba(10, 12, 16, 0.8); padding: 8px; border-radius: 12px 12px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; justify-content: space-between; margin-bottom: 0; }
         .preview-content { display: flex; align-items: center; gap: 10px; }
@@ -264,7 +265,6 @@
         .forum-empty-icon { font-size: 40px; margin-bottom: 15px; opacity: 0.5; }
         .forum-empty-text { color: var(--text-gray); font-weight: 700; }
 
-        /* Sortable Handle for Threads */
         .thread-drag-handle { cursor: grab; opacity: 0; margin-left: 10px; font-size: 12px; color: #444; padding: 5px;}
         .forum-thread-item:hover .thread-drag-handle { opacity: 1; }
 
@@ -276,6 +276,7 @@
             .channels-sidebar {
                 position: absolute; left: -280px; top: 0; height: 100%;
                 z-index: 1000; transition: 0.3s;
+                box-shadow: 2px 0 10px rgba(0,0,0,0.5);
             }
             .channels-sidebar.active { left: 0; }
             
@@ -298,7 +299,7 @@
         </div>
         <div class="channels-list" id="channelListContainer"></div>
         
-        <div class="sidebar-footer" id="adminFooter" style="display:none;">
+        <div class="sidebar-footer" id="adminFooter">
             <button class="btn-admin" onclick="openCreate()">➕ Створити канал</button>
             <button class="btn-admin" onclick="openCreateForum()">📋 Створити форум</button>
             <button class="btn-admin" onclick="openCatManager()" style="border-style: solid;">⚙ Категорії</button>
@@ -306,7 +307,7 @@
     </nav>
 
     <!-- MAIN: CHAT -->
-    <main class="chat-area">
+    <main class="chat-area" id="chatArea">
         <header class="chat-header">
             <button class="mobile-toggle-btn" id="btnToggleSidebar" onclick="window.toggleSidebar()">☰</button>
             
@@ -323,6 +324,7 @@
 
         <div id="messages" class="messages-container"></div>
         
+        <!-- FORUM CONTAINER -->
         <div id="forumContainer" class="forum-container" style="display:none;"></div>
         
         <div class="input-area-wrapper" id="inputArea">
@@ -481,9 +483,6 @@
     let replyTo = null, currentBase64Img = null, allUsers = [];
     let contextMenuTarget = null; 
     let categoriesMap = []; 
-    
-    // Variables for editing specific channels not currently active
-    let editingChannelId = null;
 
     const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'];
     function getUserColor(name) {
@@ -531,7 +530,7 @@
         });
     }
 
-    // --- CHANNELS ---
+    // --- CHANNELS (FIXED PERMISSIONS & ADMIN ELEMENTS) ---
     async function loadChannels() {
         const container = document.getElementById('channelListContainer');
         const savedCat = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
@@ -546,9 +545,9 @@
                 if (ch.parentId) return; // Hide sub-channels from sidebar
 
                 // CHECK: VIEW ROLE ONLY. If user can't see channel, skip it entirely.
+                // REMOVED: Write role check from here.
                 if (userData.role !== 'admin') {
                     if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
-                    if (ch.writeRole === 'admin' && userData.role !== 'admin') return;
                 }
 
                 const catName = ch.category || 'ГЕНЕРАЛЬНІ';
@@ -574,7 +573,7 @@
                 channels.forEach(ch => {
                     if (userData.role !== 'admin') {
                         if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
-                        if (ch.writeRole === 'admin' && userData.role !== 'admin') return;
+                        // Write role doesn't matter for visibility
                     }
 
                     if (!firstAvailableChannelId) firstAvailableChannelId = ch.id;
@@ -583,13 +582,18 @@
                     const lockIcon = ch.viewRole === 'admin' ? '🔒' : '';
                     const icon = ch.type === 'forum' ? '📋' : '#';
                     
+                    // Only show context and drag handle for admins
+                    const isAdmin = userData.role === 'admin';
+                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); openContext('${ch.id}', '${catName}')">⚙</span>` : '';
+                    const dragBtn = isAdmin ? `<span class="drag-handle">⋮⋮</span>` : '';
+                    
                     html += `
                         <li class="channel-item ${isActive}" data-id="${ch.id}" data-category="${catName}">
                             <span class="channel-icon">${icon}</span>
                             <span>${ch.name}</span>
                             <span style="margin-left:auto; font-size:10px;">${lockIcon}</span>
-                            <span class="channel-context-btn" onmousedown="event.stopPropagation(); openContext('${ch.id}', '${catName}')">⚙</span>
-                            <span class="drag-handle">⋮⋮</span>
+                            ${contextBtn}
+                            ${dragBtn}
                         </li>`;
                 });
                 html += `</ul>`;
@@ -597,6 +601,7 @@
 
             container.innerHTML = html;
 
+            // Show footer only for admins
             if (userData.role === 'admin') {
                 document.getElementById('adminFooter').style.display = 'flex';
             }
@@ -668,15 +673,21 @@
         contextMenu.style.top = `${e.pageY}px`;
 
         let html = '';
+        const isAdmin = userData.role === 'admin';
+
         if (contextMenuTarget === 'channel') {
-            html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати канал</div>`;
-            html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
-            html += `<div class="context-divider"></div>`;
+            if (isAdmin) {
+                html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати канал</div>`;
+                html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
+                html += `<div class="context-divider"></div>`;
+            }
             html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
-            html += `<div class="context-item" onclick="window.openCreateForum()">📋 Створити форум</div>`;
+            if (isAdmin) html += `<div class="context-item" onclick="window.openCreateForum()">📋 Створити форум</div>`;
         } else {
-            html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
-            html += `<div class="context-item" onclick="window.openCreateForum()">📋 Створити форум</div>`;
+            if (isAdmin) {
+                html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
+                html += `<div class="context-item" onclick="window.openCreateForum()">📋 Створити форум</div>`;
+            }
         }
         contextMenu.innerHTML = html;
     });
@@ -691,13 +702,17 @@
             contextMenu.style.top = `${e.pageY}px`;
 
             let html = '';
+            const isAdmin = userData.role === 'admin';
+
             if (threadItem) {
                 const channelId = threadItem.dataset.id;
-                html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати</div>`;
-                html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
-                html += `<div class="context-divider"></div>`;
+                if (isAdmin) {
+                    html += `<div class="context-item" onclick="window.openEditThread('${channelId}')">⚙ Налаштувати</div>`;
+                    html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
+                    html += `<div class="context-divider"></div>`;
+                }
                 html += `<div class="context-item" onclick="window.openCreateSub()">➕ Створити під-канал</div>`;
-                html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
+                if (isAdmin) html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
             } else {
                 html += `<div class="context-item" onclick="window.openCreateSub()">➕ Створити під-канал</div>`;
             }
@@ -720,13 +735,9 @@
         activeChannelData = ch;
 
         document.getElementById('activeChannelName').innerText = ch.name.toUpperCase();
+        document.getElementById('activeChannelDesc').innerText = ch.category ? `Категорія: ${ch.category}` : '';
+        document.getElementById('headerIcon').innerText = '#';
         
-        // Mobile sidebar: close after selection
-        if(window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.remove('active');
-        }
-
-        // Buttons Visibility
         const backBtn = document.getElementById('btnBack');
         const createBtn = document.getElementById('btnForumCreate');
         
@@ -751,10 +762,8 @@
         document.getElementById('messages').style.display = 'none';
         document.getElementById('forumContainer').style.display = 'none';
 
-        // Sidebar Highlight Logic
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         
-        // Highlight Logic
         let itemToHighlight = null;
         if (ch.parentId) {
             itemToHighlight = document.querySelector(`.channel-item[data-id="${ch.parentId}"]`);
@@ -819,53 +828,32 @@
         if(unsubMessages) unsubMessages();
         unsubMessages = onSnapshot(q, (snap) => {
             let html = "";
-            if(snap.empty) html = "<div style='text-align:center; color:#555; margin-top:50px;'>Немає тем. Натисніть ПКМ щоб створити.</div>";
-            
-            // Sort by index (Draggable order)
-            const sortedDocs = snap.docs.sort((a, b) => {
-                const idxA = a.data().index || 0;
-                const idxB = b.data().index || 0;
-                return idxA - idxB;
-            });
+            if(snap.empty) {
+                html = "<div style='text-align:center; color:#555; margin-top:50px;'>Немає тем. Натисніть ПКМ щоб створити.</div>";
+            } else {
+                const sortedDocs = snap.docs.sort((a, b) => {
+                    const timeA = a.data().createdAt?.toMillis() || 0;
+                    const timeB = b.data().createdAt?.toMillis() || 0;
+                    return timeB - timeA;
+                });
 
-            sortedDocs.forEach(d => {
-                const ch = d.data();
-                const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
-                html += `
-                    <div class="forum-thread-item" data-id="${d.id}" onclick="window.selectChannel('${d.id}')">
-                        <div class="thread-info">
-                            <div class="thread-title"># ${ch.name}</div>
-                            <div class="thread-meta">${ch.description || ''}</div>
-                        </div>
-                        <div class="thread-stats">
-                            <span style="margin-right:8px;">Створець: ${ch.author || 'Система'}</span>
-                            ${userData.role === 'admin' ? `<span class="thread-drag-handle">⋮⋮</span>` : ''}
-                        </div>
-                    </div>`;
-            });
-            container.innerHTML = html;
-
-            // Init Sortable for Threads
-            if (userData.role === 'admin') {
-                if (container.sortableInstance) container.sortableInstance.destroy();
-                container.sortableInstance = Sortable.create(container, {
-                    animation: 150,
-                    handle: '.thread-drag-handle',
-                    ghostClass: 'sortable-ghost',
-                    delay: 100,
-                    onEnd: async (evt) => {
-                        const itemEl = evt.item;
-                        const newIndex = evt.newIndex;
-                        const channelId = itemEl.dataset.id;
-                        
-                        // Update all threads in this forum
-                        const batch = writeBatch(db);
-                        const allItems = Array.from(container.children);
-                        allItems.forEach((li, idx) => batch.update(doc(db, "channels", li.dataset.id), { index: idx }));
-                        await batch.commit();
-                    }
+                sortedDocs.forEach(d => {
+                    const ch = d.data();
+                    const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
+                    html += `
+                        <div class="forum-thread-item" onclick="window.selectChannel('${d.id}')">
+                            <div class="thread-info">
+                                <div class="thread-title"># ${ch.name}</div>
+                                <div class="thread-meta">${ch.description || ''}</div>
+                            </div>
+                            <div class="thread-stats">
+                                <span style="margin-right:8px;">Творець: ${ch.author || 'Система'}</span>
+                                ${userData.role === 'admin' ? `<span class="thread-drag-handle">⋮⋮</span>` : ''}
+                            </div>
+                        </div>`;
                 });
             }
+            container.innerHTML = html;
         });
     }
 
@@ -971,41 +959,25 @@
     msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 
     // --- MODALS ---
-    // IMPORTANT: openSettings now takes an ID so it works for ANY channel (including threads)
-    window.openSettings = async (id) => {
-        // If ID is provided (from context menu), use it. Else use active.
-        const targetId = id || activeChannelId;
-        if (!targetId) return;
-
-        const snap = await getDoc(doc(db, "channels", targetId));
-        if (!snap.exists()) return;
-        const ch = snap.data();
-        
-        document.getElementById('editChannelName').value = ch.name;
-        document.getElementById('editViewRole').value = ch.viewRole || 'all';
-        document.getElementById('editWriteRole').value = ch.writeRole || 'all';
-        
-        // Save the ID we are editing
-        editingChannelId = targetId;
-        
-        document.getElementById('settingsModal').style.display = 'flex';
+    window.openSettings = (id) => {
+        getDoc(doc(db, "channels", id)).then(snap => {
+            const ch = snap.data();
+            document.getElementById('editChannelName').value = ch.name;
+            document.getElementById('editViewRole').value = ch.viewRole || 'all';
+            document.getElementById('editWriteRole').value = ch.writeRole || 'all';
+            document.getElementById('settingsModal').style.display = 'flex';
+        });
     };
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
-    
     window.saveSettings = async () => {
-        if (!editingChannelId) return;
-        await updateDoc(doc(db, "channels", editingChannelId), {
+        await updateDoc(doc(db, "channels", activeChannelId), {
             name: document.getElementById('editChannelName').value.trim().toUpperCase(),
             viewRole: document.getElementById('editViewRole').value,
             writeRole: document.getElementById('editWriteRole').value
         });
         closeSettings();
     };
-    window.deleteChannel = async (id) => { 
-        if(confirm("Видалити канал?")) {
-            await deleteDoc(doc(db, "channels", id));
-        } 
-    };
+    window.deleteChannel = async (id) => { if(confirm("Видалити канал?")) await deleteDoc(doc(db, "channels", id)); };
 
     window.openCreate = () => {
         const select = document.getElementById('newChannelCat');
@@ -1056,7 +1028,6 @@
         const name = document.getElementById('newSubName').value.trim();
         const desc = document.getElementById('newSubDesc').value.trim();
         if(!name) return alert("Введіть назву теми");
-        
         await addDoc(collection(db, "channels"), {
             name: name.toUpperCase(),
             description: desc,
@@ -1071,9 +1042,8 @@
         closeCreateSub();
     };
 
-    // --- EDIT THREAD (FIXED) ---
+    // --- EDIT THREAD ---
     window.openEditThread = (id) => {
-        editingChannelId = id; // FIX: Store the ID of the thread we clicked
         getDoc(doc(db, "channels", id)).then(snap => {
             const ch = snap.data();
             document.getElementById('editThreadName').value = ch.name;
@@ -1083,11 +1053,10 @@
     };
     window.closeEditThread = () => document.getElementById('editThreadModal').style.display = 'none';
     window.saveEditThread = async () => {
-        if (!editingChannelId) return; // FIX: Use stored ID, not activeChannelId
         const name = document.getElementById('editThreadName').value.trim().toUpperCase();
         const desc = document.getElementById('editThreadDesc').value.trim();
         if(!name) return;
-        await updateDoc(doc(db, "channels", editingChannelId), {
+        await updateDoc(doc(db, "channels", activeChannelId), {
             name: name,
             description: desc
         });
@@ -1146,10 +1115,20 @@
         renderCatList();
     };
 
-    // MOBILE TOGGLE
+    // --- MOBILE TOGGLE & CLICK OUTSIDE ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
     };
+
+    document.getElementById('chatArea').addEventListener('click', (e) => {
+        // If mobile and sidebar is open, close it when clicking main area
+        if (window.innerWidth <= 768) {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('active') && e.target.closest('.mobile-toggle-btn') === null) {
+                sidebar.classList.remove('active');
+            }
+        }
+    });
 
 </script>
 </body>
