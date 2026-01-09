@@ -111,6 +111,18 @@
         .chat-header-hash { font-size: 24px; color: var(--primary); margin-right: 12px; }
         .chat-header-name { color: white; font-weight: 800; font-size: 16px; text-transform: uppercase; }
         .chat-header-desc { color: var(--text-gray); font-size: 12px; font-weight: 600; margin-left: 15px; border-left: 1px solid #333; padding-left: 15px; }
+        
+        /* FORUM HEADER BUTTON */
+        .btn-forum-create {
+            margin-left: auto;
+            background: var(--primary); color: black;
+            padding: 8px 20px; border-radius: 8px;
+            font-weight: 800; font-size: 12px; text-transform: uppercase;
+            cursor: pointer; border: none;
+            box-shadow: 0 0 10px rgba(34,197,94,0.3);
+            display: none; /* Hidden by default */
+        }
+        .btn-forum-create:hover { background: var(--primary-bright); transform: translateY(-2px); }
 
         /* MESSAGES */
         .messages-container { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; scroll-behavior: smooth; }
@@ -218,7 +230,8 @@
         .cat-btn:hover { opacity: 1; }
 
         /* FORUM VIEW (Threads) */
-        .forum-container { padding: 20px; overflow-y: auto; user-select: none; }
+        .forum-container { padding: 20px; overflow-y: auto; user-select: none; display: flex; flex-direction: column; height: 100%; }
+        
         .forum-thread-item { 
             background: rgba(255,255,255,0.03); padding: 15px 20px; border-radius: 12px; margin-bottom: 15px; 
             border: 1px solid var(--glass-border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;
@@ -228,6 +241,16 @@
         .thread-title { font-size: 16px; font-weight: 800; color: var(--primary-bright); }
         .thread-meta { font-size: 12px; color: #666; }
         .thread-stats { background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #888; }
+
+        /* Empty State (Clickable) */
+        .forum-empty-state {
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 2px dashed var(--glass-border); border-radius: 20px; margin: 20px;
+            cursor: pointer; transition: 0.3s; text-align: center; padding: 40px;
+        }
+        .forum-empty-state:hover { border-color: var(--primary); background: rgba(34, 197, 94, 0.05); }
+        .forum-empty-icon { font-size: 40px; margin-bottom: 15px; opacity: 0.5; }
+        .forum-empty-text { color: var(--text-gray); font-weight: 700; }
 
         #lightbox { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 10000; display:none; align-items:center; justify-content:center; cursor:zoom-out; }
         #lightbox-img { max-width:95%; max-height:95%; border: 1px solid var(--glass-border); border-radius: 10px; }
@@ -257,11 +280,13 @@
             <div class="chat-header-hash" id="headerIcon">#</div>
             <div class="chat-header-name" id="activeChannelName">ОБЕРІТЬ КАНАЛ</div>
             <div class="chat-header-desc" id="activeChannelDesc"></div>
+            <!-- Кнопка создания темы в форуме -->
+            <button class="btn-forum-create" id="btnForumCreate" onclick="openCreateSub()">СТВОРИТИ ТЕМУ</button>
         </header>
 
         <div id="messages" class="messages-container"></div>
         
-        <!-- FORUM CONTAINER (Sub-channels/Threads) -->
+        <!-- FORUM CONTAINER -->
         <div id="forumContainer" class="forum-container" style="display:none;"></div>
         
         <div class="input-area-wrapper" id="inputArea">
@@ -350,7 +375,7 @@
 <!-- CREATE SUB-CHANNEL (THREAD) MODAL -->
 <div id="createSubModal" class="modal-overlay">
     <div class="modal-content">
-        <div class="modal-header">НОВА ТЕМА (ПОД-КАНАЛ)</div>
+        <div class="modal-header">НОВА ТЕМА</div>
         <label class="modal-label">НАЗВА ТЕМИ</label>
         <input type="text" id="newSubName" class="modal-input" placeholder="Тема обговорення">
         <label class="modal-label">ОПИС</label>
@@ -384,7 +409,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, writeBatch, getDocs, where, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, deleteDoc, writeBatch, getDocs, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -463,8 +488,7 @@
             
             snap.forEach(d => {
                 const ch = d.data();
-                // Don't show sub-channels in sidebar (unless specific logic needed, usually threads are hidden from sidebar)
-                if (ch.parentId) return; 
+                if (ch.parentId) return; // Hide sub-channels from sidebar
 
                 const catName = ch.category || 'ГЕНЕРАЛЬНІ';
                 if (!groups[catName]) groups[catName] = [];
@@ -535,7 +559,7 @@
     window.toggleCat = (name) => {
         let collapsed = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
         const idx = collapsed.indexOf(name);
-        if (idx > -1) { collapsed.splice(idx, 1); } else { collapsed.push(name); }
+        if (idx > -1) { collapsed.splice(idx,1); } else { collapsed.push(name); }
         localStorage.setItem('collapsedCats', JSON.stringify(collapsed));
         const label = document.querySelector(`.category-label[onclick="window.toggleCat('${name}')"]`);
         const group = document.querySelector(`.channels-group[data-cat="${name}"]`);
@@ -572,7 +596,6 @@
     const forumContainer = document.getElementById('forumContainer');
     const contextMenu = document.getElementById('contextMenu');
 
-    // Sidebar Context
     containerList.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         const channelItem = e.target.closest('.channel-item[data-id]');
@@ -600,12 +623,11 @@
     // Forum Area Context (Create Sub-channel)
     forumContainer.addEventListener('contextmenu', (e) => {
         e.preventDefault();
-        // Only show if active channel is forum
         if(activeChannelData && activeChannelData.type === 'forum') {
             contextMenu.style.display = 'block';
             contextMenu.style.left = `${e.pageX}px`;
             contextMenu.style.top = `${e.pageY}px`;
-            contextMenu.innerHTML = `<div class="context-item" onclick="openCreateSub()">➕ Створити під-канал (Тема)</div>`;
+            contextMenu.innerHTML = `<div class="context-item" onclick="openCreateSub()">➕ Створити тему</div>`;
         }
     });
 
@@ -627,19 +649,25 @@
         document.getElementById('activeChannelDesc').innerText = ch.category ? `Категорія: ${ch.category}` : '';
         document.getElementById('headerIcon').innerText = '#';
         
+        // Toggle Forum Button
+        const createBtn = document.getElementById('btnForumCreate');
+        if(ch.type === 'forum') {
+            createBtn.style.display = 'block';
+        } else {
+            createBtn.style.display = 'none';
+        }
+
         document.getElementById('messages').style.display = 'none';
         document.getElementById('forumContainer').style.display = 'none';
         document.getElementById('inputArea').style.display = 'none';
 
-        // Hide in sidebar if it's a sub-channel
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-        // Only highlight if visible in sidebar (no parentId)
         const mainItem = document.querySelector(`.channel-item[data-id="${id}"]`);
         if(mainItem) mainItem.classList.add('active');
 
         if(ch.type === 'forum') {
             document.getElementById('headerIcon').innerText = '📋';
-            document.getElementById('forumContainer').style.display = 'block';
+            document.getElementById('forumContainer').style.display = 'flex';
             loadForum(id);
         } else {
             document.getElementById('messages').style.display = 'flex';
@@ -682,26 +710,40 @@
     // --- FORUM (LOAD SUB-CHANNELS) ---
     function loadForum(parentId) {
         const container = document.getElementById('forumContainer');
-        // Query channels where parentId matches current forum ID
-        const q = query(collection(db, "channels"), where("parentId", "==", parentId), orderBy("createdAt", "desc"));
+        // Убрал orderBy("createdAt", "desc") чтобы избежать ошибки с индексами. Будем сортировать в JS.
+        const q = query(collection(db, "channels"), where("parentId", "==", parentId));
+        
         if(unsubMessages) unsubMessages();
         unsubMessages = onSnapshot(q, (snap) => {
             let html = "";
-            if(snap.empty) html = "<div style='text-align:center; color:#555; margin-top:50px;'>Немає тем. Натисніть ПКМ щоб створити.</div>";
-            
-            snap.forEach(d => {
-                const ch = d.data();
-                const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
-                // Count messages in this sub-channel (optimization: lazy load or just placeholder)
-                html += `
-                    <div class="forum-thread-item" onclick="selectChannel('${d.id}')">
-                        <div class="thread-info">
-                            <div class="thread-title"># ${ch.name}</div>
-                            <div class="thread-meta">${ch.description || ''}</div>
-                        </div>
-                        <div class="thread-stats">Творець: ${ch.author || 'Система'}</div>
+            if(snap.empty) {
+                // Большая кнопка "Создать тему" если пусто
+                html = `
+                    <div class="forum-empty-state" onclick="openCreateSub()">
+                        <div class="forum-empty-icon">➕</div>
+                        <div class="forum-empty-text">Немає тем. Натисніть щоб створити.</div>
                     </div>`;
-            });
+            } else {
+                // Сортируем вручную по дате (от новых к старым)
+                const sortedDocs = snap.docs.sort((a, b) => {
+                    const timeA = a.data().createdAt?.toMillis() || 0;
+                    const timeB = b.data().createdAt?.toMillis() || 0;
+                    return timeB - timeA;
+                });
+
+                sortedDocs.forEach(d => {
+                    const ch = d.data();
+                    const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
+                    html += `
+                        <div class="forum-thread-item" onclick="selectChannel('${d.id}')">
+                            <div class="thread-info">
+                                <div class="thread-title"># ${ch.name}</div>
+                                <div class="thread-meta">${ch.description || 'Без опису'}</div>
+                            </div>
+                            <div class="thread-stats">Створено: ${time}</div>
+                        </div>`;
+                });
+            }
             container.innerHTML = html;
         });
     }
@@ -878,7 +920,6 @@
         const desc = document.getElementById('newSubDesc').value.trim();
         if(!name) return alert("Введіть назву теми");
         
-        // Create sub-channel linked to current forum
         await addDoc(collection(db, "channels"), {
             name: name.toUpperCase(),
             description: desc,
