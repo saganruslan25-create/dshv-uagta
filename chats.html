@@ -9,6 +9,7 @@
     
     <style>
         :root {
+            /* STYLES CABINET.HTML */
             --primary: #22c55e;
             --primary-bright: #4ade80;
             --bg: #030507;
@@ -27,7 +28,8 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.2s, border-color 0.2s; }
         
-        html, body { height: 100%; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; }
+        /* MOBILE FIX: Use dvh for dynamic viewport height */
+        html, body { height: 100dvh; width: 100%; overflow: hidden; position: fixed; background-color: var(--bg); color: white; font-family: 'Inter', sans-serif; }
 
         /* MAIN LAYOUT */
         .app-layout { display: flex; height: 100vh; width: 100vw; }
@@ -97,45 +99,46 @@
         .btn-admin:hover { border-color: var(--primary); color: var(--primary); background: rgba(34, 197, 94, 0.1); }
 
         /* MIDDLE (CHAT) */
-        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-width: 0; position: relative; }
+        .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-width: 0; position: relative; min-height: 0; /* Key for mobile scroll */ }
         .chat-header {
             height: 60px; padding: 0 25px;
             display: flex; align-items: center;
             border-bottom: 1px solid var(--glass-border);
             background: rgba(3, 5, 7, 0.8); backdrop-filter: blur(15px);
+            flex-shrink: 0; /* Don't shrink header */
         }
         .chat-header-hash { font-size: 24px; color: var(--primary); margin-right: 12px; }
         .chat-header-name { color: white; font-weight: 800; font-size: 16px; text-transform: uppercase; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}
-        .chat-header-desc { color: var(--text-gray); font-size: 12px; font-weight: 600; margin-left: 15px; border-left: 1px solid #333; padding-left: 15px; display: none; } /* Hidden on mobile */
+        .chat-header-desc { color: var(--text-gray); font-size: 12px; font-weight: 600; margin-left: 15px; border-left: 1px solid #333; padding-left: 15px; display: none; }
         
         /* HEADER BUTTONS */
         .header-actions { display: flex; gap: 10px; margin-left: auto; align-items: center;}
         .btn-forum-create {
             background: var(--primary); color: black;
-            padding: 6px 15px; border-radius: 6px;
-            font-weight: 800; font-size: 11px; text-transform: uppercase;
+            padding: 8px 20px; border-radius: 8px;
+            font-weight: 800; font-size: 12px; text-transform: uppercase;
             cursor: pointer; border: none;
             box-shadow: 0 0 10px rgba(34,197,94,0.3);
             display: none;
         }
-        .btn-forum-create:hover { background: var(--primary-bright); transform: translateY(-1px); }
+        .btn-forum-create:hover { background: var(--primary-bright); transform: translateY(-2px); }
+        
         .btn-back {
             background: #333; color: #999;
             padding: 6px 15px; border-radius: 6px;
-            font-weight: 700; font-size: 11px; text-transform: uppercase;
+            font-weight: 700; font-size: 12px; text-transform: uppercase;
             cursor: pointer; border: none;
             display: none;
         }
         .btn-back:hover { background: #444; color: white; }
         
-        /* MOBILE BURGER */
         .mobile-toggle-btn { 
             display: none; font-size: 24px; color: var(--text-gray); 
             background: none; border: none; cursor: pointer; margin-right: 15px; 
         }
 
         /* MESSAGES */
-        .messages-container { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; scroll-behavior: smooth; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 20px 0; display: flex; flex-direction: column; scroll-behavior: smooth; min-height: 0; overflow-x: hidden; }
         .msg { padding: 4px 20px; margin-top: 8px; position: relative; animation: fadeIn 0.2s ease; }
         .msg:hover { background: rgba(255,255,255,0.02); }
         .msg.grouped { padding-top: 0; margin-top: 0; }
@@ -180,8 +183,8 @@
         .member-role { font-size: 10px; color: var(--text-gray); font-weight: 600; }
 
         /* INPUT AREA */
-        .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; }
-        .input-read-only { text-align: center; color: var(--text-gray); font-size: 12px; font-style: italic; margin-bottom: 5px; }
+        .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; flex-shrink: 0; /* Important for mobile */ }
+        .input-read-only { text-align: center; color: var(--text-gray); font-size: 12px; font-style: italic; margin-bottom: 5px; display: none; }
         .preview-bar { display: none; background: rgba(10, 12, 16, 0.8); padding: 8px; border-radius: 12px 12px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; justify-content: space-between; margin-bottom: 0; }
         .preview-content { display: flex; align-items: center; gap: 10px; }
         .preview-thumb { height: 40px; border-radius: 4px; border: 1px solid var(--primary); }
@@ -239,7 +242,13 @@
         .cat-btn { background: none; border: none; cursor: pointer; font-size: 14px; margin-left: 5px; opacity: 0.6; }
         .cat-btn:hover { opacity: 1; }
 
-        .forum-container { padding: 20px; overflow-y: auto; user-select: none; display: flex; flex-direction: column; height: 100%; }
+        /* FORUM VIEW (Threads) */
+        .forum-container { padding: 20px; overflow-y: auto; user-select: none; display: flex; flex-direction: column; height: 100%; min-height: 0; }
+        
+        /* Sortable Handle for Threads */
+        .thread-drag-handle { cursor: grab; opacity: 0; margin-left: 10px; font-size: 12px; color: #444; padding: 5px;}
+        .forum-thread-item:hover .thread-drag-handle { opacity: 1; }
+
         .forum-thread-item { 
             background: rgba(255,255,255,0.03); padding: 15px 20px; border-radius: 12px; margin-bottom: 15px; 
             border: 1px solid var(--glass-border); cursor: pointer; display: flex; justify-content: space-between; align-items: center;
@@ -251,7 +260,7 @@
         .thread-stats { background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px; font-size: 12px; color: #888; }
 
         .forum-empty-state {
-            flex:1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
             border: 2px dashed var(--glass-border); border-radius: 20px; margin: 20px;
             cursor: pointer; transition: 0.3s; text-align: center; padding: 40px;
         }
@@ -262,7 +271,7 @@
         #lightbox { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 10000; display:none; align-items:center; justify-content:center; cursor:zoom-out; }
         #lightbox-img { max-width:95%; max-height:95%; border: 1px solid var(--glass-border); border-radius: 10px; }
 
-        /* --- ADAPTIVE MOBILE --- */
+        /* MOBILE ADAPTIVE */
         @media (max-width: 768px) {
             .channels-sidebar {
                 position: absolute; left: -280px; top: 0; height: 100%;
@@ -314,10 +323,11 @@
 
         <div id="messages" class="messages-container"></div>
         
+        <!-- FORUM CONTAINER (Sub-channels/Threads) -->
         <div id="forumContainer" class="forum-container" style="display:none;"></div>
         
         <div class="input-area-wrapper" id="inputArea">
-            <div class="input-read-only" id="readOnlyMsg" style="display:none;">Тільки читання</div>
+            <div class="input-read-only" id="readOnlyMsg">Тільки читання</div>
             <div id="previewBar" class="preview-bar">
                 <div class="preview-content">
                     <img id="previewThumb" class="preview-thumb" src="">
@@ -418,7 +428,7 @@
 <!-- CREATE SUB-CHANNEL (THREAD) MODAL -->
 <div id="createSubModal" class="modal-overlay">
     <div class="modal-content">
-        <div class="modal-header">НОВА ТЕМА (ПОД-КАНАЛ)</div>
+        <div class="modal-header">НОВА ТЕМА</div>
         <label class="modal-label">НАЗВА ТЕМИ</label>
         <input type="text" id="newSubName" class="modal-input" placeholder="Тема обговорення">
         <label class="modal-label">ОПИС</label>
@@ -519,7 +529,7 @@
         });
     }
 
-    // --- CHANNELS (FIXED PERMISSIONS: ONLY VIEW ROLE HIDES CHANNEL) ---
+    // --- CHANNELS (FIXED PERMISSIONS & VISIBILITY) ---
     async function loadChannels() {
         const container = document.getElementById('channelListContainer');
         const savedCat = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
@@ -533,9 +543,10 @@
                 const ch = d.data();
                 if (ch.parentId) return; // Hide sub-channels from sidebar
 
-                // CHECK: VIEW ROLE ONLY. If user can't see channel, skip it entirely.
+                // HIDE CHANNEL IF USER CAN'T SEE IT (Fixed View Role)
                 if (userData.role !== 'admin') {
                     if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
+                    if (ch.writeRole === 'admin' && userData.role !== 'admin') return;
                 }
 
                 const catName = ch.category || 'ГЕНЕРАЛЬНІ';
@@ -559,6 +570,11 @@
                 html += `<ul class="channels-group" data-cat="${catName}" style="${isCollapsed ? 'display:none' : ''}">`;
 
                 channels.forEach(ch => {
+                    if (userData.role !== 'admin') {
+                        if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
+                        if (ch.writeRole === 'admin' && userData.role !== 'admin') return;
+                    }
+
                     if (!firstAvailableChannelId) firstAvailableChannelId = ch.id;
 
                     const isActive = activeChannelId === ch.id ? 'active' : '';
@@ -570,7 +586,7 @@
                             <span class="channel-icon">${icon}</span>
                             <span>${ch.name}</span>
                             <span style="margin-left:auto; font-size:10px;">${lockIcon}</span>
-                            <span class="channel-context-btn" onmousedown="event.stopPropagation(); openContext('${ch.id}', '${catName}')">⚙</span>
+                            <span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openContext('${ch.id}', '${catName}')">⚙</span>
                             <span class="drag-handle">⋮⋮</span>
                         </li>`;
                 });
@@ -702,40 +718,31 @@
         activeChannelData = ch;
 
         document.getElementById('activeChannelName').innerText = ch.name.toUpperCase();
-        
-        // Mobile sidebar: close after selection
-        if(window.innerWidth <= 768) {
-            document.getElementById('sidebar').classList.remove('active');
-        }
-
-        // Buttons Visibility
-        const backBtn = document.getElementById('btnBack');
-        const createBtn = document.getElementById('btnForumCreate');
-        
-        backBtn.style.display = ch.parentId ? 'block' : 'none';
-        createBtn.style.display = (ch.type === 'forum') ? 'block' : 'none';
-
         document.getElementById('activeChannelDesc').innerText = ch.category ? `Категорія: ${ch.category}` : '';
         document.getElementById('headerIcon').innerText = '#';
         
-        // CHECK WRITE ROLE (FIXED ISSUE)
-        const inputArea = document.getElementById('inputArea');
-        const readOnlyMsg = document.getElementById('readOnlyMsg');
+        const backBtn = document.getElementById('btnBack');
+        const createBtn = document.getElementById('btnForumCreate');
         
-        if (userData.role !== 'admin' && ch.writeRole === 'admin') {
-            inputArea.style.display = 'none';
-            readOnlyMsg.style.display = 'block';
+        if (ch.parentId) {
+            backBtn.style.display = 'block';
+            createBtn.style.display = 'none';
         } else {
-            inputArea.style.display = 'flex';
-            readOnlyMsg.style.display = 'none';
+            if (ch.type === 'forum') {
+                backBtn.style.display = 'none';
+                createBtn.style.display = 'block';
+            } else {
+                backBtn.style.display = 'none';
+                createBtn.style.display = 'none';
+            }
         }
 
         document.getElementById('messages').style.display = 'none';
         document.getElementById('forumContainer').style.display = 'none';
+        document.getElementById('inputArea').style.display = 'none';
 
+        // Sidebar Highlight
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
-        
-        // Sidebar Highlight Logic
         let itemToHighlight = null;
         if (ch.parentId) {
             itemToHighlight = document.querySelector(`.channel-item[data-id="${ch.parentId}"]`);
@@ -744,13 +751,24 @@
         }
         if(itemToHighlight) itemToHighlight.classList.add('active');
 
+        // Check Write Role (Show/Hide Input)
+        const inputArea = document.getElementById('inputArea');
+        const readOnlyMsg = document.getElementById('readOnlyMsg');
+        if (userData.role !== 'admin' && ch.writeRole === 'admin') {
+            inputArea.style.display = 'none';
+            readOnlyMsg.style.display = 'block';
+        } else {
+            inputArea.style.display = 'flex';
+            readOnlyMsg.style.display = 'none';
+        }
+
         if(ch.type === 'forum') {
             document.getElementById('headerIcon').innerText = '📋';
             document.getElementById('forumContainer').style.display = 'flex';
             loadForum(id);
         } else {
-            document.getElementById('headerIcon').innerText = '#';
             document.getElementById('messages').style.display = 'flex';
+            document.getElementById('inputArea').style.display = 'flex';
             loadMessages(id);
         }
     };
@@ -792,24 +810,25 @@
         });
     }
 
-    // --- FORUM ---
+    // --- FORUM (LOAD SUB-CHANNELS WITH DRAGGABLE SORTABLE) ---
     function loadForum(parentId) {
         const container = document.getElementById('forumContainer');
+        
+        // Query by parentId (Forum) OR by parentForum (if inside a thread? No, threads are direct children of forums)
         const q = query(collection(db, "channels"), where("parentId", "==", parentId));
+        
         if(unsubMessages) unsubMessages();
         unsubMessages = onSnapshot(q, (snap) => {
             let html = "";
             if(snap.empty) {
-                html = `
-                    <div class="forum-empty-state" onclick="window.openCreateSub()">
-                        <div class="forum-empty-icon">➕</div>
-                        <div class="forum-empty-text">Немає тем. Натисніть ПКМ щоб створити.</div>
-                    </div>`;
+                // Create Sortable list for empty state if needed? No.
+                html = "<div style='text-align:center; color:#555; margin-top:50px;'>Немає тем. Натисніть ПКМ щоб створити.</div>";
             } else {
+                // Sort by index (Draggable order)
                 const sortedDocs = snap.docs.sort((a, b) => {
-                    const timeA = a.data().createdAt?.toMillis() || 0;
-                    const timeB = b.data().createdAt?.toMillis() || 0;
-                    return timeB - timeA;
+                    const idxA = a.data().index || 0;
+                    const idxB = b.data().index || 0;
+                    return idxA - idxB;
                 });
 
                 sortedDocs.forEach(d => {
@@ -821,11 +840,38 @@
                                 <div class="thread-title"># ${ch.name}</div>
                                 <div class="thread-meta">${ch.description || ''}</div>
                             </div>
-                            <div class="thread-stats">Створено: ${time}</div>
+                            <div class="thread-stats">
+                                <span style="margin-right:8px;">Творець: ${ch.author || 'Система'}</span>
+                                ${userData.role === 'admin' ? `<span class="thread-drag-handle">⋮⋮</span>` : ''}
+                            </div>
                         </div>`;
                 });
             }
             container.innerHTML = html;
+
+            // Init Sortable for Threads
+            if (userData.role === 'admin') {
+                if (container.sortableInstance) container.sortableInstance.destroy();
+                container.sortableInstance = Sortable.create(container, {
+                    animation: 150,
+                    handle: '.thread-drag-handle', // Only drag by handle
+                    ghostClass: 'sortable-ghost',
+                    delay: 100,
+                    onEnd: async (evt) => {
+                        const itemEl = evt.item;
+                        const newIndex = evt.newIndex;
+                        const channelId = itemEl.dataset.id;
+                        
+                        // Update all threads in this forum
+                        const batch = writeBatch(db);
+                        const allItems = Array.from(container.children);
+                        allItems.forEach((li, idx) => {
+                            batch.update(doc(db, "channels", li.dataset.id), { index: idx });
+                        });
+                        await batch.commit();
+                    }
+                });
+            }
         });
     }
 
@@ -851,7 +897,7 @@
         if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
         let html = '';
         filtered.forEach(name => {
-            html += `<div class="mention-item" onclick="window.selectMention('${name}')"><div class="mention-avatar" style="background:${getUserColor(name)}">${name[0]}</div><span>${name}</span></div>`;
+            html += `<div class="mention-item" onclick="window.selectMention('${name}')"><div class="mention-avatar" style="background:${window.getUserColor(name)}">${name[0]}</div><span>${name}</span></div>`;
         });
         mentionBox.innerHTML = html;
         mentionBox.style.display = 'block';
@@ -1000,11 +1046,16 @@
         const name = document.getElementById('newSubName').value.trim();
         const desc = document.getElementById('newSubDesc').value.trim();
         if(!name) return alert("Введіть назву теми");
+        
+        // Count threads for index
+        const threadsSnap = await getDocs(query(collection(db, "channels"), where("parentId", "==", activeChannelId)));
+        
         await addDoc(collection(db, "channels"), {
             name: name.toUpperCase(),
             description: desc,
             parentId: activeChannelId, 
-            category: activeChannelData.category, 
+            index: threadsSnap.size, // NEW: Set index for sorting
+            category: activeChannelData.category,
             viewRole: 'all',
             writeRole: 'all',
             type: 'text',
@@ -1014,7 +1065,7 @@
         closeCreateSub();
     };
 
-    // --- EDIT THREAD LOGIC ---
+    // --- EDIT THREAD (FIXED) ---
     window.openEditThread = (id) => {
         getDoc(doc(db, "channels", id)).then(snap => {
             const ch = snap.data();
@@ -1028,10 +1079,22 @@
         const name = document.getElementById('editThreadName').value.trim().toUpperCase();
         const desc = document.getElementById('editThreadDesc').value.trim();
         if(!name) return;
-        await updateDoc(doc(db, "channels", activeChannelId), {
-            name: name,
-            description: desc
-        });
+        // Update active channel (thread)
+        if(activeChannelId) {
+            await updateDoc(doc(db, "channels", activeChannelId), {
+                name: name,
+                description: desc
+            });
+            // Update UI immediately
+            const threadItem = document.querySelector(`.forum-thread-item[data-id="${activeChannelId}"]`);
+            if(threadItem) {
+                threadItem.querySelector('.thread-title').innerText = "# " + name;
+                threadItem.querySelector('.thread-meta').innerText = desc;
+                document.getElementById('activeChannelName').innerText = name;
+            }
+        } else {
+            alert("Помилка: Активний канал не знайдено");
+        }
         closeEditThread();
     };
 
@@ -1087,7 +1150,7 @@
         renderCatList();
     };
 
-    // MOBILE TOGGLE
+    // --- MOBILE TOGGLE ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
     };
