@@ -74,7 +74,7 @@
             padding: 8px 12px; margin-bottom: 2px;
             border-radius: 8px; color: #777;
             cursor: pointer; font-size: 14px; font-weight: 600;
-            position: relative; /* Для иконок ПКМ */
+            position: relative; 
         }
         .channel-item:hover { background: rgba(34, 197, 94, 0.05); color: var(--primary-bright); }
         .channel-item.active { background: rgba(34, 197, 94, 0.1); color: white; border: 1px solid var(--glass-border); }
@@ -91,13 +91,14 @@
         .channel-item:hover .channel-context-btn:hover { color: white; background: rgba(255,255,255,0.1); }
 
         /* ADMIN FOOTER */
-        .sidebar-footer { padding: 10px; border-top: 1px solid var(--glass-border); }
-        .btn-create-cat {
-            width: 100%; background: transparent; border: 1px dashed #444;
-            color: #666; padding: 10px; border-radius: 8px; cursor: pointer;
-            font-size: 12px; font-weight: 700; text-transform: uppercase;
+        .sidebar-footer { padding: 15px; border-top: 1px solid var(--glass-border); display: flex; flex-direction: column; gap: 8px; }
+        .btn-admin { 
+            width: 100%; background: rgba(34, 197, 94, 0.05); border: 1px dashed var(--glass-border);
+            color: #666; padding: 8px 10px; border-radius: 6px; cursor: pointer;
+            font-size: 11px; font-weight: 700; text-transform: uppercase; text-align: center;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
         }
-        .btn-create-cat:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-admin:hover { border-color: var(--primary); color: var(--primary); background: rgba(34, 197, 94, 0.1); }
 
         /* MIDDLE (CHAT) */
         .chat-area { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-width: 0; position: relative; }
@@ -170,11 +171,26 @@
         .icon-btn { cursor: pointer; font-size: 22px; color: #666; transition: 0.2s; }
         .icon-btn:hover { color: var(--text-gray); }
 
-        /* CONTEXT MENU */
-        #contextMenu { position: fixed; width: 200px; background: #0a0c10; border: 1px solid var(--glass-border); border-radius: 8px; padding: 8px 0; box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: none; z-index: 5000; font-size: 13px; }
-        .context-item { padding: 10px 15px; color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 600; }
-        .context-item:hover { background: var(--primary); color: black; }
-        .context-item.danger { color: var(--danger); }
+        /* CONTEXT MENU (FIXED STYLES) */
+        #contextMenu {
+            position: fixed; 
+            width: 190px; /* Compact width */
+            background: #0a0c10; 
+            border: 1px solid var(--glass-border); 
+            border-radius: 8px; /* Rounded corners as requested */
+            padding: 6px 8px; 
+            box-shadow: 0 8px 30px rgba(0,0,0,0.6); 
+            display: none; z-index: 5000; 
+            font-size: 13px; 
+            backdrop-filter: blur(10px);
+        }
+        .context-item {
+            padding: 8px 10px; /* Compact padding */
+            color: #ccc; cursor: pointer; display: flex; align-items: center; gap: 10px; 
+            font-weight: 500; border-radius: 4px; /* Rounded items */
+        }
+        .context-item:hover { background: var(--primary); color: black; } 
+        .context-item.danger { color: #ff8888; }
         .context-item.danger:hover { background: var(--danger); color: white; }
         .context-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 4px 0; }
 
@@ -201,6 +217,13 @@
         .cat-btn { background: none; border: none; cursor: pointer; font-size: 14px; margin-left: 5px; opacity: 0.6; }
         .cat-btn:hover { opacity: 1; }
 
+        /* FORUM VIEW (Simple) */
+        .forum-container { padding: 20px; overflow-y: auto; }
+        .forum-post-item { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid var(--glass-border); cursor: pointer; }
+        .forum-post-item:hover { border-color: var(--primary); transform: translateY(-2px); }
+        .forum-post-title { font-size: 16px; font-weight: 800; color: var(--primary-bright); margin-bottom: 8px; }
+        .forum-post-meta { font-size: 12px; color: #666; }
+
         #lightbox { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index: 10000; display:none; align-items:center; justify-content:center; cursor:zoom-out; }
         #lightbox-img { max-width:95%; max-height:95%; border: 1px solid var(--glass-border); border-radius: 10px; }
     </style>
@@ -217,21 +240,26 @@
         <div class="channels-list" id="channelListContainer"></div>
         
         <div class="sidebar-footer" id="adminFooter" style="display:none;">
-            <button class="btn-create-cat" onclick="openCatManager()">⚙ КЕРУВАННЯ КАТЕГОРІЯМИ</button>
+            <button class="btn-admin" onclick="openCreate()">➕ Створити канал</button>
+            <button class="btn-admin" onclick="openCreateForum()">📋 Створити форум</button>
+            <button class="btn-admin" onclick="openCatManager()" style="border-style: solid;">⚙ Категорії</button>
         </div>
     </nav>
 
     <!-- MAIN: CHAT -->
     <main class="chat-area">
         <header class="chat-header">
-            <div class="chat-header-hash">#</div>
+            <div class="chat-header-hash" id="headerIcon">#</div>
             <div class="chat-header-name" id="activeChannelName">ОБЕРІТЬ КАНАЛ</div>
             <div class="chat-header-desc" id="activeChannelDesc"></div>
         </header>
 
         <div id="messages" class="messages-container"></div>
         
-        <div class="input-area-wrapper">
+        <!-- FORUM CONTAINER (Hidden by default) -->
+        <div id="forumContainer" class="forum-container" style="display:none;"></div>
+        
+        <div class="input-area-wrapper" id="inputArea">
             <div id="previewBar" class="preview-bar">
                 <div class="preview-content">
                     <img id="previewThumb" class="preview-thumb" src="">
@@ -299,6 +327,21 @@
     </div>
 </div>
 
+<!-- CREATE FORUM MODAL -->
+<div id="createForumModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">СТВОРИТИ ФОРУМ</div>
+        <label class="modal-label">НАЗВА ФОРУМУ</label>
+        <input type="text" id="newForumName" class="modal-input" placeholder="назва-форуму">
+        <label class="modal-label">КАТЕГОРІЯ</label>
+        <select id="newForumCat" class="modal-select"></select>
+        <div class="btn-group">
+            <button class="btn-modal btn-cancel" onclick="closeCreateForum()">Скасувати</button>
+            <button class="btn-modal btn-save" onclick="createNewForum()">Створити</button>
+        </div>
+    </div>
+</div>
+
 <!-- CATEGORY MANAGER MODAL -->
 <div id="catManagerModal" class="modal-overlay">
     <div class="modal-content" style="max-width: 500px;">
@@ -336,14 +379,12 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // STATE
     let user = null, userData = null, activeChannelId = null, activeChannelData = null;
     let unsubMessages = null;
     let replyTo = null, currentBase64Img = null, allUsers = [];
     let contextMenuTarget = null; 
-    let categoriesMap = {}; // Store categories for easy access
+    let categoriesMap = []; 
 
-    // COLORS FOR MEMBERS
     const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'];
     function getUserColor(name) {
         if (!name) return '#333';
@@ -352,7 +393,6 @@
         return colors[Math.abs(hash) % colors.length];
     }
 
-    // AUTH
     onAuthStateChanged(auth, async (u) => {
         if (u) {
             user = u;
@@ -364,10 +404,9 @@
         } else { window.location.href = "index.html"; }
     });
 
-    // --- 1. MEMBERS (SORTED) ---
+    // --- MEMBERS ---
     async function loadMembers() {
         const list = document.getElementById('membersList');
-        
         onSnapshot(collection(db, "users"), (snap) => {
             let admins = [], fighters = [];
             snap.forEach(d => {
@@ -386,24 +425,19 @@
                 if(u.role === 'admin') admins.push(item);
                 else fighters.push(item);
             });
-
-            // Sort alphabetically
-            admins.sort();
-            fighters.sort();
-
+            admins.sort(); fighters.sort();
             list.innerHTML = '<div class="members-title">АДМІНІСТРАЦІЯ — ' + admins.length + '</div>' + admins.join('') + 
                              '<div class="members-title" style="margin-top:20px;">БІЙЦІ — ' + fighters.length + '</div>' + fighters.join('');
         });
     }
 
-    // --- 2. CHANNELS & CATEGORIES ---
+    // --- CHANNELS ---
     async function loadChannels() {
         const container = document.getElementById('channelListContainer');
         const savedCat = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
-        const savedChannel = localStorage.getItem('lastChatID'); // Try to remember
+        const savedChannel = localStorage.getItem('lastChatID'); 
 
         onSnapshot(query(collection(db, "channels"), orderBy("index", "asc")), (snap) => {
-            // Group channels by category
             const groups = {};
             const uniqueCats = new Set();
             
@@ -415,9 +449,8 @@
                 uniqueCats.add(catName);
             });
 
-            categoriesMap = Array.from(uniqueCats); // Store for creation modal
+            categoriesMap = Array.from(uniqueCats); 
 
-            // Build HTML
             let html = "";
             let firstAvailableChannelId = null;
 
@@ -440,10 +473,11 @@
 
                     const isActive = activeChannelId === ch.id ? 'active' : '';
                     const lockIcon = ch.viewRole === 'admin' ? '🔒' : '';
+                    const icon = ch.type === 'forum' ? '📋' : '#';
                     
                     html += `
                         <li class="channel-item ${isActive}" data-id="${ch.id}" data-category="${catName}">
-                            <span class="channel-icon">#</span>
+                            <span class="channel-icon">${icon}</span>
                             <span>${ch.name}</span>
                             <span style="margin-left:auto; font-size:10px;">${lockIcon}</span>
                             <span class="channel-context-btn" onmousedown="event.stopPropagation(); openContext('${ch.id}', '${catName}')">⚙</span>
@@ -455,22 +489,17 @@
 
             container.innerHTML = html;
 
-            // Admin Footer
             if (userData.role === 'admin') {
-                document.getElementById('adminFooter').style.display = 'block';
+                document.getElementById('adminFooter').style.display = 'flex';
             }
 
-            // Initialize Drag & Drop
             initSortable();
 
-            // Initial Channel Selection Logic
             if (!activeChannelId) {
-                // First load attempt
                 const targetId = savedChannel && document.querySelector(`.channel-item[data-id="${savedChannel}"]`) ? savedChannel : firstAvailableChannelId;
                 if (targetId) selectChannel(targetId);
             }
 
-            // Bind Clicks
             container.querySelectorAll('.channel-item[data-id]').forEach(el => {
                 el.onclick = (e) => {
                     if(e.target.classList.contains('channel-context-btn') || e.target.classList.contains('drag-handle')) return;
@@ -483,58 +512,33 @@
     window.toggleCat = (name) => {
         let collapsed = localStorage.getItem('collapsedCats') ? JSON.parse(localStorage.getItem('collapsedCats')) : [];
         const idx = collapsed.indexOf(name);
-        if (idx > -1) {
-            collapsed.splice(idx, 1);
-        } else {
-            collapsed.push(name);
-        }
+        if (idx > -1) { collapsed.splice(idx, 1); } else { collapsed.push(name); }
         localStorage.setItem('collapsedCats', JSON.stringify(collapsed));
-        
-        // Update UI
         const label = document.querySelector(`.category-label[onclick="window.toggleCat('${name}')"]`);
         const group = document.querySelector(`.channels-group[data-cat="${name}"]`);
-        
         if (label && group) {
-            if (idx > -1) { // Was collapsed, now open
-                label.classList.remove('collapsed');
-                group.style.display = 'block';
-            } else { // Was open, now collapse
-                label.classList.add('collapsed');
-                group.style.display = 'none';
-            }
+            if (idx > -1) { label.classList.remove('collapsed'); group.style.display = 'block'; } 
+            else { label.classList.add('collapsed'); group.style.display = 'none'; }
         }
     };
 
-    // DRAG AND DROP LOGIC
     function initSortable() {
         document.querySelectorAll('.channels-group').forEach(el => {
             if (el.sortableInstance) el.sortableInstance.destroy();
             el.sortableInstance = Sortable.create(el, {
-                group: 'shared', // Allow moving between lists (categories)
-                animation: 150,
-                handle: '.drag-handle', // Only drag by handle
-                ghostClass: 'sortable-ghost',
-                delay: 100, // Prevent accidental drags
+                group: 'shared', animation: 150, handle: '.drag-handle', ghostClass: 'sortable-ghost', delay: 100,
                 onEnd: async (evt) => {
                     const itemEl = evt.item;
-                    const newIndex = evt.newIndex;
-                    const oldIndex = evt.oldIndex;
-                    const newCatList = evt.to; // UL element
-                    const oldCatList = evt.from; // UL element
-                    const newCatName = newCatList.dataset.cat;
+                    const newCatList = evt.to;
                     const channelId = itemEl.dataset.id;
+                    const newCatName = newCatList.dataset.cat;
 
-                    // 1. Update Category if moved
-                    if (newCatList !== oldCatList) {
+                    if (newCatList !== evt.from) {
                         await updateDoc(doc(db, "channels", channelId), { category: newCatName });
                     }
-
-                    // 2. Re-index ALL channels in the new category
                     const batch = writeBatch(db);
                     const allItems = Array.from(newCatList.children);
-                    allItems.forEach((li, idx) => {
-                        batch.update(doc(db, "channels", li.dataset.id), { index: idx }); // Simple index, not global
-                    });
+                    allItems.forEach((li, idx) => batch.update(doc(db, "channels", li.dataset.id), { index: idx }));
                     await batch.commit();
                 }
             });
@@ -548,7 +552,6 @@
     containerList.addEventListener('contextmenu', (e) => {
         e.preventDefault();
         const channelItem = e.target.closest('.channel-item[data-id]');
-        
         contextMenuTarget = channelItem ? 'channel' : 'sidebar';
         const channelId = channelItem ? channelItem.dataset.id : null;
 
@@ -562,8 +565,10 @@
             html += `<div class="context-item danger" onclick="deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
             html += `<div class="context-divider"></div>`;
             html += `<div class="context-item" onclick="openCreate()">➕ Створити канал</div>`;
+            html += `<div class="context-item" onclick="openCreateForum()">📋 Створити форум</div>`;
         } else {
             html += `<div class="context-item" onclick="openCreate()">➕ Створити канал</div>`;
+            html += `<div class="context-item" onclick="openCreateForum()">📋 Створити форум</div>`;
         }
         contextMenu.innerHTML = html;
     });
@@ -573,10 +578,10 @@
         document.getElementById('mentionBox').style.display = 'none';
     });
 
-    // --- 3. CHANNEL LOGIC ---
+    // --- CHANNEL LOGIC ---
     window.selectChannel = async (id) => {
         activeChannelId = id;
-        localStorage.setItem('lastChatID', id); // Save persistence
+        localStorage.setItem('lastChatID', id); 
         const snap = await getDoc(doc(db, "channels", id));
         if(!snap.exists()) return;
         const ch = snap.data();
@@ -585,11 +590,23 @@
         document.getElementById('activeChannelName').innerText = ch.name.toUpperCase();
         document.getElementById('activeChannelDesc').innerText = `Категорія: ${ch.category || 'ГЕНЕРАЛЬНІ'}`;
         
+        // Переключение иконки
+        document.getElementById('headerIcon').innerText = ch.type === 'forum' ? '📋' : '#';
+        
+        // Показ/Скрытие контейнеров
+        document.getElementById('messages').style.display = ch.type === 'forum' ? 'none' : 'flex';
+        document.getElementById('forumContainer').style.display = ch.type === 'forum' ? 'block' : 'none';
+        document.getElementById('inputArea').style.display = ch.type === 'forum' ? 'none' : 'flex';
+
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         const activeItem = document.querySelector(`.channel-item[data-id="${id}"]`);
         if(activeItem) activeItem.classList.add('active');
 
-        loadMessages(id);
+        if(ch.type === 'forum') {
+            loadForum(id);
+        } else {
+            loadMessages(id);
+        }
     };
 
     // --- MESSAGES ---
@@ -605,44 +622,53 @@
                 const m = d.data();
                 const time = m.createdAt ? m.createdAt.toMillis() : 0;
                 const isGrouped = (lastAuthor === m.author && (time - lastTime) < 300000);
-                
                 html += `
                     <div class="msg ${isGrouped ? 'grouped' : ''}" id="msg-${d.id}">
-                        ${!isGrouped ? `
-                            <div class="msg-header">
-                                <span class="msg-author">${m.author}</span>
-                                <span class="msg-time">${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
-                        ` : ''}
+                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author">${m.author}</span><span class="msg-time">${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span></div>` : ''}
                         ${m.replyTo ? `<div class="reply-block" onclick="scrollToMsg('${m.replyTo.id}')">↩ Відповідь на ${m.replyTo.author}</div>` : ""}
                         <div class="msg-content">${formatText(m.text)}</div>
                         ${m.imageUrl ? `<img src="${m.imageUrl}" class="msg-image" onclick="openLightbox('${m.imageUrl}')">` : ""}
-                        
                         <div class="msg-actions">
                             <button class="action-btn" onclick="startReply('${d.id}', '${m.author.replace(/'/g, "\\'")}', \`${m.text.replace(/`/g, "\\`")}\`)">↩</button>
                             ${m.uid === user.uid ? `<button class="action-btn" onclick="editMessage('${d.id}', \`${m.text.replace(/`/g, "\\`")}\`)">✎</button>` : ''}
                             ${userData.role === 'admin' ? `<button class="action-btn delete" onclick="deleteMessage('${d.id}')">✕</button>` : ''}
                         </div>
-                    </div>
-                `;
-                lastAuthor = m.author;
-                lastTime = time;
+                    </div>`;
+                lastAuthor = m.author; lastTime = time;
             });
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
         });
     }
 
+    // --- FORUM (SIMPLE VIEW) ---
+    function loadForum(channelId) {
+        const container = document.getElementById('forumContainer');
+        const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "desc")); // Newest posts first
+        // Используем один и тот же слушатель для форума и чата, unsubscribe старый
+        if(unsubMessages) unsubMessages();
+        unsubMessages = onSnapshot(q, (snap) => {
+            let html = "";
+            if(snap.empty) html = "<div style='text-align:center; color:#555; margin-top:50px;'>Форум пустий. Створіть першу тему!</div>";
+            snap.forEach(d => {
+                const p = d.data();
+                const time = p.createdAt ? new Date(p.createdAt.toMillis()).toLocaleDateString() : '';
+                html += `
+                    <div class="forum-post-item" onclick="alert('Переглядаємо пост ID: ${d.id}')">
+                        <div class="forum-post-title">${formatText(p.text).substring(0, 50)}...</div>
+                        <div class="forum-post-meta">Автор: ${p.author} | ${time}</div>
+                    </div>`;
+            });
+            container.innerHTML = html;
+        });
+    }
+
     window.scrollToMsg = (id) => {
         const el = document.getElementById(`msg-${id}`);
-        if(el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            el.classList.remove('msg-highlighted'); void el.offsetWidth;
-            el.classList.add('msg-highlighted');
-        }
+        if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('msg-highlighted'); void el.offsetWidth; el.classList.add('msg-highlighted'); }
     };
 
-    // --- INPUT & MENTIONS ---
+    // --- INPUT ---
     const msgInput = document.getElementById('msgInput');
     const mentionBox = document.getElementById('mentionBox');
 
@@ -661,11 +687,7 @@
         if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
         let html = '';
         filtered.forEach(name => {
-            html += `
-                <div class="mention-item" onclick="selectMention('${name}')">
-                    <div class="mention-avatar" style="background:${getUserColor(name)}">${name[0]}</div>
-                    <span>${name}</span>
-                </div>`;
+            html += `<div class="mention-item" onclick="selectMention('${name}')"><div class="mention-avatar" style="background:${getUserColor(name)}">${name[0]}</div><span>${name}</span></div>`;
         });
         mentionBox.innerHTML = html;
         mentionBox.style.display = 'block';
@@ -682,13 +704,10 @@
     msgInput.addEventListener('paste', (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let i in items) {
-            if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) {
-                processImage(items[i].getAsFile());
-            }
+            if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) processImage(items[i].getAsFile());
         }
     });
 
-    // --- EDIT/REPLY/SEND ---
     let editModeId = null;
     window.startReply = (id, author, text) => {
         replyTo = { id, author, text };
@@ -721,7 +740,6 @@
         replyTo = null; cancelImage();
     };
 
-    // --- IMAGES ---
     async function loadUsersList() {
         const s = await getDocs(collection(db, "users"));
         allUsers = []; s.forEach(d => allUsers.push(d.data().name));
@@ -790,16 +808,32 @@
         if(!name) return alert("Введіть назву");
         const s = await getDocs(collection(db, "channels"));
         await addDoc(collection(db, "channels"), {
-            name: name.toUpperCase(),
-            index: s.size,
-            category: cat || "ГЕНЕРАЛЬНІ",
-            viewRole: 'all',
-            writeRole: 'all'
+            name: name.toUpperCase(), index: s.size, category: cat || "ГЕНЕРАЛЬНІ", viewRole: 'all', writeRole: 'all', type: 'text'
         });
         closeCreate();
     };
 
-    // --- CATEGORY MANAGEMENT ---
+    // --- FORUM LOGIC ---
+    window.openCreateForum = () => {
+        const select = document.getElementById('newForumCat');
+        select.innerHTML = categoriesMap.map(c => `<option value="${c}">${c}</option>`).join('');
+        document.getElementById('newForumName').value = "";
+        document.getElementById('createForumModal').style.display = 'flex';
+    };
+    window.closeCreateForum = () => document.getElementById('createForumModal').style.display = 'none';
+
+    window.createNewForum = async () => {
+        const name = document.getElementById('newForumName').value.trim();
+        const cat = document.getElementById('newForumCat').value;
+        if(!name) return alert("Введіть назву");
+        const s = await getDocs(collection(db, "channels"));
+        await addDoc(collection(db, "channels"), {
+            name: name.toUpperCase(), index: s.size, category: cat || "ГЕНЕРАЛЬНІ", viewRole: 'all', writeRole: 'all', type: 'forum'
+        });
+        closeCreateForum();
+    };
+
+    // --- CATEGORY MANAGER ---
     window.openCatManager = () => {
         renderCatList();
         document.getElementById('catManagerModal').style.display = 'flex';
@@ -822,21 +856,10 @@
     window.createCategory = async () => {
         const name = document.getElementById('newCatNameInput').value.trim().toUpperCase();
         if(!name) return;
-        // Logic: just create a dummy channel with this category to make it appear, or trust the user to create one.
-        // Better: Just add to the map? No, map is derived from channels.
-        // Simplest: Create a placeholder channel or alert user to create channel.
-        alert(`Категорія "${name}" додана. Тепер створіть канал і виберіть цю категорію.`);
-        closeCatManager();
-        // To actually make it appear in the list immediately, we'd need a separate 'categories' collection, 
-        // but for current structure, we'll just assume user creates a channel.
-        // Wait, let's force a channel creation so the category exists.
         const s = await getDocs(collection(db, "channels"));
         await addDoc(collection(db, "channels"), {
-            name: "ОПИСАНИЕ КАТЕГОРИИ",
-            index: s.size + 1,
-            category: name,
-            viewRole: 'admin', // Hidden for now
-            writeRole: 'admin'
+            name: "ОПИСАНИЕ КАТЕГОРИИ", index: s.size + 1,
+            category: name, viewRole: 'admin', writeRole: 'admin', type: 'text'
         });
         document.getElementById('newCatNameInput').value = "";
         closeCatManager();
@@ -849,6 +872,9 @@
             const batch = writeBatch(db);
             snap.forEach(d => batch.update(doc(db, "channels", d.id), { category: newName }));
             await batch.commit();
+            // Обновляем локальный массив, чтобы перерисовать модалку
+            const idx = categoriesMap.indexOf(oldName);
+            if(idx !== -1) categoriesMap[idx] = newName;
             renderCatList();
         }
     };
@@ -859,9 +885,11 @@
         const batch = writeBatch(db);
         snap.forEach(d => batch.delete(doc(db, "channels", d.id)));
         await batch.commit();
+        // Удаляем из локального массива
+        const idx = categoriesMap.indexOf(catName);
+        if(idx !== -1) categoriesMap.splice(idx, 1);
         renderCatList();
     };
-
 </script>
 </body>
 </html>
