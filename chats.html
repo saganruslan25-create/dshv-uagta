@@ -155,13 +155,13 @@
         .msg-header { display: flex; align-items: baseline; margin-bottom: 4px; margin-top: 10px; }
         .msg-author { font-weight: 800; color: var(--primary-bright); margin-right: 10px; cursor: pointer; text-transform: uppercase; font-size: 13px; }
         .msg-time { font-size: 10px; color: #555; font-weight: 700; }
-        .msg-date { font-size: 10px; color: #666; margin-left: 8px; font-weight: 700; } /* NEW: DATE */
+        .msg-date { font-size: 10px; color: #666; margin-left: 8px; font-weight: 700; } /* DATE */
         .msg-content { color: #ddd; font-size: 14px; white-space: pre-wrap; word-wrap: break-word; line-height: 1.4; }
         .mention { background: rgba(34, 197, 94, 0.15); color: var(--primary-bright); padding: 0 4px; border-radius: 4px; font-weight: 700; cursor: pointer; }
         .mention:hover { background: var(--primary); color: black; }
         .reply-block { border-left: 3px solid var(--primary); background: rgba(34, 197, 94, 0.05); padding: 4px 10px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; max-width: fit-content; font-style: italic; }
         .reply-block:hover { background: rgba(34, 197, 94, 0.1); }
-        .reply-content { color: #ccc; margin-top: 2px; display: block; } /* NEW: REPLY TEXT TRUNCATED */
+        .reply-content { color: #ccc; margin-top: 2px; display: block; }
         .msg-image { max-width: 400px; max-height: 300px; border-radius: 8px; margin-top: 10px; display: block; cursor: zoom-in; border: 1px solid var(--glass-border); margin-bottom: 5px; }
 
         /* MESSAGE ACTIONS */
@@ -194,7 +194,7 @@
         /* INPUT AREA */
         .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
         .input-read-only { text-align: center; color: var(--text-gray); font-size: 12px; font-style: italic; margin-bottom: 5px; display: none; }
-        /* PREVIEW BAR (UPDATED FOR MULTIPLE) */
+        /* PREVIEW BAR */
         .preview-bar { display: none; background: rgba(10, 12, 16, 0.8); padding: 8px; border-radius: 12px 12px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; margin-bottom: 0; flex-wrap: wrap; gap: 5px;}
         .preview-content { display: flex; align-items: center; gap: 10px; position: relative; }
         .preview-thumb { height: 40px; border-radius: 4px; border: 1px solid var(--primary); cursor: pointer;}
@@ -486,14 +486,13 @@
     let user = null, userData = null, activeChannelId = null, activeChannelData = null;
     let unsubMessages = null;
     let replyTo = null;
-    // CHANGED: Now supports multiple images
     let uploadedImages = []; 
     let allUsers = [];
     let contextMenuTarget = null; 
     let categoriesMap = []; 
     
-    // CHANGED: For unread system
-    let userReadStatus = {}; // Stores { channelId: lastSeenTimestamp }
+    // Unread system
+    let userReadStatus = {};
     let unsubReadStatus = null;
 
     const colors = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -513,31 +512,23 @@
             loadMembers();
             loadUsersList();
             
-            // Listen for unread status
             if(unsubReadStatus) unsubReadStatus();
             unsubReadStatus = onSnapshot(collection(db, "users", u.uid, "readStatus"), (snap) => {
                 userReadStatus = {};
                 snap.forEach(d => {
                     userReadStatus[d.id] = d.data().lastSeen?.toMillis() || 0;
-                    // Trigger sidebar update for class change
-                    updateSidebarUnreadState();
                 });
-                // Trigger initial check
                 updateSidebarUnreadState();
-                if (!activeChannelId) {
-                     // Handle first channel selection if needed
-                }
             });
+            updateSidebarUnreadState();
         } else { window.location.href = "index.html"; }
     });
 
     function updateSidebarUnreadState() {
         document.querySelectorAll('.channel-item[data-id]').forEach(el => {
             const chId = el.dataset.id;
-            // Note: dataset.lastMsgTime would be set during loadChannels render
             const chLastMsg = parseInt(el.getAttribute('data-last-msg-time') || 0;
             const userSeen = userReadStatus[chId] || 0;
-            
             if (chLastMsg > userSeen) {
                 el.classList.add('unread');
             } else {
@@ -585,9 +576,8 @@
             
             snap.forEach(d => {
                 const ch = d.data();
-                if (ch.parentId) return; // Hide sub-channels from sidebar
+                if (ch.parentId) return; 
 
-                // CHECK: VIEW ROLE ONLY. 
                 if (userData.role !== 'admin') {
                     if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
                 }
@@ -624,10 +614,10 @@
                     const icon = ch.type === 'forum' ? '📋' : '#';
                     
                     const isAdmin = userData.role === 'admin';
-                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openContext('${ch.id}', '${catName}')">⚙</span>` : '';
+                    // FIX: Changed openContext to window.openSettings
+                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openSettings('${ch.id}')">⚙</span>` : '';
                     const dragBtn = isAdmin ? `<span class="drag-handle">⋮⋮</span>` : '';
 
-                    // Add data attribute for unread logic
                     const lastMsgTime = ch.lastMessageTime ? ch.lastMessageTime.toMillis() : 0;
 
                     html += `
@@ -643,6 +633,8 @@
             }
 
             container.innerHTML = html;
+
+            updateSidebarUnreadState();
 
             if (userData.role === 'admin') {
                 document.getElementById('adminFooter').style.display = 'flex';
@@ -778,12 +770,10 @@
 
         document.getElementById('activeChannelName').innerText = ch.name.toUpperCase();
         
-        // Mobile sidebar: close after selection
         if(window.innerWidth <= 768) {
             document.getElementById('sidebar').classList.remove('active');
         }
 
-        // Buttons Visibility
         const backBtn = document.getElementById('btnBack');
         const createBtn = document.getElementById('btnForumCreate');
         
@@ -793,7 +783,6 @@
         document.getElementById('activeChannelDesc').innerText = ch.category ? `Категорія: ${ch.category}` : '';
         document.getElementById('headerIcon').innerText = '#';
         
-        // CHECK WRITE ROLE
         const inputArea = document.getElementById('inputArea');
         const readOnlyMsg = document.getElementById('readOnlyMsg');
         
@@ -808,7 +797,6 @@
         document.getElementById('messages').style.display = 'none';
         document.getElementById('forumContainer').style.display = 'none';
 
-        // Sidebar Highlight Logic
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         
         let itemToHighlight = null;
@@ -819,9 +807,7 @@
         }
         if(itemToHighlight) itemToHighlight.classList.add('active');
 
-        // Unread Logic: Update lastSeen for this channel
         setDoc(doc(db, "users", user.uid, "readStatus", id), { lastSeen: serverTimestamp() }, { merge: true });
-        // Update local state immediately for visual feedback
         userReadStatus[id] = Date.now();
         updateSidebarUnreadState();
 
@@ -851,13 +837,12 @@
             let html = "";
             let lastAuthor = null, lastTime = 0;
             snap.docChanges().forEach(change => {
-                // Update channel's lastMessageTime if this is the latest message
                 if (change.type === "added") {
                     const msg = change.doc.data();
                     const time = msg.createdAt ? msg.createdAt.toMillis() : 0;
                     const lastKnownTime = (activeChannelData.lastMessageTime?.toMillis() || 0);
                     if (time > lastKnownTime) {
-                        updateDoc(doc(db, "channels", channelId), { lastMessageTime: serverTimestamp() }); // This triggers sidebar update
+                        updateDoc(doc(db, "channels", channelId), { lastMessageTime: serverTimestamp() });
                     }
                 }
             });
@@ -866,7 +851,6 @@
                 const time = m.createdAt ? m.createdAt.toMillis() : 0;
                 const isGrouped = (lastAuthor === m.author && (time - lastTime) < 300000);
                 
-                // Images support
                 let imagesHtml = "";
                 if (Array.isArray(m.imageUrls)) {
                     imagesHtml = m.imageUrls.map(url => `<img src="${url}" class="msg-image" onclick="window.openLightbox('${url}')">`).join('');
@@ -874,7 +858,6 @@
                     imagesHtml = `<img src="${m.imageUrl}" class="msg-image" onclick="window.openLightbox('${m.imageUrl}')">`;
                 }
 
-                // Date support
                 const dateStr = !isGrouped ? `<span class="msg-date">${new Date(time).toLocaleDateString()}</span>` : '';
 
                 html += `
@@ -896,7 +879,7 @@
         });
     }
 
-    // --- FORUM (LOAD SUB-CHANNELS WITH DRAGGABLE & CLICK FIX) ---
+    // --- FORUM (LOAD SUB-CHANNELS) ---
     function loadForum(parentId) {
         const container = document.getElementById('forumContainer');
         const q = query(collection(db, "channels"), where("parentId", "==", parentId));
@@ -907,7 +890,6 @@
             if(snap.empty) {
                 html = "<div style='text-align:center; color:#555; margin-top:50px;'>Немає тем. Натисніть ПКМ щоб створити.</div>";
             } else {
-                // Sort by index (Draggable order)
                 const sortedDocs = snap.docs.sort((a, b) => {
                     const idxA = a.data().index || 0;
                     const idxB = b.data().index || 0;
@@ -917,12 +899,18 @@
                 sortedDocs.forEach(d => {
                     const ch = d.data();
                     const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
-                    // Removed inline onclick here
+                    let previewHtml = "";
+                    if (Array.isArray(ch.imageUrls) && ch.imageUrls.length > 0) {
+                        previewHtml = `🖐 ${ch.imageUrls.length}`;
+                    } else if (ch.imageUrl) {
+                        previewHtml = `🖐 1`;
+                    }
+
                     html += `
                         <div class="forum-thread-item" data-id="${d.id}">
                             <div class="thread-info">
                                 <div class="thread-title"># ${ch.name}</div>
-                                <div class="thread-meta">${ch.description || ''}</div>
+                                <div class="thread-meta">${ch.description || ''} ${previewHtml}</div>
                             </div>
                             <div class="thread-stats">
                                 <span style="margin-right:8px;">Створець: ${ch.author || 'Система'}</span>
@@ -932,36 +920,6 @@
                 });
             }
             container.innerHTML = html;
-
-            // Attach Click Listeners (Delegation) to prevent drag conflict
-            container.querySelectorAll('.forum-thread-item').forEach(el => {
-                el.onclick = (e) => {
-                    if (e.target.closest('.thread-drag-handle')) return; // Don't switch if dragging
-                    selectChannel(el.dataset.id);
-                };
-            });
-
-            // Init Sortable for Threads
-            if (userData.role === 'admin') {
-                if (container.sortableInstance) container.sortableInstance.destroy();
-                container.sortableInstance = Sortable.create(container, {
-                    animation: 150,
-                    handle: '.thread-drag-handle',
-                    ghostClass: 'sortable-ghost',
-                    delay: 100,
-                    onEnd: async (evt) => {
-                        const itemEl = evt.item;
-                        const newIndex = evt.newIndex;
-                        const channelId = itemEl.dataset.id;
-                        
-                        // Update all threads in this forum
-                        const batch = writeBatch(db);
-                        const allItems = Array.from(container.children);
-                        allItems.forEach((li, idx) => batch.update(doc(db, "channels", li.dataset.id), { index: idx }));
-                        await batch.commit();
-                    }
-                });
-            }
         });
     }
 
@@ -970,7 +928,63 @@
         if(el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.remove('msg-highlighted'); void el.offsetWidth; el.classList.add('msg-highlighted'); }
     };
 
-    // --- INPUT ---
+    // --- INPUT (MULTIPLE IMAGES) ---
+    window.handleImageSelect = (input) => {
+        const files = input.files;
+        if (files) {
+            Array.from(files).forEach(processImage);
+        }
+    };
+
+    function processImage(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height, max = 1000;
+                if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                uploadedImages.push(base64);
+                renderPreviews();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function renderPreviews() {
+        const bar = document.getElementById('previewBar');
+        if (uploadedImages.length === 0) {
+            bar.style.display = 'none';
+        } else {
+            bar.style.display = 'flex';
+            let html = '';
+            uploadedImages.forEach((img, idx) => {
+                html += `
+                    <div class="preview-content">
+                        <img src="${img}" class="preview-thumb" onclick="window.openLightbox('${img}')">
+                        <div class="preview-close" onclick="removePreviewImage(${idx})">✕</div>
+                    </div>
+                `;
+            });
+            bar.innerHTML = html;
+        }
+    }
+
+    window.removePreviewImage = (index) => {
+        uploadedImages.splice(index, 1);
+        renderPreviews();
+    };
+
+    window.cancelImage = () => {
+        uploadedImages = [];
+        renderPreviews();
+    };
+    
+    // --- MENTIONS ---
     const msgInput = document.getElementById('msgInput');
     const mentionBox = document.getElementById('mentionBox');
     msgInput.addEventListener('input', function() {
@@ -1015,7 +1029,6 @@
         editModeId = id;
         msgInput.value = text;
         msgInput.placeholder = "Редагування повідомлення...";
-        // FIX: Auto resize input
         msgInput.style.height = 'auto';
         msgInput.style.height = msgInput.scrollHeight + 'px';
         msgInput.focus();
@@ -1030,20 +1043,17 @@
         const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
         if(replyTo) data.replyTo = replyTo;
         
-        // FIX IMAGE PRESERVATION & REMOVED BROKEN BATCH LOGIC
+        if (uploadedImages.length > 0) {
+            data.imageUrls = uploadedImages;
+        }
+        
         if (editModeId) {
-            // In edit mode, preserve existing images if not explicitly cleared
-            // For simplicity here, we send what we have (text + new images)
             const updateData = { text: text, edited: true };
             if (uploadedImages.length > 0) updateData.imageUrls = uploadedImages;
-            // We don't support editing images array here to keep it simple in one file
             await updateDoc(doc(db, "channels", activeChannelId, "messages", editModeId), updateData);
             editModeId = null;
         } else {
-            if(currentBase64Img) data.imageUrl = currentBase64Img;
-            if (uploadedImages.length > 0) data.imageUrls = uploadedImages;
             await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
-            // Update channel time
             await updateDoc(doc(db, "channels", activeChannelId), { lastMessageTime: serverTimestamp() });
         }
         msgInput.value = ""; 
@@ -1051,63 +1061,13 @@
         msgInput.placeholder = "Написати повідомлення...";
         replyTo = null; 
         cancelImage();
-        
-        // Reset preview
         document.getElementById('previewBar').style.display = 'none';
     };
+
     async function loadUsersList() {
         const s = await getDocs(collection(db, "users"));
         allUsers = []; s.forEach(d => allUsers.push(d.data().name));
     }
-    function processImage(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height, max = 1000;
-                if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                const base64 = canvas.toDataURL('image/jpeg', 0.7);
-                uploadedImages.push(base64);
-                renderPreviews();
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-    window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); if (i.files.length > 1) Array.from(i.files).forEach(processImage); };
-    function renderPreviews() {
-        const bar = document.getElementById('previewBar');
-        if (uploadedImages.length === 0) {
-            bar.style.display = 'none';
-        } else {
-            bar.style.display = 'flex';
-            let html = '';
-            uploadedImages.forEach((img, idx) => {
-                html += `
-                        <div class="preview-content">
-                            <img src="${img}" class="preview-thumb" onclick="window.openLightbox('${img}')">
-                            <div class="preview-close" onclick="removePreviewImage(${idx})">✕</div>
-                        </div>
-                    `;
-            });
-            bar.innerHTML = html;
-        }
-    }
-    window.removePreviewImage = (index) => {
-        uploadedImages.splice(index, 1);
-        renderPreviews();
-    };
-
-    window.cancelImage = () => {
-        uploadedImages = []; // RESET ARRAY
-        renderPreviews();
-    };
-    
-    // Old image logic keep for compatibility if needed, but we focus on uploadedImages array
-    let currentBase64Img = null; 
 
     window.mentionUser = (n) => { msgInput.value += `@${n} `; msgInput.focus(); };
     window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
@@ -1145,6 +1105,7 @@
     };
 
     window.openCreate = () => {
+        if(userData.role !== 'admin') { alert("Доступ заборонено"); return; }
         const select = document.getElementById('newChannelCat');
         select.innerHTML = categoriesMap.map(c => `<option value="${c}">${c}</option>`).join('');
         document.getElementById('newChannelName').value = "";
@@ -1165,6 +1126,7 @@
 
     // --- FORUM ---
     window.openCreateForum = () => {
+        if(userData.role !== 'admin') { alert("Доступ заборонено"); return; }
         const select = document.getElementById('newForumCat');
         select.innerHTML = categoriesMap.map(c => `<option value="${c}">${c}</option>`).join('');
         document.getElementById('newForumName').value = "";
@@ -1201,7 +1163,7 @@
             description: desc,
             parentId: activeChannelId, 
             index: threadsSnap.size, 
-            category: activeChannelData.category,
+            category: activeChannelData.category, 
             viewRole: 'all',
             writeRole: 'all',
             type: 'text',
@@ -1292,7 +1254,6 @@
     };
 
     document.getElementById('chatArea').addEventListener('click', (e) => {
-        // If mobile and sidebar is open, close it
         if (window.innerWidth <= 768) {
             const sidebar = document.getElementById('sidebar');
             if (sidebar.classList.contains('active') && e.target.closest('.mobile-toggle-btn') === null) {
