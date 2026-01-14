@@ -161,7 +161,7 @@
         .mention:hover { background: var(--primary); color: black; }
         .reply-block { border-left: 3px solid var(--primary); background: rgba(34, 197, 94, 0.05); padding: 4px 10px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; max-width: fit-content; font-style: italic; }
         .reply-block:hover { background: rgba(34, 197, 94, 0.1); }
-        .reply-content { color: #ccc; margin-top: 2px; display: block; } /* REPLY TEXT TRUNCATED */
+        .reply-content { color: #ccc; margin-top: 2px; display: block; } /* NEW: REPLY TEXT TRUNCATED */
         .msg-image { max-width: 400px; max-height: 300px; border-radius: 8px; margin-top: 10px; display: block; cursor: zoom-in; border: 1px solid var(--glass-border); margin-bottom: 5px; }
 
         /* MESSAGE ACTIONS */
@@ -194,7 +194,7 @@
         /* INPUT AREA */
         .input-area-wrapper { padding: 0 20px 20px 20px; background: var(--bg); display: flex; flex-direction: column; flex-shrink: 0; z-index: 10; }
         .input-read-only { text-align: center; color: var(--text-gray); font-size: 12px; font-style: italic; margin-bottom: 5px; display: none; }
-        /* PREVIEW BAR */
+        /* PREVIEW BAR (UPDATED FOR MULTIPLE) */
         .preview-bar { display: none; background: rgba(10, 12, 16, 0.8); padding: 8px; border-radius: 12px 12px 0 0; border: 1px solid var(--glass-border); border-bottom: none; align-items: center; margin-bottom: 0; flex-wrap: wrap; gap: 5px;}
         .preview-content { display: flex; align-items: center; gap: 10px; position: relative; }
         .preview-thumb { height: 40px; border-radius: 4px; border: 1px solid var(--primary); cursor: pointer;}
@@ -275,7 +275,6 @@
         .forum-empty-icon { font-size: 40px; margin-bottom: 15px; opacity: 0.5; }
         .forum-empty-text { color: var(--text-gray); font-weight: 700; }
 
-        /* Sortable Handle for Threads */
         .thread-drag-handle { cursor: grab; opacity: 0; margin-left: 10px; font-size: 12px; color: #444; padding: 5px;}
         .forum-thread-item:hover .thread-drag-handle { opacity: 1; }
 
@@ -335,7 +334,6 @@
 
         <div id="messages" class="messages-container"></div>
         
-        <!-- FORUM CONTAINER -->
         <div id="forumContainer" class="forum-container" style="display:none;"></div>
         
         <div class="input-area-wrapper" id="inputArea">
@@ -483,10 +481,12 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // --- FIX: GLOBAL CACHE FOR SAFE MESSAGE HANDLING ---
+    window.messageCache = {};
+
     let user = null, userData = null, activeChannelId = null, activeChannelData = null;
     let unsubMessages = null;
     let replyTo = null;
-    // Multiple images support
     let uploadedImages = []; 
     let allUsers = [];
     let contextMenuTarget = null; 
@@ -513,20 +513,14 @@
             loadMembers();
             loadUsersList();
             
-            // Listen for unread status
             if(unsubReadStatus) unsubReadStatus();
             unsubReadStatus = onSnapshot(collection(db, "users", u.uid, "readStatus"), (snap) => {
                 userReadStatus = {};
                 snap.forEach(d => {
                     userReadStatus[d.id] = d.data().lastSeen?.toMillis() || 0;
-                    // Trigger sidebar update for class change
                     updateSidebarUnreadState();
                 });
-                // Trigger initial check
                 updateSidebarUnreadState();
-                if (!activeChannelId) {
-                     // Handle first channel selection if needed
-                }
             });
         } else { window.location.href = "index.html"; }
     });
@@ -552,10 +546,8 @@
             snap.forEach(d => {
                 const u = d.data();
                 const color = u.role === 'admin' ? 'var(--primary)' : getUserColor(u.name);
-                // Escape quotes in name for inline handler
-                const safeName = u.name.replace(/'/g, "\\'");
                 const item = `
-                    <div class="member-item" onclick="window.mentionUser('${safeName}')">
+                    <div class="member-item" onclick="window.mentionUser('${u.name}')">
                         <div class="member-avatar" style="background:${color}">
                             ${u.name.charAt(0).toUpperCase()}
                         </div>
@@ -585,7 +577,7 @@
             
             snap.forEach(d => {
                 const ch = d.data();
-                if (ch.parentId) return; // Hide sub-channels from sidebar
+                if (ch.parentId) return; 
 
                 if (userData.role !== 'admin') {
                     if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
@@ -623,15 +615,14 @@
                     const icon = ch.type === 'forum' ? '📋' : '#';
                     
                     const isAdmin = userData.role === 'admin';
-                    // ESCAPE ID to fix Syntax Error
-                    const safeId = ch.id.replace(/'/g, "\\'");
-                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openSettings('${safeId}')">⚙</span>` : '';
+                    // Pass ID safely to window.openSettings. ID is usually safe (UUID), but using replace is extra safe.
+                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openSettings('${ch.id}')">⚙</span>` : '';
                     const dragBtn = isAdmin ? `<span class="drag-handle">⋮⋮</span>` : '';
 
                     const lastMsgTime = ch.lastMessageTime ? ch.lastMessageTime.toMillis() : 0;
 
                     html += `
-                        <li class="channel-item ${isActive}" data-id="${safeId}" data-category="${catName}" data-last-msg-time="${lastMsgTime}">
+                        <li class="channel-item ${isActive}" data-id="${ch.id}" data-category="${catName}" data-last-msg-time="${lastMsgTime}">
                             <span class="channel-icon">${icon}</span>
                             <span>${ch.name}</span>
                             <span style="margin-left:auto; font-size:10px;">${lockIcon}</span>
@@ -643,6 +634,7 @@
             }
 
             container.innerHTML = html;
+            updateSidebarUnreadState();
 
             if (userData.role === 'admin') {
                 document.getElementById('adminFooter').style.display = 'flex';
@@ -718,11 +710,9 @@
         const isAdmin = userData.role === 'admin';
 
         if (contextMenuTarget === 'channel') {
-            // ESCAPE ID
-            const safeId = channelId ? channelId.replace(/'/g, "\\'") : '';
             if (isAdmin) {
-                html += `<div class="context-item" onclick="window.openSettings('${safeId}')">⚙ Налаштувати канал</div>`;
-                html += `<div class="context-item danger" onclick="window.deleteChannel('${safeId}')">🗑 Видалити канал</div>`;
+                html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати канал</div>`;
+                html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
                 html += `<div class="context-divider"></div>`;
             }
             html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
@@ -749,10 +739,10 @@
             const isAdmin = userData.role === 'admin';
 
             if (threadItem) {
-                const safeId = threadItem.dataset.id ? threadItem.dataset.id.replace(/'/g, "\\'") : '';
+                const channelId = threadItem.dataset.id;
                 if (isAdmin) {
-                    html += `<div class="context-item" onclick="window.openSettings('${safeId}')">⚙ Налаштувати</div>`;
-                    html += `<div class="context-item danger" onclick="window.deleteChannel('${safeId}')">🗑 Видалити канал</div>`;
+                    html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати</div>`;
+                    html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
                     html += `<div class="context-divider"></div>`;
                 }
                 html += `<div class="context-item" onclick="window.openCreateSub()">➕ Створити під-канал</div>`;
@@ -780,12 +770,10 @@
 
         document.getElementById('activeChannelName').innerText = ch.name.toUpperCase();
         
-        // Mobile sidebar: close after selection
         if(window.innerWidth <= 768) {
             document.getElementById('sidebar').classList.remove('active');
         }
 
-        // Buttons Visibility
         const backBtn = document.getElementById('btnBack');
         const createBtn = document.getElementById('btnForumCreate');
         
@@ -795,7 +783,6 @@
         document.getElementById('activeChannelDesc').innerText = ch.category ? `Категорія: ${ch.category}` : '';
         document.getElementById('headerIcon').innerText = '#';
         
-        // CHECK WRITE ROLE
         const inputArea = document.getElementById('inputArea');
         const readOnlyMsg = document.getElementById('readOnlyMsg');
         
@@ -810,7 +797,6 @@
         document.getElementById('messages').style.display = 'none';
         document.getElementById('forumContainer').style.display = 'none';
 
-        // Sidebar Highlight Logic
         document.querySelectorAll('.channel-item').forEach(el => el.classList.remove('active'));
         
         let itemToHighlight = null;
@@ -821,9 +807,7 @@
         }
         if(itemToHighlight) itemToHighlight.classList.add('active');
 
-        // Unread Logic: Update lastSeen for this channel
         setDoc(doc(db, "users", user.uid, "readStatus", id), { lastSeen: serverTimestamp() }, { merge: true });
-        // Update local state immediately for visual feedback
         userReadStatus[id] = Date.now();
         updateSidebarUnreadState();
 
@@ -853,15 +837,20 @@
             let html = "";
             let lastAuthor = null, lastTime = 0;
             
-            // Check for new messages to update channel timestamp
+            // CHECK: UPDATE CHANNEL TIME & UPDATE CACHE
             snap.docChanges().forEach(change => {
                 if (change.type === "added") {
                     const msg = change.doc.data();
                     const time = msg.createdAt ? msg.createdAt.toMillis() : 0;
                     const lastKnownTime = (activeChannelData.lastMessageTime?.toMillis() || 0);
                     if (time > lastKnownTime) {
-                        updateDoc(doc(db, "channels", channelId), { lastMessageTime: serverTimestamp() }); // This triggers sidebar update
+                        updateDoc(doc(db, "channels", channelId), { lastMessageTime: serverTimestamp() });
                     }
+                    // Populate global cache
+                    window.messageCache[change.doc.id] = {
+                        author: msg.author,
+                        text: msg.text
+                    };
                 }
             });
 
@@ -870,6 +859,11 @@
                 const time = m.createdAt ? m.createdAt.toMillis() : 0;
                 const isGrouped = (lastAuthor === m.author && (time - lastTime) < 300000);
                 
+                // Update cache on load as well
+                if (!window.messageCache[d.id]) {
+                    window.messageCache[d.id] = { author: m.author, text: m.text };
+                }
+
                 let imagesHtml = "";
                 if (Array.isArray(m.imageUrls)) {
                     imagesHtml = m.imageUrls.map(url => `<img src="${url}" class="msg-image" onclick="window.openLightbox('${url}')">`).join('');
@@ -886,8 +880,9 @@
                         <div class="msg-content">${window.formatText(m.text)}</div>
                         ${imagesHtml}
                         <div class="msg-actions">
-                            <button class="action-btn" onclick="window.startReply('${d.id}', '${m.author.replace(/'/g, "\\'")}', \`${m.text.replace(/`/g, "\\`")}\`)">↩</button>
-                            ${m.uid === user.uid ? `<button class="action-btn" onclick="window.editMessage('${d.id}', \`${m.text.replace(/`/g, "\\`")}\`)">✎</button>` : ''}
+                            <!-- SAFE: ONLY PASS ID -->
+                            <button class="action-btn" onclick="window.startReply('${d.id}')">↩</button>
+                            ${m.uid === user.uid ? `<button class="action-btn" onclick="window.editMessage('${d.id}')">✎</button>` : ''}
                             ${userData.role === 'admin' ? `<button class="action-btn delete" onclick="window.deleteMessage('${d.id}')">✕</button>` : ''}
                         </div>
                     </div>`;
@@ -909,7 +904,6 @@
             if(snap.empty) {
                 html = "<div style='text-align:center; color:#555; margin-top:50px;'>Немає тем. Натисніть ПКМ щоб створити.</div>";
             } else {
-                // Sort by index (Draggable order)
                 const sortedDocs = snap.docs.sort((a, b) => {
                     const idxA = a.data().index || 0;
                     const idxB = b.data().index || 0;
@@ -919,16 +913,18 @@
                 sortedDocs.forEach(d => {
                     const ch = d.data();
                     const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
+                    
+                    // Images
                     let previewHtml = "";
                     if (Array.isArray(ch.imageUrls) && ch.imageUrls.length > 0) {
                         previewHtml = `🖐 ${ch.imageUrls.length}`;
                     } else if (ch.imageUrl) {
                         previewHtml = `🖐 1`;
                     }
-                    // ESCAPE ID for inline handler
-                    const safeId = ch.id.replace(/'/g, "\\'");
+
+                    // Use data-id for clean handler
                     html += `
-                        <div class="forum-thread-item" data-id="${safeId}">
+                        <div class="forum-thread-item" data-id="${d.id}">
                             <div class="thread-info">
                                 <div class="thread-title"># ${ch.name}</div>
                                 <div class="thread-meta">${ch.description || ''} ${previewHtml}</div>
@@ -941,6 +937,31 @@
                 });
             }
             container.innerHTML = html;
+
+            // Attach Click Listeners
+            container.querySelectorAll('.forum-thread-item').forEach(el => {
+                el.onclick = (e) => {
+                    if (e.target.closest('.thread-drag-handle')) return; 
+                    selectChannel(el.dataset.id);
+                };
+            });
+
+            // Init Sortable
+            if (userData.role === 'admin') {
+                if (container.sortableInstance) container.sortableInstance.destroy();
+                container.sortableInstance = Sortable.create(container, {
+                    animation: 150,
+                    handle: '.thread-drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    delay: 100,
+                    onEnd: async (evt) => {
+                        const batch = writeBatch(db);
+                        const allItems = Array.from(container.children);
+                        allItems.forEach((li, idx) => batch.update(doc(db, "channels", li.dataset.id), { index: idx }));
+                        await batch.commit();
+                    }
+                });
+            }
         });
     }
 
@@ -950,13 +971,94 @@
     };
 
     // --- INPUT ---
-    window.handleImageSelect = (input) => {
-        const files = input.files;
-        if (files) {
-            Array.from(files).forEach(processImage);
+    const msgInput = document.getElementById('msgInput');
+    const mentionBox = document.getElementById('mentionBox');
+    msgInput.addEventListener('input', function() {
+        this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+        const val = this.value;
+        const atPos = val.lastIndexOf('@');
+        if (atPos !== -1 && (atPos === 0 || val[atPos-1] === ' ')) {
+            const query = val.substring(atPos + 1).toLowerCase();
+            window.showMentions(query);
+        } else { mentionBox.style.display = 'none'; }
+    });
+    window.showMentions = (q) => {
+        const filtered = allUsers.filter(u => u.toLowerCase().includes(q));
+        if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
+        let html = '';
+        filtered.forEach(name => {
+            html += `<div class="mention-item" onclick="window.selectMention('${name}')"><div class="mention-avatar" style="background:${window.getUserColor(name)}">${name[0]}</div><span>${name}</span></div>`;
+        });
+        mentionBox.innerHTML = html;
+        mentionBox.style.display = 'block';
+    }
+    window.selectMention = (name) => {
+        const text = msgInput.value;
+        const atPos = text.lastIndexOf('@');
+        msgInput.value = text.substring(0, atPos) + `@${name} `;
+        mentionBox.style.display = 'none';
+        msgInput.focus();
+    };
+    msgInput.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let i in items) {
+            if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) processImage(items[i].getAsFile());
         }
+    });
+    
+    // --- SAFE REPLY & EDIT (USING CACHE) ---
+    let editModeId = null;
+    window.startReply = (id) => {
+        const cached = window.messageCache[id];
+        if (!cached) return;
+        replyTo = { id, author: cached.author, text: cached.text.substring(0, 60) + (cached.text.length > 60 ? '...' : '') };
+        msgInput.placeholder = `Відповідь для ${cached.author}`;
+        msgInput.focus();
+    };
+    window.editMessage = (id) => {
+        editModeId = id;
+        const cached = window.messageCache[id];
+        if (!cached) return;
+        msgInput.value = cached.text;
+        msgInput.placeholder = "Редагування повідомлення...";
+        msgInput.style.height = 'auto';
+        msgInput.style.height = msgInput.scrollHeight + 'px';
+        msgInput.focus();
+    };
+    window.deleteMessage = async (id) => {
+        if(confirm("Видалити назавжди?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id));
+    };
+    
+    window.sendMessage = async () => {
+        const text = msgInput.value.trim();
+        if ((!text && uploadedImages.length === 0) || !activeChannelId) return;
+        
+        const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
+        if(replyTo) data.replyTo = replyTo;
+        
+        if (uploadedImages.length > 0) data.imageUrls = uploadedImages;
+        
+        if (editModeId) {
+            const updateData = { text: text, edited: true };
+            if (uploadedImages.length > 0) updateData.imageUrls = uploadedImages;
+            await updateDoc(doc(db, "channels", activeChannelId, "messages", editModeId), updateData);
+            editModeId = null;
+        } else {
+            await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
+            await updateDoc(doc(db, "channels", activeChannelId), { lastMessageTime: serverTimestamp() });
+        }
+        msgInput.value = ""; 
+        msgInput.style.height = 'auto'; 
+        msgInput.placeholder = "Написати повідомлення...";
+        replyTo = null; 
+        cancelImage();
+        document.getElementById('previewBar').style.display = 'none';
     };
 
+    async function loadUsersList() {
+        const s = await getDocs(collection(db, "users"));
+        allUsers = []; s.forEach(d => allUsers.push(d.data().name));
+    }
     function processImage(file) {
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -975,7 +1077,7 @@
         };
         reader.readAsDataURL(file);
     }
-
+    window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); if (i.files.length > 1) Array.from(i.files).forEach(processImage); };
     function renderPreviews() {
         const bar = document.getElementById('previewBar');
         if (uploadedImages.length === 0) {
@@ -994,7 +1096,6 @@
             bar.innerHTML = html;
         }
     }
-
     window.removePreviewImage = (index) => {
         uploadedImages.splice(index, 1);
         renderPreviews();
@@ -1005,147 +1106,21 @@
         renderPreviews();
     };
     
-    // --- MENTIONS ---
-    const msgInput = document.getElementById('msgInput');
-    const mentionBox = document.getElementById('mentionBox');
-    msgInput.addEventListener('input', function() {
-        this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
-        const val = this.value;
-        const atPos = val.lastIndexOf('@');
-        
-        if (atPos !== -1 && (atPos === 0 || val[atPos-1] === ' ')) {
-            const query = val.substring(atPos + 1).toLowerCase();
-            window.showMentions(query);
-        } else {
-            mentionBox.style.display = 'none';
-        }
-    });
-
-    window.showMentions = (q) => {
-        const filtered = allUsers.filter(u => u.toLowerCase().includes(q));
-        if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
-        let html = '';
-        filtered.forEach(name => {
-            // ESCAPE NAME in onclick
-            const safeName = name.replace(/'/g, "\\'");
-            html += `<div class="mention-item" onclick="window.selectMention('${safeName}')">
-                        <div class="mention-avatar" style="background:${window.getUserColor(name)}">${name[0].toUpperCase()}</div>
-                        <span>${name}</span>
-                    </div>`;
-        });
-        mentionBox.innerHTML = html;
-        mentionBox.style.display = 'block';
-    }
-    
-    window.selectMention = (name) => {
-        const text = msgInput.value;
-        const atPos = text.lastIndexOf('@');
-        msgInput.value = text.substring(0, atPos) + `@${name} `;
-        mentionBox.style.display = 'none';
-        msgInput.focus();
-    };
-
-    msgInput.addEventListener('paste', (e) => {
-        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-        for (let i in items) {
-            if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) processImage(items[i].getAsFile());
-        }
-    });
-    
-    let editModeId = null;
-    window.startReply = (id, author, text) => {
-        // ESCAPE ID, TEXT
-        const safeText = text.replace(/`/g, "\\`");
-        const safeAuthor = author.replace(/'/g, "\\'");
-        replyTo = { id, author, text: text.substring(0, 60) + (text.length > 60 ? '...' : '') };
-        msgInput.placeholder = `Відповідь для ${safeAuthor}`;
-        msgInput.focus();
-    };
-    window.editMessage = (id, text) => {
-        editModeId = id;
-        msgInput.value = text;
-        msgInput.placeholder = "Редагування повідомлення...";
-        // Auto resize
-        msgInput.style.height = 'auto';
-        msgInput.style.height = msgInput.scrollHeight + 'px';
-        msgInput.focus();
-    };
-    window.deleteMessage = async (id) => {
-        if(confirm("Видалити назавжди?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id));
-    };
-    
-    window.sendMessage = async () => {
-        const text = msgInput.value.trim();
-        if ((!text && uploadedImages.length === 0) || !activeChannelId) return;
-        
-        const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
-        if (replyTo) data.replyTo = replyTo; // Use truncated text
-        
-        // Images Logic
-        if (uploadedImages.length > 0) {
-            data.imageUrls = uploadedImages;
-        } else if (currentBase64Img) {
-            // Legacy single image support in case
-            data.imageUrl = currentBase64Img;
-        }
-        
-        if (editModeId) {
-            // In edit mode, preserve existing images if not explicitly cleared
-            const updateData = { text: text, edited: true };
-            if (uploadedImages.length > 0) updateData.imageUrls = uploadedImages;
-            await updateDoc(doc(db, "channels", activeChannelId, "messages", editModeId), updateData);
-            editModeId = null;
-        } else {
-            await addDoc(collection(db, "channels", activeChannelId, "messages"), data);
-            await updateDoc(doc(db, "channels", activeChannelId), { lastMessageTime: serverTimestamp() });
-        }
-        
-        msgInput.value = ""; 
-        msgInput.style.height = 'auto'; 
-        msgInput.placeholder = "Написати повідомлення...";
-        replyTo = null; 
-        cancelImage();
-        
-        // Reset preview
-        document.getElementById('previewBar').style.display = 'none';
-    };
-
-    async function loadUsersList() {
-        const s = await getDocs(collection(db, "users"));
-        allUsers = []; s.forEach(d => allUsers.push(d.data().name));
-    }
-
-    // Old image logic keep for compatibility if needed, but we focus on uploadedImages array
-    let currentBase64Img = null; 
-
-    window.mentionUser = (n) => { 
-        const safeName = n.replace(/'/g, "\\'");
-        msgInput.value += `@${safeName} `; 
-        msgInput.focus(); 
-    };
-    window.openLightbox = (s) => { 
-        document.getElementById('lightbox-img').src = s; 
-        document.getElementById('lightbox').style.display = 'flex'; 
-    };
+    window.mentionUser = (n) => { msgInput.value += `@${n} `; msgInput.focus(); };
+    window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
     msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 
     // --- MODALS ---
     window.openSettings = async (id) => {
-        // Permissions Check
-        if(userData.role !== 'admin') { alert("Доступ заборонено"); return; }
-        
         const targetId = id || activeChannelId;
         if (!targetId) return;
-
         const snap = await getDoc(doc(db, "channels", targetId));
         if (!snap.exists()) return;
         const ch = snap.data();
         document.getElementById('editChannelName').value = ch.name;
         document.getElementById('editViewRole').value = ch.viewRole || 'all';
         document.getElementById('editWriteRole').value = ch.writeRole || 'all';
-        
         editingChannelId = targetId;
-        
         document.getElementById('settingsModal').style.display = 'flex';
     };
     window.closeSettings = () => document.getElementById('settingsModal').style.display = 'none';
@@ -1185,7 +1160,6 @@
         closeCreate();
     };
 
-    // --- FORUM ---
     window.openCreateForum = () => {
         if(userData.role !== 'admin') { alert("Доступ заборонено"); return; }
         const select = document.getElementById('newForumCat');
@@ -1205,7 +1179,6 @@
         closeCreateForum();
     };
 
-    // --- SUB-CHANNEL (THREAD) ---
     window.openCreateSub = () => {
         document.getElementById('newSubName').value = "";
         document.getElementById('newSubDesc').value = "";
@@ -1224,7 +1197,7 @@
             description: desc,
             parentId: activeChannelId, 
             index: threadsSnap.size, 
-            category: activeChannelData.category, 
+            category: activeChannelData.category,
             viewRole: 'all',
             writeRole: 'all',
             type: 'text',
@@ -1280,7 +1253,7 @@
         if(!name) return;
         const s = await getDocs(collection(db, "channels"));
         await addDoc(collection(db, "channels"), {
-            name: "ОПИСАНИЕ КАТЕГОРИИ", index: s.size +1,
+            name: "ОПИСАНИЕ КАТЕГОРИИ", index: s.size + 1,
             category: name, viewRole: 'admin', writeRole: 'admin', type: 'text'
         });
         document.getElementById('newCatNameInput').value = "";
