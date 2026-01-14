@@ -161,7 +161,7 @@
         .mention:hover { background: var(--primary); color: black; }
         .reply-block { border-left: 3px solid var(--primary); background: rgba(34, 197, 94, 0.05); padding: 4px 10px; margin-bottom: 4px; border-radius: 4px; font-size: 12px; color: #aaa; cursor: pointer; max-width: fit-content; font-style: italic; }
         .reply-block:hover { background: rgba(34, 197, 94, 0.1); }
-        .reply-content { color: #ccc; margin-top: 2px; display: block; } /* NEW: REPLY TEXT TRUNCATED */
+        .reply-content { color: #ccc; margin-top: 2px; display: block; } /* REPLY TEXT TRUNCATED */
         .msg-image { max-width: 400px; max-height: 300px; border-radius: 8px; margin-top: 10px; display: block; cursor: zoom-in; border: 1px solid var(--glass-border); margin-bottom: 5px; }
 
         /* MESSAGE ACTIONS */
@@ -275,6 +275,7 @@
         .forum-empty-icon { font-size: 40px; margin-bottom: 15px; opacity: 0.5; }
         .forum-empty-text { color: var(--text-gray); font-weight: 700; }
 
+        /* Sortable Handle for Threads */
         .thread-drag-handle { cursor: grab; opacity: 0; margin-left: 10px; font-size: 12px; color: #444; padding: 5px;}
         .forum-thread-item:hover .thread-drag-handle { opacity: 1; }
 
@@ -481,12 +482,8 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // HELPER: Safe HTML escaping for inline onclick handlers
-    window.safeHtml = (str) => {
-        if (!str) return "";
-        // Escape single quotes to prevent breaking onclick="..."
-        return str.replace(/'/g, "&#39;");
-    };
+    // --- FIX: GLOBAL CACHE FOR SAFE MESSAGE HANDLING ---
+    window.messageCache = {};
 
     let user = null, userData = null, activeChannelId = null, activeChannelData = null;
     let unsubMessages = null;
@@ -522,15 +519,10 @@
                 userReadStatus = {};
                 snap.forEach(d => {
                     userReadStatus[d.id] = d.data().lastSeen?.toMillis() || 0;
-                    // Trigger sidebar update for class change
-                    updateSidebarUnreadState();
                 });
-                // Trigger initial check
                 updateSidebarUnreadState();
-                if (!activeChannelId) {
-                     // Handle first channel selection if needed
-                }
             });
+            updateSidebarUnreadState();
         } else { window.location.href = "index.html"; }
     });
 
@@ -547,7 +539,7 @@
         });
     }
 
-    // --- MEMBERS ---
+    // --- MEMBERS (SAFE EVENTS) ---
     async function loadMembers() {
         const list = document.getElementById('membersList');
         onSnapshot(collection(db, "users"), (snap) => {
@@ -555,15 +547,14 @@
             snap.forEach(d => {
                 const u = d.data();
                 const color = u.role === 'admin' ? 'var(--primary)' : getUserColor(u.name);
-                // ESCAPE NAME
-                const safeName = window.safeHtml(u.name);
+                // SAFE HTML: Use data-attributes, no onclick
                 const item = `
-                    <div class="member-item" onclick="window.mentionUser('${safeName}')">
+                    <div class="member-item" data-username="${u.name}">
                         <div class="member-avatar" style="background:${color}">
                             ${u.name.charAt(0).toUpperCase()}
                         </div>
                         <div class="member-info">
-                            <div class="member-name" style="color:${u.role === 'admin' ? 'var(--primary-bright)' : 'white'}">${safeName}</div>
+                            <div class="member-name" style="color:${u.role === 'admin' ? 'var(--primary-bright)' : 'white'}">${u.name}</div>
                             <div class="member-role">${u.rank}</div>
                         </div>
                     </div>`;
@@ -573,6 +564,13 @@
             admins.sort(); fighters.sort();
             list.innerHTML = '<div class="members-title">АДМІНІСТРАЦІЯ — ' + admins.length + '</div>' + admins.join('') + 
                              '<div class="members-title" style="margin-top:20px;">БІЙЦІ — ' + fighters.length + '</div>' + fighters.join('');
+            
+            // Attach listeners for mentions
+            list.querySelectorAll('.member-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    window.mentionUser(item.dataset.username);
+                });
+            });
         });
     }
 
@@ -594,11 +592,10 @@
                     if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
                 }
 
-                // ESCAPE CATEGORY
-                const catName = window.safeHtml(ch.category || 'ГЕНЕРАЛЬНІ');
+                const catName = ch.category || 'ГЕНЕРАЛЬНІ';
                 if (!groups[catName]) groups[catName] = [];
                 groups[catName].push({ id: d.id, ...ch, lastMsgTime: ch.lastMessageTime ? ch.lastMessageTime.toMillis() : 0 });
-                uniqueCats.add(ch.category);
+                uniqueCats.add(catName);
             });
 
             categoriesMap = Array.from(uniqueCats); 
@@ -627,8 +624,8 @@
                     const icon = ch.type === 'forum' ? '📋' : '#';
                     
                     const isAdmin = userData.role === 'admin';
-                    // ID is usually safe UUID, but replace to be safe
-                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openSettings('${ch.id.replace(/'/g, "\\'")}')">⚙</span>` : '';
+                    // SAFE: data-id instead of onclick
+                    const contextBtn = isAdmin ? `<span class="channel-context-btn" data-id="${ch.id}">⚙</span>` : '';
                     const dragBtn = isAdmin ? `<span class="drag-handle">⋮⋮</span>` : '';
 
                     const lastMsgTime = ch.lastMessageTime ? ch.lastMessageTime.toMillis() : 0;
@@ -654,17 +651,26 @@
 
             initSortable();
 
-            if (!activeChannelId) {
-                const targetId = savedChannel && document.querySelector(`.channel-item[data-id="${savedChannel}"]`) ? savedChannel : firstAvailableChannelId;
-                if (targetId) selectChannel(targetId);
-            }
-
+            // Attach listeners for channel selection
             container.querySelectorAll('.channel-item[data-id]').forEach(el => {
                 el.onclick = (e) => {
                     if(e.target.classList.contains('channel-context-btn') || e.target.classList.contains('drag-handle')) return;
                     selectChannel(el.dataset.id);
                 };
             });
+
+            // Attach listeners for context menu
+            container.querySelectorAll('.channel-context-btn[data-id]').forEach(btn => {
+                btn.addEventListener('mousedown', (e) => {
+                    e.stopPropagation();
+                    window.openSettings(btn.dataset.id);
+                });
+            });
+
+            if (!activeChannelId) {
+                const targetId = savedChannel && document.querySelector(`.channel-item[data-id="${savedChannel}"]`) ? savedChannel : firstAvailableChannelId;
+                if (targetId) selectChannel(targetId);
+            }
         });
     }
 
@@ -723,19 +729,36 @@
 
         if (contextMenuTarget === 'channel') {
             if (isAdmin) {
-                html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати канал</div>`;
-                html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
+                html += `<div class="context-item" data-action="settings" data-id="${channelId}">⚙ Налаштувати канал</div>`;
+                html += `<div class="context-item danger" data-action="delete" data-id="${channelId}">🗑 Видалити канал</div>`;
                 html += `<div class="context-divider"></div>`;
             }
-            html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
-            if (isAdmin) html += `<div class="context-item" onclick="window.openCreateForum()">📋 Створити форум</div>`;
+            html += `<div class="context-item" data-action="create-channel">➕ Створити канал</div>`;
+            if (isAdmin) html += `<div class="context-item" data-action="create-forum">📋 Створити форум</div>`;
         } else {
             if (isAdmin) {
-                html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
-                html += `<div class="context-item" onclick="window.openCreateForum()">📋 Створити форум</div>`;
+                html += `<div class="context-item" data-action="create-channel">➕ Створити канал</div>`;
+                html += `<div class="context-item" data-action="create-forum">📋 Створити форум</div>`;
             }
         }
         contextMenu.innerHTML = html;
+        
+        // Context Menu Listeners
+        contextMenu.querySelectorAll('.context-item[data-id]').forEach(item => {
+            item.onclick = (e) => {
+                const action = item.dataset.action;
+                const id = item.dataset.id;
+                if (action === 'settings') window.openSettings(id);
+                if (action === 'delete') window.deleteChannel(id);
+            }
+        });
+        contextMenu.querySelectorAll('.context-item[data-action]').forEach(item => {
+            item.onclick = (e) => {
+                const action = item.dataset.action;
+                if (action === 'create-channel') window.openCreate();
+                if (action === 'create-forum') window.openCreateForum();
+            }
+        });
     });
 
     forumContainer.addEventListener('contextmenu', (e) => {
@@ -753,16 +776,28 @@
             if (threadItem) {
                 const channelId = threadItem.dataset.id;
                 if (isAdmin) {
-                    html += `<div class="context-item" onclick="window.openSettings('${channelId}')">⚙ Налаштувати</div>`;
-                    html += `<div class="context-item danger" onclick="window.deleteChannel('${channelId}')">🗑 Видалити канал</div>`;
+                    html += `<div class="context-item" data-action="settings" data-id="${channelId}">⚙ Налаштувати</div>`;
+                    html += `<div class="context-item danger" data-action="delete" data-id="${channelId}">🗑 Видалити канал</div>`;
                     html += `<div class="context-divider"></div>`;
                 }
-                html += `<div class="context-item" onclick="window.openCreateSub()">➕ Створити під-канал</div>`;
-                if (isAdmin) html += `<div class="context-item" onclick="window.openCreate()">➕ Створити канал</div>`;
+                html += `<div class="context-item" data-action="create-sub">➕ Створити під-канал</div>`;
+                if (isAdmin) html += `<div class="context-item" data-action="create-channel">➕ Створити канал</div>`;
             } else {
-                html += `<div class="context-item" onclick="window.openCreateSub()">➕ Створити під-канал</div>`;
+                html += `<div class="context-item" data-action="create-sub">➕ Створити під-канал</div>`;
             }
             contextMenu.innerHTML = html;
+
+            // Attach listeners
+            contextMenu.querySelectorAll('.context-item[data-action]').forEach(item => {
+                item.onclick = (e) => {
+                    const action = item.dataset.action;
+                    const id = item.dataset.id;
+                    if (action === 'settings') window.openSettings(id);
+                    if (action === 'delete') window.deleteChannel(id);
+                    if (action === 'create-sub') window.openCreateSub();
+                    if (action === 'create-channel') window.openCreate();
+                };
+            });
         }
     });
 
@@ -840,7 +875,7 @@
         }
     };
 
-    // --- MESSAGES (SAFE HTML) ---
+    // --- MESSAGES (SAFE EVENTS & CACHE) ---
     function loadMessages(channelId) {
         if (unsubMessages) unsubMessages();
         const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -849,7 +884,7 @@
             let html = "";
             let lastAuthor = null, lastTime = 0;
             
-            // Check for new messages to update channel timestamp
+            // UPDATE CACHE & CHANNEL TIME
             snap.docChanges().forEach(change => {
                 if (change.type === "added") {
                     const msg = change.doc.data();
@@ -868,37 +903,68 @@
 
             snap.forEach(d => {
                 const m = d.data();
+                const id = d.id;
                 const time = m.createdAt ? m.createdAt.toMillis() : 0;
                 const isGrouped = (lastAuthor === m.author && (time - lastTime) < 300000);
                 
-                // ESCAPE TEXT AND AUTHOR FOR HTML
-                const safeAuthor = window.safeHtml(m.author);
-                const safeTime = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-                const safeDate = new Date(time).toLocaleDateString();
-
-                let imagesHtml = "";
-                if (Array.isArray(m.imageUrls)) {
-                    imagesHtml = m.imageUrls.map(url => `<img src="${url}" class="msg-image" onclick="window.openLightbox('${url}')">`).join('');
-                } else if (m.imageUrl) {
-                    imagesHtml = `<img src="${m.imageUrl}" class="msg-image" onclick="window.openLightbox('${m.imageUrl}')">`;
+                // Ensure cache is populated on load
+                if (!window.messageCache[id]) {
+                    window.messageCache[id] = { author: m.author, text: m.text };
                 }
 
+                // IMAGES: Use data-src for safe lightbox
+                let imagesHtml = "";
+                if (Array.isArray(m.imageUrls)) {
+                    imagesHtml = m.imageUrls.map(url => `<img src="${url}" class="msg-image" data-src="${url}">`).join('');
+                } else if (m.imageUrl) {
+                    imagesHtml = `<img src="${m.imageUrl}" class="msg-image" data-src="${m.imageUrl}">`;
+                }
+
+                const dateStr = !isGrouped ? `<span class="msg-date">${new Date(time).toLocaleDateString()}</span>` : '';
+
                 html += `
-                    <div class="msg ${isGrouped ? 'grouped' : ''}" id="msg-${d.id}">
-                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author">${safeAuthor}</span><span class="msg-time">${safeTime}</span><span class="msg-date">${safeDate}</span></div>` : ''}
-                        ${m.replyTo ? `<div class="reply-block" onclick="window.scrollToMsg('${m.replyTo.id}')">↩ Відповідь на ${window.safeHtml(m.replyTo.author)}<span class="reply-content">${window.safeHtml(m.replyTo.text.substring(0, 60))}${m.replyTo.text.length > 60 ? '...' : ''}</span></div>` : ""}
+                    <div class="msg ${isGrouped ? 'grouped' : ''}" id="msg-${id}">
+                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author">${m.author}</span><span class="msg-time">${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>${dateStr}</div>` : ''}
+                        ${m.replyTo ? `<div class="reply-block" data-reply-id="${m.replyTo.id}">↩ Відповідь на ${m.replyTo.author}<span class="reply-content">${m.replyTo.text.substring(0, 60)}${m.replyTo.text.length > 60 ? '...' : ''}</span></div>` : ""}
                         <div class="msg-content">${window.formatText(m.text)}</div>
                         ${imagesHtml}
                         <div class="msg-actions">
-                            <button class="action-btn" onclick="window.startReply('${d.id}')">↩</button>
-                            ${m.uid === user.uid ? `<button class="action-btn" onclick="window.editMessage('${d.id}')">✎</button>` : ''}
-                            ${userData.role === 'admin' ? `<button class="action-btn delete" onclick="window.deleteMessage('${d.id}')">✕</button>` : ''}
+                            <!-- SAFE: Use data-id and data-action -->
+                            <button class="action-btn" data-action="reply" data-id="${id}">↩</button>
+                            ${m.uid === user.uid ? `<button class="action-btn" data-action="edit" data-id="${id}">✎</button>` : ''}
+                            ${userData.role === 'admin' ? `<button class="action-btn delete" data-action="delete" data-id="${id}">✕</button>` : ''}
                         </div>
                     </div>`;
                 lastAuthor = m.author; lastTime = time;
             });
             container.innerHTML = html;
             container.scrollTop = container.scrollHeight;
+
+            // Attach Listeners for Actions
+            container.querySelectorAll('.msg-actions .action-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.dataset.id;
+                    const action = btn.dataset.action;
+                    if (action === 'reply') window.startReply(id);
+                    if (action === 'edit') window.editMessage(id);
+                    if (action === 'delete') window.deleteMessage(id);
+                });
+            });
+
+            // Attach Listener for Reply Block
+            container.querySelectorAll('.reply-block[data-reply-id]').forEach(blk => {
+                blk.addEventListener('click', (e) => {
+                    const id = blk.dataset.replyId;
+                    window.scrollToMsg(id);
+                });
+            });
+
+            // Attach Listener for Lightbox
+            container.querySelectorAll('.msg-image[data-src]').forEach(img => {
+                img.addEventListener('click', () => {
+                    window.openLightbox(img.dataset.src);
+                });
+            });
         });
     }
 
@@ -922,6 +988,7 @@
                 sortedDocs.forEach(d => {
                     const ch = d.data();
                     const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
+                    
                     // Images
                     let previewHtml = "";
                     if (Array.isArray(ch.imageUrls) && ch.imageUrls.length > 0) {
@@ -929,24 +996,46 @@
                     } else if (ch.imageUrl) {
                         previewHtml = `🖐 1`;
                     }
-                    // ESCAPE NAME AND AUTHOR
-                    const safeName = window.safeHtml(ch.name);
-                    const safeAuthor = window.safeHtml(ch.author || 'Система');
-                    
+
                     html += `
                         <div class="forum-thread-item" data-id="${d.id}">
                             <div class="thread-info">
-                                <div class="thread-title"># ${safeName}</div>
-                                <div class="thread-meta">${window.safeHtml(ch.description || '')} ${previewHtml}</div>
+                                <div class="thread-title"># ${ch.name}</div>
+                                <div class="thread-meta">${ch.description || ''} ${previewHtml}</div>
                             </div>
                             <div class="thread-stats">
-                                <span style="margin-right:8px;">Створець: ${safeAuthor}</span>
+                                <span style="margin-right:8px;">Створець: ${ch.author || 'Система'}</span>
                                 ${userData.role === 'admin' ? `<span class="thread-drag-handle">⋮⋮</span>` : ''}
                             </div>
                         </div>`;
                 });
             }
             container.innerHTML = html;
+
+            // Safe Click Listener
+            container.querySelectorAll('.forum-thread-item').forEach(el => {
+                el.onclick = (e) => {
+                    if (e.target.closest('.thread-drag-handle')) return; 
+                    selectChannel(el.dataset.id);
+                };
+            });
+
+            // Init Sortable
+            if (userData.role === 'admin') {
+                if (container.sortableInstance) container.sortableInstance.destroy();
+                container.sortableInstance = Sortable.create(container, {
+                    animation: 150,
+                    handle: '.thread-drag-handle',
+                    ghostClass: 'sortable-ghost',
+                    delay: 100,
+                    onEnd: async (evt) => {
+                        const batch = writeBatch(db);
+                        const allItems = Array.from(container.children);
+                        allItems.forEach((li, idx) => batch.update(doc(db, "channels", li.dataset.id), { index: idx }));
+                        await batch.commit();
+                    }
+                });
+            }
         });
     }
 
@@ -992,12 +1081,20 @@
             uploadedImages.forEach((img, idx) => {
                 html += `
                     <div class="preview-content">
-                        <img src="${img}" class="preview-thumb" onclick="window.openLightbox('${img}')">
-                        <div class="preview-close" onclick="removePreviewImage(${idx})">✕</div>
+                        <img src="${img}" class="preview-thumb" data-src="${img}">
+                        <div class="preview-close" data-index="${idx}">✕</div>
                     </div>
                 `;
             });
             bar.innerHTML = html;
+
+            // Preview Listeners
+            bar.querySelectorAll('.preview-thumb[data-src]').forEach(img => {
+                img.addEventListener('click', () => window.openLightbox(img.dataset.src));
+            });
+            bar.querySelectorAll('.preview-close[data-index]').forEach(btn => {
+                btn.addEventListener('click', () => removePreviewImage(btn.dataset.index));
+            });
         }
     }
 
@@ -1028,14 +1125,20 @@
         if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
         let html = '';
         filtered.forEach(name => {
-            const safeName = window.safeHtml(name);
-            html += `<div class="mention-item" onclick="window.selectMention('${safeName}')">
+            html += `<div class="mention-item" data-name="${name}">
                         <div class="mention-avatar" style="background:${window.getUserColor(name)}">${name[0].toUpperCase()}</div>
                         <span>${name}</span>
                     </div>`;
         });
         mentionBox.innerHTML = html;
         mentionBox.style.display = 'block';
+
+        // Attach listeners
+        mentionBox.querySelectorAll('.mention-item').forEach(item => {
+            item.addEventListener('click', () => {
+                window.selectMention(item.dataset.name);
+            });
+        });
     }
     window.selectMention = (name) => {
         const text = msgInput.value;
@@ -1050,11 +1153,12 @@
             if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) processImage(items[i].getAsFile());
         }
     });
+    
+    // --- SAFE REPLY & EDIT (USING CACHE) ---
     let editModeId = null;
     window.startReply = (id) => {
         const cached = window.messageCache[id];
         if (!cached) return;
-        const safeText = cached.text.replace(/`/g, "\\`");
         replyTo = { id, author: cached.author, text: cached.text.substring(0, 60) + (cached.text.length > 60 ? '...' : '') };
         msgInput.placeholder = `Відповідь для ${cached.author}`;
         msgInput.focus();
@@ -1072,6 +1176,7 @@
     window.deleteMessage = async (id) => {
         if(confirm("Видалити назавжди?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id));
     };
+    
     window.sendMessage = async () => {
         const text = msgInput.value.trim();
         if ((!text && uploadedImages.length === 0) || !activeChannelId) return;
@@ -1106,8 +1211,7 @@
     }
 
     window.mentionUser = (n) => { 
-        const safeName = n.replace(/'/g, "\\'");
-        msgInput.value += `@${safeName} `; 
+        msgInput.value += `@${n} `; 
         msgInput.focus(); 
     };
     window.openLightbox = (s) => { 
@@ -1126,7 +1230,6 @@
         document.getElementById('editChannelName').value = ch.name;
         document.getElementById('editViewRole').value = ch.viewRole || 'all';
         document.getElementById('editWriteRole').value = ch.writeRole || 'all';
-        
         editingChannelId = targetId;
         document.getElementById('settingsModal').style.display = 'flex';
     };
@@ -1167,7 +1270,6 @@
         closeCreate();
     };
 
-    // --- FORUM ---
     window.openCreateForum = () => {
         if(userData.role !== 'admin') { alert("Доступ заборонено"); return; }
         const select = document.getElementById('newForumCat');
@@ -1187,7 +1289,6 @@
         closeCreateForum();
     };
 
-    // --- SUB-CHANNEL (THREAD) ---
     window.openCreateSub = () => {
         document.getElementById('newSubName').value = "";
         document.getElementById('newSubDesc').value = "";
@@ -1216,7 +1317,6 @@
         closeCreateSub();
     };
 
-    // --- EDIT THREAD ---
     window.openEditThread = (id) => {
         editingChannelId = id;
         getDoc(doc(db, "channels", id)).then(snap => {
@@ -1239,7 +1339,6 @@
         closeEditThread();
     };
 
-    // --- CATEGORY MANAGER ---
     window.openCatManager = () => {
         renderCatList();
         document.getElementById('catManagerModal').style.display = 'flex';
@@ -1291,7 +1390,6 @@
         renderCatList();
     };
 
-    // --- MOBILE TOGGLE ---
     window.toggleSidebar = () => {
         document.getElementById('sidebar').classList.toggle('active');
     };
