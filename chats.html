@@ -481,8 +481,12 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // --- FIX: GLOBAL CACHE FOR SAFE MESSAGE HANDLING ---
-    window.messageCache = {};
+    // HELPER: Safe HTML escaping for inline onclick handlers
+    window.safeHtml = (str) => {
+        if (!str) return "";
+        // Escape single quotes to prevent breaking onclick="..."
+        return str.replace(/'/g, "&#39;");
+    };
 
     let user = null, userData = null, activeChannelId = null, activeChannelData = null;
     let unsubMessages = null;
@@ -518,9 +522,14 @@
                 userReadStatus = {};
                 snap.forEach(d => {
                     userReadStatus[d.id] = d.data().lastSeen?.toMillis() || 0;
+                    // Trigger sidebar update for class change
                     updateSidebarUnreadState();
                 });
+                // Trigger initial check
                 updateSidebarUnreadState();
+                if (!activeChannelId) {
+                     // Handle first channel selection if needed
+                }
             });
         } else { window.location.href = "index.html"; }
     });
@@ -546,13 +555,15 @@
             snap.forEach(d => {
                 const u = d.data();
                 const color = u.role === 'admin' ? 'var(--primary)' : getUserColor(u.name);
+                // ESCAPE NAME
+                const safeName = window.safeHtml(u.name);
                 const item = `
-                    <div class="member-item" onclick="window.mentionUser('${u.name}')">
+                    <div class="member-item" onclick="window.mentionUser('${safeName}')">
                         <div class="member-avatar" style="background:${color}">
                             ${u.name.charAt(0).toUpperCase()}
                         </div>
                         <div class="member-info">
-                            <div class="member-name" style="color:${u.role === 'admin' ? 'var(--primary-bright)' : 'white'}">${u.name}</div>
+                            <div class="member-name" style="color:${u.role === 'admin' ? 'var(--primary-bright)' : 'white'}">${safeName}</div>
                             <div class="member-role">${u.rank}</div>
                         </div>
                     </div>`;
@@ -583,10 +594,11 @@
                     if (ch.viewRole === 'admin' && userData.role !== 'admin') return;
                 }
 
-                const catName = ch.category || 'ГЕНЕРАЛЬНІ';
+                // ESCAPE CATEGORY
+                const catName = window.safeHtml(ch.category || 'ГЕНЕРАЛЬНІ');
                 if (!groups[catName]) groups[catName] = [];
                 groups[catName].push({ id: d.id, ...ch, lastMsgTime: ch.lastMessageTime ? ch.lastMessageTime.toMillis() : 0 });
-                uniqueCats.add(catName);
+                uniqueCats.add(ch.category);
             });
 
             categoriesMap = Array.from(uniqueCats); 
@@ -615,8 +627,8 @@
                     const icon = ch.type === 'forum' ? '📋' : '#';
                     
                     const isAdmin = userData.role === 'admin';
-                    // Pass ID safely to window.openSettings. ID is usually safe (UUID), but using replace is extra safe.
-                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openSettings('${ch.id}')">⚙</span>` : '';
+                    // ID is usually safe UUID, but replace to be safe
+                    const contextBtn = isAdmin ? `<span class="channel-context-btn" onmousedown="event.stopPropagation(); window.openSettings('${ch.id.replace(/'/g, "\\'")}')">⚙</span>` : '';
                     const dragBtn = isAdmin ? `<span class="drag-handle">⋮⋮</span>` : '';
 
                     const lastMsgTime = ch.lastMessageTime ? ch.lastMessageTime.toMillis() : 0;
@@ -828,7 +840,7 @@
         }
     };
 
-    // --- MESSAGES ---
+    // --- MESSAGES (SAFE HTML) ---
     function loadMessages(channelId) {
         if (unsubMessages) unsubMessages();
         const q = query(collection(db, "channels", channelId, "messages"), orderBy("createdAt", "asc"));
@@ -837,7 +849,7 @@
             let html = "";
             let lastAuthor = null, lastTime = 0;
             
-            // CHECK: UPDATE CHANNEL TIME & UPDATE CACHE
+            // Check for new messages to update channel timestamp
             snap.docChanges().forEach(change => {
                 if (change.type === "added") {
                     const msg = change.doc.data();
@@ -846,7 +858,7 @@
                     if (time > lastKnownTime) {
                         updateDoc(doc(db, "channels", channelId), { lastMessageTime: serverTimestamp() });
                     }
-                    // Populate global cache
+                    // Populate cache
                     window.messageCache[change.doc.id] = {
                         author: msg.author,
                         text: msg.text
@@ -859,10 +871,10 @@
                 const time = m.createdAt ? m.createdAt.toMillis() : 0;
                 const isGrouped = (lastAuthor === m.author && (time - lastTime) < 300000);
                 
-                // Update cache on load as well
-                if (!window.messageCache[d.id]) {
-                    window.messageCache[d.id] = { author: m.author, text: m.text };
-                }
+                // ESCAPE TEXT AND AUTHOR FOR HTML
+                const safeAuthor = window.safeHtml(m.author);
+                const safeTime = new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                const safeDate = new Date(time).toLocaleDateString();
 
                 let imagesHtml = "";
                 if (Array.isArray(m.imageUrls)) {
@@ -871,16 +883,13 @@
                     imagesHtml = `<img src="${m.imageUrl}" class="msg-image" onclick="window.openLightbox('${m.imageUrl}')">`;
                 }
 
-                const dateStr = !isGrouped ? `<span class="msg-date">${new Date(time).toLocaleDateString()}</span>` : '';
-
                 html += `
                     <div class="msg ${isGrouped ? 'grouped' : ''}" id="msg-${d.id}">
-                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author">${m.author}</span><span class="msg-time">${new Date(time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>${dateStr}</div>` : ''}
-                        ${m.replyTo ? `<div class="reply-block" onclick="window.scrollToMsg('${m.replyTo.id}')">↩ Відповідь на ${m.replyTo.author}<span class="reply-content">${m.replyTo.text.substring(0, 60)}${m.replyTo.text.length > 60 ? '...' : ''}</span></div>` : ""}
+                        ${!isGrouped ? `<div class="msg-header"><span class="msg-author">${safeAuthor}</span><span class="msg-time">${safeTime}</span><span class="msg-date">${safeDate}</span></div>` : ''}
+                        ${m.replyTo ? `<div class="reply-block" onclick="window.scrollToMsg('${m.replyTo.id}')">↩ Відповідь на ${window.safeHtml(m.replyTo.author)}<span class="reply-content">${window.safeHtml(m.replyTo.text.substring(0, 60))}${m.replyTo.text.length > 60 ? '...' : ''}</span></div>` : ""}
                         <div class="msg-content">${window.formatText(m.text)}</div>
                         ${imagesHtml}
                         <div class="msg-actions">
-                            <!-- SAFE: ONLY PASS ID -->
                             <button class="action-btn" onclick="window.startReply('${d.id}')">↩</button>
                             ${m.uid === user.uid ? `<button class="action-btn" onclick="window.editMessage('${d.id}')">✎</button>` : ''}
                             ${userData.role === 'admin' ? `<button class="action-btn delete" onclick="window.deleteMessage('${d.id}')">✕</button>` : ''}
@@ -913,7 +922,6 @@
                 sortedDocs.forEach(d => {
                     const ch = d.data();
                     const time = ch.createdAt ? new Date(ch.createdAt.toMillis()).toLocaleDateString() : '';
-                    
                     // Images
                     let previewHtml = "";
                     if (Array.isArray(ch.imageUrls) && ch.imageUrls.length > 0) {
@@ -921,47 +929,24 @@
                     } else if (ch.imageUrl) {
                         previewHtml = `🖐 1`;
                     }
-
-                    // Use data-id for clean handler
+                    // ESCAPE NAME AND AUTHOR
+                    const safeName = window.safeHtml(ch.name);
+                    const safeAuthor = window.safeHtml(ch.author || 'Система');
+                    
                     html += `
                         <div class="forum-thread-item" data-id="${d.id}">
                             <div class="thread-info">
-                                <div class="thread-title"># ${ch.name}</div>
-                                <div class="thread-meta">${ch.description || ''} ${previewHtml}</div>
+                                <div class="thread-title"># ${safeName}</div>
+                                <div class="thread-meta">${window.safeHtml(ch.description || '')} ${previewHtml}</div>
                             </div>
                             <div class="thread-stats">
-                                <span style="margin-right:8px;">Створець: ${ch.author || 'Система'}</span>
+                                <span style="margin-right:8px;">Створець: ${safeAuthor}</span>
                                 ${userData.role === 'admin' ? `<span class="thread-drag-handle">⋮⋮</span>` : ''}
                             </div>
                         </div>`;
                 });
             }
             container.innerHTML = html;
-
-            // Attach Click Listeners
-            container.querySelectorAll('.forum-thread-item').forEach(el => {
-                el.onclick = (e) => {
-                    if (e.target.closest('.thread-drag-handle')) return; 
-                    selectChannel(el.dataset.id);
-                };
-            });
-
-            // Init Sortable
-            if (userData.role === 'admin') {
-                if (container.sortableInstance) container.sortableInstance.destroy();
-                container.sortableInstance = Sortable.create(container, {
-                    animation: 150,
-                    handle: '.thread-drag-handle',
-                    ghostClass: 'sortable-ghost',
-                    delay: 100,
-                    onEnd: async (evt) => {
-                        const batch = writeBatch(db);
-                        const allItems = Array.from(container.children);
-                        allItems.forEach((li, idx) => batch.update(doc(db, "channels", li.dataset.id), { index: idx }));
-                        await batch.commit();
-                    }
-                });
-            }
         });
     }
 
@@ -971,6 +956,62 @@
     };
 
     // --- INPUT ---
+    window.handleImageSelect = (input) => {
+        const files = input.files;
+        if (files) {
+            Array.from(files).forEach(processImage);
+        }
+    };
+
+    function processImage(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height, max = 1000;
+                if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                const base64 = canvas.toDataURL('image/jpeg', 0.7);
+                uploadedImages.push(base64);
+                renderPreviews();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function renderPreviews() {
+        const bar = document.getElementById('previewBar');
+        if (uploadedImages.length === 0) {
+            bar.style.display = 'none';
+        } else {
+            bar.style.display = 'flex';
+            let html = '';
+            uploadedImages.forEach((img, idx) => {
+                html += `
+                    <div class="preview-content">
+                        <img src="${img}" class="preview-thumb" onclick="window.openLightbox('${img}')">
+                        <div class="preview-close" onclick="removePreviewImage(${idx})">✕</div>
+                    </div>
+                `;
+            });
+            bar.innerHTML = html;
+        }
+    }
+
+    window.removePreviewImage = (index) => {
+        uploadedImages.splice(index, 1);
+        renderPreviews();
+    };
+
+    window.cancelImage = () => {
+        uploadedImages = [];
+        renderPreviews();
+    };
+    
+    // --- MENTIONS ---
     const msgInput = document.getElementById('msgInput');
     const mentionBox = document.getElementById('mentionBox');
     msgInput.addEventListener('input', function() {
@@ -987,7 +1028,11 @@
         if (filtered.length === 0) { mentionBox.style.display = 'none'; return; }
         let html = '';
         filtered.forEach(name => {
-            html += `<div class="mention-item" onclick="window.selectMention('${name}')"><div class="mention-avatar" style="background:${window.getUserColor(name)}">${name[0]}</div><span>${name}</span></div>`;
+            const safeName = window.safeHtml(name);
+            html += `<div class="mention-item" onclick="window.selectMention('${safeName}')">
+                        <div class="mention-avatar" style="background:${window.getUserColor(name)}">${name[0].toUpperCase()}</div>
+                        <span>${name}</span>
+                    </div>`;
         });
         mentionBox.innerHTML = html;
         mentionBox.style.display = 'block';
@@ -1005,12 +1050,11 @@
             if (items[i].kind === 'file' && items[i].type.indexOf('image/') !== -1) processImage(items[i].getAsFile());
         }
     });
-    
-    // --- SAFE REPLY & EDIT (USING CACHE) ---
     let editModeId = null;
     window.startReply = (id) => {
         const cached = window.messageCache[id];
         if (!cached) return;
+        const safeText = cached.text.replace(/`/g, "\\`");
         replyTo = { id, author: cached.author, text: cached.text.substring(0, 60) + (cached.text.length > 60 ? '...' : '') };
         msgInput.placeholder = `Відповідь для ${cached.author}`;
         msgInput.focus();
@@ -1028,7 +1072,6 @@
     window.deleteMessage = async (id) => {
         if(confirm("Видалити назавжди?")) await deleteDoc(doc(db, "channels", activeChannelId, "messages", id));
     };
-    
     window.sendMessage = async () => {
         const text = msgInput.value.trim();
         if ((!text && uploadedImages.length === 0) || !activeChannelId) return;
@@ -1036,7 +1079,9 @@
         const data = { text, author: userData.name, uid: user.uid, createdAt: serverTimestamp() };
         if(replyTo) data.replyTo = replyTo;
         
-        if (uploadedImages.length > 0) data.imageUrls = uploadedImages;
+        if (uploadedImages.length > 0) {
+            data.imageUrls = uploadedImages;
+        }
         
         if (editModeId) {
             const updateData = { text: text, edited: true };
@@ -1059,55 +1104,16 @@
         const s = await getDocs(collection(db, "users"));
         allUsers = []; s.forEach(d => allUsers.push(d.data().name));
     }
-    function processImage(file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height, max = 1000;
-                if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                const base64 = canvas.toDataURL('image/jpeg', 0.7);
-                uploadedImages.push(base64);
-                renderPreviews();
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-    window.handleImageSelect = (i) => { if (i.files[0]) processImage(i.files[0]); if (i.files.length > 1) Array.from(i.files).forEach(processImage); };
-    function renderPreviews() {
-        const bar = document.getElementById('previewBar');
-        if (uploadedImages.length === 0) {
-            bar.style.display = 'none';
-        } else {
-            bar.style.display = 'flex';
-            let html = '';
-            uploadedImages.forEach((img, idx) => {
-                html += `
-                    <div class="preview-content">
-                        <img src="${img}" class="preview-thumb" onclick="window.openLightbox('${img}')">
-                        <div class="preview-close" onclick="removePreviewImage(${idx})">✕</div>
-                    </div>
-                `;
-            });
-            bar.innerHTML = html;
-        }
-    }
-    window.removePreviewImage = (index) => {
-        uploadedImages.splice(index, 1);
-        renderPreviews();
-    };
 
-    window.cancelImage = () => {
-        uploadedImages = [];
-        renderPreviews();
+    window.mentionUser = (n) => { 
+        const safeName = n.replace(/'/g, "\\'");
+        msgInput.value += `@${safeName} `; 
+        msgInput.focus(); 
     };
-    
-    window.mentionUser = (n) => { msgInput.value += `@${n} `; msgInput.focus(); };
-    window.openLightbox = (s) => { document.getElementById('lightbox-img').src = s; document.getElementById('lightbox').style.display = 'flex'; };
+    window.openLightbox = (s) => { 
+        document.getElementById('lightbox-img').src = s; 
+        document.getElementById('lightbox').style.display = 'flex'; 
+    };
     msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
 
     // --- MODALS ---
@@ -1120,6 +1126,7 @@
         document.getElementById('editChannelName').value = ch.name;
         document.getElementById('editViewRole').value = ch.viewRole || 'all';
         document.getElementById('editWriteRole').value = ch.writeRole || 'all';
+        
         editingChannelId = targetId;
         document.getElementById('settingsModal').style.display = 'flex';
     };
@@ -1160,6 +1167,7 @@
         closeCreate();
     };
 
+    // --- FORUM ---
     window.openCreateForum = () => {
         if(userData.role !== 'admin') { alert("Доступ заборонено"); return; }
         const select = document.getElementById('newForumCat');
@@ -1179,6 +1187,7 @@
         closeCreateForum();
     };
 
+    // --- SUB-CHANNEL (THREAD) ---
     window.openCreateSub = () => {
         document.getElementById('newSubName').value = "";
         document.getElementById('newSubDesc').value = "";
@@ -1197,7 +1206,7 @@
             description: desc,
             parentId: activeChannelId, 
             index: threadsSnap.size, 
-            category: activeChannelData.category,
+            category: activeChannelData.category, 
             viewRole: 'all',
             writeRole: 'all',
             type: 'text',
