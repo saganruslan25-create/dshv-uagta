@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | ФОТОГАЛЕРЕЯ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-bright: #4ade80;
+            --bg: #030507;
+            --card-bg: rgba(10, 12, 16, 0.6);
+            --glass-border: rgba(34, 197, 94, 0.2);
+            --danger: #ef4444;
+            --text-gray: #94a3b8;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            background-image: radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.08) 0%, transparent 60%);
+            color: white; font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+        /* HEADER */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%; background: rgba(3, 5, 7, 0.8);
+            backdrop-filter: blur(10px); border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo-box { 
+            background: var(--primary); color: black; padding: 6px 14px; 
+            border-radius: 8px; font-weight: 900; text-decoration: none; 
+            text-transform: uppercase; box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+        }
+        .nav-link {
+            color: white; text-decoration: none; font-weight: 600; font-size: 14px;
+            padding: 8px 15px; border-radius: 8px; transition: 0.2s;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: var(--primary-bright); }
+
+        /* CONTAINER */
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
+        .section-header { text-align: center; margin-bottom: 50px; }
+        .section-title { font-size: 36px; font-weight: 900; margin: 0; text-shadow: 0 0 20px rgba(34,197,94,0.2); }
+
+        /* UPLOAD SECTION */
+        .upload-area {
+            background: var(--card-bg); border: 2px dashed var(--glass-border);
+            border-radius: 20px; padding: 40px; text-align: center;
+            margin-bottom: 50px; transition: 0.3s; display: none;
+        }
+        .upload-area.visible { display: block; }
+        .upload-area:hover { border-color: var(--primary); background: rgba(34, 197, 94, 0.05); }
+        
+        .btn-upload {
+            background: var(--primary); color: black; border: none;
+            padding: 12px 30px; border-radius: 10px; font-weight: 800;
+            cursor: pointer; margin-top: 15px; font-size: 14px;
+            box-shadow: 0 0 15px rgba(34,197,94,0.3);
+        }
+        .btn-upload:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; }
+
+        /* GALLERY GRID */
+        .gallery-grid {
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px;
+        }
+
+        .photo-card {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 16px; overflow: hidden; position: relative;
+            transition: 0.3s; cursor: zoom-in;
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .photo-card:hover { 
+            transform: translateY(-5px); 
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.15); 
+            border-color: var(--primary);
+        }
+
+        .photo-img {
+            width: 100%; height: 220px; object-fit: cover;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .photo-info { padding: 15px; }
+        .photo-caption { font-size: 14px; font-weight: 700; color: white; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .photo-meta { font-size: 11px; color: var(--text-gray); display: flex; justify-content: space-between; align-items: center; }
+        
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.1); color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px;
+            border-radius: 6px; font-size: 10px; cursor: pointer; font-weight: 800;
+        }
+        .delete-btn:hover { background: var(--danger); color: white; }
+
+        /* LIGHTBOX */
+        .lightbox {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 2000; display: none;
+            justify-content: center; align-items: center; backdrop-filter: blur(5px);
+        }
+        .lightbox-img { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #333; }
+        .lightbox-close { position: absolute; top: 30px; right: 30px; font-size: 40px; color: white; cursor: pointer; }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<nav>
+    <a href="index.html" class="logo-box">ДШВ</a>
+    <div>
+        <a href="cabinet.html" class="nav-link">← КАБІНЕТ</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="section-header">
+        <h1 class="section-title">ФОТОГАЛЕРЕЯ ПІДРОЗДІЛУ</h1>
+        <p style="color: var(--text-gray); font-size: 14px; margin-top: 10px;">Найкращі моменти наших операцій</p>
+    </div>
+
+    <!-- БЛОК ЗАГРУЗКИ (Виден только верифицированным) -->
+    <div id="uploadSection" class="upload-area">
+        <h3 style="color: var(--primary-bright); margin: 0 0 10px 0;">ОПУБЛІКУВАТИ ФОТО</h3>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(this)">
+        <input type="text" id="imgCaption" class="nav-link" style="background: rgba(0,0,0,0.3); border: 1px solid #333; width: 300px; display: inline-block; text-align: center;" placeholder="Підпис до фото (напр. Патруль)">
+        <br>
+        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">ОБРАТИ ФАЙЛ</button>
+        <button class="btn-upload" id="btnUploadAction" onclick="uploadPhoto()" style="background: #333; margin-left: 10px;">ЗАВАНТАЖИТИ</button>
+    </div>
+
+    <!-- СЕТКА ФОТО -->
+    <div id="galleryGrid" class="gallery-grid"></div>
+</div>
+
+<div id="lightbox" class="lightbox" onclick="if(event.target === this) this.style.display='none'">
+    <span class="lightbox-close">&times;</span>
+    <img id="lightboxImg" class="lightbox-img" src="">
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let currentBase64 = null;
+
+    // --- AUTH CHECK ---
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            currentUser = user;
+            const snap = await getDoc(doc(db, "users", user.uid));
+            if (snap.exists() && snap.data().verified) {
+                document.getElementById('uploadSection').classList.add('visible');
+            }
+        }
+    });
+
+    // --- LOAD PHOTOS ---
+    const q = query(collection(db, "gallery"), orderBy("timestamp", "desc"));
+    onSnapshot(q, (snapshot) => {
+        const grid = document.getElementById('galleryGrid');
+        grid.innerHTML = "";
+        
+        if (snapshot.empty) {
+            grid.innerHTML = "<div style='grid-column: 1/-1; text-align: center; color: var(--text-gray); padding: 50px;'>Галерея порожня. Будь першим, хто завантажить фото!</div>";
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const data = docSnap.data();
+            const isOwner = currentUser && currentUser.uid === data.uid;
+            const isAdmin = currentUser && (await getDoc(doc(db, "users", currentUser.uid))).data().role === 'admin';
+            
+            const card = document.createElement('div');
+            card.className = 'photo-card';
+            card.onclick = () => openLightbox(data.imageUrl);
+            
+            let deleteBtn = '';
+            if (isOwner || isAdmin) {
+                deleteBtn = `<button class="delete-btn" onclick="event.stopPropagation(); deletePhoto('${docSnap.id}')">ВИДАЛИТИ</button>`;
+            }
+
+            card.innerHTML = `
+                <img src="${data.imageUrl}" class="photo-img" loading="lazy">
+                <div class="photo-info">
+                    <div class="photo-caption">${data.caption || 'Без назви'}</div>
+                    <div class="photo-meta">
+                        <span>${data.author}</span>
+                        ${deleteBtn}
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    });
+
+    // --- IMAGE PROCESSING (FROM CHATS.HTML) ---
+    window.handleFileSelect = (input) => {
+        if (input.files && input.files[0]) {
+            processImage(input.files[0]);
+        }
+    };
+
+    function processImage(file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let w = img.width, h = img.height, max = 800; // Сжимаем до 800px для галереи
+                if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                currentBase64 = canvas.toDataURL('image/jpeg', 0.7); // Качество 70%
+                
+                const btn = document.getElementById('btnUploadAction');
+                btn.innerText = "ГОТОВО ДО ЗАВАНТАЖЕННЯ";
+                btn.style.background = "var(--primary)";
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    window.uploadPhoto = async () => {
+        if (!currentBase64) return alert("Спочатку оберіть фото!");
+        const caption = document.getElementById('imgCaption').value;
+        
+        // Получаем имя пользователя
+        let authorName = "Анонім";
+        if (currentUser) {
+            const uSnap = await getDoc(doc(db, "users", currentUser.uid));
+            if (uSnap.exists()) authorName = uSnap.data().name;
+        }
+
+        const btn = document.getElementById('btnUploadAction');
+        btn.disabled = true;
+        btn.innerText = "ЗАВАНТАЖЕННЯ...";
+
+        try {
+            await addDoc(collection(db, "gallery"), {
+                imageUrl: currentBase64,
+                caption: caption,
+                author: authorName,
+                uid: currentUser ? currentUser.uid : 'guest',
+                timestamp: serverTimestamp()
+            });
+            
+            // Reset
+            document.getElementById('fileInput').value = "";
+            document.getElementById('imgCaption').value = "";
+            currentBase64 = null;
+            btn.disabled = false;
+            btn.innerText = "ЗАВАНТАЖИТИ";
+            btn.style.background = "#333";
+            alert("Фото опубліковано!");
+        } catch (err) {
+            alert("Помилка: " + err.message);
+            btn.disabled = false;
+            btn.innerText = "ЗАВАНТАЖИТИ";
+        }
+    };
+
+    window.deletePhoto = async (id) => {
+        if(confirm("Видалити це фото?")) {
+            await deleteDoc(doc(db, "gallery", id));
+        }
+    };
+
+    window.openLightbox = (src) => {
+        document.getElementById('lightboxImg').src = src;
+        document.getElementById('lightbox').style.display = 'flex';
+    };
+</script>
+
+<script>
+    document.onkeydown = function(e) {
+        if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
+    };
+</script>
+</body>
+</html>
