@@ -46,6 +46,7 @@
         .nav-link {
             color: white; text-decoration: none; font-weight: 600; font-size: 14px;
             padding: 8px 15px; border-radius: 8px; transition: 0.2s;
+            cursor: pointer;
         }
         .nav-link:hover { background: rgba(255,255,255,0.05); color: var(--primary-bright); }
 
@@ -58,18 +59,30 @@
         .upload-area {
             background: var(--card-bg); border: 2px dashed var(--glass-border);
             border-radius: 20px; padding: 40px; text-align: center;
-            margin-bottom: 50px; transition: 0.3s; display: none;
+            margin-bottom: 50px; transition: 0.3s;
         }
-        .upload-area.visible { display: block; }
         .upload-area:hover { border-color: var(--primary); background: rgba(34, 197, 94, 0.05); }
         
+        .status-msg {
+            color: var(--text-gray); font-size: 14px; margin-bottom: 15px;
+            background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;
+        }
+        .status-error { color: var(--danger); }
+
         .btn-upload {
             background: var(--primary); color: black; border: none;
             padding: 12px 30px; border-radius: 10px; font-weight: 800;
             cursor: pointer; margin-top: 15px; font-size: 14px;
             box-shadow: 0 0 15px rgba(34,197,94,0.3);
+            transition: 0.2s;
         }
-        .btn-upload:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; }
+        .btn-upload:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(34,197,94,0.5); }
+        .btn-upload:disabled { background: #333; color: #666; cursor: not-allowed; box-shadow: none; transform: none; }
+
+        .input-inline {
+            background: rgba(0,0,0,0.3); border: 1px solid #333; color: white;
+            padding: 10px 15px; border-radius: 10px; outline: none; margin: 0 10px;
+        }
 
         /* GALLERY GRID */
         .gallery-grid {
@@ -105,25 +118,60 @@
             background: rgba(239, 68, 68, 0.1); color: var(--danger);
             border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px;
             border-radius: 6px; font-size: 10px; cursor: pointer; font-weight: 800;
+            transition: 0.2s;
         }
-        .delete-btn:hover { background: var(--danger); color: white; }
+        .delete-btn:hover { background: var(--danger); color: white; transform: scale(1.05); }
 
-        /* LIGHTBOX */
+        /* BEAUTIFUL LIGHTBOX */
         .lightbox {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.95); z-index: 2000; display: none;
-            justify-content: center; align-items: center; backdrop-filter: blur(5px);
+            justify-content: center; align-items: center; backdrop-filter: blur(10px);
+            flex-direction: column;
         }
-        .lightbox-img { max-width: 90%; max-height: 90%; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.8); border: 1px solid #333; }
-        .lightbox-close { position: absolute; top: 30px; right: 30px; font-size: 40px; color: white; cursor: pointer; }
+        .lightbox-content-wrapper {
+            position: relative;
+            max-width: 95%; max-height: 90%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lightbox-img { 
+            max-width: 100%; max-height: 85vh; 
+            border-radius: 8px; box-shadow: 0 0 50px rgba(0,0,0,0.8); 
+            border: 1px solid #333; 
+            transition: opacity 0.3s ease;
+        }
+        .lightbox-close { 
+            position: absolute; top: 30px; right: 30px; 
+            font-size: 40px; color: white; cursor: pointer; 
+            opacity: 0.7; transition: 0.3s;
+            z-index: 2002;
+        }
+        .lightbox-close:hover { opacity: 1; color: var(--danger); transform: rotate(90deg); }
+
+        .nav-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            font-size: 60px; color: white; cursor: pointer;
+            opacity: 0.4; transition: 0.3s; z-index: 2002;
+            background: rgba(0,0,0,0.2); padding: 20px; border-radius: 50%;
+            user-select: none;
+        }
+        .nav-arrow:hover { opacity: 1; background: var(--primary); color: black; }
+        .nav-prev { left: 20px; }
+        .nav-next { right: 20px; }
+
+        .lightbox-caption {
+            margin-top: 15px; font-size: 16px; font-weight: 600; color: white;
+            text-align: center; opacity: 0.8;
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
 
 <nav>
     <a href="index.html" class="logo-box">ДШВ</a>
+    <!-- FIX 1: Back button uses browser history to go back where user was -->
     <div>
-        <a href="cabinet.html" class="nav-link">← КАБІНЕТ</a>
+        <a href="javascript:window.history.back()" class="nav-link">← НАЗАД</a>
     </div>
 </nav>
 
@@ -133,29 +181,41 @@
         <p style="color: var(--text-gray); font-size: 14px; margin-top: 10px;">Найкращі моменти наших операцій</p>
     </div>
 
-    <!-- БЛОК ЗАГРУЗКИ (Виден только верифицированным) -->
+    <!-- FIX 2: Upload area is always visible, shows status if not allowed -->
     <div id="uploadSection" class="upload-area">
         <h3 style="color: var(--primary-bright); margin: 0 0 10px 0;">ОПУБЛІКУВАТИ ФОТО</h3>
-        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(this)">
-        <input type="text" id="imgCaption" class="nav-link" style="background: rgba(0,0,0,0.3); border: 1px solid #333; width: 300px; display: inline-block; text-align: center;" placeholder="Підпис до фото (напр. Патруль)">
-        <br>
-        <button class="btn-upload" onclick="document.getElementById('fileInput').click()">ОБРАТИ ФАЙЛ</button>
-        <button class="btn-upload" id="btnUploadAction" onclick="uploadPhoto()" style="background: #333; margin-left: 10px;">ЗАВАНТАЖИТИ</button>
+        
+        <div id="statusMessage" class="status-msg">Перевірка доступу...</div>
+
+        <div id="uploadControls" style="display:none;">
+            <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(this)">
+            <input type="text" id="imgCaption" class="input-inline" placeholder="Підпис до фото">
+            <button class="btn-upload" onclick="document.getElementById('fileInput').click()">ОБРАТИ ФАЙЛ</button>
+            <button class="btn-upload" id="btnUploadAction" onclick="uploadPhoto()" style="background: #333; border: 1px solid var(--primary); color: white;">ЗАВАНТАЖИТИ</button>
+        </div>
     </div>
 
     <!-- СЕТКА ФОТО -->
     <div id="galleryGrid" class="gallery-grid"></div>
 </div>
 
-<div id="lightbox" class="lightbox" onclick="if(event.target === this) this.style.display='none'">
-    <span class="lightbox-close">&times;</span>
-    <img id="lightboxImg" class="lightbox-img" src="">
+<!-- FIX 4: Beautiful Lightbox with Navigation -->
+<div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
+    <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+    
+    <div class="lightbox-content-wrapper">
+        <div class="nav-arrow nav-prev" onclick="changeSlide(-1)">&#10094;</div>
+        <img id="lightboxImg" class="lightbox-img" src="">
+        <div class="nav-arrow nav-next" onclick="changeSlide(1)">&#10095;</div>
+    </div>
+    
+    <div id="lightboxCaption" class="lightbox-caption"></div>
 </div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, serverTimestamp, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -171,42 +231,81 @@
     const db = getFirestore(app);
 
     let currentUser = null;
+    let currentUserData = null; // FIX 3: Cache user data to avoid lag
     let currentBase64 = null;
+    
+    // FIX 4: Global array for navigation
+    let allPhotos = [];
+    let currentPhotoIndex = 0;
 
-    // --- AUTH CHECK ---
+    // --- AUTH CHECK & VISIBILITY FIX ---
     onAuthStateChanged(auth, async (user) => {
+        const statusMsg = document.getElementById('statusMessage');
+        const uploadControls = document.getElementById('uploadControls');
+
         if (user) {
             currentUser = user;
             const snap = await getDoc(doc(db, "users", user.uid));
-            if (snap.exists() && snap.data().verified) {
-                document.getElementById('uploadSection').classList.add('visible');
+            if (snap.exists()) {
+                currentUserData = snap.data();
+                if (currentUserData.verified) {
+                    // Verified user
+                    statusMsg.style.display = 'none';
+                    uploadControls.style.display = 'block';
+                } else {
+                    // Logged in but not verified
+                    statusMsg.innerHTML = "🔒 <b>Ви не верифіковані.</b><br>Очікуйте підтвердження від адміністрації для завантаження.";
+                    statusMsg.className = "status-msg status-error";
+                    uploadControls.style.display = 'none';
+                }
+            } else {
+                 statusMsg.innerText = "Помилка даних профілю.";
+                 uploadControls.style.display = 'none';
             }
+        } else {
+            // Guest
+            currentUser = null;
+            currentUserData = null;
+            statusMsg.innerHTML = "🔒 <b>Необхідно увійти в акаунт.</b><br>Відвідайте кабінет для входу.";
+            statusMsg.className = "status-msg status-error";
+            uploadControls.style.display = 'none';
         }
+        
+        // Re-render grid to update delete buttons visibility
+        renderGrid(); 
     });
 
     // --- LOAD PHOTOS ---
     const q = query(collection(db, "gallery"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
+        allPhotos = []; // Clear cache
+        snapshot.forEach(docSnap => {
+            allPhotos.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        renderGrid();
+    });
+
+    function renderGrid() {
         const grid = document.getElementById('galleryGrid');
         grid.innerHTML = "";
         
-        if (snapshot.empty) {
+        if (allPhotos.length === 0) {
             grid.innerHTML = "<div style='grid-column: 1/-1; text-align: center; color: var(--text-gray); padding: 50px;'>Галерея порожня. Будь першим, хто завантажить фото!</div>";
             return;
         }
 
-        snapshot.forEach(docSnap => {
-            const data = docSnap.data();
+        allPhotos.forEach((data, index) => {
             const isOwner = currentUser && currentUser.uid === data.uid;
-            const isAdmin = currentUser && (await getDoc(doc(db, "users", currentUser.uid))).data().role === 'admin';
+            const isAdmin = currentUserData && currentUserData.role === 'admin';
             
             const card = document.createElement('div');
             card.className = 'photo-card';
-            card.onclick = () => openLightbox(data.imageUrl);
+            // FIX 4: Pass index to openLightbox
+            card.onclick = () => openLightbox(index);
             
             let deleteBtn = '';
             if (isOwner || isAdmin) {
-                deleteBtn = `<button class="delete-btn" onclick="event.stopPropagation(); deletePhoto('${docSnap.id}')">ВИДАЛИТИ</button>`;
+                deleteBtn = `<button class="delete-btn" onclick="event.stopPropagation(); deletePhoto('${data.id}')">ВИДАЛИТИ</button>`;
             }
 
             card.innerHTML = `
@@ -221,9 +320,9 @@
             `;
             grid.appendChild(card);
         });
-    });
+    }
 
-    // --- IMAGE PROCESSING (FROM CHATS.HTML) ---
+    // --- IMAGE PROCESSING ---
     window.handleFileSelect = (input) => {
         if (input.files && input.files[0]) {
             processImage(input.files[0]);
@@ -236,15 +335,16 @@
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height, max = 800; // Сжимаем до 800px для галереи
+                let w = img.width, h = img.height, max = 1000; 
                 if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                currentBase64 = canvas.toDataURL('image/jpeg', 0.7); // Качество 70%
+                currentBase64 = canvas.toDataURL('image/jpeg', 0.7);
                 
                 const btn = document.getElementById('btnUploadAction');
                 btn.innerText = "ГОТОВО ДО ЗАВАНТАЖЕННЯ";
                 btn.style.background = "var(--primary)";
+                btn.style.color = "black";
             };
             img.src = e.target.result;
         };
@@ -255,11 +355,9 @@
         if (!currentBase64) return alert("Спочатку оберіть фото!");
         const caption = document.getElementById('imgCaption').value;
         
-        // Получаем имя пользователя
         let authorName = "Анонім";
         if (currentUser) {
-            const uSnap = await getDoc(doc(db, "users", currentUser.uid));
-            if (uSnap.exists()) authorName = uSnap.data().name;
+            authorName = currentUserData ? currentUserData.name : "Боєць";
         }
 
         const btn = document.getElementById('btnUploadAction');
@@ -282,6 +380,7 @@
             btn.disabled = false;
             btn.innerText = "ЗАВАНТАЖИТИ";
             btn.style.background = "#333";
+            btn.style.color = "white";
             alert("Фото опубліковано!");
         } catch (err) {
             alert("Помилка: " + err.message);
@@ -290,16 +389,67 @@
         }
     };
 
+    // FIX 3: Delete function
     window.deletePhoto = async (id) => {
         if(confirm("Видалити це фото?")) {
-            await deleteDoc(doc(db, "gallery", id));
+            try {
+                await deleteDoc(doc(db, "gallery", id));
+            } catch(e) {
+                alert("Помилка видалення: " + e.message);
+            }
         }
     };
 
-    window.openLightbox = (src) => {
-        document.getElementById('lightboxImg').src = src;
+    // FIX 4: Lightbox Navigation Logic
+    window.openLightbox = (index) => {
+        if (index < 0 || index >= allPhotos.length) return;
+        currentPhotoIndex = index;
+        updateLightboxContent();
         document.getElementById('lightbox').style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // Disable scroll
     };
+
+    window.closeLightbox = () => {
+        document.getElementById('lightbox').style.display = 'none';
+        document.body.style.overflow = 'auto'; // Enable scroll
+    };
+
+    window.changeSlide = (direction) => {
+        const newIndex = currentPhotoIndex + direction;
+        // Loop navigation
+        if (newIndex >= allPhotos.length) {
+            openLightbox(0);
+        } else if (newIndex < 0) {
+            openLightbox(allPhotos.length - 1);
+        } else {
+            openLightbox(newIndex);
+        }
+    };
+
+    function updateLightboxContent() {
+        const photo = allPhotos[currentPhotoIndex];
+        const img = document.getElementById('lightboxImg');
+        const caption = document.getElementById('lightboxCaption');
+        
+        img.style.opacity = '0'; // Fade out effect start
+        
+        setTimeout(() => {
+            img.src = photo.imageUrl;
+            caption.innerText = photo.caption || `Фото від ${photo.author}`;
+            img.onload = () => {
+                img.style.opacity = '1'; // Fade in
+            };
+        }, 200);
+    }
+
+    // Keyboard Navigation
+    document.addEventListener('keydown', (e) => {
+        if (document.getElementById('lightbox').style.display === 'flex') {
+            if (e.key === 'ArrowLeft') changeSlide(-1);
+            if (e.key === 'ArrowRight') changeSlide(1);
+            if (e.key === 'Escape') closeLightbox();
+        }
+    });
 </script>
 
 <script>
