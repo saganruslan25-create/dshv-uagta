@@ -112,8 +112,18 @@
 
         .photo-info { padding: 15px; }
         .photo-caption { font-size: 14px; font-weight: 700; color: white; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .photo-meta { font-size: 11px; color: var(--text-gray); display: flex; justify-content: space-between; align-items: center; }
         
+        /* Оновлено для відображення дати */
+        .photo-meta { 
+            font-size: 11px; color: var(--text-gray); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+        }
+        
+        .meta-left { display: flex; flex-direction: column; gap: 2px; }
+        .meta-date { opacity: 0.6; font-size: 10px; }
+
         .delete-btn {
             background: rgba(239, 68, 68, 0.1); color: var(--danger);
             border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px;
@@ -162,6 +172,11 @@
         .lightbox-caption {
             margin-top: 15px; font-size: 16px; font-weight: 600; color: white;
             text-align: center; opacity: 0.8;
+            max-width: 80%;
+        }
+        .lightbox-meta-date {
+            display: block; margin-top: 5px; font-size: 12px; 
+            color: var(--text-gray); font-weight: 400;
         }
     </style>
 </head>
@@ -169,7 +184,6 @@
 
 <nav>
     <a href="index.html" class="logo-box">ДШВ</a>
-    <!-- FIX 1: Back button uses browser history to go back where user was -->
     <div>
         <a href="javascript:window.history.back()" class="nav-link">← НАЗАД</a>
     </div>
@@ -181,7 +195,6 @@
         <p style="color: var(--text-gray); font-size: 14px; margin-top: 10px;">Найкращі моменти наших операцій</p>
     </div>
 
-    <!-- FIX 2: Upload area is always visible, shows status if not allowed -->
     <div id="uploadSection" class="upload-area">
         <h3 style="color: var(--primary-bright); margin: 0 0 10px 0;">ОПУБЛІКУВАТИ ФОТО</h3>
         
@@ -199,7 +212,7 @@
     <div id="galleryGrid" class="gallery-grid"></div>
 </div>
 
-<!-- FIX 4: Beautiful Lightbox with Navigation -->
+<!-- LIGHTBOX -->
 <div id="lightbox" class="lightbox" onclick="if(event.target === this) closeLightbox()">
     <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
     
@@ -231,14 +244,13 @@
     const db = getFirestore(app);
 
     let currentUser = null;
-    let currentUserData = null; // FIX 3: Cache user data to avoid lag
+    let currentUserData = null;
     let currentBase64 = null;
     
-    // FIX 4: Global array for navigation
     let allPhotos = [];
     let currentPhotoIndex = 0;
 
-    // --- AUTH CHECK & VISIBILITY FIX ---
+    // --- AUTH CHECK & VISIBILITY ---
     onAuthStateChanged(auth, async (user) => {
         const statusMsg = document.getElementById('statusMessage');
         const uploadControls = document.getElementById('uploadControls');
@@ -249,11 +261,9 @@
             if (snap.exists()) {
                 currentUserData = snap.data();
                 if (currentUserData.verified) {
-                    // Verified user
                     statusMsg.style.display = 'none';
                     uploadControls.style.display = 'block';
                 } else {
-                    // Logged in but not verified
                     statusMsg.innerHTML = "🔒 <b>Ви не верифіковані.</b><br>Очікуйте підтвердження від адміністрації для завантаження.";
                     statusMsg.className = "status-msg status-error";
                     uploadControls.style.display = 'none';
@@ -263,22 +273,19 @@
                  uploadControls.style.display = 'none';
             }
         } else {
-            // Guest
             currentUser = null;
             currentUserData = null;
             statusMsg.innerHTML = "🔒 <b>Необхідно увійти в акаунт.</b><br>Відвідайте кабінет для входу.";
             statusMsg.className = "status-msg status-error";
             uploadControls.style.display = 'none';
         }
-        
-        // Re-render grid to update delete buttons visibility
         renderGrid(); 
     });
 
     // --- LOAD PHOTOS ---
     const q = query(collection(db, "gallery"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
-        allPhotos = []; // Clear cache
+        allPhotos = [];
         snapshot.forEach(docSnap => {
             allPhotos.push({ id: docSnap.id, ...docSnap.data() });
         });
@@ -298,9 +305,16 @@
             const isOwner = currentUser && currentUser.uid === data.uid;
             const isAdmin = currentUserData && currentUserData.role === 'admin';
             
+            // Форматування дати та часу
+            let dateStr = 'Без дати';
+            if (data.timestamp) {
+                dateStr = new Date(data.timestamp.toDate()).toLocaleString('uk-UA', { 
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                });
+            }
+            
             const card = document.createElement('div');
             card.className = 'photo-card';
-            // FIX 4: Pass index to openLightbox
             card.onclick = () => openLightbox(index);
             
             let deleteBtn = '';
@@ -313,7 +327,10 @@
                 <div class="photo-info">
                     <div class="photo-caption">${data.caption || 'Без назви'}</div>
                     <div class="photo-meta">
-                        <span>${data.author}</span>
+                        <div class="meta-left">
+                            <span>${data.author}</span>
+                            <span class="meta-date">${dateStr}</span>
+                        </div>
                         ${deleteBtn}
                     </div>
                 </div>
@@ -370,10 +387,9 @@
                 caption: caption,
                 author: authorName,
                 uid: currentUser ? currentUser.uid : 'guest',
-                timestamp: serverTimestamp()
+                timestamp: serverTimestamp() // Додаємо автоматично
             });
             
-            // Reset
             document.getElementById('fileInput').value = "";
             document.getElementById('imgCaption').value = "";
             currentBase64 = null;
@@ -389,7 +405,6 @@
         }
     };
 
-    // FIX 3: Delete function
     window.deletePhoto = async (id) => {
         if(confirm("Видалити це фото?")) {
             try {
@@ -400,23 +415,22 @@
         }
     };
 
-    // FIX 4: Lightbox Navigation Logic
+    // LIGHTBOX
     window.openLightbox = (index) => {
         if (index < 0 || index >= allPhotos.length) return;
         currentPhotoIndex = index;
         updateLightboxContent();
         document.getElementById('lightbox').style.display = 'flex';
-        document.body.style.overflow = 'hidden'; // Disable scroll
+        document.body.style.overflow = 'hidden';
     };
 
     window.closeLightbox = () => {
         document.getElementById('lightbox').style.display = 'none';
-        document.body.style.overflow = 'auto'; // Enable scroll
+        document.body.style.overflow = 'auto';
     };
 
     window.changeSlide = (direction) => {
         const newIndex = currentPhotoIndex + direction;
-        // Loop navigation
         if (newIndex >= allPhotos.length) {
             openLightbox(0);
         } else if (newIndex < 0) {
@@ -431,18 +445,27 @@
         const img = document.getElementById('lightboxImg');
         const caption = document.getElementById('lightboxCaption');
         
-        img.style.opacity = '0'; // Fade out effect start
+        img.style.opacity = '0';
         
+        // Форматуємо дату для лайтбокса
+        let dateHtml = '';
+        if (photo.timestamp) {
+            const d = new Date(photo.timestamp.toDate());
+            const formattedDate = d.toLocaleString('uk-UA', { 
+                day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+            });
+            dateHtml = `<span class="lightbox-meta-date">${formattedDate}</span>`;
+        }
+
         setTimeout(() => {
             img.src = photo.imageUrl;
-            caption.innerText = photo.caption || `Фото від ${photo.author}`;
+            caption.innerHTML = `${photo.caption || 'Без назви'}${dateHtml}`;
             img.onload = () => {
-                img.style.opacity = '1'; // Fade in
+                img.style.opacity = '1';
             };
         }, 200);
     }
 
-    // Keyboard Navigation
     document.addEventListener('keydown', (e) => {
         if (document.getElementById('lightbox').style.display === 'flex') {
             if (e.key === 'ArrowLeft') changeSlide(-1);
