@@ -53,7 +53,7 @@
         .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
         .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
         .btn-lock-menu:hover, .btn-verify:hover, .edit-icon:hover, .staff-toggle-btn:hover {
-            transform: translateY(-4px);
+            transform: translate(-50%, -4px); /* ВИПРАВЛЕНО: Центрування + підйом */
             border-color: var(--primary);
             box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px rgba(0,255,102,0.2);
             text-shadow: 0 0 10px var(--primary);
@@ -91,7 +91,7 @@
             color: var(--primary-bright); padding: 8px 15px; border-radius: 10px;
             font-weight: 900; cursor: pointer; font-size: 12px;
         }
-        .btn-small-header:hover { background: var(--primary); color: black; transform: translateY(-2px); box-shadow: 0 0 20px var(--primary); }
+        .btn-small-header:hover { background: var(--primary); color: black; transform: translate(-50%, -2px); /* Теж саме правило для кнопок в шапці, щоб не дрожали */ border: none; box-shadow: 0 0 20px var(--primary); }
         
         .btn-logout-custom {
             background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger);
@@ -157,6 +157,8 @@
             background: rgba(0, 255, 68, 0.15); 
             color: var(--primary-bright);
             border-color: var(--primary);
+            /* transform: translateY(-4px) не потрібно, бо в цьому блоці немає центрування */
+            box-shadow: 0 0 20px var(--primary-glow);
         }
         .fire-dot { width: 9px; height: 9px; background: var(--danger); border-radius: 50%; display: none; }
         .btn-lock-menu {
@@ -275,22 +277,26 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
 
-        /* СТАФ - ВИПРАВЛЕНО ПОЯВЛЕННЯ КНОПКИ */
+        /* СТАФ - ВИПРАВЛЕНО ДЕРГАННЯ КНОПКИ */
         .staff-toggle-btn {
             width: 90%; margin: 40px auto 0;
             background: rgba(0, 255, 68, 0.05); border: 1px dashed var(--glass-border);
             color: var(--primary); padding: 15px; border-radius: 15px;
             font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
-            display: none; /* Спочатку приховано */
+            display: none; 
             align-items: center; justify-content: center; gap: 10px;
             opacity: 0;
             position: relative;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%); /* Центрування в спокої */
         }
         .staff-toggle-btn.visible { 
-            display: flex; /* ВИПРАВЛЕНО: Додаємо display: flex */
+            display: flex; 
             opacity: 1;
+        }
+        /* ВИПРАВЛЕНО: Зберігаємо центрування при наведенні */
+        .staff-toggle-btn:hover {
+            transform: translate(-50%, -4px);
         }
         
         .staff-section-container { 
@@ -854,7 +860,7 @@
         }
 
         window.moveUser = async (id, direction) => {
-            const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
+            const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc"));
             let users = [];
             snap.forEach(d => users.push({id: d.id, ...d.data()}));
             const idx = users.findIndex(u => u.id === id);
@@ -953,7 +959,7 @@
 
         window.toggleSystemAccess = async () => {
             const code = await getSecret(); 
-            const input = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            const input = prompt("ВВВЕДІТЬ СЕКРЕТНИЙ КОД:");
             if (input === code) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
