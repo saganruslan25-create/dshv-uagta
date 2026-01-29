@@ -735,7 +735,6 @@
             setTextIfChanged('userRep', data.reprimands || 0);
             setTextIfChanged('userWarns', data.warns || 0);
 
-            // Привязка кнопок редактирования паспорта и дискорда
             const btnPass = document.getElementById('btnAddPass');
             const btnDisc = document.getElementById('btnAddDisc');
 
@@ -810,7 +809,6 @@
                 let needsUpdate = false;
                 fullSnap.forEach(docSnap => {
                     if (docSnap.data().staffIndex === undefined) {
-                        // ИСПРАВЛЕНО: добавлена закрывающая скобка )
                         batch.update(doc(db, "users", docSnap.id), { staffIndex: Date.now() });
                         needsUpdate = true;
                     }
@@ -865,7 +863,6 @@
             const newIdx = idx + direction;
             if (newIdx < 0 || newIdx >= users.length) return;
             const batch = writeBatch(db);
-            // ИСПРАВЛЕНО: добавлены закрывающие скобки )
             batch.update(doc(db, "users", users[idx].id), { staffIndex: newIdx });
             batch.update(doc(db, "users", users[newIdx].id), { staffIndex: idx });
             await batch.commit();
@@ -922,7 +919,6 @@
             const code = await getSecret();
             const input = prompt("Ведіть пароль:");
             if (input === code) {
-                // ИСПРАВЛЕНО: добавлена закрывающая скобка )
                 await deleteDoc(doc(db, "users", id));
                 alert("Бійця видалено!");
             } else {
@@ -993,13 +989,14 @@
                     }
                 });
             }
+            // ИСПРАВЛЕНО: Добавлена закрывающая скобка ) в регулярном выражении
             listUI.innerHTML = found.map(f => `
                 <div class="report-card ${f.colType === 'Щотижневий' ? 'rep-weekly' : 'rep-subotnik'}">
                     <div class="report-header">
                         <span style="font-size: 12px; font-weight: 900; color: var(--primary-bright);">${f.period || f.date || '---'}</span>
                         <span style="font-size: 10px; background: ${f.colType === 'Щотижневий' ? 'var(--primary)' : 'var(--warning)'}; color: black; padding: 3px 8px; border-radius: 5px; font-weight: 900;">${f.colType}</span>
                     </div>
-                    <div class="report-body">${(f.content || f.message).replace(/(https?:\/\/[^\s]+/g, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>')}</div>`
+                    <div class="report-body">${(f.content || f.message).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>')}</div>`
                 </div>
             `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
         };
