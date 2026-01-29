@@ -54,7 +54,7 @@
         .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
         .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
         .btn-lock-menu:hover, .btn-verify:hover, .edit-icon:hover, .staff-toggle-btn:hover {
-            transform: translateY(-1px); /* ЗМЕНШИЛИ ПІДЙОМ (Тільки трохи трохи піднімаємо, щоб не злітали занадто) */
+            transform: translateY(-1px); 
             border-color: var(--primary);
             box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(0,255,102,0.1);
             text-shadow: 0 0 8px var(--primary);
@@ -92,11 +92,9 @@
             color: var(--primary-bright); padding: 8px 15px; border-radius: 10px;
             font-weight: 900; cursor: pointer; font-size: 12px;
         }
-        /* ВИПРАВЛЕННЯ ДЕРГАННЯ КНОПКИ */
         .btn-small-header:hover { 
             background: var(--primary); 
             color: black; 
-            /* transform: translate(-50%, -1px); Центруємо, трохи трохи піднімаємо */
             border: none; 
             box-shadow: 0 0 15px var(--primary); 
         }
@@ -165,7 +163,7 @@
             background: rgba(0, 255, 68, 0.15); 
             color: var(--primary-bright);
             border-color: var(--primary);
-            transform: translateY(-1px); /* Не зміщено */
+            transform: translateY(-1px); 
             box-shadow: 0 0 20px var(--primary-glow);
         }
         .fire-dot { width: 9px; height: 9px; background: var(--danger); border-radius: 50%; display: none; }
@@ -265,7 +263,7 @@
         .btn-primary { background: var(--primary); color: black; margin-bottom: 10px; }
         .btn-primary:hover { background: var(--primary-bright); box-shadow: 0 0 20px var(--primary); }
         .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { background: #ff55555; box-shadow: 0 0 20px var(--danger); }
+        .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
 
         /* СТАФ - ВИПРАВЛЕНО ДЕРГАННЯ КНОПКИ */
         .staff-toggle-btn {
@@ -273,18 +271,17 @@
             background: rgba(0, 255, 68, 0.05); border: 1px dashed var(--glass-border);
             color: var(--primary); padding: 15px; border-radius: 15px;
             font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
-            display: none; /* Спочатку приховано */
+            display: none; 
             align-items: center; justify-content: center; gap: 10px;
             opacity: 0;
             position: relative;
             left: 50%;
-            transform: translateX(-50%); /* Центрування */
+            transform: translateX(-50%); 
         }
         .staff-toggle-btn.visible { 
             display: flex; 
             opacity: 1;
         }
-        /* ВИПРАВЛЕННО: ЗМІНША ПЕРЕСУНЯ (Тільки -1px) + Центрування (щоб не втрачало) */
         .staff-toggle-btn:hover {
             transform: translate(-50%, -1px);
             border-color: var(--primary);
@@ -296,7 +293,7 @@
         .staff-section-container { 
             display: grid; 
             grid-template-rows: 0fr; 
-            transition: grid-template-rows: 0.6s ease-out, opacity 0.5s ease;
+            transition: grid-template-rows 0.6s ease-out, opacity 0.5s ease;
             opacity: 0;
             width: 100vw; 
             position: relative;
@@ -472,8 +469,7 @@
                     
                     <div class="info-box">
                         <span>DISCORD</span>
-                        <!-- ФІКС ТИПОВА: БУВЛИКАЮ КЛАСИВО (змінено з btn-download) -->
-                        <div class="editable-field-row"> <!-- Змінено на editable-field-row -->
+                        <div class="editable-field-row">
                             <h2 id="userDiscord" style="font-size: 16px;">---</h2>
                             <button class="edit-icon" id="btnAddDisc">✎</button>
                         </div>
@@ -575,7 +571,7 @@
         const greetings = [
             "Раді бачити Вас!","Вітаємо з поверненням!","Приємно знову Вас бачити!",
             "З поверненням у стрій!","Раді знову Вас вітати!","Вітаємо на борту!",
-            "Система доповіда: боєць на місці","ЗСистема доповіда: боєць на місці","ЗСУ раді бачити своїх"
+            "Система доповіда: боєць на місці","Система доповіда: боєць на місці","ЗСУ раді бачити своїх"
         ];
 
         document.onkeydown = function(e) {
@@ -708,7 +704,7 @@
         let userListenerUnsubscribe = null;
         function listenToUserUpdates(uid) {
             if (userListenerUnsubscribe) userListenerUnsubscribe();
-            userListenerUnsubscribe = onSnapshot(doc(db, "users", uid, (doc) => {
+            userListenerUnsubscribe = onSnapshot(doc(db, "users", uid), (doc) => {
                 if (doc.exists()) {
                     const data = doc.data();
                     if (editingUID === uid) {
@@ -738,17 +734,19 @@
             
             setTextIfChanged('userRep', data.reprimands || 0);
             setTextIfChanged('userWarns', data.warns || 0);
-            
-            // ФІКС ТИПИ ДЛЯ DISCORD - ВИПРАВЛЕНО CLASS (Тут використовував старий class)
-            if(!document.getElementById('btnAddDisc').hasAttribute('data-event-bound')) {
-                document.getElementById('btnAddDisc').onclick = (/* ... */);
-                document.getElementById('btnAddDisc').setAttribute('data-event-bound', 'true');
-            }
 
-            // ДЛЯ ПАСПОРТУ (Тут використовував старий клас)
-            if(!document.getElementById('btnAddPass').hasAttribute('data-event-bound')) {
-                document.getElementById('btnAddPass').onclick = (/* ... */);
-                document.getElementById('btnAddPass').setAttribute('data-event-bound', 'true');
+            // Привязка кнопок редактирования паспорта и дискорда
+            const btnPass = document.getElementById('btnAddPass');
+            const btnDisc = document.getElementById('btnAddDisc');
+
+            if(btnPass && !btnPass.hasAttribute('data-event-bound')) {
+                btnPass.onclick = () => window.openEditModal(editingUID, 'passport', 'Паспорт', document.getElementById('userPassport').innerText);
+                btnPass.setAttribute('data-event-bound', 'true');
+            }
+            
+            if(btnDisc && !btnDisc.hasAttribute('data-event-bound')) {
+                btnDisc.onclick = () => window.openEditModal(editingUID, 'discord', 'Discord', document.getElementById('userDiscord').innerText);
+                btnDisc.setAttribute('data-event-bound', 'true');
             }
 
             const posValue = data.position || (parts[1] ? parts[1].trim() : "---");
@@ -785,22 +783,8 @@
             }
 
             document.querySelectorAll('.admin-controls').forEach(c => {
-                c.style.display = (myData.role === 'admin') ? 'flex' : 'none'; });
+                c.style.display = (myData.role === 'admin') ? 'flex' : 'none'; 
             });
-
-            document.querySelectorAll('.admin-controls').forEach(c => {
-                c.style.display = (myData.role === 'admin') ? 'flex' : 'none'; /* Дублювання дублювання класів */
-            });
-
-            // Олівці для паспорта/дискорда
-            if(!document.getElementById('btnAddPass').hasAttribute('data-event-bound')) {
-                document.getElementById('btnAddPass').onclick = () => window.openEditModal(editingUID, 'passport', 'Паспорт', document.getElementById('userPassport').innerText));
-                document.getElementById('btnAddPass').setAttribute('data-event-bound', 'true');
-            }
-            if(!document.getElementById('btnAddDisc').hasAttribute('data-event-bound')) {
-                document.getElementById('btnAddDisc').onclick = (/* ... */); // Тут був фрагмент в коментарі, я виправив його в `editable-field-row`
-                document.getElementById('btnAddDisc').setAttribute('data-event-bound', 'true');
-            }
         }
 
         window.toggleStaffList = () => {
@@ -826,7 +810,8 @@
                 let needsUpdate = false;
                 fullSnap.forEach(docSnap => {
                     if (docSnap.data().staffIndex === undefined) {
-                        batch.update(doc(db, "users", docSnap.id, { staffIndex: Date.now() });
+                        // ИСПРАВЛЕНО: добавлена закрывающая скобка )
+                        batch.update(doc(db, "users", docSnap.id), { staffIndex: Date.now() });
                         needsUpdate = true;
                     }
                 });
@@ -872,7 +857,7 @@
         }
 
         window.moveUser = async (id, direction) => {
-            const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc"));
+            const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
             let users = [];
             snap.forEach(d => users.push({id: d.id, ...d.data()}));
             const idx = users.findIndex(u => u.id === id);
@@ -880,8 +865,9 @@
             const newIdx = idx + direction;
             if (newIdx < 0 || newIdx >= users.length) return;
             const batch = writeBatch(db);
-            batch.update(doc(db, "users", users[idx].id, { staffIndex: newIdx });
-            batch.update(doc(db, "users", users[newIdx].id, { staffIndex: idx });
+            // ИСПРАВЛЕНО: добавлены закрывающие скобки )
+            batch.update(doc(db, "users", users[idx].id), { staffIndex: newIdx });
+            batch.update(doc(db, "users", users[newIdx].id), { staffIndex: idx });
             await batch.commit();
         };
 
@@ -936,7 +922,8 @@
             const code = await getSecret();
             const input = prompt("Ведіть пароль:");
             if (input === code) {
-                await deleteDoc(doc(db, "users", id);
+                // ИСПРАВЛЕНО: добавлена закрывающая скобка )
+                await deleteDoc(doc(db, "users", id));
                 alert("Бійця видалено!");
             } else {
                 if (input === null) {
@@ -1012,7 +999,7 @@
                         <span style="font-size: 12px; font-weight: 900; color: var(--primary-bright);">${f.period || f.date || '---'}</span>
                         <span style="font-size: 10px; background: ${f.colType === 'Щотижневий' ? 'var(--primary)' : 'var(--warning)'}; color: black; padding: 3px 8px; border-radius: 5px; font-weight: 900;">${f.colType}</span>
                     </div>
-                    <div class="report-body">${(f.content || f.message).replace(/(https?:\/\/[^\s]+/g, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>')}</div>`)
+                    <div class="report-body">${(f.content || f.message).replace(/(https?:\/\/[^\s]+/g, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>')}</div>`
                 </div>
             `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
         };
