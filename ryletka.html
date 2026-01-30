@@ -28,10 +28,16 @@
                 radial-gradient(circle at 50% -20%, var(--primary-glow) 0%, transparent 50%),
                 radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 40%);
             color: white; 
-            font-family: 'Inter', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+            /* ПРИОРИТЕТ ЭМОДЗИ ШРИФТОВ */
+            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', 'Inter', sans-serif;
             min-height: 100vh; overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
             padding-bottom: 60px;
+        }
+
+        /* ПРИНУДИТЕЛЬНЫЕ ШРИФТЫ ДЛЯ КНОПОК И ИКОНОК */
+        button, .btn-main, .stat-item, .log-icon, .menu-btn, .price-tag, .toast, #footerRoleLabel {
+            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', sans-serif !important;
         }
 
         .neon-text {
@@ -42,13 +48,13 @@
         header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 5%; background: rgba(2, 3, 5, 0.8);
-            backdrop-filter: blur(20px); border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px); border-bottom:1px solid var(--glass-border);
             position: sticky; top: 0; z-index: 1000;
         }
 
         .stat-item {
             display: flex; align-items: center; gap: 8px;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05); border:1px solid var(--glass-border);
             padding: 10px 20px; border-radius: 15px; font-weight: 800; font-size: 14px;
         }
 
@@ -153,14 +159,23 @@
         }
         .category-label::after { content: ''; flex: 1; height: 1px; background: rgba(34, 197, 94, 0.2); }
 
-        /* SHOP CARD */
+        /* SHOP CARD & RATE */
         .shop-info-banner {
             background: rgba(34,197, 94, 0.05); border: 1px solid var(--glass-border);
             padding: 25px; border-radius: 20px; margin-bottom: 30px;
             display: flex; flex-direction: column; gap: 15px; text-align: left;
         }
-        .shop-rate-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .shop-rate-display { font-size: 24px; font-weight: 900; color: var(--primary-bright); }
+        
+        .shop-rate-row {
+            display: flex; justify-content: center; align-items: center; gap: 15px;
+            font-size: 32px; font-weight: 900; color: var(--primary-bright);
+            padding: 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 15px;
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
         .shop-info-text { font-size: 14px; color: var(--text-gray); line-height: 1.6; white-space: pre-wrap; }
 
         .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
@@ -188,6 +203,26 @@
         .log-amount.plus { color: var(--primary); }
         .log-amount.minus { color: var(--danger); }
 
+        /* PROCESSING MODAL */
+        .processing-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 10000;
+            display: none; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .processing-content {
+            text-align: center; color: white; padding: 30px; background: var(--card-bg);
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            box-shadow: 0 0 50px rgba(34,197,94,0.3);
+            max-width: 400px; width: 90%;
+        }
+        .spinner {
+            width: 50px; height: 50px; border: 5px solid rgba(34, 197, 94, 0.1);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin 1s linear infinite; margin: 0 auto 20px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         #toastContainer { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); }
 
@@ -204,7 +239,6 @@
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(20px); }
 
-        /* File Input */
         .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
         .file-upload-btn {
             border: 1px dashed var(--glass-border); color: var(--text-gray);
@@ -231,6 +265,15 @@
 <body>
 
     <div id="toastContainer"></div>
+
+    <!-- ОБРАБОТКА (NEW) -->
+    <div id="processingModal" class="processing-overlay">
+        <div class="processing-content">
+            <div class="spinner"></div>
+            <h3 id="procTitle" style="color:var(--primary); margin-bottom:10px;">ОБРОБКА</h3>
+            <p id="procText" style="color:var(--text-gray); font-size:14px;">Підключення до сервера...</p>
+        </div>
+    </div>
 
     <header>
         <a href="cabinet.html" style="color: var(--text-gray); text-decoration: none; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing:1px;">← НАЗАД</a>
@@ -272,9 +315,7 @@
             <section id="shopPage" class="content-section">
                 <div class="shop-info-banner">
                     <div class="shop-rate-row">
-                        <span style="font-size:14px; color:var(--text-gray); font-weight:700;">КУРС:</span>
-                        <span class="shop-rate-display">1 🪙 = <span id="shopRateDisplay">0</span> $</span>
-                    </div>
+                        1 🪙 = <span id="shopRateDisplay">0</span> $                     </div>
                     <div id="shopInfoText" class="shop-info-text">Завантаження...</div>
                 </div>
 
@@ -301,16 +342,15 @@
                     <div id="tabSettings" class="admin-tab" style="display:none;">
                         <div style="display:flex; flex-direction:column; gap:15px;">
                             <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius:10px;">
-                                <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">DISCORD WEBHOOK URL (РЕЄСТР САЙТУ)</label>
+                                <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">DISCORD WEBHOOK URL</label>
                                 <input type="text" id="webhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
-                                <small style="color:#666; font-size:10px;">Всі дії (покупки, виграші, зміна балансу) летять сюди.</small>
                             </div>
 
                             <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius:10px;">
                                 <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
-                                <div style="display: flex; gap: 10px;">
+                                <div style="display: flex; gap: 10px; margin-top:5px;">
                                     <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
-                                    <button class="btn-main btn-buy" style="max-width: 150px;" onclick="saveSettings()">СОХРАНИТЬ</button>
+                                    <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSettings()">СОХРАНИТЬ</button>
                                 </div>
                             </div>
 
@@ -482,29 +522,28 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
-        // --- УНИВЕРСАЛЬНАЯ ФУНКЦИЯ ДИСКОРДА ---
+        // --- DISCORD ---
         async function sendLogToDiscord(type, userObj, description, amount = 0) {
             if (!webhookUrl || !webhookUrl.startsWith("https://discord")) return;
 
-            let color = 0; // Default gray
+            let color = 0; 
             let icon = "📄";
             let title = "Лог";
 
             if (type === 'buy') {
-                color = 5793266; // Blue
+                color = 5793266; 
                 icon = "🛒";
                 title = "ПОКУПКА";
             } else if (type === 'win') {
-                color = 15105570; // Gold
+                color = 15105570; 
                 icon = "🎉";
                 title = "ВИГРАШ";
             } else if (type === 'admin') {
-                color = 16007990; // Red
+                color = 16007990; 
                 icon = "🛠️";
-                title = "АДМІНІСТРУВАВАННЯ";
+                title = "АДМІНІСТРУВАННЯ";
             }
 
-            // Формируем красивое описание с форматированием
             let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
             if (amount !== 0) {
                 desc += `\n\`\`\`Баланс: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
@@ -620,25 +659,39 @@
             });
         }
 
+        // --- SETTINGS SAVE WITH INDICATOR ---
         window.saveSettings = async () => {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
+            
+            const btn = document.getElementById('saveSettingsBtn');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ СОХРАНЕННЯ...";
+            btn.disabled = true;
+
             const rate = parseFloat(document.getElementById('exchangeRateInput').value);
             const text = document.getElementById('infoTextInput').value;
             const url = document.getElementById('webhookUrl').value;
 
-            if (!rate) return notify("Вкажіть курс!");
-            
-            exchangeRate = rate;
-            infoText = text;
-            webhookUrl = url;
+            try {
+                if (!rate) throw new Error("Вкажіть курс!");
+                
+                exchangeRate = rate;
+                infoText = text;
+                webhookUrl = url;
 
-            await setDoc(doc(db, "configs", "roulette"), { 
-                exchangeRate: rate, 
-                infoText: text,
-                webhookUrl: url 
-            }, { merge: true });
-            notify("Налаштування оновлено!");
-            updateShopDisplay();
+                await setDoc(doc(db, "configs", "roulette"), { 
+                    exchangeRate: rate, 
+                    infoText: text,
+                    webhookUrl: url 
+                }, { merge: true });
+                notify("Налаштування оновлено!");
+                updateShopDisplay();
+            } catch (e) {
+                notify(e.message || "Помилка");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         }
 
         function updateShopDisplay() {
@@ -751,16 +804,27 @@
             
             openModal("ПОКУПКА", msg, async () => {
                 isProcessing = true;
+                
+                // ПОКАЗАТЬ МОДАЛКУ ОБРАБОТКИ
+                document.getElementById('procTitle').innerText = "ПОКУПКА";
+                document.getElementById('procText').innerText = `Купівля: ${item.name}\nЦіна: ${item.price} 🪙`;
+                document.getElementById('processingModal').style.display = 'flex';
+
                 try {
+                    // ЗАДЕРЖКА 2 СЕКУНДЫ
+                    await new Promise(r => setTimeout(r, 2000));
+
                     await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
                     await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price);
                     
-                    // SEND TO DISCORD
-                    await sendLogToDiscord('buy', userData, `Купив: ${item.name}`, -item.price);
+                    // SEND DISCORD
+                    await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price);
                     
+                    document.getElementById('processingModal').style.display = 'none';
                     closeModal();
                     notify("Покупка успішна!");
                 } catch(e) {
+                    document.getElementById('processingModal').style.display = 'none';
                     notify("Помилка транзакції");
                 } finally {
                     isProcessing = false;
@@ -816,19 +880,30 @@
             
             openModal("КУПІВЛЯ", msg, async () => {
                 isProcessing = true;
+                
+                // ПОКАЗАТЬ МОДАЛКУ ОБРАБОТКИ
+                document.getElementById('procTitle').innerText = "ПОКУПЛЯ БИЛЕТІВ";
+                document.getElementById('procText').innerText = `Баланс: ${points}\nКупівля: ${count} квитків\nСписання: ${cost} 🪙`;
+                document.getElementById('processingModal').style.display = 'flex';
+
                 try {
+                    // ЗАДЕРЖКА 2 СЕКУНДЫ
+                    await new Promise(r => setTimeout(r, 2000));
+
                     await updateDoc(doc(db, "users", user.uid), { 
                         points: points - cost, 
                         roulette_passes: (userData.roulette_passes || 0) + count 
                     });
                     await addLog(userData.name, "SHOP", `Купив ${count} квитків`, -cost);
                     
-                    // SEND TO DISCORD
+                    // SEND DISCORD
                     await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
-                    
+
+                    document.getElementById('processingModal').style.display = 'none';
                     closeModal();
                     notify(`Куплено ${count} квитків!`);
                 } catch(e) {
+                    document.getElementById('processingModal').style.display = 'none';
                     notify("Помилка транзакції");
                 } finally {
                     isProcessing = false;
@@ -887,8 +962,7 @@
                 document.getElementById('spinBtn').disabled = false;
                 notify(`ВИТАЄМО! Ви виграли: ${winner.name}`);
                 
-                // SEND TO DISCORD (WIN)
-                await sendLogToDiscord('win', userData, `Виграв: ${winner.name}`, 0);
+                sendLogToDiscord('win', userData, `Виграв: ${winner.name}`, 0);
                 
                 let upd = {};
                 const val = parseFloat(winner.actionValue) || 0;
@@ -995,13 +1069,12 @@
             openModal("БАЛАНС", `Змінити на ${type==='add'?'+':'-'}${amt}?`, async () => {
                 const ref = doc(db, "users", id);
                 const s = await getDoc(ref);
-                const targetUser = s.data(); // ЦЕЛЬНОЙ ПОЛЬЗОВАТЕЛЬ
+                const targetUser = s.data();
                 const cur = targetUser.points || 0;
                 
                 await updateDoc(ref, { points: type === 'add' ? cur + amt : cur - amt });
                 await addLog(userData.name, targetUser.name, `Адмін-корекція`, type==='add'?amt:-amt);
                 
-                // SEND TO DISCORD (ADMIN ACTION)
                 const actionStr = type === 'add' ? `Нарахував ${amt} балів` : `Списав ${amt} балів`;
                 await sendLogToDiscord('admin', userData, `Змінив баланс ${targetUser.name}: ${actionStr}`, type==='add'?amt:-amt);
 
@@ -1064,7 +1137,7 @@
                     const l = d.data();
                     let icon = "📄";
                     if(l.action.includes("Купив")) icon = "🛒";
-                    if(l.action.includes("Виграш")) icon = "🎁";
+                    if(l.action.includes("Виграш")) icon = "🎉";
                     if(l.action.includes("Адмін")) icon = "🛠️";
 
                     const amountClass = l.amount >= 0 ? 'plus' : 'minus';
@@ -1085,7 +1158,7 @@
             const usersSnap = await getDocs(query(collection(db, "users")));
             const select = document.getElementById('adminUserSelect');
             if (!select) return;
-            select.innerHTML = '<option value="">Оберіть користувача...</option>';
+            select.innerHTML = '<option value="">Оберіть бійця...</option>';
             usersSnap.forEach(d => {
                 const u = d.data();
                 if (['admin', 'instructor'].includes(u.role)) {
