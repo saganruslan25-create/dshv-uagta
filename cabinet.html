@@ -989,14 +989,17 @@
                     }
                 });
             }
-            // ИСПРАВЛЕНО: Добавлена закрывающая скобка ) в регулярном выражении
+
+            // Создаем регулярное выражение отдельно, чтобы избежать ошибок парсинга в шаблонной строке
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+
             listUI.innerHTML = found.map(f => `
                 <div class="report-card ${f.colType === 'Щотижневий' ? 'rep-weekly' : 'rep-subotnik'}">
                     <div class="report-header">
                         <span style="font-size: 12px; font-weight: 900; color: var(--primary-bright);">${f.period || f.date || '---'}</span>
                         <span style="font-size: 10px; background: ${f.colType === 'Щотижневий' ? 'var(--primary)' : 'var(--warning)'}; color: black; padding: 3px 8px; border-radius: 5px; font-weight: 900;">${f.colType}</span>
                     </div>
-                    <div class="report-body">${(f.content || f.message).replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>')}</div>`
+                    <div class="report-body">${(f.content || f.message).replace(urlRegex, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>')}</div>`
                 </div>
             `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
         };
