@@ -45,7 +45,7 @@
             box-shadow: 0 0 10px var(--primary);
         }
 
-        /* ГЛОБАЛЬНИЙ ПЕРЕХІД КЛАС - ОПТИМІЗОВАНО ДЛЯ FPS */
+        /* ГЛОБАЛЬНИЙ ПЕРЕХІД КЛАС */
         * { box-sizing: border-box; transition: all 0.2s ease; }
         
         input, textarea { user-select: text !important; -webkit-user-select: text !important; }
@@ -273,20 +273,24 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
 
-        /* МОДАЛЬКА РОЛІ */
+        /* МОДАЛЬКА РОЛІ (СТИЛЬ ЯК В ІНШИХ) */
         .role-btn {
             background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
             color: white; padding: 15px; border-radius: 10px; font-weight: 800; cursor: pointer;
             width: 100%; margin-bottom: 10px; transition: 0.3s;
             text-align: center;
+            border: 1px solid var(--warning); /* Жовта рамка зберігається */
+            color: var(--warning); /* Жовтий колір зберігається */
         }
         .role-btn:hover { background: rgba(0, 255, 68, 0.1); border-color: var(--primary); color: var(--primary-bright); }
         .role-btn.active { 
-            background: var(--primary); color: black; border-color: var(--primary); 
+            background: var(--primary); 
+            color: black; 
+            border-color: var(--primary);
             box-shadow: 0 0 15px var(--primary); 
         }
 
-        /* СТАФ - ВИПРАВЛЕНО РОЗТАШУВАННЯ КНОПКИ */
+        /* СТАФ */
         .staff-toggle-btn {
             width: 100%;
             max-width: 500px;
@@ -559,8 +563,9 @@
         </div>
     </div>
 
+    <!-- МОДАЛЬКА РОЛІ -->
     <div id="roleModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 300px;">
+        <div class="modal-content">
             <button class="close-modal-btn" onclick="closeRoleModal()">&times;</button>
             <h3 style="color: var(--primary-bright); text-align: center; margin-bottom: 20px;">ПРИЗНАЧИТИ РОЛЬ</h3>
             <div id="roleCurrentUid" type="hidden"></div>
@@ -679,7 +684,12 @@
             document.getElementById('editTargetUid').value = uid;
             document.getElementById('editFieldName').value = fieldName;
             document.getElementById('editLabel').innerText = label;
-            document.getElementById('editInput').value = currentVal || "";
+            
+            // ФІКС: Якщо значення "---" або undefined, передаємо порожній рядок, щоб в інпуті не було "---"
+            let cleanVal = currentVal;
+            if (cleanVal === '---' || cleanVal === undefined) cleanVal = "";
+            
+            document.getElementById('editInput').value = cleanVal;
             document.getElementById('editModal').style.display = 'flex';
         };
         window.closeEditModal = () => document.getElementById('editModal').style.display = 'none';
@@ -687,7 +697,7 @@
             const uid = document.getElementById('editTargetUid').value;
             const fieldName = document.getElementById('editFieldName').value;
             const val = document.getElementById('editInput').value;
-            if (val && uid) await updateDoc(doc(db, "users", uid), { [fieldName]: val });
+            if (uid) await updateDoc(doc(db, "users", uid), { [fieldName]: val });
             closeEditModal();
         };
 
@@ -727,12 +737,12 @@
             editingUID = user.uid;
 
             const userDoc = await getDoc(doc(db, "users", user.uid));
+            
+            // --- ВИПРАВЛЕННЯ АВТОРЕЄСТРАЦІЇ ---
             if (!userDoc.exists()) {
-                await setDoc(doc(db, "users", user.uid), {
-                    name: user.displayName || "Новий боєць",
-                    verified: false, role: 'user', rank: 'Рекрут | Службовець', reprimands: 0, warns: 0, staffIndex: Date.now(), lastIP: ipData.ip
-                });
-                document.getElementById('verifyWaitingScreen').style.display = 'flex';
+                alert("Профіль не знайдено в базі даних. Будь ласка, зареєструйтесь.");
+                await signOut(auth);
+                window.location.href = "index.html";
                 return;
             }
 
@@ -748,7 +758,6 @@
             updateUI(myData);
             listenToSystemStatus(myData.role);
             
-            // Адмінські функції
             if (myData.role === 'admin') {
                 document.getElementById('toggleStaffBtn').classList.add('visible');
                 document.getElementById('adminAppBtn').style.display = 'flex';
@@ -764,7 +773,7 @@
             } else {
                 document.getElementById('ryletkaLink').style.display = 'none';
             }
-            
+
             initNotifications();
             listenForMentions();
         });
@@ -803,6 +812,11 @@
             setTextIfChanged('userRep', data.reprimands || 0);
             setTextIfChanged('userWarns', data.warns || 0);
 
+            // ЛОГІКА ПАСПОРТА І ДИСКОРДА
+            // ВИПРАВЛЕНО: Якщо даних немає, показуємо пустий рядок замість "---", щоб при кліку редагування в поле вводу не летіло "---".
+            setTextIfChanged('userPassport', data.passport || "");
+            setTextIfChanged('userDiscord', data.discord || "");
+
             const btnPass = document.getElementById('btnAddPass');
             const btnDisc = document.getElementById('btnAddDisc');
 
@@ -820,7 +834,6 @@
             setTextIfChanged('userPosEdit', posValue);
 
             // ПРАВА АДМІНІСТРАТОРА
-            // Інструктор не має доступу до адмінських контролов
             const isAdmin = (myData.role === 'admin');
 
             const isManaging = (isAdmin && editingUID !== currentUID);
@@ -995,7 +1008,7 @@
 
         window.deleteUser = async (id) => {
             const code = await getSecret();
-            const input = prompt("Ведіть пароль:");
+            const input = prompt("Введіть пароль:");
             if (input === code) {
                 await deleteDoc(doc(db, "users", id));
                 alert("Бійця видалено!");
@@ -1009,7 +1022,7 @@
         };
 
         function initNotifications() {
-            ['reports', 'subotniks', 'applications', 'ryletka'].forEach(t => { // Додано ryletka
+            ['reports', 'subotniks', 'applications', 'ryletka'].forEach(t => {
                 let isInitialLoad = true;
                 onSnapshot(collection(db, t), (snap) => {
                     if (isInitialLoad) { isInitialLoad = false; return; }
@@ -1035,7 +1048,7 @@
 
         window.toggleSystemAccess = async () => {
             const code = await getSecret(); 
-            const input = prompt("ВВВЕДІТЬ СЕКРЕТНИЙ КОД:");
+            const input = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
             if (input === code) {
                 const ref = doc(db, "settings", "systemStatus");
                 const snap = await getDoc(ref);
