@@ -444,12 +444,17 @@
             const preview = document.getElementById('prizePreview');
             if (!preview) return;
             preview.innerHTML = "";
+            const isInstructor = userData && userData.role === 'instructor';
+
             items.forEach(p => {
                 let chanceText = isAutoOdds ? (100 / items.length).toFixed(1) + '%' : (p.chance || 0) + '%';
+                // Hide chance for instructors
+                const displayChance = isInstructor ? '' : chanceText;
+                
                 preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; margin-bottom:8px;">
                     <div style="font-size:10px; font-weight:800;">${p.name}</div>
-                    <div style="font-size:8px; color:var(--text-gray); margin-top:4px;">${chanceText}</div>
+                    <div style="font-size:8px; color:var(--text-gray); margin-top:4px;">${displayChance}</div>
                 </div>`;
             });
             initTrack(items);
@@ -655,6 +660,7 @@
             rGrid.innerHTML = ""; sGrid.innerHTML = "";
             const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
             const isAdmin = userData && userData.role === 'admin';
+            const isInstructor = userData && userData.role === 'instructor';
 
             prizePool.forEach(p => {
                 const el = document.createElement('div');
@@ -664,7 +670,12 @@
                 if (p.category === 'shop') {
                     valDisplay = p.price + '🪙';
                 } else {
-                    valDisplay = isAutoOdds ? (100 / rouletteItems.length).toFixed(1) + '%' : (p.chance || 0) + '%';
+                    // Hide chances for instructors
+                    if (isInstructor) {
+                        valDisplay = "";
+                    } else {
+                        valDisplay = isAutoOdds ? (100 / rouletteItems.length).toFixed(1) + '%' : (p.chance || 0) + '%';
+                    }
                 }
 
                 // Only show edit/delete buttons for admins
