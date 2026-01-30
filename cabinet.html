@@ -50,7 +50,7 @@
         
         input, textarea { user-select: text !important; -webkit-user-select: text !important; }
 
-        /* АНІМАЦІЯ НАВЕДЕННЯ - ЗМЕНШЕНО ЗНИЖНЯ */
+        /* АНІМАЦІЯ НАВЕДЕННЯ */
         .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
         .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
         .btn-lock-menu:hover, .btn-verify:hover, .edit-icon:hover, .staff-toggle-btn:hover {
@@ -217,6 +217,14 @@
         .info-box span { font-size: 11px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 10px; display: block; opacity: 0.9; text-shadow: 0 0 8px var(--primary); }
         .info-box h2 { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2; text-shadow: 0 0 5px rgba(255,255,255,0.2); }
         
+        /* ФІКС ДЛЯ ПАСПОРТА ТА ДИСКОРДА */
+        .editable-field-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
         /* ТИПИЧНИЙ БЛОК */
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .admin-controls { display: none; justify-content: center; gap: 10px; margin-top: 5px; }
@@ -265,9 +273,11 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
 
-        /* СТАФ - ВИПРАВЛЕНО ДЕРГАННЯ КНОПКИ */
+        /* СТАФ - ВИПРАВЛЕНО РОЗТАШУВАННЯ КНОПКИ */
         .staff-toggle-btn {
-            width: 90%; margin: 40px auto 0;
+            width: 100%;
+            max-width: 500px; /* Обмежуємо ширину */
+            margin: 40px auto 0; /* Центруємо стандартно */
             background: rgba(0, 255, 68, 0.05); border: 1px dashed var(--glass-border);
             color: var(--primary); padding: 15px; border-radius: 15px;
             font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
@@ -275,15 +285,14 @@
             align-items: center; justify-content: center; gap: 10px;
             opacity: 0;
             position: relative;
-            left: 50%;
-            transform: translateX(-50%); 
+            /* Видалили left: 50%, transform: translateX(-50%), щоб кнопка не вилітала */
         }
         .staff-toggle-btn.visible { 
             display: flex; 
             opacity: 1;
         }
         .staff-toggle-btn:hover {
-            transform: translate(-50%, -1px);
+            transform: translateY(-1px); /* Легкий підйом */
             border-color: var(--primary);
             box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px rgba(0,255,102,0.2);
             text-shadow: 0 0 10px var(--primary);
@@ -295,12 +304,11 @@
             grid-template-rows: 0fr; 
             transition: grid-template-rows 0.6s ease-out, opacity 0.5s ease;
             opacity: 0;
-            width: 100vw; 
-            position: relative;
-            left: 50%;
-            transform: translateX(-50%); 
-            margin-top: 20px;
+            width: 100%; /* Зроблено 100% замість 100vw, щоб не виривало з контейнера */
+            max-width: 1550px; /* Максимальна ширина як у контейнера */
+            margin: 20px auto 0; /* Центруємо */
             padding: 0;
+            position: relative;
         }
         .staff-section-container.open {
             grid-template-rows: 1fr;
@@ -318,7 +326,6 @@
             padding: 30px 5%; 
             margin: 0; 
             box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-            max-width: 1920px; 
         }
         .staff-item {
             display: flex; justify-content: space-between; align-items: center;
@@ -371,6 +378,7 @@
             .staff-item > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 5px; }
             .modal-content { width: 95%; }
             .staff-section { padding: 20px; }
+            .staff-toggle-btn { max-width: 90%; }
         }
     </style>
 </head>
@@ -536,9 +544,9 @@
 
     <div id="reportsModal" class="modal-overlay">
         <div class="modal-content">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
+            <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
                 <h2 id="modalTitle" style="color: var(--primary-bright); font-size: 20px; margin:0;">АРХІВ ЗВІТІВ</h2>
-                <button onclick="window.copyAllReports()" style="background:var(--primary); color:black; border:none; padding:8px 15px; border-radius:8px; font-weight:800; cursor:pointer;">📋 СКОПІЮВАТИ ВСЕ</button>
+                <!-- КНОПКУ СКОПІЮВАТИ ВСЕ ВИДАЛЕНО -->
             </div>
             <div id="modalReportsList"></div>
             <span onclick="document.getElementById('reportsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 35px; cursor: pointer; color: #555;">&times;</span>
@@ -974,7 +982,7 @@
             }
         };
 
-        // Функція для обробки посилань (винесена окремо для стабільності)
+        // Функція для обробки посилань
         function linkify(text) {
             if (!text) return "";
             const urlRegex = /(https?:\/\/\S+)/g;
@@ -1006,22 +1014,6 @@
                     <div class="report-body">${linkify(f.content || f.message)}</div>
                 </div>
             `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
-        };
-
-        window.copyAllReports = () => {
-            const list = document.getElementById('modalReportsList');
-            if (!list) return;
-            let textToCopy = list.innerText;
-            if (!textToCopy || textToCopy.includes("Звітів не знайдено") || textToCopy.includes("Завантаження архіву")) {
-                alert("Немає даних для копіювання!");
-                return;
-            }
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                alert("Архів скопійовано до буферу обміну!");
-            }).catch(err => {
-                console.error('Помилка копіювання: ', err);
-                alert("Не вдалося скопіювати автоматично. Виділисть текст вручну.");
-            });
         };
 
         window.onclick = function(event) {
