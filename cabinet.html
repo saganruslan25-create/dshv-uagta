@@ -107,7 +107,7 @@
         .btn-logout-custom:hover { background: var(--danger); color: white; transform: translateY(-2px); box-shadow: 0 0 20px var(--danger); }
 
         /* СПОВІЩЕННЯ */
-        .notif-wrapper { position: relative; cursor: pointer; padding:5px; z-index: 2001; }
+        .notif-wrapper { position: relative; cursor: pointer; padding: 5px; z-index: 2001; }
         .bell-icon { font-size: 24px; color: var(--warning); filter: drop-shadow(0 0 8px var(--warning)); }
         .bell-badge { 
             position: absolute; top: -2px; right: -2px; 
@@ -273,11 +273,24 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
 
+        /* МОДАЛЬКА РОЛІ */
+        .role-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+            color: white; padding: 15px; border-radius: 10px; font-weight: 800; cursor: pointer;
+            width: 100%; margin-bottom: 10px; transition: 0.3s;
+            text-align: center;
+        }
+        .role-btn:hover { background: rgba(0, 255, 68, 0.1); border-color: var(--primary); color: var(--primary-bright); }
+        .role-btn.active { 
+            background: var(--primary); color: black; border-color: var(--primary); 
+            box-shadow: 0 0 15px var(--primary); 
+        }
+
         /* СТАФ - ВИПРАВЛЕНО РОЗТАШУВАННЯ КНОПКИ */
         .staff-toggle-btn {
             width: 100%;
-            max-width: 500px; /* Обмежуємо ширину */
-            margin: 40px auto 0; /* Центруємо стандартно */
+            max-width: 500px;
+            margin: 40px auto 0;
             background: rgba(0, 255, 68, 0.05); border: 1px dashed var(--glass-border);
             color: var(--primary); padding: 15px; border-radius: 15px;
             font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
@@ -285,14 +298,13 @@
             align-items: center; justify-content: center; gap: 10px;
             opacity: 0;
             position: relative;
-            /* Видалили left: 50%, transform: translateX(-50%), щоб кнопка не вилітала */
         }
         .staff-toggle-btn.visible { 
             display: flex; 
             opacity: 1;
         }
         .staff-toggle-btn:hover {
-            transform: translateY(-1px); /* Легкий підйом */
+            transform: translateY(-1px);
             border-color: var(--primary);
             box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px rgba(0,255,102,0.2);
             text-shadow: 0 0 10px var(--primary);
@@ -304,9 +316,9 @@
             grid-template-rows: 0fr; 
             transition: grid-template-rows 0.6s ease-out, opacity 0.5s ease;
             opacity: 0;
-            width: 100%; /* Зроблено 100% замість 100vw, щоб не виривало з контейнера */
-            max-width: 1550px; /* Максимальна ширина як у контейнера */
-            margin: 20px auto 0; /* Центруємо */
+            width: 100%; 
+            max-width: 1550px; 
+            margin: 20px auto 0; 
             padding: 0;
             position: relative;
         }
@@ -346,6 +358,7 @@
         .btn-manage { background: #1e293b; color: white; border: 1px solid var(--glass-border); }
         .btn-verify { background: var(--warning); color: black; }
         .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 12px; }
+        .btn-role { background: rgba(255,255,255,0.05); border: 1px solid var(--warning); color: var(--warning); font-size: 11px; padding: 8px 15px; }
 
         /* АРХІВ */
         .report-card {
@@ -420,12 +433,16 @@
         <div class="main-container">
             <div class="side-menu">
                 <button id="backToMe" onclick="resetView()" style="display: none; width: 100%; background: var(--warning); color: black; padding: 14px; border-radius: 12px; font-weight: 900; border: none; cursor: pointer; margin-bottom: 15px; font-size: 13px;">⬅ МІЙ ПРОФІЛЬ</button>
+                
+                <!-- ОНОВЛЕНЕ МЕНЮ -->
                 <a href="index.html" class="menu-item">🏠 Головна сторінка</a>
-                <a href="gallery.html" class="menu-item">📸 Галерея</a>
                 <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
                 <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
-                <a href="applications.html" class="menu-item" id="adminAppBtn" style="display: none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
                 <a href="chats.html" class="menu-item">💬 Чати / Інформація <div id="dot-chats" class="fire-dot"></div></a>
+                <a href="gallery.html" class="menu-item">📸 Галерея</a>
+                <a href="applications.html" class="menu-item" id="adminAppBtn" style="display: none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
+                <a href="ryletka.html" class="menu-item" id="ryletkaLink" style="display: none;">🎲 Рулетка Удачі <div id="dot-ryletka" class="fire-dot"></div></a>
+                
                 <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
             </div>
 
@@ -542,11 +559,21 @@
         </div>
     </div>
 
+    <div id="roleModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 300px;">
+            <button class="close-modal-btn" onclick="closeRoleModal()">&times;</button>
+            <h3 style="color: var(--primary-bright); text-align: center; margin-bottom: 20px;">ПРИЗНАЧИТИ РОЛЬ</h3>
+            <div id="roleCurrentUid" type="hidden"></div>
+            
+            <button class="role-btn" id="btnRoleFighter" onclick="window.assignRole('fighter')">БІЄЦЬ</button>
+            <button class="role-btn" id="btnRoleInstructor" onclick="window.assignRole('instructor')">ІНСТРУКТОР</button>
+        </div>
+    </div>
+
     <div id="reportsModal" class="modal-overlay">
         <div class="modal-content">
             <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
                 <h2 id="modalTitle" style="color: var(--primary-bright); font-size: 20px; margin:0;">АРХІВ ЗВІТІВ</h2>
-                <!-- КНОПКУ СКОПІЮВАТИ ВСЕ ВИДАЛЕНО -->
             </div>
             <div id="modalReportsList"></div>
             <span onclick="document.getElementById('reportsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 35px; cursor: pointer; color: #555;">&times;</span>
@@ -664,6 +691,30 @@
             closeEditModal();
         };
 
+        // --- РОЛІ ---
+        window.openRoleModal = (uid, currentRole) => {
+            document.getElementById('roleCurrentUid').value = uid;
+            
+            const btnFighter = document.getElementById('btnRoleFighter');
+            const btnInstructor = document.getElementById('btnRoleInstructor');
+            
+            btnFighter.classList.remove('active');
+            btnInstructor.classList.remove('active');
+            
+            if (currentRole === 'fighter' || currentRole === 'user') btnFighter.classList.add('active');
+            if (currentRole === 'instructor') btnInstructor.classList.add('active');
+            
+            document.getElementById('roleModal').style.display = 'flex';
+        };
+        window.closeRoleModal = () => document.getElementById('roleModal').style.display = 'none';
+        window.assignRole = async (newRole) => {
+            const uid = document.getElementById('roleCurrentUid').value;
+            if (uid) {
+                await updateDoc(doc(db, "users", uid), { role: newRole });
+                closeRoleModal();
+            }
+        };
+
         // --- ПІДКЛЮЧЕННЯ ---
         onAuthStateChanged(auth, async (user) => {
             if (!user) { window.location.href = "index.html"; return; }
@@ -697,6 +748,7 @@
             updateUI(myData);
             listenToSystemStatus(myData.role);
             
+            // Адмінські функції
             if (myData.role === 'admin') {
                 document.getElementById('toggleStaffBtn').classList.add('visible');
                 document.getElementById('adminAppBtn').style.display = 'flex';
@@ -705,6 +757,14 @@
             } else {
                 document.getElementById('toggleStaffBtn').style.display = 'none';
             }
+            
+            // Доступ до Ролетки (для Адмінів та Інструкторів)
+            if (myData.role === 'admin' || myData.role === 'instructor') {
+                document.getElementById('ryletkaLink').style.display = 'flex';
+            } else {
+                document.getElementById('ryletkaLink').style.display = 'none';
+            }
+            
             initNotifications();
             listenForMentions();
         });
@@ -759,14 +819,18 @@
             const posValue = data.position || (parts[1] ? parts[1].trim() : "---");
             setTextIfChanged('userPosEdit', posValue);
 
-            const isManaging = (myData.role === 'admin' && editingUID !== currentUID);
+            // ПРАВА АДМІНІСТРАТОРА
+            // Інструктор не має доступу до адмінських контролов
+            const isAdmin = (myData.role === 'admin');
+
+            const isManaging = (isAdmin && editingUID !== currentUID);
             const isSelf = (editingUID === currentUID);
 
             const btnRank = document.getElementById('btnEditRank');
             const btnPos = document.getElementById('btnEditPos');
             const btnPosEdit = document.getElementById('btnAddPos');
 
-            if (myData.role === 'admin') {
+            if (isAdmin) {
                 btnRank.style.display = 'inline-block'; btnRank.style.opacity = '1';
                 btnPos.style.display = 'inline-block'; btnPos.style.opacity = '1';
                 btnPosEdit.style.display = 'inline-block'; btnPosEdit.style.opacity = '1';
@@ -790,7 +854,7 @@
             }
 
             document.querySelectorAll('.admin-controls').forEach(c => {
-                c.style.display = (myData.role === 'admin') ? 'flex' : 'none'; 
+                c.style.display = isAdmin ? 'flex' : 'none'; 
             });
         }
 
@@ -838,6 +902,11 @@
                             <button class="edit-icon" style="display: inline-block; opacity: 1; margin-left:5px; color:var(--primary-bright);" onclick="window.openEditModal('${u.id}', 'rank', 'Звання', '${rName}')">✎</button>
                         ` : '';
 
+                        // Кнопка Ролі (тільки для адміна)
+                        const roleBtn = (myData.role === 'admin') ? `
+                            <button class="btn-role" onclick="window.openRoleModal('${u.id}', '${u.role || 'user'}')">РОЛЬ</button>
+                        ` : '';
+
                         item.innerHTML = `
                             <div style="display: flex; align-items: center;">
                                 <div class="order-arrows">
@@ -854,6 +923,7 @@
                                 <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">АРХІВ</button>
                                 <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
                                 <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">X</button>
+                                ${roleBtn}
                             </div>
                         `;
                         list.appendChild(item);
@@ -939,7 +1009,7 @@
         };
 
         function initNotifications() {
-            ['reports', 'subotniks', 'applications'].forEach(t => {
+            ['reports', 'subotniks', 'applications', 'ryletka'].forEach(t => { // Додано ryletka
                 let isInitialLoad = true;
                 onSnapshot(collection(db, t), (snap) => {
                     if (isInitialLoad) { isInitialLoad = false; return; }
@@ -950,6 +1020,8 @@
                             let text = `Новий запис: ${t}`;
                             let link = `${t}.html`;
                             if (t === 'applications' && myData.role !== 'admin') return;
+                            // Якщо це ролетка, а не адмін і не інструктор - не показувати
+                            if (t === 'ryletka' && myData.role !== 'admin' && myData.role !== 'instructor') return;
                             addNotification(text, link, id);
                         }
                     });
