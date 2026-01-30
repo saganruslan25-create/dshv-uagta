@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | РУЛЕТКА УДАЧІ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #00eaff; /* Неоновий синій */
+            --primary-dark: #0088cc;
+            --primary-glow: rgba(0, 234, 255, 0.4);
+            --iron-dark: #111116;
+            --iron-light: #2a2d35;
+            --iron-border: #3e4456;
+            --text-main: #e2e8f0;
+            --text-dim: #94a3b8;
+            --danger: #ff4444;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--iron-dark);
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(0, 234, 255, 0.1) 0%, transparent 70%),
+                linear-gradient(0deg, #0a0a0a, #111116);
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--iron-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--primary-dark); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-blue); }
+
+        /* HEADER */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%; background: rgba(0, 0, 0, 0.8);
+            border-bottom: 1px solid var(--iron-border);
+            backdrop-filter: blur(10px);
+            position: sticky; top: 0; z-index: 1000;
+        }
+        .logo {
+            background: var(--primary-blue);
+            color: #000; padding: 5px 10px; font-weight: 900; text-decoration: none; border-radius: 4px;
+            box-shadow: 0 0 10px var(--primary-glow);
+            text-transform: uppercase;
+        }
+        .user-info {
+            display: flex; align-items: center; gap: 15px;
+            font-size: 14px; font-weight: 700;
+            background: rgba(0, 234, 255, 0.1);
+            padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(0, 234, 255, 0.2);
+        }
+        .balance-display span { color: var(--primary-blue); font-size: 18px; font-weight: 900; }
+        
+        /* MAIN CONTAINER */
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding-bottom: 50px;
+        }
+
+        /* WHEEL SECTION */
+        .wheel-section {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--iron-border);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+            border-radius: 50%;
+            border: 8px solid var(--iron-light);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0,0,0,0.5);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Wheel Visuals (CSS Gradients) */
+        .wheel {
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg, #ff4757 0deg 9%, 
+                #f5b041 9deg 18%, 
+                #eab308 18deg 27%, 
+                #10b981 27deg 36%, 
+                #3b82f6 36deg 45%, 
+                #6366f1 45deg 54%, 
+                #8b5cf6 54deg 63%, 
+                #d946ef 63deg 72%, 
+                #f43f5e 72deg 81%, 
+                #ff4757 81deg 90%, 
+                #f5b041 90deg 100%
+            );
+            transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+        
+        /* The Pointer/Marker */
+        .marker {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 10px solid white;
+            border-bottom: 10px solid white;
+            transform-origin: top center;
+            filter: drop-shadow(0 0 5px black);
+            z-index: 2;
+        }
+
+        /* Controls */
+        .multipliers {
+            display: flex; justify-content: center; gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .btn-mult {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--primary-dark);
+            color: white;
+            width: 60px; height: 60px;
+            border-radius: 10px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .btn-mult.active {
+            background: var(--primary-blue);
+            color: black;
+            box-shadow: 0 0 15px var(--primary-glow);
+            border-color: var(--primary-blue);
+        }
+        .btn-mult:hover:not(.active) { background: rgba(0, 234, 255, 0.1); }
+
+        .btn-spin {
+            margin-top: 20px;
+            background: linear-gradient(135deg, var(--primary-dark), #005577);
+            color: white;
+            border: none;
+            padding: 15px 60px;
+            font-size: 18px;
+            font-weight: 900;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 20px var(--primary-glow);
+            letter-spacing: 2px;
+            transition: 0.2s;
+        }
+        .btn-spin:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px var(--primary-glow);
+        }
+        .btn-spin:disabled {
+            background: #333;
+            cursor: not-allowed;
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
+        /* INVENTORY / STORE */
+        .inventory-section {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--iron-border);
+            border-radius: 20px;
+            padding: 20px;
+        }
+        .section-title {
+            margin-top: 0; font-size: 14px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 15px;
+        }
+        .store-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--iron-border);
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: 0.2s;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .store-item:hover {
+            border-color: var(--primary-blue);
+            background: rgba(0, 234, 255, 0.05);
+        }
+        .item-icon {
+            font-size: 24px;
+        }
+        .item-name {
+            font-size: 12px;
+            color: #fff;
+            font-weight: 600;
+        }
+        .item-price {
+            font-size: 11px;
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        /* ADMIN PANEL (ADMIN PANEL) */
+        .admin-panel {
+            margin-top: 40px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid var(--danger);
+            border-radius: 15px;
+            display: none; /* Скрыто по умолчанию */
+        }
+        .admin-header {
+            color: var(--danger);
+            font-size: 14px; font-weight: 800;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .admin-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .admin-input, .admin-select {
+            background: #000; border: 1px solid #333;
+            color: white;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            outline: none;
+        }
+        .btn-admin {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-admin:hover {
+            background: #ff6b6b;
+            box-shadow: 0 0 15px var(--danger-glow);
+        }
+
+        /* MODAL FOR WIN/LOSE */
+        .result-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            justify-content: center; align-items: center;
+            z-index: 3000;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+        .modal-content {
+            background: #15171a;
+            border: 2px solid var(--primary-blue);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px var(--primary-glow);
+            animation: popUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 400px; width: 90%;
+        }
+        @keyframes popUp { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .win-amount { font-size: 48px; font-weight: 900; color: var(--primary-blue); margin: 10px 0; text-shadow: 0 0 20px var(--primary-glow); }
+        .lose-text { font-size: 24px; color: #666; margin-top: 10px; }
+        .btn-close-modal { margin-top: 30px; background: #333; border: none; color: white; padding: 10px 30px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+        .btn-close-modal:hover { background: #555; }
+
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <header>
+        <a href="cabinet.html" class="logo">← НАЗАД</a>
+        <div class="user-info">
+            <span>БАЛАНС:</span>
+            <span id="userBalance" class="balance-display">0</span>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        <!-- ЛІВА ЧАСТИНА -->
+        <div class="wheel-section">
+            <div class="wheel-container">
+                <div class="wheel" id="wheel"></div>
+                <div class="marker" id="marker"></div>
+                <!-- Центральна кнопка "Крути" -->
+                <button class="btn-spin" id="spinBtn">КРУТИ</button>
+            </div>
+
+            <div class="multipliers">
+                <button class="btn-mult active" onclick="setMultiplier(1)">x1</button>
+                <button class="btn-mult" onclick="setMultiplier(2)">x2</button>
+                <button class="btn-mult" onclick="setMultiplier(3)">x3</button>
+                <button class="btn-mult" onclick="setMultiplier(5)">x5</button>
+            </div>
+
+            <div id="spinResult" style="margin-top: 15px; font-weight: 700; color: var(--text-dim); height: 20px;"></div>
+        </div>
+
+        <!-- ПРАВА ЧАСТИНА (Магазин) -->
+        <div class="inventory-section" id="inventorySection">
+            <div class="section-title">
+                <span>🛒 МАГАЗИН</span>
+                <!-- Адмінська кнопка налаштування -->
+                <button id="openAdminBtn" style="display:none; border:none; background:rgba(255,255,255,0.1); color:var(--text-dim); cursor:pointer; border-radius:4px; padding: 5px 10px;">⚙ НАЛАШТУВАННЯ</button>
+            </div>
+            <div class="items-grid" id="storeGrid">
+                <!-- Товари генеруються через JS -->
+            </div>
+        </div>
+
+    </div>
+
+    <!-- АДМІН ПАНЕЛЬ (Панель управління балансом) -->
+    <div class="admin-panel" id="adminPanel">
+        <div class="admin-header">⚙ КЕРУВАННЯ БАЛАНСОМ</div>
+        <div class="admin-form">
+            <label style="color: #ccc; font-size: 12px; margin-bottom: 5px;">Оберіть користувача:</label>
+            <select id="userSelect" class="admin-select">
+                <option value="">Завантаження користувачів...</option>
+            </select>
+            
+            <label style="color: #ccc; font-size: 12px; margin-bottom: 5px;">Сума для поповнення:</label>
+            <input type="number" id="adminAmount" class="admin-input" placeholder="Введіть суму...">
+            
+            <label style="color: #888; font-size: 11px; margin-bottom: 10px;">
+                Виберіть дію (завжди надсилається повідомлення в чат):
+            </label>
+            <select id="adminActionType" class="admin-select">
+                <option value="add">Поповнити баланс</option>
+            </select>
+
+            <button class="btn-admin" onclick="adminSubmit()">НАЧИСЛИТИ / ПОПОВНИТИ</button>
+            <div id="adminMsg" style="color: #4ade80; font-size: 12px; margin-top: 5px;"></div>
+        </div>
+        <div style="text-align: right; margin-top: 10px;">
+            <button class="btn-close-modal" style="margin-top:0; background: transparent; color: #555; border: 1px solid #333; padding: 5px 10px; border-radius: 4px; cursor: pointer;" onclick="document.getElementById('adminPanel').style.display='none'">✕ ЗАКРИТИ</button>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ВІКНО РЕЗУЛЬТАТУ -->
+    <div class="result-modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="resTitle">ВИГРАШ!</h2>
+            <div id="resAmount" class="win-amount">5000</div>
+            <p style="color: #ccc;">Баланс оновлено.</p>
+            <button class="btn-close-modal">ОК</button>
+        </div>
+    </div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.8/firebase-auth.js";
+    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, setDoc, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.8/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // --- КОНФІГУРАЦІЯ ІГРИ ---
+    // 0 = Червоний (Прогр)
+    // 1 = Жовтий (x2)
+    // 2 = Помаранжевий (x3)
+    // 3 - 9 = Синій (x5)
+    // 10-36 = Зелений (x5)
+    
+    const prizes = [
+        { name: "Попередження", value: 0, multiplier: 1, color: "red" },
+        { name: "x2 Множник", value: 0, multiplier: 2, color: "yellow" },
+        { name: "Помаранжевий", value: 0, multiplier: 3, color: "orange" },
+        { name: "500 ГРН", value: 500, multiplier: 1, color: "blue" },
+        { name: "1000 ГРН", value: 1000, multiplier: 1, "color": "green" },
+        { 11: "x5 Множник", value: 0, multiplier: 5, color: "cyan" },
+        { 12: "x5 Множник", value: 0, multiplier: 5, color: "cyan" },
+        // Заповнюємо інші позиції пустими множниками для балансову
+        ...Array(30).fill(null).map((_, i) => ({ name: "Нічого", value: 0, multiplier: 5, color: "#333" }))
+    ];
+    
+    // ТОВари (Магазин) - Прикладний список. 
+    // 'price' - скільки коштує це в грішах (баланс).
+    const storeItems = [
+        { id: 1, name: "Баланс x2", icon: "💰", price: 500, type: "add", value: 500 }, // Приклад: Купуєш 500 баланс за 500
+        { id: 2, name: "x1 Множник", icon: "🍀", price: 1000, type: "item", value: 0 },  // Купуєш доступ до x2 на 1 спін
+        { id: 3, name: "x5 Множник", icon: "🚀", price: 5000, type: "item", value: 5 }, // Купуєш доступ до x5 на 1 спін
+        { id: 4, name: "Деньгі", icon: "📅", price: 10000, type: "item", value: 0 },
+        { id: 5, name: "VIP", icon: "👑", price: 15000, type: "role", value: 0 }
+    ];
+
+    let currentMultiplier = 1;
+    let userBalance = 0;
+    let userRole = 'user'; // 'fighter', 'admin', 'instructor'
+    let isSpinning = false;
+
+    document.onkeydown = function(e) {
+        if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e && e.ctrlKey && e.keyCode == 85)) return false;
+    };
+    setInterval(() => console.clear(), 500);
+
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = "index.html";
+            return;
+        }
+
+        // Перевіряємо роль (тільки для адміна доступ до адмінки, інструктор/гравець бачать рулетку)
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            userRole = data.role || 'user';
+            userBalance = data.balance || 0;
+            updateBalanceDisplay();
+
+            if (userRole === 'admin') {
+                document.getElementById('openAdminBtn').style.display = 'block';
+                loadUsersForAdmin();
+                loadStore();
+            } else {
+                document.getElementById('adminPanel').style.display = 'none';
+                loadStore();
+            }
+        }
+    });
+
+    function updateBalanceDisplay() {
+        const el = document.getElementById('userBalance');
+        if(el) el.innerText = userBalance + " ГРН";
+    }
+
+    // --- МАГАЗИН ---
+    function loadStore() {
+        const grid = document.getElementById('storeGrid');
+        grid.innerHTML = "";
+        storeItems.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'store-item';
+            div.onclick = () => buyItem(item);
+            div.innerHTML = `
+                <div class="item-icon">${item.icon}</div>
+                <div class="item-name">${item.name}</div>
+                <div class="item-price">${item.price} ГРН</div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    async function buyItem(item) {
+        if (isSpinning) {
+            alert("Почекайте спін!");
+            return;
+        }
+        
+        if (userBalance < item.price) {
+            alert("Недостатньо коштів на балансі!");
+            return;
+        }
+
+        const confirmMsg = `Купити ${item.name} за ${item.price} ГРН?`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            // ЛОГІКА ПОКУПКИ
+            const user = auth.currentUser;
+            if(!user) return;
+
+            const newBalance = userBalance - item.price;
+            
+            await updateDoc(doc(db, "users", user.uid), { balance: newBalance });
+            
+            alert("Купівлено: " + item.name);
+        } catch (e) {
+            console.error(e);
+            alert("Помилка покупки.");
+        }
+    }
+
+    // --- АДМІН ФУНКЦІЇ ---
+    async function loadUsersForAdmin() {
+        const select = document.getElementById('userSelect');
+        select.innerHTML = '<option value="">Оберіть користувача...</option>';
+        
+        const q = query(collection(db, "users"), orderBy("balance", "desc"));
+        const snap = await getDocs(q);
+        
+        snap.forEach(docSnap => {
+            const u = docSnap.data();
+            const option = document.createElement('option');
+            option.value = docSnap.id;
+            option.text = `${u.name} (Баланс: ${u.balance || 0})`;
+            select.appendChild(option);
+        });
+    }
+
+    window.adminSubmit = async () => {
+        const uid = document.getElementById('userSelect').value;
+        const amount = parseInt(document.getElementById('adminAmount').value);
+        
+        if (!uid || !amount || amount <= 0) {
+            alert("Виберіть користувача та введіть суму.");
+            return;
+        }
+
+        const docRef = doc(db, "users", uid);
+        const snap = await getDoc(docRef);
+
+        if (!snap.exists()) {
+            alert("Користувача не знайдено.");
+            return;
+        }
+
+        const currentBal = snap.data().balance || 0;
+        const newBalance = currentBal + amount;
+
+        // Надсилаємо повідомлення в чат
+        await addDoc(collection(db, "chats"), {
+            text: `✅ Вам нараховано **${amount} ГРН**. Баланс оновлено до ${newBalance}.`,
+            author: "SYSTEM",
+            createdAt: new Date()
+        });
+
+        await updateDoc(docRef, { balance: newBalance });
+        
+        document.getElementById('adminMsg').innerText = `Успішно! Баланс оновлено для ID: ${uid}.`;
+        setTimeout(() => document.getElementById('adminMsg').innerText = "", 2000);
+    };
+
+    // --- ЛОГІКА РУЛЕТКИ ---
+    function setMultiplier(mult) {
+        if (isSpinning) return;
+        currentMultiplier = mult;
+        
+        // Оновлення UI кнопок
+        document.querySelectorAll('.btn-mult').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        
+        const spinCost = 100 * currentMultiplier;
+        const btn = document.getElementById('spinBtn');
+        
+        if (userRole === 'admin') {
+            btn.innerText = `КРУТИ (x${mult})`;
+            btn.style.opacity = '1';
+        } else {
+            if (userBalance >= spinCost) {
+                btn.innerText = `КРУТИ (-${spinCost} ГРН)`;
+                btn.disabled = false;
+            } else {
+                btn.innerText = `НЕДОСТАТНЬО БАЛАНСУ (-${spinCost} ГРН)`;
+                btn.disabled = true;
+            }
+        }
+    }
+
+    window.spinWheel = async () => {
+        if (isSpinning) return;
+
+        const spinCost = 100 * currentMultiplier;
+
+        // Перевірка балансу для гравців
+        if (userRole !== 'admin') {
+            if (userBalance < spinCost) {
+                alert("Недостатньо коштів на балансі для цієї ставки!");
+                return;
+            }
+            
+            // Знімаємо баланс (списуємо в базу пізніше)
+            const user = auth.currentUser;
+            await updateDoc(doc(db, "users", user.uid), { balance: (userBalance - spinCost) });
+        }
+
+        // Починаємо спін
+        isSpinning = true;
+        const btn = document.getElementById('spinWheelBtn'); // Помилка в HTML, виправив на spinBtn
+        document.getElementById('spinBtn').innerText = "ГРАЄМО..."; // Оновлення тексту кнопки
+        
+        const wheel = document.getElementById('wheel');
+        let rotations = 0; // Скільки обертів
+        const totalRotations = 5 + Math.floor(Math.random() * 5); // Від 5 до 10 обертів
+        let currentRotation = 0;
+
+        const wheelInterval = setInterval(() => {
+            currentRotation += 15;
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+            rotations++;
+
+            if (rotations >= totalRotations) {
+                clearInterval(wheelInterval);
+                isSping = false;
+                handleResult(currentRotation);
+                // Повертаємо кнопку в початковий стан
+                setMultiplier(currentMultiplier);
+            }
+        }, 100);
+    };
+
+    async function handleResult(finalRotation) {
+        const wheel = document.getElementById('wheel');
+        const normalizedDeg = finalRotation % 360;
+        
+        // Розрахунок сектору
+        // 360 градусів / 37 секторів = ~9.7 градусів на сектор
+        const sectorIndex = Math.floor(normalizedDeg / 10);
+        
+        const prize = prizes[sectorIndex] || prizes[prizes.length - 1];
+        
+        const user = auth.currentUser;
+        
+        let message = "";
+        let amount = 0;
+
+        if (prize.multiplier !== 1) {
+            message = `Ви виграли множник x${prize.multiplier}!`;
+        } else if (prize.value > 0) {
+            amount = prize.value;
+            message = `Ви виграли ${prize.name}!`;
+            
+            // Якщо виграв гроші, додаємо до балансу
+            await updateDoc(doc(db, "users", user.uid), {
+                balance: increment(userBalance, amount)
+            });
+        } else {
+            message = "Нічого.";
+        }
+
+        showResultModal(message, amount, prize);
+        
+        // Оновлюємо баланс локально, щоб UI оновився миттєво
+        if(userRole !== 'admin') {
+            userBalance += amount;
+            updateBalanceDisplay();
+        }
+    }
+
+    function showResultModal(text, amount, prize) {
+        const modal = document.getElementById('resultModal');
+        const title = document.getElementById('resTitle');
+        const amountDiv = document.getElementById('resAmount');
+        
+        if (amount > 0) {
+            title.innerText = "ВИГРАШ!";
+            amountDiv.innerText = `+${amount} ГРН`;
+            amountDiv.style.color = prize.color || 'var(--primary-blue)';
+        } else {
+            title.innerText = "НЕ ПОЩАСТИВСЯ СПРОБА";
+            amountDiv.innerText = "0";
+            amountDiv.style.color = "#666";
+        }
+        
+        document.getElementById('resTitle').innerText = text; // Оновлення тексту
+        modal.style.display = 'flex';
+    }
+
+    function increment(current, value) {
+        return (current || 0) + value;
+    }
+
+    // Закриття модального вікна
+    document.querySelector('.btn-close-modal').onclick = () => {
+        document.getElementById('resultModal').style.display = 'none';
+    }
+
+</script>
+
+</body>
+</html>
