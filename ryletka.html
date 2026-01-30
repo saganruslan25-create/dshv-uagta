@@ -108,19 +108,31 @@
         .prize-card img { width: 110px; height: 110px; object-fit: contain; }
         .prize-card span { font-size: 12px; font-weight: 900; margin-top: 12px; color: var(--text-gray); text-align: center; }
 
+        .spin-actions {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            max-width: 600px;
+            margin: 20px auto 0;
+        }
+
         .btn-main {
             padding: 18px 30px; border-radius: 16px; border: none; font-weight: 900;
             cursor: pointer; text-transform: uppercase; font-size: 14px; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center; gap: 5px;
+            min-width: 220px;
         }
         .btn-buy { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4); }
         .btn-spin { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+        .btn-spin:hover:not(:disabled) { border-color: var(--primary); color: white; }
 
         .admin-box { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 30px; padding: 35px; }
         .input, .select { 
             width: 100%; background: #000; border: 1px solid #222; color: white; 
             padding: 16px; border-radius: 12px; outline: none; box-sizing: border-box; font-family: 'Inter', sans-serif;
         }
+        .input:focus, .select:focus { border-color: var(--primary); }
 
         .category-label {
             font-size: 10px; font-weight: 900; color: var(--primary); 
@@ -145,6 +157,11 @@
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 400px; text-align: center; }
 
+        .edit-mode-active {
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
         @media (max-width: 900px) {
             .main-container { grid-template-columns: 1fr; margin-top: 10px; }
             .sidebar { flex-direction: row; overflow-x: auto; position: sticky; top: 75px; z-index: 100; border-radius: 15px; padding: 8px; }
@@ -154,8 +171,8 @@
             .prize-card { min-width: 140px; height: 140px; margin: 0 5px; }
             .prize-card img { width: 70px; height: 70px; }
             .prize-card span { font-size: 10px; }
-            .btn-main { padding: 15px 20px; width: 100%; }
-            .spin-actions { gap: 10px; }
+            .spin-actions { flex-direction: column; width: 100%; }
+            .btn-main { padding: 15px 20px; width: 100%; min-width: unset; }
         }
     </style>
 </head>
@@ -232,7 +249,9 @@
                     </div>
 
                     <div id="tabPrizes" class="admin-tab" style="display:none;">
-                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); padding:25px; border-radius:24px; margin-bottom:30px;">
+                        <!-- FORM FOR CREATE / EDIT -->
+                        <div id="prizeForm" style="background:rgba(255,255,255,0.03); border:1px solid var(--glass-border); padding:25px; border-radius:24px; margin-bottom:30px; transition: 0.3s;">
+                            <h4 id="formTitle" style="margin-top:0; font-size:14px; color:var(--text-gray); margin-bottom:15px; text-transform: uppercase;">Створити новий слот</h4>
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
                                 <input type="text" id="newPrizeName" class="input" placeholder="Назва">
                                 <input type="text" id="newPrizeImg" class="input" placeholder="Фото URL">
@@ -259,7 +278,10 @@
                                 <input type="text" id="newPrizeActionVal" class="input" placeholder="Значення (сума балів або к-ть квитків)">
                             </div>
 
-                            <button class="btn-main btn-buy" style="width:100%" onclick="addPrizeToPool()">ЗБЕРЕГТИ НОВИЙ СЛОТ</button>
+                            <div style="display:flex; gap:10px;">
+                                <button id="savePrizeBtn" class="btn-main btn-buy" style="width:100%" onclick="addPrizeToPool()">ЗБЕРЕГТИ НОВИЙ СЛОТ</button>
+                                <button id="cancelEditBtn" class="btn-main" style="width:120px; background:#222; color:white; display:none;" onclick="resetPrizeForm()">СКАСУВАТИ</button>
+                            </div>
                         </div>
 
                         <div class="category-label">🎰 СЛОТИ РУЛЕТКИ</div>
@@ -288,7 +310,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -306,7 +328,7 @@
         // CONFIG (Discord Webhook)
         const DISCORD_WEBHOOK = ""; 
 
-        let user = null, userData = null, isSpinning = false, prizePool = [];
+        let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null;
 
         function notify(msg, type = "success") {
             const container = document.getElementById('toastContainer');
@@ -322,8 +344,8 @@
             user = u;
             onSnapshot(doc(db, "users", u.uid), (s) => {
                 userData = s.data();
-                document.getElementById('pointsVal').innerText = userData.points || 0;
-                document.getElementById('ticketsVal').innerText = userData.roulette_passes || 0;
+                if (document.getElementById('pointsVal')) document.getElementById('pointsVal').innerText = userData.points || 0;
+                if (document.getElementById('ticketsVal')) document.getElementById('ticketsVal').innerText = userData.roulette_passes || 0;
                 if (['admin', 'instructor'].includes(userData.role)) {
                     document.getElementById('adminBtn').style.display = 'block';
                     loadAdminData();
@@ -345,6 +367,7 @@
         function renderRoulette() {
             const items = prizePool.filter(p => !p.category || p.category === 'roulette');
             const preview = document.getElementById('prizePreview');
+            if (!preview) return;
             preview.innerHTML = "";
             items.forEach(p => {
                 preview.innerHTML += `
@@ -359,6 +382,7 @@
         function renderShop() {
             const items = prizePool.filter(p => p.category === 'shop');
             const grid = document.getElementById('shopGrid');
+            if (!grid) return;
             grid.innerHTML = "";
             if (items.length === 0) {
                 grid.innerHTML = "<div style='grid-column: 1/-1; text-align:center; padding: 50px; opacity:0.3;'>МАГАЗИН ПОРОЖНІЙ</div>";
@@ -411,12 +435,20 @@
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
 
+            // Robust Weighted Random
             const totalWeight = roulettePrizes.reduce((s, p) => s + (parseFloat(p.chance) || 0), 0);
+            if (totalWeight <= 0) {
+                isSpinning = false;
+                document.getElementById('spinBtn').disabled = false;
+                return notify("Помилка налаштування шансів!", "error");
+            }
+
             let r = Math.random() * totalWeight;
             let winner = roulettePrizes[0];
             for (const p of roulettePrizes) {
-                if (r < p.chance) { winner = p; break; }
-                r -= p.chance;
+                const pChance = parseFloat(p.chance) || 0;
+                if (r < pChance) { winner = p; break; }
+                r -= pChance;
             }
 
             const targetIdx = 60;
@@ -446,10 +478,10 @@
                 notify(`ВИТАЄМО! Ви виграли: ${winner.name}`);
                 
                 if (winner.actionType === 'points') {
-                    const val = parseFloat(winner.actionValue);
+                    const val = parseFloat(winner.actionValue) || 0;
                     await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) + val });
                 } else if (winner.actionType === 'ticket') {
-                    const val = parseInt(winner.actionValue);
+                    const val = parseInt(winner.actionValue) || 0;
                     await updateDoc(doc(db, "users", user.uid), { roulette_passes: (userData.roulette_passes || 0) + val });
                 }
                 await addLog("SYSTEM", userData.name, `Виграш: ${winner.name}`, 0);
@@ -467,6 +499,46 @@
             document.getElementById('actionValField').style.display = type === 'item' ? 'none' : 'block';
         }
 
+        // EDITING LOGIC
+        window.editPrize = (id) => {
+            const item = prizePool.find(p => p.id === id);
+            if (!item) return;
+
+            editingId = id;
+            document.getElementById('newPrizeName').value = item.name || '';
+            document.getElementById('newPrizeImg').value = item.img || '';
+            document.getElementById('newPrizeCategory').value = item.category || 'roulette';
+            document.getElementById('newPrizeActionType').value = item.actionType || 'item';
+            document.getElementById('newPrizeActionVal').value = item.actionValue || '';
+            document.getElementById('newPrizeChance').value = item.chance || 0;
+            document.getElementById('newPrizePrice').value = item.price || 0;
+
+            togglePrizeInputs();
+            toggleActionValueField();
+
+            document.getElementById('prizeForm').classList.add('edit-mode-active');
+            document.getElementById('formTitle').innerText = 'Редагування слота';
+            document.getElementById('savePrizeBtn').innerText = 'ОНОВИТИ СЛОТ';
+            document.getElementById('cancelEditBtn').style.display = 'block';
+            
+            document.getElementById('prizeForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        window.resetPrizeForm = () => {
+            editingId = null;
+            document.querySelectorAll('#tabPrizes input').forEach(inp => inp.value = "");
+            document.getElementById('newPrizeCategory').value = 'roulette';
+            document.getElementById('newPrizeActionType').value = 'item';
+            
+            togglePrizeInputs();
+            toggleActionValueField();
+
+            document.getElementById('prizeForm').classList.remove('edit-mode-active');
+            document.getElementById('formTitle').innerText = 'Створити новий слот';
+            document.getElementById('savePrizeBtn').innerText = 'ЗБЕРЕГТИ НОВИЙ СЛОТ';
+            document.getElementById('cancelEditBtn').style.display = 'none';
+        }
+
         async function addPrizeToPool() {
             const n = document.getElementById('newPrizeName').value;
             const i = document.getElementById('newPrizeImg').value;
@@ -478,13 +550,24 @@
 
             if (!n || !i) return notify("Заповніть назву та посилання!", "error");
             
-            await addDoc(collection(db, "roulette_prizes"), { 
+            const data = { 
                 name: n, img: i, category: cat, 
                 actionType: actType, actionValue: actVal,
                 chance: chance, price: price
-            });
-            notify("Збережено!");
-            document.querySelectorAll('#tabPrizes input').forEach(inp => inp.value = "");
+            };
+
+            try {
+                if (editingId) {
+                    await updateDoc(doc(db, "roulette_prizes", editingId), data);
+                    notify("Слот оновлено!");
+                } else {
+                    await addDoc(collection(db, "roulette_prizes"), data);
+                    notify("Новий слот додано!");
+                }
+                resetPrizeForm();
+            } catch (e) {
+                notify("Помилка при збереженні", "error");
+            }
         }
 
         async function processAdminRefill() {
@@ -505,22 +588,30 @@
         }
 
         async function deletePrize(id) {
-            if (confirm("Видалити?")) await deleteDoc(doc(db, "roulette_prizes", id));
+            if (confirm("Видалити цей слот назавжди?")) {
+                await deleteDoc(doc(db, "roulette_prizes", id));
+                notify("Видалено!");
+                if (editingId === id) resetPrizeForm();
+            }
         }
 
         function renderManage() {
             const rGrid = document.getElementById('manageRouletteGrid');
             const sGrid = document.getElementById('manageShopGrid');
+            if (!rGrid || !sGrid) return;
             rGrid.innerHTML = ""; sGrid.innerHTML = "";
 
             prizePool.forEach(p => {
                 const el = document.createElement('div');
                 el.style = "background:#000; padding:10px; border-radius:12px; text-align:center; border:1px solid #222; position:relative;";
                 el.innerHTML = `
-                    <button onclick="window.deletePrize('${p.id}')" style="position:absolute; top:-5px; right:-5px; background:var(--danger); border:none; color:white; border-radius:50%; width:20px; height:20px; cursor:pointer;">✕</button>
+                    <div style="position:absolute; top:-5px; right:-5px; display:flex; gap:3px;">
+                        <button onclick="window.editPrize('${p.id}')" style="background:var(--primary); border:none; color:white; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:10px;">✎</button>
+                        <button onclick="window.deletePrize('${p.id}')" style="background:var(--danger); border:none; color:white; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:10px;">✕</button>
+                    </div>
                     <img src="${p.img}" style="width:35px; height:35px; object-fit:contain; margin-bottom:5px;">
-                    <div style="font-size:9px; font-weight:700;">${p.name}</div>
-                    <div style="font-size:8px; color:var(--text-gray)">${p.actionType !== 'item' ? p.actionType : ''}</div>
+                    <div style="font-size:9px; font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
+                    <div style="font-size:8px; color:var(--text-gray)">${p.category === 'shop' ? p.price + '🪙' : p.chance + '%'}</div>
                 `;
                 if (p.category === 'shop') sGrid.appendChild(el);
                 else rGrid.appendChild(el);
@@ -530,6 +621,7 @@
         async function loadAdminData() {
             onSnapshot(query(collection(db, "roulette_logs"), orderBy("timestamp", "desc")), (snap) => {
                 const list = document.getElementById('logsList');
+                if (!list) return;
                 list.innerHTML = "";
                 snap.forEach(d => {
                     const l = d.data();
@@ -542,6 +634,7 @@
 
             const usersSnap = await getDocs(query(collection(db, "users")));
             const select = document.getElementById('adminUserSelect');
+            if (!select) return;
             select.innerHTML = '<option value="">Оберіть бійця...</option>';
             usersSnap.forEach(d => {
                 const u = d.data();
