@@ -119,7 +119,7 @@
             flex: 1; padding: 18px 20px; border-radius: 16px; border: none; font-weight: 900;
             cursor: pointer; text-transform: uppercase; font-size: 14px; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
-            max-width: 300px;
+            max-width: 300px; width: 100%;
         }
         .btn-buy { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4); }
         .btn-spin { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
@@ -151,7 +151,7 @@
         .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; }
+        .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; overflow: hidden; }
 
         .edit-mode-active { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--accent-glow); }
 
@@ -247,7 +247,6 @@
                     </div>
 
                     <div id="tabPrizes" class="admin-tab" style="display:none;">
-                        <!-- NEW: Auto Odds Toggle -->
                         <div class="toggle-container">
                             <label class="switch">
                                 <input type="checkbox" id="autoOddsToggle" onchange="toggleAutoOdds(this.checked)">
@@ -306,9 +305,9 @@
         <div class="modal-inner">
             <h3 id="modalTitle" class="neon-text" style="font-size:18px; margin:0;">ПІДТВЕРДЖЕННЯ</h3>
             <p id="modalText" style="color: var(--text-gray); margin: 25px 0; font-size:14px;"></p>
-            <div style="display:flex; gap: 12px; justify-content: center;">
-                <button class="btn-main" style="background:#111; color:white; font-size:12px; max-width: 150px;" onclick="closeModal()">ВІДМІНА</button>
-                <button id="modalActionBtn" class="btn-main btn-buy" style="font-size:12px; max-width: 150px;">ОК</button>
+            <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="closeModal()">ВІДМІНА</button>
+                <button id="modalActionBtn" class="btn-main btn-buy" style="font-size:12px; flex: 1; min-width: 120px;">ОК</button>
             </div>
         </div>
     </div>
@@ -352,20 +351,23 @@
                 if (['admin', 'instructor'].includes(userData.role)) {
                     document.getElementById('adminBtn').style.display = 'block';
                     loadAdminData();
-                    loadConfig();
+                    startConfigSync();
                 }
             });
             loadPrizes();
         });
 
-        async function loadConfig() {
-            const snap = await getDoc(doc(db, "configs", "roulette"));
-            if (snap.exists()) {
-                isAutoOdds = snap.data().autoOdds || false;
-                const toggle = document.getElementById('autoOddsToggle');
-                if (toggle) toggle.checked = isAutoOdds;
-                toggleAutoOddsUI(isAutoOdds);
-            }
+        function startConfigSync() {
+            onSnapshot(doc(db, "configs", "roulette"), (snap) => {
+                if (snap.exists()) {
+                    isAutoOdds = snap.data().autoOdds || false;
+                    const toggle = document.getElementById('autoOddsToggle');
+                    if (toggle) toggle.checked = isAutoOdds;
+                    toggleAutoOddsUI(isAutoOdds);
+                    renderRoulette();
+                    renderManage();
+                }
+            });
         }
 
         window.toggleAutoOdds = async (val) => {
@@ -600,9 +602,18 @@
             const sGrid = document.getElementById('manageShopGrid');
             if (!rGrid || !sGrid) return;
             rGrid.innerHTML = ""; sGrid.innerHTML = "";
+            const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
             prizePool.forEach(p => {
                 const el = document.createElement('div');
                 el.style = "background:#000; padding:10px; border-radius:12px; text-align:center; border:1px solid #222; position:relative;";
+                
+                let valDisplay = "";
+                if (p.category === 'shop') {
+                    valDisplay = p.price + '🪙';
+                } else {
+                    valDisplay = isAutoOdds ? (100 / rouletteItems.length).toFixed(1) + '%' : (p.chance || 0) + '%';
+                }
+
                 el.innerHTML = `
                     <div style="position:absolute; top:-5px; right:-5px; display:flex; gap:3px;">
                         <button onclick="window.editPrize('${p.id}')" style="background:var(--primary); border:none; color:white; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:10px;">✎</button>
@@ -610,7 +621,7 @@
                     </div>
                     <img src="${p.img}" style="width:35px; height:35px; object-fit:contain; margin-bottom:5px;">
                     <div style="font-size:9px; font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
-                    <div style="font-size:8px; color:var(--text-gray)">${p.category === 'shop' ? p.price + '🪙' : p.chance + '%'}</div>
+                    <div style="font-size:8px; color:var(--text-gray)">${valDisplay}</div>
                 `;
                 if (p.category === 'shop') sGrid.appendChild(el); else rGrid.appendChild(el);
             });
