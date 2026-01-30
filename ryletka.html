@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -31,7 +30,7 @@
             color: white; font-family: 'Inter', sans-serif;
             min-height: 100vh; overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
-            padding-bottom: 60px; /* Space for footer */
+            padding-bottom: 60px;
         }
 
         .neon-text {
@@ -51,6 +50,14 @@
             background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
             padding: 10px 20px; border-radius: 15px; font-weight: 800; font-size: 14px;
         }
+        
+        .info-btn {
+            background: rgba(255,255,255,0.1); border: 1px solid var(--glass-border);
+            color: var(--primary-bright); width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            font-weight: 900; margin-left: 10px; transition: 0.3s;
+        }
+        .info-btn:hover { background: var(--primary); color: black; }
 
         .main-container {
             display: grid; grid-template-columns: 280px 1fr; gap: 30px;
@@ -165,7 +172,7 @@
         .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; overflow: hidden; }
+        .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; overflow: hidden; max-height: 90vh; overflow-y: auto; }
 
         .edit-mode-active { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--accent-glow); }
 
@@ -177,6 +184,18 @@
         .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(20px); }
+
+        /* File Input */
+        .file-input-wrapper { position: relative; overflow: hidden; display: inline-block; width: 100%; }
+        .file-upload-btn {
+            border: 1px dashed var(--glass-border); color: var(--text-gray);
+            background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
+            font-size: 12px; font-weight: 700; cursor: pointer; text-align: center;
+            transition: 0.2s; width: 100%;
+        }
+        .file-upload-btn:hover { border-color: var(--primary); color: var(--primary-bright); }
+        .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
+        .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top: 5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
 
         @media (max-width: 900px) {
             .main-container { grid-template-columns: 1fr; }
@@ -196,7 +215,10 @@
 
     <header>
         <a href="cabinet.html" style="color: var(--text-gray); text-decoration: none; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">← НАЗАД</a>
-        <div class="stat-item">🪙 <span id="pointsVal">0</span></div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="stat-item">🪙 <span id="pointsVal">0</span></div>
+            <div class="info-btn" onclick="openInfoModal()">?</div>
+        </div>
     </header>
 
     <div class="main-container">
@@ -211,12 +233,14 @@
             <section id="roulettePage" class="content-section">
                 <div class="roulette-container">
                     <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
+                    <div style="font-size: 12px; color: var(--text-gray); margin-top: -10px; margin-bottom: 10px;">
+                        Курс: 1 🪙 = <span id="exchangeRateDisplay" style="color:var(--primary)">0</span> $                     </div>
                     <div class="carousel-outer">
                         <div class="pointer"></div>
                         <div id="track" class="track"></div>
                     </div>
                     <div class="spin-actions">
-                        <button class="btn-main btn-buy" onclick="confirmPurchase()">
+                        <button class="btn-main btn-buy" onclick="openPurchaseModal()">
                             <span>КУПИТИ КВИТОК</span>
                             <small style="opacity:0.8; font-size:10px;">ВАРТІСТЬ: 100 🪙</small>
                         </button>
@@ -250,6 +274,15 @@
                     </div>
 
                     <div id="tabRefill" class="admin-tab" style="display:none;">
+                        <!-- КУРС ВАЛЮТЫ -->
+                        <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                            <label style="font-size: 10px; color: var(--text-gray); text-transform: uppercase; font-weight: 700;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <input type="number" id="exchangeRateInput" class="input" placeholder="Сумма">
+                                <button class="btn-main btn-buy" style="max-width: 150px;" onclick="saveExchangeRate()">СОХРАНИТЬ</button>
+                            </div>
+                        </div>
+
                         <div id="refillNotice" style="padding: 15px; background: rgba(249, 115, 22, 0.1); border: 1px solid var(--accent); border-radius: 12px; margin-bottom: 20px; display: none;">
                             <small style="color: var(--accent); font-weight: 700;">У вас недостатньо прав для зміни балансів.</small>
                         </div>
@@ -277,8 +310,15 @@
                             <h4 id="formTitle" style="margin-top:0; font-size:14px; color:var(--text-gray); margin-bottom:15px; text-transform: uppercase;">Створити новий слот</h4>
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
                                 <input type="text" id="newPrizeName" class="input" placeholder="Назва">
-                                <input type="text" id="newPrizeImg" class="input" placeholder="Фото URL">
+                                <!-- ЗАМЕНА URL НА ЗАГРУЗКУ ФОТО -->
+                                <div class="file-input-wrapper">
+                                    <button class="file-upload-btn" type="button">📷 ЗАВАНТАЖИТИ ФОТО</button>
+                                    <input type="file" id="newPrizeImgFile" accept="image/*" onchange="processSlotImage(this)">
+                                </div>
                             </div>
+                            <!-- Превью загруженного фото -->
+                            <img id="slotImgPreview" class="img-preview-small" style="margin: 0 auto 10px auto; display: block;">
+
                             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
                                 <select id="newPrizeCategory" class="select" onchange="togglePrizeInputs()">
                                     <option value="roulette">КАТЕГОРІЯ: РУЛЕТКА</option>
@@ -338,6 +378,49 @@
         </div>
     </footer>
 
+    <!-- MODAL ПОКУПКИ БИЛЕТОВ -->
+    <div id="purchaseModal" class="modal">
+        <div class="modal-inner">
+            <h3 class="neon-text" style="font-size:18px; margin:0;">КУПІВЛЯ КВИТКІВ</h3>
+            <p style="color: var(--text-gray); margin: 20px 0; font-size:14px;">Вартість одного квитка: <b style="color:var(--primary)">100 🪙</b></p>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display:block; font-size:10px; color:var(--text-gray); margin-bottom:5px;">КІЛЬКІСТЬ</label>
+                <input type="number" id="ticketCount" class="input" value="1" min="1" oninput="updateTotalCost()">
+            </div>
+
+            <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--primary); padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+                <span style="font-size: 12px; color: var(--text-gray);">ВСЬОГО СПИСАТЬСЯ:</span><br>
+                <span id="totalCostDisplay" style="font-size: 24px; font-weight: 900; color: var(--primary);">100 🪙</span>
+            </div>
+
+            <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="document.getElementById('purchaseModal').style.display='none'">ВІДМІНА</button>
+                <button id="confirmPurchaseBtn" class="btn-main btn-buy" style="font-size:12px; flex: 1; min-width: 120px;">КУПИТИ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ИНФО КАК ПОЛУЧИТЬ БАЛЛЫ -->
+    <div id="infoModal" class="modal">
+        <div class="modal-inner">
+            <h3 class="neon-text" style="font-size:18px; margin:0;">ЯК ОТРИМАТИ БАЛИ?</h3>
+            <div style="text-align: left; font-size: 14px; line-height: 1.6; color: #ccc; margin-top: 20px;">
+                <p>💰 <b>Курс:</b> 1 🪙 = <span id="infoRateDisplay" style="color:var(--primary)">0</span> $ ігрової валюти.</p>
+                <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;">
+                <p>🛡️ <b>Варіанти отримання:</b></p>
+                <ul style="padding-left: 20px; margin: 5px 0;">
+                    <li>Участь у тренуваннях і суботниках.</li>
+                    <li>Виконання рапортів (звітів).</li>
+                    <li>Покупка у адміністрації фракції.</li>
+                    <li>Подарунок від керівництва.</li>
+                </ul>
+            </div>
+            <button class="btn-main" style="background:var(--primary); color:black; font-size:12px; margin-top:20px; width:100%;" onclick="document.getElementById('infoModal').style.display='none'">ЗРОЗУМІЛО</button>
+        </div>
+    </div>
+
+    <!-- MODAL ПОДТВЕРЖДЕНИЯ -->
     <div id="modal" class="modal">
         <div class="modal-inner">
             <h3 id="modalTitle" class="neon-text" style="font-size:18px; margin:0;">ПІДТВЕРДЖЕННЯ</h3>
@@ -367,7 +450,8 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false;
+        let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000;
+        let currentSlotBase64 = null; // Для фото слота
 
         function notify(msg) {
             const container = document.getElementById('toastContainer');
@@ -441,14 +525,38 @@
             onSnapshot(doc(db, "configs", "roulette"), (snap) => {
                 if (snap.exists()) {
                     isAutoOdds = snap.data().autoOdds || false;
+                    exchangeRate = snap.data().exchangeRate || 10000; // Default
+                    
                     const toggle = document.getElementById('autoOddsToggle');
                     if (toggle) toggle.checked = isAutoOdds;
+                    
+                    const exInput = document.getElementById('exchangeRateInput');
+                    if(exInput) exInput.value = exchangeRate;
+
                     toggleAutoOddsUI(isAutoOdds);
+                    updateExchangeRateDisplay();
                     renderRoulette();
                     renderManage();
                 }
             });
         }
+
+        window.saveExchangeRate = async () => {
+            if (userData.role !== 'admin') return notify("У вас немає прав!");
+            const val = parseFloat(document.getElementById('exchangeRateInput').value);
+            if (!val) return notify("Вкажіть курс!");
+            exchangeRate = val;
+            await setDoc(doc(db, "configs", "roulette"), { exchangeRate: val }, { merge: true });
+            notify("Курс оновлено!");
+            updateExchangeRateDisplay();
+        }
+
+        function updateExchangeRateDisplay() {
+            document.getElementById('exchangeRateDisplay').innerText = exchangeRate;
+            if(document.getElementById('infoRateDisplay')) document.getElementById('infoRateDisplay').innerText = exchangeRate;
+        }
+
+        window.openInfoModal = () => document.getElementById('infoModal').style.display = 'flex';
 
         window.toggleAutoOdds = async (val) => {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
@@ -467,7 +575,7 @@
             onSnapshot(collection(db, "roulette_prizes"), (snap) => {
                 prizePool = [];
                 snap.forEach(d => prizePool.push({ id: d.id, ...d.data() }));
-                // CRITICAL FIX: Don't re-render track if spinning is in progress
+                // Initial render if not spinning
                 if (!isSpinning) {
                     renderRoulette();
                     renderShop();
@@ -477,7 +585,6 @@
         }
 
         function renderRoulette() {
-            if (isSpinning) return; // Prevent overwriting track during animation
             const items = prizePool.filter(p => !p.category || p.category === 'roulette');
             const preview = document.getElementById('prizePreview');
             if (!preview) return;
@@ -512,6 +619,36 @@
             });
         }
 
+        // ОБРАБОТКА ФОТО ДЛЯ СЛОТОВ (КАК В GALLERY)
+        window.processSlotImage = (input) => {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height, max = 1000; 
+                        if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        currentSlotBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                        
+                        const btn = input.parentElement.querySelector('.file-upload-btn');
+                        btn.innerText = "✅ ФОТО ВИБРАНО";
+                        btn.style.borderColor = "var(--primary)";
+                        btn.style.color = "var(--primary)";
+                        
+                        const prev = document.getElementById('slotImgPreview');
+                        prev.src = currentSlotBase64;
+                        prev.style.display = 'block';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
         window.buyItem = async (id) => {
             const item = prizePool.find(p => p.id === id);
             if (!item) return;
@@ -530,11 +667,18 @@
         function initTrack(prizes) {
             const track = document.getElementById('track');
             if (!track || prizes.length < 2) return;
+            // Очищаем только если не спинимся
+            if (isSpinning) return; 
+            
             track.innerHTML = "";
+            // Генерируем сразу набор элементов
             for (let i = 0; i < 40; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
+            // Сбрасываем позицию, чтобы было видно
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
         }
 
         function createPrizeNode(p) {
@@ -543,6 +687,42 @@
             el.innerHTML = `<img src="${p.img}"><span>${p.name}</span>`;
             return el;
         }
+
+        // ЛОГИКА ПОКУПКИ МНОГИХ БИЛЕТОВ
+        window.openPurchaseModal = () => {
+            document.getElementById('purchaseModal').style.display = 'flex';
+            updateTotalCost();
+        };
+
+        window.updateTotalCost = () => {
+            const count = parseInt(document.getElementById('ticketCount').value) || 0;
+            const total = count * 100;
+            document.getElementById('totalCostDisplay').innerText = `${total} 🪙`;
+        };
+
+        window.confirmPurchase = () => {
+            const count = parseInt(document.getElementById('ticketCount').value) || 1;
+            if(count < 1) return notify("Мінімум 1 квиток");
+            
+            const points = userData.points || 0;
+            const cost = 100 * count;
+            const isDebt = points < cost;
+            const msg = isDebt 
+                ? `У вас недостатньо балів (${points}). Купівля ${count} квитків за ${cost} 🪙 зажене вас у борг. Продовжити?` 
+                : `Купити ${count} квитків за ${cost} 🪙?`;
+            
+            document.getElementById('purchaseModal').style.display = 'none';
+            
+            openModal("КУПІВЛЯ", msg, async () => {
+                await updateDoc(doc(db, "users", user.uid), { 
+                    points: points - cost, 
+                    roulette_passes: (userData.roulette_passes || 0) + count 
+                });
+                await addLog(userData.name, "SHOP", `Купив ${count} квитків`, -cost);
+                closeModal();
+                notify(`Куплено ${count} квитків!`);
+            });
+        };
 
         async function startSpin() {
             const roulettePrizes = prizePool.filter(p => !p.category || p.category === 'roulette');
@@ -572,7 +752,7 @@
             track.style.transform = 'translateX(0)';
             track.innerHTML = "";
             
-            // Build the long track for the spin
+            // Build long track for spin
             for (let i = 0; i < 80; i++) {
                 const p = (i === targetIdx) ? winner : roulettePrizes[Math.floor(Math.random() * roulettePrizes.length)];
                 track.appendChild(createPrizeNode(p));
@@ -628,7 +808,21 @@
             if (!item) return;
             editingId = id;
             document.getElementById('newPrizeName').value = item.name || '';
-            document.getElementById('newPrizeImg').value = item.img || '';
+            
+            // Если есть фото, ставим его превью
+            currentSlotBase64 = item.img || null;
+            const btn = document.querySelector('.file-upload-btn');
+            const prev = document.getElementById('slotImgPreview');
+            
+            if(item.img) {
+                btn.innerText = "✅ ЗМІНИТИ ФОТО";
+                prev.src = item.img;
+                prev.style.display = 'block';
+            } else {
+                btn.innerText = "📷 ЗАВАНТАЖИТИ ФОТО";
+                prev.style.display = 'none';
+            }
+
             document.getElementById('newPrizeCategory').value = item.category || 'roulette';
             document.getElementById('newPrizeActionType').value = item.actionType || 'item';
             document.getElementById('newPrizeActionVal').value = item.actionValue || '';
@@ -644,9 +838,17 @@
 
         window.resetPrizeForm = () => {
             editingId = null;
-            document.querySelectorAll('#tabPrizes input').forEach(inp => inp.value = "");
+            document.querySelectorAll('#tabPrizes input:not(#newPrizeImgFile)').forEach(inp => inp.value = "");
             document.getElementById('newPrizeCategory').value = 'roulette';
             document.getElementById('newPrizeActionType').value = 'item';
+            currentSlotBase64 = null;
+            
+            const btn = document.querySelector('.file-upload-btn');
+            btn.innerText = "📷 ЗАВАНТАЖИТИ ФОТО";
+            btn.style.borderColor = "";
+            btn.style.color = "";
+            document.getElementById('slotImgPreview').style.display = 'none';
+
             togglePrizeInputs(); toggleActionValueField();
             document.getElementById('prizeForm').classList.remove('edit-mode-active');
             document.getElementById('formTitle').innerText = 'Створити новий слот';
@@ -656,16 +858,21 @@
 
         async function addPrizeToPool() {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
+            
+            // Если фото не загружено и это новый айтем, или редактирование без смены фото
+            if (!currentSlotBase64 && !editingId) return notify("Завантажте фото!");
+
             const data = { 
                 name: document.getElementById('newPrizeName').value,
-                img: document.getElementById('newPrizeImg').value,
+                img: currentSlotBase64 || (editingId ? prizePool.find(p=>p.id===editingId).img : ""), // сохраняем старое если нет нового
                 category: document.getElementById('newPrizeCategory').value, 
                 actionType: document.getElementById('newPrizeActionType').value,
                 actionValue: document.getElementById('newPrizeActionVal').value,
                 chance: parseFloat(document.getElementById('newPrizeChance').value) || 0,
                 price: parseFloat(document.getElementById('newPrizePrice').value) || 0
             };
-            if (!data.name || !data.img) return notify("Заповніть форму!");
+            if (!data.name) return notify("Заповніть форму!");
+            
             if (editingId) await updateDoc(doc(db, "roulette_prizes", editingId), data);
             else await addDoc(collection(db, "roulette_prizes"), data);
             notify("Збережено!");
@@ -764,18 +971,6 @@
             await addDoc(collection(db, "roulette_logs"), { from, to, action, amount, timestamp: serverTimestamp() });
         }
 
-        window.confirmPurchase = () => {
-            const points = userData.points || 0;
-            const isDebt = points < 100;
-            const msg = isDebt ? `У вас недостатньо балів (${points}). Купівля квитка за 100 🪙 зажене вас у борг. Продовжити?` : "Купити квиток за 100 балів?";
-            
-            openModal("КУПІВЛЯ", msg, async () => {
-                await updateDoc(doc(db, "users", user.uid), { points: points - 100, roulette_passes: (userData.roulette_passes || 0) + 1 });
-                await addLog(userData.name, "SHOP", "Купив квиток", -100);
-                closeModal(); notify("Куплено!");
-            });
-        };
-
         window.openModal = (t, txt, act) => {
             document.getElementById('modalTitle').innerText = t;
             document.getElementById('modalText').innerText = txt;
@@ -790,7 +985,6 @@
             document.getElementById(id + 'Page').classList.add('active');
             if (btn) btn.classList.add('active');
             
-            // Update Footer Label
             const label = id === 'roulette' ? 'РУЛЕТКА' : (id === 'shop' ? 'МАГАЗИН' : 'КОНСОЛЬ');
             if (document.getElementById('footerPageLabel')) document.getElementById('footerPageLabel').innerText = label;
             
