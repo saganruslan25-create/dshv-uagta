@@ -187,12 +187,51 @@
         appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
     };
 
+    // --- НАЛАШТУВАННЯ DISCORD WEBHOOK ДЛЯ СУБОТНИКІВ ---
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1467268468180258866/87zZ5VK1GBSAUFz3lfVRv0_eImhQr_CYB4Taeepqk27K_DZHtrV8UE28vqccEDwSb1Ak";
+
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
     let currentUserData = null;
     let editId = null;
+
+    // --- ФУНКЦІЯ ВІДПРАВКИ В DISCORD ---
+    async function sendLogToDiscord(type, userObj, dateStr, contentText) {
+        if (!WEBHOOK_URL) return; // Якщо посилання немає, не робимо нічого
+
+        const isEdit = editId !== null;
+        let color = 5793266; // Зелений (новий)
+        let title = "🧹 НОВИЙ ЗВІТ (СУБОТНИК)";
+        
+        if (isEdit) {
+            color = 16776960; // Жовтий (змінено)
+            title = "✏️ ЗВІТ БУЛО ЗМІНЕНО";
+        }
+
+        const payload = {
+            username: "Суботник Бот",
+            avatar_url: "https://cdn-icons-png.flaticon.com/512/806/806068.png",
+            embeds: [{
+                title: title,
+                color: color,
+                description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Дата проведення:** ${dateStr}\n**Зміст:** \`\`\`${contentText.substring(0, 500)}${contentText.length > 500 ? '...' : ''}\`\`\``,
+                footer: { text: `UID: ${userObj.uid}` },
+                timestamp: new Date().toISOString()
+            }]
+        };
+
+        try {
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) {
+            console.error("Помилка відправки в Discord:", e);
+        }
+    }
 
     function linkify(text) {
         if (!text) return "---";
@@ -216,6 +255,8 @@
         try {
             if (editId) {
                 await updateDoc(doc(db, "subotniks", editId), { date, content, edited: true });
+                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ
+                await sendLogToDiscord('edit', currentUserData, date, content);
                 editId = null;
                 document.getElementById('subBtn').innerText = "Опублікувати звіт";
             } else {
@@ -226,6 +267,8 @@
                     date, content,
                     timestamp: serverTimestamp()
                 });
+                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ
+                await sendLogToDiscord('create', currentUserData, date, content);
             }
             document.getElementById('subDate').value = "";
             document.getElementById('subContent').value = "";
