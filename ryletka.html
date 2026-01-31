@@ -21,14 +21,9 @@
 
         * { box-sizing: border-box; }
 
-        /* СКРОЛЛБАР */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #05070a; }
-        ::-webkit-scrollbar-thumb { 
-            background: var(--primary); 
-            border-radius: 10px; 
-            box-shadow: 0 0 10px var(--primary-glow);
-        }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; box-shadow: 0 0 10px var(--primary-glow); }
         ::-webkit-scrollbar-thumb:hover { background: var(--primary-bright); }
 
         body {
@@ -48,9 +43,9 @@
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* АНИМАЦИИ */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
         .neon-text {
             text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow);
@@ -128,6 +123,24 @@
             box-shadow: 0 0 25px var(--accent);
         }
         
+        /* WIN OVERLAY */
+        #winOverlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); z-index: 50;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            backdrop-filter: blur(2px);
+            animation: fadeIn 0.5s;
+        }
+        #winTitle {
+            font-size: 40px; font-weight: 900; color: var(--accent);
+            text-shadow: 0 0 20px var(--accent); margin-bottom: 10px;
+            text-transform: uppercase; animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #winPrizeName {
+            font-size: 24px; font-weight: 800; color: white;
+            text-shadow: 0 0 10px rgba(0,0,0,0.8);
+        }
+
         .track {
             display: flex; position: absolute; left: 0; top: 30px;
             will-change: transform;
@@ -167,6 +180,7 @@
             width: 100%; background: #000; border: 1px solid #222; color: white; 
             padding: 16px; border-radius: 12px; outline: none; box-sizing: border-box; font-family: 'Inter', sans-serif;
         }
+        .input:disabled, .select:disabled, .textarea:disabled { background: #111; color: #555; cursor: not-allowed; }
         .textarea { min-height: 100px; resize: vertical; }
 
         .category-label {
@@ -211,7 +225,7 @@
 
         .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         .shop-card { 
-            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255,255, 255, 0.05);
             border-radius: 20px; padding: 25px; text-align: center; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center;
             position: relative; overflow: hidden;
@@ -224,16 +238,16 @@
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
 
-        /* LOGS STYLE - TERMINAL LOOK */
+        /* LOGS STYLE */
         #logsList {
             min-height: 500px;
             background: #000000;
             border: 2px solid #333;
             border-radius: 8px;
             padding: 15px;
-            font-family: 'Courier New', Courier, monospace; /* Terminal font */
+            font-family: 'Courier New', Courier, monospace;
             overflow-y: auto;
-            color: #00ff41; /* Hacker green */
+            color: #00ff41;
             font-weight: bold;
             text-transform: none;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
@@ -280,7 +294,7 @@
 
         .edit-mode-active { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--accent-glow); }
 
-        .toggle-container { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .toggle-container { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255, 255, 0.05); }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 24px; }
@@ -344,6 +358,12 @@
             <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
             <div class="carousel-outer">
                 <div class="pointer"></div>
+                <!-- WIN OVERLAY -->
+                <div id="winOverlay">
+                    <div id="winTitle">ВИГРАШ</div>
+                    <div id="winPrizeName">NAME</div>
+                </div>
+                <!-- TRACK -->
                 <div id="track" class="track">ЗАВАНТАЖЕННЯ...</div>
             </div>
             <div class="spin-actions">
@@ -645,7 +665,7 @@
             await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         } catch (e) {
             console.error("Discord send error:", e);
-            notify("Помилка відправки в Discord");
+            notify("Помилка відправки в Discord (Webhook)");
         }
     }
 
@@ -830,15 +850,11 @@
             if (isAutoOdds) {
                 return prizes[Math.floor(Math.random() * prizes.length)];
             } else {
-                // MANUAL ODDS LOGIC
                 let totalChance = prizes.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
-                
-                // Защита: если админ не указал шансы (0%), делаем равные шансы
                 if (totalChance <= 0) {
                      console.warn("Total chance is 0, falling back to random.");
                      return prizes[Math.floor(Math.random() * prizes.length)];
                 }
-
                 let random = Math.random() * totalChance;
                 for (let p of prizes) {
                     random -= (parseFloat(p.chance) || 0);
@@ -848,7 +864,6 @@
             }
         }
 
-        // ИСПРАВЛЕННАЯ ЛОГИКА ВРАЩЕНИЯ
         window.startSpin = async () => {
             const btn = document.getElementById('spinBtn');
             
@@ -857,20 +872,20 @@
             
             btn.disabled = true;
             roulette_active = true;
+            
+            // Hide win overlay if open
+            document.getElementById('winOverlay').style.display = 'none';
 
             const { track, children, length } = getTrackData();
             if (length === 0) {
                 return notify("Немає призів для гри!"); 
             }
 
-            // 1. Определяем победителя СРАЗУ ЖЕ
             const winPrize = getWinner(prizePool);
             if (!winPrize) return notify("Помилка вибору призу");
 
-            // 2. Выбираем индекс
             const targetIndex = Math.floor(Math.random() * 50) + 50;
             
-            // 3. ПРИНУДИТЕЛЬНО меняем карточку на этом индексе
             const targetCard = children[targetIndex];
             if (targetCard) {
                 const img = targetCard.querySelector('img');
@@ -879,19 +894,15 @@
                 if(txt) txt.innerText = winPrize.name;
             }
             
-            // 4. Вычисляем смещение
             const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
             const halfWidth = CARD_WIDTH / 2;
             const targetOffset = -(targetIndex * CARD_WIDTH) + (containerWidth/2) + halfWidth;
             
             window.isProcessing = true;
 
-            // 5. Запускаем анимацию (ИСПРАВЛЕНА ФИЗИКА)
-            // cubic-bezier(0.25, 0.1, 0.25, 1) - быстрый старт, медленная остановка
             track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
             track.style.transform = `translateX(${targetOffset}px)`;
 
-            // 6. Ждем окончания анимации
             setTimeout(async () => {
                 window.isProcessing = false;
                 btn.disabled = false;
@@ -904,12 +915,14 @@
                     }
                     track.style.transition = 'none';
                     track.style.transform = 'translateX(0px)';
+                    
+                    // Show Win Overlay
+                    const overlay = document.getElementById('winOverlay');
+                    document.getElementById('winPrizeName').innerText = winPrize.name;
+                    overlay.style.display = 'flex';
                 }
 
-                // Уведомление о победе
                 notify(`Вітаю! Ви виграли ${winPrize.name}`);
-
-                // Обработка победы (База + Дискорд + Логи)
                 await processWin(winPrize);
 
             }, SPIN_TIME_SECONDS * 1000);
@@ -934,10 +947,7 @@
 
             await updateDoc(doc(db, "users", user.uid), updateData);
 
-            // ИСПРАВЛЕННЫЕ ЛОГИ
             await addLog(uData.name, "WIN", `Виграв на рулетці: ${prize.name}`, prize.name);
-            
-            // Дискорд
             await sendLogToDiscord('win', uData, `Виграв на рулетці: ${prize.name}`, prize.name);
         }
 
@@ -967,10 +977,10 @@
                 await new Promise(r => setTimeout(r, 1000));
                 await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - cost, roulette_passes: (userData.roulette_passes || 0) + count });
                 
-                // ИСПРАВЛЕННЫЕ ЛОГИ
+                // ИСПРАВЛЕНИЕ: Обновляем UI билетов сразу
+                document.getElementById('ticketsVal').innerText = (userData.roulette_passes || 0) + count;
+
                 await addLog(userData.name, "BUY", `Купив ${count} квитків`, `-${cost}⚪`);
-                
-                // Дискорд
                 await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, `-${cost}⚪`);
                 
                 document.getElementById('purchaseModal').style.display = 'none';
@@ -1015,10 +1025,7 @@
                     await new Promise(r => setTimeout(r, 2000));
                     await updateDoc(doc(db, "users", user.uid), { points: currentPts - pts, currency: (userData.currency || 0) + moneyVal });
                     
-                    // Логи
                     await addLog(userData.name, "SYSTEM", `Обмін балів на ${moneyVal} грн`, `+${moneyVal} грн`);
-                    
-                    // Дискорд
                     await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
                     
                     notify("Успішно обміняно!");
@@ -1034,7 +1041,6 @@
             });
         };
 
-        // Исправленная функция покупки в магазине
         window.buyItem = async (id) => {
             if (window.isProcessing) return notify("Зачекайте...");
             
@@ -1059,10 +1065,7 @@
                     await new Promise(r => setTimeout(r, 1500));
                     await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
                     
-                    // ИСПРАВЛЕННЫЕ ЛОГИ
                     await addLog(userData.name, "BUY", `Купив у магазині: ${item.name}`, `-${item.price}⚪`);
-                    
-                    // Дискорд
                     await sendLogToDiscord('buy', userData, `Купив у магазині: ${item.name}`, `-${item.price}⚪`);
                     
                     notify("Покупка успішна!");
@@ -1149,10 +1152,8 @@
                 
                 await updateDoc(doc(db, "users", uid), updateData);
                 
-                // Лог админа
                 await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
                 
-                // Дискорд админа
                 sendLogToDiscord('admin', userData, `${logDesc} (${data.name})`, logAmount);
                 
                 notify("Успішно!");
@@ -1188,6 +1189,7 @@
         };
 
         window.editPrize = (id) => {
+            if (!window.prizePool || window.prizePool.length === 0) return notify("Помилка даних");
             const p = window.prizePool.find(x => x.id === id);
             if (!p) return;
             
@@ -1367,10 +1369,23 @@
 
         function applyRoleRestrictions() {
             if (userData.role !== 'admin') {
+                // Show global notice
                 const notice = document.getElementById('instructorNotice');
                 if (notice) notice.style.display = 'block';
-                const inputs = document.querySelectorAll('#prizeForm input, #prizeForm select, #savePrizeBtn');
-                inputs.forEach(el => el.disabled = true);
+
+                // 1. Disable Prize Form Inputs
+                const formInputs = document.querySelectorAll('#prizeForm input, #prizeForm select, #savePrizeBtn');
+                formInputs.forEach(el => el.disabled = true);
+
+                // 2. Disable Settings Inputs
+                const settingsInputs = document.querySelectorAll('#tabSettings input, #tabSettings textarea, #tabSettings button');
+                settingsInputs.forEach(el => el.disabled = true);
+
+                // 3. Disable Admin Refill
+                const refillBtn = document.getElementById('processRefillBtn');
+                if(refillBtn) refillBtn.disabled = true;
+                const refillNotice = document.getElementById('refillNotice');
+                if(refillNotice) refillNotice.style.display = 'block';
             }
         }
     });
