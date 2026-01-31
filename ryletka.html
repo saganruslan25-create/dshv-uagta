@@ -134,7 +134,6 @@
         
         .track {
             display: flex; position: absolute; left: 0; top: 30px;
-            /* transition: transform 6s cubic-bezier(0.15, 0, 0.15, 1);  <-- Убираем анимацию отсюда, добавляем в JS */
             will-change: transform;
         }
         .prize-card {
@@ -220,7 +219,6 @@
             display: flex; flex-direction: column; align-items: center;
             position: relative; overflow: hidden;
         }
-        /* Эффект наведения на карточки (Оптимизированно) */
         .shop-card:hover { 
             transform: translateY(-5px); 
             border-color: var(--primary); 
@@ -229,21 +227,32 @@
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
 
-        /* LOGS */
+        /* 2. LOGS STYLE (TERMINAL) */
+        #logsList {
+            min-height: 500px;
+            background: #000000;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            overflow-y: auto;
+        }
         .log-item {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
-            padding: 12px 15px; border-radius: 10px; margin-bottom: 8px;
-            font-size: 13px; transition: 0.2s;
+            border-bottom: 1px solid #222;
+            padding: 8px 0;
+            font-size: 13px;
+            color: #eee;
+            font-family: 'Courier New', monospace;
         }
-        .log-item:hover { background: rgba(255,255,255,0.05); }
+        .log-item:hover { background: #111; }
         .log-left { display: flex; align-items: center; gap: 10px; }
-        .log-icon { font-size: 18px; }
-        .log-action { color: white; font-weight: 600; }
+        .log-icon { font-size: 16px; }
+        .log-action { color: var(--primary); font-weight: bold; }
         .log-user { font-size: 11px; color: var(--text-gray); display: block; }
-        .log-amount { font-weight: 800; font-size: 12px; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.3); }
-        .log-amount.plus { color: var(--primary); }
-        .log-amount.minus { color: var(--danger); }
+        .log-amount { font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #111; border: 1px solid #333; }
+        .log-amount.plus { color: var(--primary); border-color: var(--primary); }
+        .log-amount.minus { color: var(--danger); border-color: var(--danger); }
 
         /* PROCESSING OVERLAY */
         .processing-overlay {
@@ -265,7 +274,6 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #toastContainer { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        /* Анимация тоста */
         .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); animation: slideDown 0.3s ease-out; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
@@ -290,9 +298,8 @@
         }
         .file-upload-btn:hover { border-color: var(--primary); color: var(--primary-bright); }
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
-        .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top: 5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
+        .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top:5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
 
-        /* Кнопка Сохранить */
         #saveSettingsBtn {
             width: 100% !important;
             box-sizing: border-box !important;
@@ -393,7 +400,7 @@
 
                     <!-- LOGS -->
                     <div id="tabLogs" class="admin-tab" style="display:none;">
-                        <div id="logsList" style="max-height:500px; overflow-y:auto; border-radius: 10px; background: rgba(0,0,0,0.2); padding: 10px;"></div>
+                        <div id="logsList"></div>
                     </div>
 
                     <!-- SETTINGS -->
@@ -476,7 +483,6 @@
                                 </select>
                             </div>
                             
-                            <!-- 2. Поле шанса скрыто, если включен авто-режим -->
                             <div id="rouletteFields" style="margin-bottom:12px; display:none;">
                                 <input type="number" step="0.001" id="newPrizeChance" class="input" placeholder="Шанс випадіння %">
                                 <small id="autoOddsHint" style="color:var(--primary); font-size:10px; display:none; margin-top:5px;">* Шанси ігноруються через активний авто-розподіл</small>
@@ -522,7 +528,7 @@
         </div>
     </footer>
 
-    <!-- EXCHANGE MODAL (4. Убрана таблица) -->
+    <!-- EXCHANGE MODAL -->
     <div id="exchangeModal" class="modal">
         <div class="modal-inner">
             <h3 class="neon-text" style="font-size:18px; margin:0;">ОБМІН БАЛІВ</h3>
@@ -604,6 +610,7 @@
         let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
         let currentSlotBase64 = null;
         let isProcessing = false; 
+        const CARD_WIDTH = 220; // 200px + 20px margin
 
         window.toggleShopInfo = () => {
             const el = document.getElementById('shopInfoText');
@@ -683,6 +690,7 @@
             const lastPage = localStorage.getItem('ryl_last_page') || 'roulette';
             const pageBtn = document.querySelector(`.sidebar button[onclick*="'${lastPage}'"]`);
             if (pageBtn) { showPage(lastPage, pageBtn); } else { showPage('roulette', document.getElementById('nav-roulette')); }
+            
             if (lastPage === 'admin') {
                 const lastAdminTab = localStorage.getItem('ryl_last_admin_tab') || 'logs';
                 const tabBtn = document.querySelector(`.admin-box button[onclick*="'${lastAdminTab}'"]`);
@@ -755,7 +763,6 @@
 
         function toggleAutoOddsUI(val) {
             const hint = document.getElementById('autoOddsHint');
-            // 2. Скрываем поле ввода шансов если включен авто
             const rouletteFields = document.getElementById('rouletteFields');
             if (rouletteFields) {
                 if (val) rouletteFields.style.display = 'none';
@@ -810,24 +817,19 @@
             });
         }
 
-        // 3. ИСПРАВЛЕНА ЛОГИКА РУЛЕТКИ
-        let trackOffset = 0; 
-
+        // 1. НОВАЯ ЛОГИКА РУЛЕТКИ (PRE-GENERATED TRACK + SWAP)
         function initTrack(prizes) {
             const track = document.getElementById('track');
             if (!track || prizes.length < 2) return;
-            if (isSpinning) return; 
             
-            if(track.children.length > 0) return;
+            // Если трек уже не пустой, не трогаем (чтобы не сбить позицию)
+            if (track.children.length > 0) return;
 
-            // Заполняем трек случайными призами, но достаточно длинным (40 элементов)
-            for (let i = 0; i < 40; i++) {
+            // Генерируем 50 карточек вперед
+            for (let i = 0; i < 50; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
-            
-            track.style.transition = 'none';
-            track.style.transform = 'translateX(0)';
         }
 
         function createPrizeNode(p) {
@@ -837,7 +839,6 @@
             return el;
         }
 
-        // 2. АЛГОРИТМ ВЗВЕШЕННОГО ВЫБИРАННЯ
         function getWinner() {
             if (isAutoOdds) {
                 return prizePool[Math.floor(Math.random() * prizePool.length)];
@@ -862,65 +863,90 @@
             document.getElementById('spinBtn').disabled = true;
             
             const track = document.getElementById('track');
-            const cardWidth = 220; 
-            
-            // 3. ОПРЕДЕЛЯЕМ ПОБЕДИТЕЛЯ СРАЗУ
             const winPrize = getWinner();
             
-            // ДОБАВЛЯЕМ ЭТОТ ПОБЕДИТЕЛЬ В КОНЕЦ ТРЕКА
-            const winCardNode = createPrizeNode(winPrize);
-            // Добавляем 3 пустых слота после выигрыша для отступа (визуально)
-            const emptySpacer = document.createElement('div');
-            emptySpacer.style.width = "200px";
+            // Логика:
+            // Мы хотим приземиться на карту, которая находится через 30 карточек вперед.
+            // Мы берем эту карту (targetIndex) и подменяем её содержимое на winPrize.
+            // Это гарантирует, что мы приземлимся на существующий DOM элемент.
             
-            track.appendChild(winCardNode);
-            track.appendChild(emptySpacer); 
+            const targetIndex = 30; 
+            const targetCard = track.children[targetIndex];
             
-            // ВЫЧИСЛЯЕМ СМЕЩЕНИЕ: Нужно докрутить так, чтобы winCardNode был в центре.
-            // Центр carousel-outer это 50%. Центр карточки это offset + ширина/2.
-            // Дополнительно добавляем несколько полных прокруток для эффектности (3 круга * ширина трека)
-            const trackWidth = track.children.length * cardWidth;
-            const spinDistance = (3 * trackWidth) + (trackWidth - (cardWidth/2) - 50); 
-            // -50 это половина отступа margins и центрирование pointer
+            if(targetCard) {
+                // Подмена визуала (Cheat)
+                const img = targetCard.querySelector('img');
+                const txt = targetCard.querySelector('span');
+                if(img) img.src = winPrize.img;
+                if(txt) txt.innerText = winPrize.name;
+            }
             
-            trackOffset -= spinDistance;
+            // Вычисляем смещение
+            // Центр контейнера это 50%. Ширина карточки CARD_WIDTH.
+            // Точка остановки: offset = -(index * CARD_WIDTH) + (containerWidth/2) - (CARD_WIDTH/2)
+            const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
+            const targetOffset = -((targetIndex * CARD_WIDTH) - (containerWidth/2) + (CARD_WIDTH/2));
             
-            track.style.transition = 'transform 6s cubic-bezier(0.15, 0, 0.15, 1)'; // Плавное затухание
-            track.style.transform = `translateX(${trackOffset}px)`;
+            // Чтобы анимация всегда была по часовой, двигаемся далеко влево
+            // Добавляем запасных кругов, например 5 полных оборотов (50 карт)
+            // Но проще: просто используем вычисленный targetOffset, но каждый раз увеличиваем базу? 
+            // Нет, чтобы не переполнять DOM, мы будем сбрасывать трек. 
+            
+            // Анимируем к цели
+            track.style.transition = 'transform 5s cubic-bezier(0.1, 0, 0.1, 1)';
+            track.style.transform = `translateX(${targetOffset}px)`;
             
             setTimeout(async () => {
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
                 
-                // Очистка старых элементов DOM, чтобы не было переполнения памяти
-                // Удаляем все элементы ДО последнего добавленного (который мы видели)
-                while (track.children.length > 10) {
-                    track.removeChild(track.firstChild);
+                // Сбрасываем визуально, но оставляем выигрышную карту в центре?
+                // Просто сбрасываем без анимации на индекс 0, но подменяем первую карту на выигрышную?
+                // Чтобы не дергало, лучше просто оставить как есть до следующего раза.
+                // Но если targetOffset слишком большой, браузер может тупить.
+                // Поэтому сделаем мягкий сброс.
+                
+                // 1. Находим карту, которая победила (она в центре)
+                const winningCard = document.querySelector('.pointer').nextElementSibling; // pointer left: 50%
+                
+                // 2. Мягко возвращаем трек в начало, ставим эту карту на место 1 в DOM и сдвигаем в 0.
+                if(winningCard) {
+                    track.style.transition = 'none';
+                    track.style.transform = 'translateX(0)';
+                    
+                    // Удаляем все перед выигрышной картой
+                    while(winningCard.previousElementSibling) {
+                        track.removeChild(track.firstChild);
+                    }
+                    
+                    // Переносим выигрышную карту в конец, чтобы не было скучно
+                    // track.appendChild(winningCard.cloneNode(true));
                 }
-                // Сбрасываем смещение без анимации, чтобы не улетели в минус бесконечность
-                // Но визуально элементы уже на месте.
-                const newOffset = - ((track.children.length - 1) * cardWidth) + 50; 
-                track.style.transition = 'none';
-                track.style.transform = `translateX(${newOffset}px)`;
-                trackOffset = newOffset;
-
+                
                 await processWin(winPrize);
-            }, 6000);
+            }, 5000);
         };
 
         async function processWin(prize) {
             const uSnap = await getDoc(doc(db, "users", user.uid));
             const uData = uSnap.data();
             
+            // 4. ЗАЩИТА ОТ ДОЛГОВ
+            let updateData = {};
+            
             if (prize.action === 'points') {
-                await updateDoc(doc(db, "users", user.uid), { points: (uData.points || 0) + parseInt(prize.actionVal) });
+                updateData.points = (uData.points || 0) + parseInt(prize.actionVal);
             } else if (prize.action === 'sub_points') {
-                await updateDoc(doc(db, "users", user.uid), { points: (uData.points || 0) - parseInt(prize.actionVal) });
+                // Если баллов меньше, чем списать, ставим 0
+                const newPoints = (uData.points || 0) - parseInt(prize.actionVal);
+                updateData.points = Math.max(0, newPoints);
             } else if (prize.action === 'currency') {
-                 await updateDoc(doc(db, "users", user.uid), { currency: (uData.currency || 0) + parseInt(prize.actionVal) });
+                 updateData.currency = (uData.currency || 0) + parseInt(prize.actionVal);
             } else if (prize.action === 'ticket') {
-                await updateDoc(doc(db, "users", user.uid), { roulette_passes: (uData.roulette_passes || 0) + parseInt(prize.actionVal) });
+                updateData.roulette_passes = (uData.roulette_passes || 0) + parseInt(prize.actionVal);
             }
+            
+            await updateDoc(doc(db, "users", user.uid), updateData);
             
             await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name);
             await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
@@ -930,7 +956,7 @@
 
         window.openPurchaseModal = () => document.getElementById('purchaseModal').style.display = 'flex';
         window.updateTotalCost = () => {
-            const c = parseInt(document.getElementById('ticketCount').value) || 1;
+            const c = parseInt(document.getElementById('ticketCount').value) ||1;
             document.getElementById('totalCostDisplay').innerText = (c * 100) + " ⚪";
         };
         window.confirmPurchase = async () => {
@@ -938,6 +964,7 @@
              const count = parseInt(document.getElementById('ticketCount').value) || 1;
              const cost = count * 100;
              if ((userData.points || 0) < cost) return notify("Недостатньо балів!");
+             
              isProcessing = true;
              document.getElementById('procTitle').innerText = "ПОКУПКА";
              document.getElementById('procText').innerText = `Оформлення замовлення...\n${count} квитків`;
@@ -994,10 +1021,11 @@
             const item = prizePool.find(p => p.id === id);
             if (!item) return;
             const points = userData.points || 0;
+            // 4. Проверка баланса в магазине (уже была, но убедимся)
             const isDebt = points < (item.price || 0);
-            const msg = isDebt ? `У вас недостатньо балів (${points}). Баланс піде в борг. Купити ${item.name}?` : `Купити ${item.name} за ${item.price} балів?`;
+            if(isDebt) return notify("Недостатньо балів!"); 
             
-            openModal("ПОКУПКА", msg, async () => {
+            openModal("ПОКУПКА", `Купити ${item.name} за ${item.price} балів?`, async () => {
                 isProcessing = true;
                 document.getElementById('procTitle').innerText = "ПОКУПКА";
                 document.getElementById('procText').innerText = `Купівля: ${item.name}\nЦіна: ${item.price} ⚪`;
@@ -1014,14 +1042,12 @@
         };
 
         function loadAdminData() {
-            // 1. ФИЛЬТР ПОЛЬЗОВАТЕЛЕЙ (ТОЛЬКО АДМИН И ИНСТРУКТОР)
             onSnapshot(collection(db, "users"), (snap) => {
                 const sel = document.getElementById('adminUserSelect');
                 if(sel) {
                     sel.innerHTML = '<option value="">Оберіть користувача (Адмін/Інструктор)...</option>';
                     snap.forEach(d => {
                         const u = d.data();
-                        // Проверка роли
                         if (u.role === 'admin' || u.role === 'instructor') {
                             sel.innerHTML += `<option value="${d.id}">${u.name} (${u.points || 0}⚪, ${u.currency || 0}₴)</option>`;
                         }
@@ -1029,26 +1055,26 @@
                 }
             });
             
-            // 8. ЛОГИ (ИСПРАВЛЕНО)
             const q = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
             onSnapshot(q, (snap) => {
                 const list = document.getElementById('logsList');
                 if(!list) return;
                 list.innerHTML = "";
                 if(snap.empty) {
-                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px;'>Логів немає</div>";
+                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>[SYSTEM] No logs found.</div>";
                     return;
                 }
                 snap.forEach(d => {
                     const l = d.data();
                     const isPlus = l.action.includes('+');
+                    const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleTimeString('uk-UA') : '--:--';
                     list.innerHTML += `
                         <div class="log-item">
                             <div class="log-left">
                                 <span class="log-icon">${isPlus ? '📈' : '📉'}</span>
                                 <div>
                                     <div class="log-action">${l.user}</div>
-                                    <span class="log-user">${l.type} - ${l.desc}</span>
+                                    <span class="log-user">[${time}] ${l.type} - ${l.desc}</span>
                                 </div>
                             </div>
                             <div class="log-amount ${isPlus ? 'plus' : 'minus'}">${l.amount}</div>
@@ -1082,9 +1108,9 @@
                 let logAmount = "";
 
                 if (type === 'add_points') { updateData.points = (data.points || 0) + amount; logDesc = "Додавання балів"; logAmount = `+${amount}`; }
-                else if (type === 'sub_points') { updateData.points = (data.points || 0) - amount; logDesc = "Списання балів"; logAmount = `-${amount}`; }
+                else if (type === 'sub_points') { updateData.points = Math.max(0, (data.points || 0) - amount); logDesc = "Списання балів"; logAmount = `-${amount}`; }
                 else if (type === 'add_currency') { updateData.currency = (data.currency || 0) + amount; logDesc = "Додавання валюти"; logAmount = `+${amount} грн`; }
-                else if (type === 'sub_currency') { updateData.currency = (data.currency || 0) - amount; logDesc = "Списання валюти"; logAmount = `-${amount} грн`; }
+                else if (type === 'sub_currency') { updateData.currency = Math.max(0, (data.currency || 0) - amount); logDesc = "Списання валюти"; logAmount = `-${amount} грн`; }
 
                 await updateDoc(doc(db, "users", uid), updateData);
                 await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
@@ -1120,7 +1146,6 @@
             `;
         }
         
-        // 5. ПЛАВНЫЙ СКРОЛЛ К ФОРМЕ РЕДАКТИРОВАНИЯ
         window.editPrize = (id) => {
             const p = prizePool.find(x => x.id === id);
             if(!p) return;
@@ -1142,8 +1167,6 @@
             
             document.getElementById('cancelEditBtn').style.display = 'block';
             document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ";
-            
-            // СКРОЛЛИМ К ФОРМЕ
             document.getElementById('prizeForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
         
@@ -1224,14 +1247,23 @@
         window.showPage = (pageId, btn) => {
             document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
             document.getElementById(pageId + 'Page').classList.add('active');
+            
             document.querySelectorAll('.sidebar button').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
+            
             document.getElementById('footerPageLabel').innerText = btn.innerText;
             localStorage.setItem('ryl_last_page', pageId);
+            
+            // 3. Если открываем админку, открываем логи по умолчанию
+            if (pageId === 'admin') {
+                 switchAdminTab('logs', document.getElementById('admin-logs-btn'));
+            }
         };
+        
         window.switchAdminTab = (tab, btn) => {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
+            
             document.querySelectorAll('.admin-box button').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
             localStorage.setItem('ryl_last_admin_tab', tab);
