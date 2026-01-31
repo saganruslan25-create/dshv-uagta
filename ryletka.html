@@ -8,7 +8,7 @@
     <style>
         :root {
             --primary: #22c55e;
-            --primary-glow: rgba(34, 197, 94, 0.5);
+            --primary-glow: rgba(34,197, 94, 0.5);
             --accent: #f97316;
             --accent-glow: rgba(249, 115, 22, 0.5);
             --bg: #020305;
@@ -33,7 +33,7 @@
         ::-webkit-scrollbar-thumb:hover { background: var(--primary-bright); }
 
         body {
-            margin: 0; padding: 0;
+            margin:0; padding: 0;
             background-color: var(--bg);
             background-image: 
                 radial-gradient(circle at 50% -20%, var(--primary-glow) 0%, transparent 50%),
@@ -70,7 +70,7 @@
 
         .stat-item {
             display: flex; align-items: center; gap: 8px;
-            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
+            background: rgba(255,255,255, 0.05); border: 1px solid var(--glass-border);
             padding: 10px 20px; border-radius: 15px; font-weight: 800; font-size: 14px;
             transition: 0.3s;
         }
@@ -135,6 +135,10 @@
         .track {
             display: flex; position: absolute; left: 0; top: 30px;
             will-change: transform;
+            color: var(--text-gray);
+            font-size: 12px;
+            display: flex; align-items: center; justify-content: center;
+            width: 100%;
         }
         .prize-card {
             width: 200px; height: 200px; margin: 0 10px;
@@ -227,22 +231,22 @@
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
 
-        /* 2. LOGS STYLE (TERMINAL) */
+        /* LOGS STYLE */
         #logsList {
-            min-height: 500px;
+            min-height: 400px;
             background: #000000;
             border: 1px solid #333;
             border-radius: 10px;
             padding: 15px;
             font-family: 'Courier New', monospace;
             overflow-y: auto;
+            color: #ccc;
         }
         .log-item {
             display: flex; justify-content: space-between; align-items: center;
             border-bottom: 1px solid #222;
             padding: 8px 0;
             font-size: 13px;
-            color: #eee;
             font-family: 'Courier New', monospace;
         }
         .log-item:hover { background: #111; }
@@ -355,7 +359,8 @@
                     <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
                     <div class="carousel-outer">
                         <div class="pointer"></div>
-                        <div id="track" class="track"></div>
+                        <!-- 5. Текст загрузки, чтобы не было пусто -->
+                        <div id="track" class="track">ЗАВАНТАЖЕННЯ...</div>
                     </div>
                     <div class="spin-actions">
                         <button class="btn-main btn-buy" onclick="openPurchaseModal()">
@@ -368,6 +373,7 @@
                         </button>
                     </div>
                 </div>
+                <!-- 4. Убраны проценты из превью -->
                 <h3 style="text-transform: uppercase; letter-spacing: 3px; color: var(--primary); font-size: 12px; margin-bottom: 20px;">ПРИЗИ В ЦІЙ РУЛЕТЦІ</h3>
                 <div id="prizePreview" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;"></div>
             </section>
@@ -400,7 +406,7 @@
 
                     <!-- LOGS -->
                     <div id="tabLogs" class="admin-tab" style="display:none;">
-                        <div id="logsList"></div>
+                        <div id="logsList">Завантаження логів...</div>
                     </div>
 
                     <!-- SETTINGS -->
@@ -610,7 +616,7 @@
         let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
         let currentSlotBase64 = null;
         let isProcessing = false; 
-        const CARD_WIDTH = 220; // 200px + 20px margin
+        const CARD_WIDTH = 220; 
 
         window.toggleShopInfo = () => {
             const el = document.getElementById('shopInfoText');
@@ -626,8 +632,14 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
+        // 1. ДИСКОРД ЛОГИ
         async function sendLogToDiscord(type, userObj, description, amount = 0) {
-            if (!webhookUrl || !webhookUrl.startsWith("https://discord")) return;
+            // Проверяем URL
+            if (!webhookUrl || !webhookUrl.startsWith("https://discord")) {
+                console.warn("Webhook URL is missing or invalid.");
+                return;
+            }
+
             let color = 0, icon = "📄", title = "Лог";
             if (type === 'buy') { color = 5793266; icon = "🛒"; title = "ПОКУПКА"; }
             else if (type === 'win') { color = 15105570; icon = "🎉"; title = "ВИГРАШ"; }
@@ -642,7 +654,13 @@
                 avatar_url: "https://cdn-icons-png.flaticon.com/512/806/806068.png",
                 embeds: [{ title: `${icon} ${title}`, description: desc, color: color, footer: { text: `ID: ${userObj.uid}` }, timestamp: new Date().toISOString() }]
             };
-            try { await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); } catch (e) {}
+            
+            try {
+                await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            } catch (e) {
+                console.error("Discord send error:", e);
+                notify("Помилка відправки в Discord");
+            }
         }
 
         onAuthStateChanged(auth, async (u) => {
@@ -690,7 +708,6 @@
             const lastPage = localStorage.getItem('ryl_last_page') || 'roulette';
             const pageBtn = document.querySelector(`.sidebar button[onclick*="'${lastPage}'"]`);
             if (pageBtn) { showPage(lastPage, pageBtn); } else { showPage('roulette', document.getElementById('nav-roulette')); }
-            
             if (lastPage === 'admin') {
                 const lastAdminTab = localStorage.getItem('ryl_last_admin_tab') || 'logs';
                 const tabBtn = document.querySelector(`.admin-box button[onclick*="'${lastAdminTab}'"]`);
@@ -790,13 +807,10 @@
             const isInstructor = userData && userData.role === 'instructor';
 
             items.forEach(p => {
-                let chanceText = isAutoOdds ? (100 / items.length).toFixed(1) + '%' : (p.chance || 0) + '%';
-                const displayChance = isInstructor ? '' : chanceText;
-                
+                // 4. Скрываем проценты в превью полностью
                 preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; margin-bottom:8px;">
                     <div style="font-size:10px; font-weight:800;">${p.name}</div>
-                    <div style="font-size:8px; color:var(--text-gray); margin-top:4px;">${displayChance}</div>
                 </div>`;
             });
             initTrack(items);
@@ -817,19 +831,24 @@
             });
         }
 
-        // 1. НОВАЯ ЛОГИКА РУЛЕТКИ (PRE-GENERATED TRACK + SWAP)
         function initTrack(prizes) {
             const track = document.getElementById('track');
             if (!track || prizes.length < 2) return;
+            if (isSpinning) return; 
             
-            // Если трек уже не пустой, не трогаем (чтобы не сбить позицию)
-            if (track.children.length > 0) return;
+            if(track.children.length > 0) return;
+
+            // 5. Очищаем текст "ЗАВАНТАЖЕННЯ..."
+            track.innerHTML = "";
 
             // Генерируем 50 карточек вперед
             for (let i = 0; i < 50; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
+            
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
         }
 
         function createPrizeNode(p) {
@@ -865,34 +884,19 @@
             const track = document.getElementById('track');
             const winPrize = getWinner();
             
-            // Логика:
-            // Мы хотим приземиться на карту, которая находится через 30 карточек вперед.
-            // Мы берем эту карту (targetIndex) и подменяем её содержимое на winPrize.
-            // Это гарантирует, что мы приземлимся на существующий DOM элемент.
-            
             const targetIndex = 30; 
             const targetCard = track.children[targetIndex];
             
             if(targetCard) {
-                // Подмена визуала (Cheat)
                 const img = targetCard.querySelector('img');
                 const txt = targetCard.querySelector('span');
                 if(img) img.src = winPrize.img;
                 if(txt) txt.innerText = winPrize.name;
             }
             
-            // Вычисляем смещение
-            // Центр контейнера это 50%. Ширина карточки CARD_WIDTH.
-            // Точка остановки: offset = -(index * CARD_WIDTH) + (containerWidth/2) - (CARD_WIDTH/2)
             const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
             const targetOffset = -((targetIndex * CARD_WIDTH) - (containerWidth/2) + (CARD_WIDTH/2));
             
-            // Чтобы анимация всегда была по часовой, двигаемся далеко влево
-            // Добавляем запасных кругов, например 5 полных оборотов (50 карт)
-            // Но проще: просто используем вычисленный targetOffset, но каждый раз увеличиваем базу? 
-            // Нет, чтобы не переполнять DOM, мы будем сбрасывать трек. 
-            
-            // Анимируем к цели
             track.style.transition = 'transform 5s cubic-bezier(0.1, 0, 0.1, 1)';
             track.style.transform = `translateX(${targetOffset}px)`;
             
@@ -900,27 +904,15 @@
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
                 
-                // Сбрасываем визуально, но оставляем выигрышную карту в центре?
-                // Просто сбрасываем без анимации на индекс 0, но подменяем первую карту на выигрышную?
-                // Чтобы не дергало, лучше просто оставить как есть до следующего раза.
-                // Но если targetOffset слишком большой, браузер может тупить.
-                // Поэтому сделаем мягкий сброс.
+                const winningCard = document.querySelector('.pointer').nextElementSibling; 
                 
-                // 1. Находим карту, которая победила (она в центре)
-                const winningCard = document.querySelector('.pointer').nextElementSibling; // pointer left: 50%
-                
-                // 2. Мягко возвращаем трек в начало, ставим эту карту на место 1 в DOM и сдвигаем в 0.
                 if(winningCard) {
                     track.style.transition = 'none';
                     track.style.transform = 'translateX(0)';
-                    
-                    // Удаляем все перед выигрышной картой
                     while(winningCard.previousElementSibling) {
                         track.removeChild(track.firstChild);
                     }
-                    
-                    // Переносим выигрышную карту в конец, чтобы не было скучно
-                    // track.appendChild(winningCard.cloneNode(true));
+                    track.appendChild(winningCard.cloneNode(true));
                 }
                 
                 await processWin(winPrize);
@@ -931,13 +923,11 @@
             const uSnap = await getDoc(doc(db, "users", user.uid));
             const uData = uSnap.data();
             
-            // 4. ЗАЩИТА ОТ ДОЛГОВ
             let updateData = {};
             
             if (prize.action === 'points') {
                 updateData.points = (uData.points || 0) + parseInt(prize.actionVal);
             } else if (prize.action === 'sub_points') {
-                // Если баллов меньше, чем списать, ставим 0
                 const newPoints = (uData.points || 0) - parseInt(prize.actionVal);
                 updateData.points = Math.max(0, newPoints);
             } else if (prize.action === 'currency') {
@@ -948,8 +938,12 @@
             
             await updateDoc(doc(db, "users", user.uid), updateData);
             
+            // 1. Обновляем данные пользователя, чтобы отправить свежий баланс в Discord
+            const finalSnap = await getDoc(doc(db, "users", user.uid));
+            const finalData = finalSnap.data();
+
             await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name);
-            await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
+            await sendLogToDiscord('win', { name: finalData.name, uid: user.uid }, `Виграв ${prize.name}`, prize.name);
             
             notify(`Ви виграли: ${prize.name}!`);
         }
@@ -974,6 +968,7 @@
                 await new Promise(r => setTimeout(r, 1000));
                 await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - cost, roulette_passes: (userData.roulette_passes || 0) + count });
                 await addLog(userData.name, "SHOP", `Купив квитки`, -cost);
+                await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
                 document.getElementById('purchaseModal').style.display = 'none';
                 notify(`Куплено ${count} квитків!`);
              } catch(e) { notify("Помилка"); } finally { isProcessing = false; document.getElementById('processingModal').style.display = 'none'; }
@@ -1021,7 +1016,6 @@
             const item = prizePool.find(p => p.id === id);
             if (!item) return;
             const points = userData.points || 0;
-            // 4. Проверка баланса в магазине (уже была, но убедимся)
             const isDebt = points < (item.price || 0);
             if(isDebt) return notify("Недостатньо балів!"); 
             
@@ -1055,15 +1049,18 @@
                 }
             });
             
+            // 2. Логи - начальное состояние и загрузка
+            const list = document.getElementById('logsList');
+            if(list) list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>Завантаження логів...</div>";
+
             const q = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
             onSnapshot(q, (snap) => {
-                const list = document.getElementById('logsList');
                 if(!list) return;
-                list.innerHTML = "";
                 if(snap.empty) {
-                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>[SYSTEM] No logs found.</div>";
+                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>Логів немає</div>";
                     return;
                 }
+                list.innerHTML = "";
                 snap.forEach(d => {
                     const l = d.data();
                     const isPlus = l.action.includes('+');
@@ -1132,10 +1129,21 @@
         
         function renderManageCard(p) {
             const isAdmin = userData.role === 'admin';
+            
+            // 3. Отображение шанса на карточке
+            let chanceDisplay = "";
+            if(p.category === 'shop') {
+                chanceDisplay = "Магазин";
+            } else {
+                if(isAutoOdds) chanceDisplay = "Авто";
+                else chanceDisplay = (p.chance || 0) + '%';
+            }
+
             return `
                 <div style="background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); border-radius:10px; padding:10px; position:relative;">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; display:block; margin:0 auto;">
                     <div style="font-size:10px; text-align:center; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
+                    <div style="font-size:9px; text-align:center; color:var(--text-gray); margin-top:2px;">${chanceDisplay}</div>
                     ${isAdmin ? `
                         <div style="display:flex; gap:5px; margin-top:5px;">
                             <button onclick="editPrize('${p.id}')" style="flex:1; background:#333; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✎</button>
@@ -1247,23 +1255,18 @@
         window.showPage = (pageId, btn) => {
             document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
             document.getElementById(pageId + 'Page').classList.add('active');
-            
             document.querySelectorAll('.sidebar button').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
-            
             document.getElementById('footerPageLabel').innerText = btn.innerText;
             localStorage.setItem('ryl_last_page', pageId);
             
-            // 3. Если открываем админку, открываем логи по умолчанию
             if (pageId === 'admin') {
                  switchAdminTab('logs', document.getElementById('admin-logs-btn'));
             }
         };
-        
         window.switchAdminTab = (tab, btn) => {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
-            
             document.querySelectorAll('.admin-box button').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
             localStorage.setItem('ryl_last_admin_tab', tab);
