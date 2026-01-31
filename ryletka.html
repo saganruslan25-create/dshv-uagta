@@ -21,7 +21,6 @@
 
         * { box-sizing: border-box; }
 
-        /* СКРОЛЛБАР (Додано з 2-го файлу) */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #05070a; }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; box-shadow: 0 0 10px var(--primary-glow); }
@@ -209,7 +208,6 @@
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
             flex-wrap: wrap;
         }
-        .shop-rate-text { font-size: 14px; }
 
         .collapsible-info {
             background: rgba(0, 0, 0, 0.2);
@@ -343,7 +341,6 @@
     <div style="display:flex; gap:10px; align-items:center;">
         <div class="stat-item">⚪ <span id="pointsVal">0</span></div>
         <div class="stat-item" style="border-color: var(--currency);">💸 <span id="currencyVal">0</span> ₴</div>
-        <!-- Кнопка обміну залишилась в хедері для швидкого доступу -->
         <button class="stat-item" style="cursor: pointer; background: linear-gradient(135deg, #fbbf24, #d97706); border:none; color:black; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);" onclick="openExchangeModal()">ОБМІН</button>
     </div>
 </header>
@@ -390,11 +387,9 @@
         <div class="shop-info-banner">
             <div class="shop-rate-row">
                 1 ⚪ = <span id="shopRateDisplay">0</span> ₴
-                <!-- Кнопка обміну також всередині банку магазину (з 2-го файлу) -->
                 <button style="background:var(--primary); color:black; border:none; padding:10px 20px; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; white-space:nowrap; box-shadow: 0 0 10px var(--primary-glow);" onclick="openExchangeModal()">ОБМІН</button>
             </div>
             
-            <!-- Розгортається блок (з 2-го файлу) -->
             <button onclick="toggleShopInfo()" style="background:none; border: 1px dashed var(--glass-border); color:var(--primary); width:100%; padding:10px; border-radius:10px; font-weight: 700; cursor:pointer; font-size:12px;">Як отримати бали? (Натисни, щоб розкрити)</button>
             <div id="shopInfoText" class="collapsible-info">Завантаження...</div>
         </div>
@@ -441,7 +436,7 @@
                 </div>
             </div>
 
-            <!-- REFILL (Оновлено з 2-го файлу для валюти) -->
+            <!-- REFILL -->
             <div id="tabRefill" class="admin-tab" style="display:none;">
                 <div id="refillNotice" style="padding: 15px; background: rgba(249, 115, 22, 0.1); border: 1px solid var(--accent); border-radius: 12px; margin-bottom: 20px; display: none;">
                     <small style="color: var(--accent); font-weight: 700;">У вас недостатньо прав для зміни балансів.</small>
@@ -499,7 +494,7 @@
                     </div>
                     
                     <div id="rouletteFields" style="margin-bottom:12px; display:none;">
-                        <input type="number" step="0.001" id="newPrizeChance" class="input" placeholder="Шанс випадіння %">
+                        <input type="number" step="0.01" id="newPrizeChance" class="input" placeholder="Шанс випадіння %">
                         <small id="autoOddsHint" style="color:var(--primary); font-size:10px; display:none; margin-top:5px;">* Шанси ігноруються через активний авто-розподіл</small>
                     </div>
                     <div id="shopFields" style="display:none; margin-bottom:12px;">
@@ -510,7 +505,7 @@
                     </div>
 
                     <div id="prizeFormActions" style="display:flex; gap:10px;">
-                        <button id="savePrizeBtn" class="btn-main btn-buy" style="width:100%; max-width:none;" onclick="addPrizeToPool()">ЗБЕРЕГТИ</button>
+                        <button id="savePrizeBtn" class="btn-main btn-buy" style="width:100%; max-width:none;" onclick="savePrize()">ЗБЕРЕГТИ</button>
                         <button id="cancelEditBtn" class="btn-main" style="width:120px; background:#222; color:white; display:none;" onclick="resetPrizeForm()">ВІДМІНА</button>
                     </div>
                     <div id="instructorNotice" style="text-align: center; display: none;">
@@ -518,10 +513,10 @@
                     </div>
                 </div>
 
-                <div class="category-label">🎰 СЛОТИ РУЛЕТКИ</div>
-                <div id="manageRouletteGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;"></div>
+                <div class="category-label">🎰 СЛОТИ РУЛЕТКИ <span style="margin-left:auto; font-size:10px; color:#666;">(Шанс вказано під слотом)</span></div>
+                <div id="manageRouletteGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
                 <div class="category-label">🛍️ ТОВАРИ МАГАЗИНУ</div>
-                <div id="manageShopGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;"></div>
+                <div id="manageShopGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;"></div>
             </div>
         </section>
     </main>
@@ -606,7 +601,7 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -623,7 +618,7 @@
 
     let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
     const SPIN_TIME_SECONDS = 6;
-    const CARD_WIDTH = 220; 
+    const CARD_WIDTH = 220; // 200px width + 20px margins
     const TOTAL_CARDS = 100;
     let isProcessing = false; 
 
@@ -677,7 +672,8 @@
             } else {
                 document.getElementById('adminBtn').style.display = 'none';
             }
-            initTrack(prizePool.filter(p => !p.category || p.category === 'roulette'));
+            // Init track only if not spinning and data loaded
+            if (!isSpinning) initTrack(prizePool.filter(p => !p.category || p.category === 'roulette'));
         });
 
         loadPrizes();
@@ -756,7 +752,6 @@
         if (rouletteFields) rouletteFields.style.display = val ? 'none' : 'block';
     }
 
-    // Оновлений processAdminRefill з підтримкою валюти (з 2-го файлу)
     window.processAdminRefill = async () => {
         if (userData.role !== 'admin') return notify("У вас немає прав!");
         const userId = document.getElementById('adminUserSelect').value;
@@ -812,9 +807,18 @@
         if (!preview) return;
         preview.innerHTML = "";
         items.forEach(p => {
+            // Calculate chance percentage display
+            let chanceText = "";
+            if (isAutoOdds) {
+                chanceText = (100 / items.length).toFixed(1) + "%";
+            } else {
+                chanceText = (p.chance || 0) + "%";
+            }
+
             preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                 <img src="${p.img}" style="width:50px; height:50px; object-fit: contain; margin-bottom:8px;">
                 <div style="font-size:10px; font-weight:800;">${p.name}</div>
+                <div style="font-size:8px; color:var(--primary); margin-top:2px;">${chanceText}</div>
             </div>`;
         });
         initTrack(items);
@@ -835,7 +839,7 @@
         });
     }
 
-    // --- ROULETTE SYSTEM ---
+    // --- ROULETTE SYSTEM (FIXED SYNC) ---
     function createPrizeNode(p) {
         const el = document.createElement('div');
         el.className = 'prize-card';
@@ -862,6 +866,7 @@
         } else {
             let totalChance = prizes.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
             if (totalChance <= 0) return prizes[Math.floor(Math.random() * prizes.length)];
+            
             let random = Math.random() * totalChance;
             for (let p of prizes) {
                 random -= (parseFloat(p.chance) || 0);
@@ -876,21 +881,32 @@
         if (btn.disabled || isProcessing) return;
         if (!userData || userData.roulette_passes < 1) return notify("Немає квитків!");
         
+        // 1. LISTEN: Deduct ticket IMMEDIATELY
+        try {
+            await updateDoc(doc(db, "users", user.uid), { roulette_passes: userData.roulette_passes - 1 });
+            // Update local UI immediately
+            userData.roulette_passes -= 1;
+            document.getElementById('ticketsVal').innerText = userData.roulette_passes;
+        } catch(e) {
+            notify("Помилка списання квитка");
+            return;
+        }
+
         btn.disabled = true;
         isSpinning = true;
         document.getElementById('winOverlay').style.display = 'none';
 
         const track = document.getElementById('track');
-        const children = Array.from(track.children);
+        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
         
-        if (children.length === 0) return notify("Немає призів для гри!");
-
-        const winPrize = getWinner(prizePool);
+        // 2. LOGIC: Decide Winner
+        const winPrize = getWinner(rouletteItems);
         if (!winPrize) return notify("Помилка вибору призу");
 
-        // Вираховуємо де буде приз
-        const targetIndex = Math.floor(Math.random() * 50) + 50; 
-        const targetCard = children[targetIndex];
+        // 3. RIGGING: Pick a fixed target index (e.g., index 55)
+        // We will force this specific card in the DOM to be the winner
+        const targetIndex = 55; 
+        const targetCard = track.children[targetIndex];
         
         if (targetCard) {
             const img = targetCard.querySelector('img');
@@ -899,14 +915,19 @@
             if(txt) txt.innerText = winPrize.name;
         }
 
+        // 4. PHYSICS: Calculate Scroll
+        // Center of container = containerWidth / 2
+        // Center of target card = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2)
+        // Translate = - (TargetCardCenter - ContainerCenter)
         const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
-        const halfWidth = CARD_WIDTH / 2;
-        const targetOffset = -(targetIndex * CARD_WIDTH) + (containerWidth/2) + halfWidth;
-        
+        const targetCenter = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2);
+        const scrollAmount = targetCenter - (containerWidth / 2);
+
         window.isProcessing = true;
 
-        track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
-        track.style.transform = `translateX(${targetOffset}px)`;
+        // LINEAR TRANSITION (Constant Speed)
+        track.style.transition = `transform ${SPIN_TIME_SECONDS}s linear`;
+        track.style.transform = `translateX(-${scrollAmount}px)`;
 
         setTimeout(async () => {
             window.isProcessing = false;
@@ -921,12 +942,11 @@
             notify(`Вітаю! Ви виграли ${winPrize.name}`);
             await processWin(winPrize);
 
-            // Reset track position without animation
+            // Optional: Reset track visually after delay so next spin is fresh
             setTimeout(() => {
-                // Remove items before current for cleanliness
-                // track.style.transition = 'none';
-                // track.style.transform = 'translateX(0px)';
-                // initTrack(prizePool.filter(p => !p.category || p.category === 'roulette'));
+                track.style.transition = 'none';
+                track.style.transform = 'translateX(0px)';
+                initTrack(rouletteItems);
             }, 3000);
 
         }, SPIN_TIME_SECONDS * 1000);
@@ -1058,7 +1078,6 @@
     }
 
     async function loadAdminData() {
-        // Load users
         const usersSnap = await getDocs(collection(db, "users"));
         const sel = document.getElementById('adminUserSelect');
         sel.innerHTML = "<option value=''>Оберіть користувача...</option>";
@@ -1066,7 +1085,6 @@
             sel.innerHTML += `<option value="${d.id}">${d.data().name} (${d.data().role})</option>`;
         });
 
-        // Load Logs
         const q = query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50));
         onSnapshot(q, (snap) => {
             const list = document.getElementById('logsList');
@@ -1087,7 +1105,9 @@
         });
     }
 
-    // --- ADMIN PRIZE MANAGEMENT ---
+    // --- ADMIN PRIZE MANAGEMENT (EDIT & DELETE) ---
+    let currentSlotBase64 = null;
+
     window.processSlotImage = (input) => {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -1112,15 +1132,58 @@
         document.getElementById('actionValField').style.display = act !== 'item' ? 'block' : 'none';
     };
 
-    window.addPrizeToPool = async () => {
+    // Редагування слота
+    window.editPrize = (id) => {
+        if (userData.role !== 'admin') return notify("Тільки адмін!");
+        const p = prizePool.find(x => x.id === id);
+        if(!p) return;
+
+        editingId = id;
+        
+        // Заповнення форми
+        document.getElementById('newPrizeName').value = p.name;
+        document.getElementById('newPrizeCategory').value = p.category || 'roulette';
+        document.getElementById('newPrizeActionType').value = p.action || 'item';
+        
+        // Перемалювання полів
+        togglePrizeInputs();
+        toggleActionValueField();
+
+        if(p.category === 'roulette') document.getElementById('newPrizeChance').value = p.chance || 0;
+        if(p.category === 'shop') document.getElementById('newPrizePrice').value = p.price || 0;
+        
+        document.getElementById('newPrizeActionVal').value = p.actionVal || "";
+        
+        // Фото
+        currentSlotBase64 = p.img;
+        const img = document.getElementById('slotImgPreview');
+        img.src = p.img;
+        img.style.display = 'block';
+
+        // Зміна інтерфейсу форми
+        document.getElementById('formTitle').innerText = "РЕДАГУВАТИ СЛОТ";
+        document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ СЛОТ";
+        document.getElementById('cancelEditBtn').style.display = 'block';
+        
+        // Скрол до форми
+        document.getElementById('prizeForm').scrollIntoView({behavior: "smooth"});
+    };
+
+    // Збереження (Створення або Оновлення)
+    window.savePrize = async () => {
         if (userData.role !== 'admin') return notify("Тільки адмін!");
         const name = document.getElementById('newPrizeName').value;
         const cat = document.getElementById('newPrizeCategory').value;
         const act = document.getElementById('newPrizeActionType').value;
         
-        if (!name || !currentSlotBase64) return notify("Назва та фото обов'язкові!");
+        if (!name) return notify("Назва обов'язкова!");
+        // Якщо новий слот, то фото обов'язкове. Якщо редагування, можна не змінювати.
+        if (!editingId && !currentSlotBase64) return notify("Фото обов'язкове!");
 
-        const data = { name, img: currentSlotBase64, category: cat, action: act };
+        const data = { name, category: cat, action: act };
+        
+        // Оновлюємо фото тільки якщо воно є (нове або старе)
+        if (currentSlotBase64) data.img = currentSlotBase64;
         
         if (cat === 'roulette') {
             data.chance = parseFloat(document.getElementById('newPrizeChance').value) || 0;
@@ -1132,16 +1195,34 @@
             data.actionVal = document.getElementById('newPrizeActionVal').value;
         }
 
-        await addDoc(collection(db, "roulette_prizes"), data);
-        notify("Слот створено!");
-        resetPrizeForm();
+        if (editingId) {
+            await updateDoc(doc(db, "roulette_prizes", editingId), data);
+            notify("Слот оновлено!");
+            resetPrizeForm();
+        } else {
+            await addDoc(collection(db, "roulette_prizes"), data);
+            notify("Слот створено!");
+            resetPrizeForm();
+        }
+    };
+
+    window.deletePrize = async (id) => {
+        if (userData.role !== 'admin') return notify("Тільки адмін!");
+        if(confirm("Видалити цей слот назавжди?")) {
+            await deleteDoc(doc(db, "roulette_prizes", id));
+            notify("Слот видалено");
+        }
     };
 
     function resetPrizeForm() {
+        editingId = null;
         document.getElementById('newPrizeName').value = "";
         document.getElementById('newPrizeImgFile').value = "";
         document.getElementById('slotImgPreview').style.display = 'none';
         currentSlotBase64 = null;
+        document.getElementById('formTitle').innerText = "Створити новий слот";
+        document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
+        document.getElementById('cancelEditBtn').style.display = 'none';
     }
 
     function renderManage() {
@@ -1151,27 +1232,41 @@
 
         rouletteGrid.innerHTML = "";
         shopGrid.innerHTML = "";
+        
+        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+        
+        // Розрахунок відсотків для відображення
+        let totalChance = rouletteItems.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
 
         prizePool.forEach(p => {
+            let chanceDisplay = "";
+            if (p.category === 'shop') {
+                chanceDisplay = `Ціна: ${p.price} ⚪`;
+            } else {
+                if (isAutoOdds) {
+                    chanceDisplay = `Шанс: ${(100 / rouletteItems.length).toFixed(1)}%`;
+                } else {
+                    let thisChance = parseFloat(p.chance) || 0;
+                    let percent = totalChance > 0 ? ((thisChance / totalChance) * 100).toFixed(1) : 0;
+                    chanceDisplay = `Шанс: ${thisChance}% (${percent} реальн.)`;
+                }
+            }
+
             const html = `
-                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; position:relative;">
+                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; position:relative; border:1px solid rgba(255,255,255,0.1);">
                     <img src="${p.img}" style="width:50px; height:50px;">
-                    <div style="font-size:10px; font-weight:700; margin-top:5px;">${p.name}</div>
-                    <button onclick="deletePrize('${p.id}')" style="position:absolute; top:-5px; right:-5px; background:red; color:white; border:none; border-radius:50%; width:20px; height:20px; cursor:pointer;">X</button>
+                    <div style="font-size:10px; font-weight:700; margin-top:5px; color:#fff;">${p.name}</div>
+                    <div style="font-size:9px; color:var(--primary); margin-top:2px; margin-bottom:5px;">${chanceDisplay}</div>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button onclick="window.editPrize('${p.id}')" style="background:#334155; border:none; color:white; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">✏️</button>
+                        <button onclick="window.deletePrize('${p.id}')" style="background:#7f1d1d; border:none; color:white; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">🗑️</button>
+                    </div>
                 </div>`;
             
             if (p.category === 'shop') shopGrid.innerHTML += html;
             else rouletteGrid.innerHTML += html;
         });
     }
-
-    window.deletePrize = async (id) => {
-        if (userData.role !== 'admin') return notify("Тільки адмін!");
-        if(confirm("Видалити слот?")) {
-            await deleteDoc(doc(db, "roulette_prizes", id));
-            notify("Видалено");
-        }
-    };
 
     function applyRoleRestrictions() {
         if (userData.role !== 'admin') {
