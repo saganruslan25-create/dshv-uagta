@@ -442,7 +442,8 @@
                     <small style="color: var(--accent); font-weight: 700;">У вас недостатньо прав для зміни балансів.</small>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:15px;">
-                    <select id="adminUserSelect" class="select"><option value="">Оберіть користувача (Адмін/Інструктор)...</option></select>
+                    <label style="font-size:12px; color:var(--text-gray);">ОБЕРІТЬ КОРИСТУВАЧА (ЛИШЕ АДМІН/ІНСТРУКТОР)</label>
+                    <select id="adminUserSelect" class="select"><option value="">Завантаження...</option></select>
                             
                     <select id="refillType" class="select">
                         <option value="add_points">НАРАХУВАТИ БАЛИ (+)</option>
@@ -776,6 +777,9 @@
             await addLog(targetData.name, "ADMIN", `Зміна балансу (${type})`, logAmount);
             await sendLogToDiscord('admin', userData, `Змінив баланс ${targetData.name}`, logAmount);
             notify("Баланс успішно змінено!");
+            
+            // Перезавантаження списку для оновлення балансу в Dropdown (опціонально, але краще)
+            loadAdminData();
         } catch(e) {
             notify(e.message);
         }
@@ -839,7 +843,7 @@
         });
     }
 
-    // --- ROULETTE SYSTEM (FIXED SYNC) ---
+    // --- ROULETTE SYSTEM (SMOOTH STOP FIX) ---
     function createPrizeNode(p) {
         const el = document.createElement('div');
         el.className = 'prize-card';
@@ -904,7 +908,7 @@
         if (!winPrize) return notify("Помилка вибору призу");
 
         // 3. RIGGING: Pick a fixed target index (e.g., index 55)
-        // We will force this specific card in the DOM to be the winner
+        // We will force this specific card in DOM to be winner
         const targetIndex = 55; 
         const targetCard = track.children[targetIndex];
         
@@ -925,8 +929,8 @@
 
         window.isProcessing = true;
 
-        // LINEAR TRANSITION (Constant Speed)
-        track.style.transition = `transform ${SPIN_TIME_SECONDS}s linear`;
+        // SMOOTH STOP ANIMATION: ease-out makes it decelerate smoothly at the end
+        track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.2, 1)`;
         track.style.transform = `translateX(-${scrollAmount}px)`;
 
         setTimeout(async () => {
@@ -1081,8 +1085,16 @@
         const usersSnap = await getDocs(collection(db, "users"));
         const sel = document.getElementById('adminUserSelect');
         sel.innerHTML = "<option value=''>Оберіть користувача...</option>";
+        
         usersSnap.forEach(d => {
-            sel.innerHTML += `<option value="${d.id}">${d.data().name} (${d.data().role})</option>`;
+            const data = d.data();
+            // ФІЛЬТР: Тільки адміни та інструктори
+            if (['admin', 'instructor'].includes(data.role)) {
+                const pts = data.points || 0;
+                const cur = data.currency || 0;
+                // ВИВІД: Ім'я, роль, баланс
+                sel.innerHTML += `<option value="${d.id}">${data.name} (${data.role.toUpperCase()}) — ⚪${pts} / 💸${cur}</option>`;
+            }
         });
 
         const q = query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50));
@@ -1198,11 +1210,11 @@
         if (editingId) {
             await updateDoc(doc(db, "roulette_prizes", editingId), data);
             notify("Слот оновлено!");
-            resetPrizeForm();
+            window.resetPrizeForm();
         } else {
             await addDoc(collection(db, "roulette_prizes"), data);
             notify("Слот створено!");
-            resetPrizeForm();
+            window.resetPrizeForm();
         }
     };
 
@@ -1214,16 +1226,19 @@
         }
     };
 
-    function resetPrizeForm() {
+    // Функція скидання форми (вирішено проблему з видимістю)
+    window.resetPrizeForm = () => {
         editingId = null;
         document.getElementById('newPrizeName').value = "";
         document.getElementById('newPrizeImgFile').value = "";
         document.getElementById('slotImgPreview').style.display = 'none';
         currentSlotBase64 = null;
+        
+        // Повернення UI в початковий стан
         document.getElementById('formTitle').innerText = "Створити новий слот";
         document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
         document.getElementById('cancelEditBtn').style.display = 'none';
-    }
+    };
 
     function renderManage() {
         const rouletteGrid = document.getElementById('manageRouletteGrid');
