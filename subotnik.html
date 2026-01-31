@@ -198,8 +198,8 @@
     let editId = null;
 
     // --- ФУНКЦІЯ ВІДПРАВКИ В DISCORD ---
-    async function sendLogToDiscord(type, userObj, dateStr, contentText) {
-        if (!WEBHOOK_URL) return; // Якщо посилання немає, не робимо нічого
+    async function sendLogToDiscord(type, userObj, dateStr) {
+        if (!WEBHOOK_URL) return; 
 
         const isEdit = editId !== null;
         let color = 5793266; // Зелений (новий)
@@ -216,7 +216,7 @@
             embeds: [{
                 title: title,
                 color: color,
-                description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Дата проведення:** ${dateStr}\n**Зміст:** \`\`\`${contentText.substring(0, 500)}${contentText.length > 500 ? '...' : ''}\`\`\``,
+                description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Дата проведення:** ${dateStr}\n\n💻 Перегляньте на сайті.`,
                 footer: { text: `UID: ${userObj.uid}` },
                 timestamp: new Date().toISOString()
             }]
@@ -255,8 +255,8 @@
         try {
             if (editId) {
                 await updateDoc(doc(db, "subotniks", editId), { date, content, edited: true });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ
-                await sendLogToDiscord('edit', currentUserData, date, content);
+                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ (без контенту)
+                await sendLogToDiscord('edit', currentUserData, date);
                 editId = null;
                 document.getElementById('subBtn').innerText = "Опублікувати звіт";
             } else {
@@ -267,8 +267,8 @@
                     date, content,
                     timestamp: serverTimestamp()
                 });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ
-                await sendLogToDiscord('create', currentUserData, date, content);
+                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ (без контенту)
+                await sendLogToDiscord('create', currentUserData, date);
             }
             document.getElementById('subDate').value = "";
             document.getElementById('subContent').value = "";
