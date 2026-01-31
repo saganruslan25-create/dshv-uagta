@@ -40,6 +40,7 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
         @keyframes slideInRight { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
         button, .btn-main, .stat-item, .log-icon, .menu-btn, .price-tag, .toast, #footerRoleLabel, h1, h2, h3, h4, span, div {
             font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', 'Inter', sans-serif !important;
@@ -255,7 +256,6 @@
             border-top-color: var(--primary); border-radius: 50%;
             animation: spin 1s linear infinite; margin: 0 auto 20px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
         #toastContainer { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); animation: fadeIn 0.3s; }
@@ -331,7 +331,6 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <div class="stat-item">🪙 <span id="pointsVal">0</span></div>
             <div class="stat-item" style="border-color: var(--currency);">💸 <span id="currencyVal">0</span> ₴</div>
-            <!-- Кнопка обміну прибрана з хедера -->
         </div>
     </header>
 
@@ -371,7 +370,6 @@
                 <div class="shop-info-banner">
                     <div class="shop-rate-row">
                         1 🪙 = <span id="shopRateDisplay">0</span> ₴
-                        <!-- Кнопка обміну перенесена сюди -->
                         <button class="btn-main" onclick="openExchangeModal()" style="background: var(--currency); color: black; width: auto; padding: 10px 20px; font-size: 12px;">ОБМІНЯТИ</button>
                     </div>
                     
@@ -410,7 +408,6 @@
                                 <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">КУРС 1 БАЛ К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                                 <div style="display: flex; gap: 10px;">
                                     <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
-                                    <!-- Збільшена кнопка -->
                                     <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 180px; padding: 18px; font-size: 16px;" onclick="window.saveSettings()">💾 ЗБЕРЕГТИ</button>
                                 </div>
                             </div>
@@ -544,8 +541,6 @@
                 <span id="exchangeResult" style="font-size: 24px; font-weight: 900; color: var(--currency);">0</span> <span style="font-size:14px;">грн</span>
             </div>
 
-            <!-- Інструкція прибрана з модалки обміну -->
-
             <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="document.getElementById('exchangeModal').style.display='none'">ВІДМІНА</button>
                 <button id="confirmExchangeBtn" class="btn-main" style="background:var(--currency); color:black; font-size:12px; flex: 1; min-width: 120px;" onclick="window.confirmExchange()">ОБМІНЯТИ</button>
@@ -610,6 +605,7 @@
         let currentSlotBase64 = null;
         let isProcessing = false; // GLOBAL LOCK
 
+        // --- HELPER FUNCTIONS ---
         function notify(msg) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
@@ -619,58 +615,30 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
-        // --- DISCORD ---
         async function sendLogToDiscord(type, userObj, description, amount = 0) {
             if (!webhookUrl || !webhookUrl.startsWith("https://discord")) return;
-
             let color = 0; 
             let icon = "📄";
             let title = "Лог";
-
-            if (type === 'buy') {
-                color = 5793266; 
-                icon = "🛒";
-                title = "ПОКУПКА";
-            } else if (type === 'win') {
-                color = 15105570; 
-                icon = "🎉";
-                title = "ВИГРАШ";
-            } else if (type === 'admin') {
-                color = 16007990; 
-                icon = "🛠️";
-                title = "АДМІНІСТРУВАННЯ";
-            } else if (type === 'exchange') {
-                color = 11206584; 
-                icon = "💸";
-                title = "ОБМІН";
-            }
+            if (type === 'buy') { color = 5793266; icon = "🛒"; title = "ПОКУПКА"; }
+            else if (type === 'win') { color = 15105570; icon = "🎉"; title = "ВИГРАШ"; }
+            else if (type === 'admin') { color = 16007990; icon = "🛠️"; title = "АДМІНІСТРУВАННЯ"; }
+            else if (type === 'exchange') { color = 11206584; icon = "💸"; title = "ОБМІН"; }
 
             let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
-            if (amount !== 0) {
-                desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
-            }
-
-            const payload = {
-                username: "Реєстр сайту",
-                avatar_url: "https://cdn-icons-png.flaticon.com/512/806/806068.png",
-                embeds: [{
-                    title: `${icon} ${title}`,
-                    description: desc,
-                    color: color,
-                    footer: { text: `ID: ${userObj.uid}` },
-                    timestamp: new Date().toISOString()
-                }]
-            };
+            if (amount !== 0) desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
 
             try {
                 await fetch(webhookUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        username: "Реєстр сайту",
+                        avatar_url: "https://cdn-icons-png.flaticon.com/512/806/806068.png",
+                        embeds: [{ title: `${icon} ${title}`, description: desc, color: color, footer: { text: `ID: ${userObj.uid}` }, timestamp: new Date().toISOString() }]
+                    })
                 });
-            } catch (e) {
-                console.error("Discord Webhook Error:", e);
-            }
+            } catch (e) { console.error("Discord Error:", e); }
         }
 
         // --- УНІВЕРСАЛЬНА ФУНКЦІЯ ЗАВАНТАЖЕННЯ ---
@@ -691,6 +659,23 @@
             }
         }
 
+        function openModal(title, text, action) {
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalText').innerText = text;
+            const btn = document.getElementById('modalActionBtn');
+            // Remove old listeners to avoid stacking
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.onclick = async () => {
+                closeModal();
+                await action();
+            };
+        }
+
+        window.closeModal = () => document.getElementById('modal').style.display = 'none';
+
+        // --- AUTH & INIT ---
         onAuthStateChanged(auth, async (u) => {
             if (!u) { window.location.href = "index.html"; return; }
             user = u;
@@ -717,6 +702,38 @@
             loadPrizes();
         });
 
+        function loadAdminData() {
+            // Logs
+            onSnapshot(query(collection(db, "roulette_logs"), orderBy("timestamp", "desc")), (snap) => {
+                const list = document.getElementById('logsList');
+                list.innerHTML = "";
+                snap.forEach(d => {
+                    const data = d.data();
+                    list.innerHTML += `
+                        <div class="log-item">
+                            <div class="log-left">
+                                <span class="log-icon">${data.actionType === 'buy' ? '🛒' : (data.actionType === 'win' ? '🎉' : '⚙️')}</span>
+                                <div>
+                                    <div class="log-action">${data.desc}</div>
+                                    <span class="log-user">${data.userName}</span>
+                                </div>
+                            </div>
+                            <span class="log-amount ${data.amount >= 0 ? 'plus' : 'minus'}">${data.amount > 0 ? '+' : ''}${data.amount}</span>
+                        </div>`;
+                });
+            });
+
+            // Users for refill
+            getDocs(collection(db, "users")).then(snap => {
+                const select = document.getElementById('adminUserSelect');
+                select.innerHTML = "<option value=''>Оберіть користувача...</option>";
+                snap.forEach(d => {
+                    const data = d.data();
+                    select.innerHTML += `<option value="${d.id}">${data.name} (${data.role})</option>`;
+                });
+            });
+        }
+
         function applyRoleRestrictions() {
             if (!userData) return;
             const isAdmin = userData.role === 'admin';
@@ -729,20 +746,37 @@
                 if (document.getElementById('autoOddsToggle')) document.getElementById('autoOddsToggle').disabled = true;
                 
                 const adminInputs = document.querySelectorAll('#adminPage input:not(#adminUserSelect), #adminPage textarea, #adminPage button');
-                adminInputs.forEach(inp => {
-                    if(inp.id !== 'adminUserSelect') inp.disabled = true;
-                });
+                adminInputs.forEach(inp => { if(inp.id !== 'adminUserSelect') inp.disabled = true; });
             }
         }
+
+        // --- NAVIGATION ---
+        window.showPage = (pageId, btn) => {
+            document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+            document.getElementById(pageId + 'Page').classList.add('active');
+            
+            document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            
+            document.getElementById('footerPageLabel').innerText = btn ? btn.innerText : 'UNKNOWN';
+            localStorage.setItem('ryl_last_page', pageId);
+        };
+
+        window.switchAdminTab = (tabId, btn) => {
+            document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
+            document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).style.display = 'block';
+            
+            document.querySelectorAll('.admin-box .menu-btn').forEach(el => el.classList.remove('active'));
+            btn.classList.add('active');
+            
+            localStorage.setItem('ryl_last_admin_tab', tabId);
+        };
 
         function restorePageState() {
             const lastPage = localStorage.getItem('ryl_last_page') || 'roulette';
             const pageBtn = document.querySelector(`.sidebar button[onclick*="'${lastPage}'"]`);
-            if (pageBtn) {
-                showPage(lastPage, pageBtn);
-            } else {
-                showPage('roulette', document.getElementById('nav-roulette'));
-            }
+            if (pageBtn) showPage(lastPage, pageBtn);
+            else showPage('roulette', document.getElementById('nav-roulette'));
 
             if (lastPage === 'admin') {
                 const lastAdminTab = localStorage.getItem('ryl_last_admin_tab') || 'logs';
@@ -751,6 +785,7 @@
             }
         }
 
+        // --- CONFIG ---
         function startConfigSync() {
             onSnapshot(doc(db, "configs", "roulette"), (snap) => {
                 if (snap.exists()) {
@@ -758,22 +793,13 @@
                     exchangeRate = snap.data().exchangeRate || 10000;
                     infoText = snap.data().infoText || "Інформація відсутня.";
                     webhookUrl = snap.data().webhookUrl || "";
-                    spinDuration = snap.data().spinDuration || 6; // Час прокрутки
+                    spinDuration = snap.data().spinDuration || 6;
                     
-                    const toggle = document.getElementById('autoOddsToggle');
-                    if (toggle) toggle.checked = isAutoOdds;
-                    
-                    const exInput = document.getElementById('exchangeRateInput');
-                    if(exInput) exInput.value = exchangeRate;
-
-                    const txtInput = document.getElementById('infoTextInput');
-                    if(txtInput) txtInput.value = infoText;
-
-                    const whInput = document.getElementById('webhookUrl');
-                    if(whInput) whInput.value = webhookUrl;
-
-                    const durInput = document.getElementById('spinDurationInput');
-                    if(durInput) durInput.value = spinDuration;
+                    const toggle = document.getElementById('autoOddsToggle'); if(toggle) toggle.checked = isAutoOdds;
+                    const exInput = document.getElementById('exchangeRateInput'); if(exInput) exInput.value = exchangeRate;
+                    const txtInput = document.getElementById('infoTextInput'); if(txtInput) txtInput.value = infoText;
+                    const whInput = document.getElementById('webhookUrl'); if(whInput) whInput.value = webhookUrl;
+                    const durInput = document.getElementById('spinDurationInput'); if(durInput) durInput.value = spinDuration;
 
                     toggleAutoOddsUI(isAutoOdds);
                     updateShopDisplay();
@@ -785,7 +811,6 @@
 
         window.saveSettings = async () => {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
-            
             const btn = document.getElementById('saveSettingsBtn');
             const originalText = btn.innerText;
             btn.innerText = "⏳ СОХРАНЕННЯ...";
@@ -798,18 +823,12 @@
 
             try {
                 if (!rate || !dur) throw new Error("Вкажіть курс та час прокрутки!");
-                
                 exchangeRate = rate;
                 infoText = text;
                 webhookUrl = url;
                 spinDuration = dur;
 
-                await setDoc(doc(db, "configs", "roulette"), { 
-                    exchangeRate: rate, 
-                    infoText: text,
-                    webhookUrl: url,
-                    spinDuration: dur
-                }, { merge: true });
+                await setDoc(doc(db, "configs", "roulette"), { exchangeRate: rate, infoText: text, webhookUrl: url, spinDuration: dur }, { merge: true });
                 notify("Налаштування оновлено!");
                 updateShopDisplay();
             } catch (e) {
@@ -821,22 +840,13 @@
         }
 
         function updateShopDisplay() {
-            const rateEl = document.getElementById('shopRateDisplay');
-            if(rateEl) rateEl.innerText = exchangeRate;
-            
-            const textEl = document.getElementById('shopInfoContainer');
-            if(textEl) {
-                textEl.innerHTML = infoText;
-            }
+            const rateEl = document.getElementById('shopRateDisplay'); if(rateEl) rateEl.innerText = exchangeRate;
+            const textEl = document.getElementById('shopInfoContainer'); if(textEl) textEl.innerHTML = infoText;
         }
 
         window.toggleShopInfo = () => {
             const container = document.getElementById('shopInfoContainer');
-            if (container.style.display === 'block') {
-                container.style.display = 'none';
-            } else {
-                container.style.display = 'block';
-            }
+            container.style.display = container.style.display === 'block' ? 'none' : 'block';
         };
 
         window.toggleAutoOdds = async (val) => {
@@ -848,19 +858,14 @@
         }
 
         function toggleAutoOddsUI(val) {
-            const hint = document.getElementById('autoOddsHint');
-            if (hint) hint.style.display = val ? 'block' : 'none';
+            const hint = document.getElementById('autoOddsHint'); if(hint) hint.style.display = val ? 'block' : 'none';
         }
 
         function loadPrizes() {
             onSnapshot(collection(db, "roulette_prizes"), (snap) => {
                 prizePool = [];
                 snap.forEach(d => prizePool.push({ id: d.id, ...d.data() }));
-                if (!isSpinning) {
-                    renderRoulette();
-                    renderShop();
-                    renderManage();
-                }
+                if (!isSpinning) { renderRoulette(); renderShop(); renderManage(); }
             });
         }
 
@@ -872,17 +877,13 @@
             const isInstructor = userData && (userData.role === 'admin' || userData.role === 'instructor');
 
             items.forEach(p => {
-                // Адміни бачать відсотки в превью
-                let chanceDisplay = "";
-                if (isInstructor) {
-                    let chanceText = isAutoOdds ? (100 / items.length).toFixed(1) + '%' : (p.chance || 0) + '%';
-                    chanceDisplay = `<div class="prize-chance-preview">${chanceText}</div>`;
-                }
+                let chanceText = isAutoOdds ? (100 / items.length).toFixed(1) + '%' : (p.chance || 0) + '%';
+                const displayChance = isInstructor ? `<div class="prize-chance-preview">${chanceText}</div>` : '';
                 
                 preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; margin-bottom:8px;">
                     <div style="font-size:10px; font-weight:800;">${p.name}</div>
-                    ${chanceDisplay}
+                    ${displayChance}
                 </div>`;
             });
             initTrack(items);
@@ -903,7 +904,74 @@
             });
         }
 
-        // --- EXCHANGE LOGIC ---
+        // --- ROULETTE LOGIC ---
+        function initTrack(prizes) {
+            const track = document.getElementById('track');
+            if (!track || prizes.length < 2) return;
+            if (isSpinning) return; 
+            track.innerHTML = "";
+            for (let i = 0; i < 40; i++) {
+                const p = prizes[Math.floor(Math.random() * prizes.length)];
+                track.appendChild(createPrizeNode(p));
+            }
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
+            
+            // Update CSS variable or inline style for duration
+            track.style.transitionDuration = `${spinDuration}s`;
+        }
+
+        function createPrizeNode(p) {
+            const el = document.createElement('div');
+            el.className = 'prize-card';
+            el.innerHTML = `<img src="${p.img}" style="width:110px; height:110px; object-fit:contain;"><span>${p.name}</span>`;
+            return el;
+        }
+
+        window.startSpin = () => {
+            if (isSpinning) return;
+            const passes = userData.roulette_passes || 0;
+            if (passes < 1) return notify("Купіть квиток!");
+            
+            isSpinning = true;
+            const track = document.getElementById('track');
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = true;
+
+            updateDoc(doc(db, "users", user.uid), { roulette_passes: passes - 1 });
+            
+            // Logic to pick winner (random for now, server-side is better for security)
+            const items = prizePool.filter(p => !p.category || p.category === 'roulette');
+            const winningItem = items[Math.floor(Math.random() * items.length)];
+            const winningIndex = Math.floor(Math.random() * 5) + 2; // Random position in the "center" area
+
+            const cardWidth = 200 + 20; // width + margin
+            const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
+            const targetX = -(winningIndex * cardWidth) + (containerWidth / 2) - (cardWidth / 2);
+            const rotations = 3;
+            const totalDistance = (containerWidth * rotations) + Math.abs(targetX);
+
+            track.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0, 0.1, 1)`;
+            track.style.transform = `translateX(-${totalDistance}px)`;
+
+            setTimeout(async () => {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                
+                // Process win
+                await addLog(userData.name, 'win', `Виграв ${winningItem.name}`, winningItem.value || 0);
+                sendLogToDiscord('win', userData, `Виграв ${winningItem.name}`, winningItem.value || 0);
+                
+                // Apply win effects
+                if (winningItem.actionType === 'points') {
+                    await updateDoc(doc(db, "users", user.uid), { points: (userData.points||0) + (parseInt(winningItem.actionValue)||0) });
+                }
+                
+                alert(`Вітаємо! Ви виграли: ${winningItem.name}`);
+            }, spinDuration * 1000);
+        };
+
+        // --- SHOP & EXCHANGE ---
         window.openExchangeModal = () => {
             document.getElementById('exchangeModal').style.display = 'flex';
             updateExchangeCalc();
@@ -922,27 +990,20 @@
             if(pts < 1) return notify("Мінімум 1 бал");
             const currentPts = userData.points || 0;
             if(pts > currentPts) return notify("Недостатньо балів!");
-
             const moneyVal = Math.floor(pts * exchangeRate);
             const msg = `Обміняти ${pts} балів на ${moneyVal} грн?`;
             
             document.getElementById('exchangeModal').style.display = 'none';
             openModal("ОБМІН", msg, async () => {
                 await runWithLoading("ОБМІН", `Підключення до банку...\n${pts} 🪙 ➔ ${moneyVal} грн`, async () => {
-                    await updateDoc(doc(db, "users", user.uid), { 
-                        points: currentPts - pts,
-                        currency: (userData.currency || 0) + moneyVal
-                    });
-                    await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`);
-                    await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
-                    
+                    await updateDoc(doc(db, "users", user.uid), { points: currentPts - pts, currency: (userData.currency || 0) + moneyVal });
+                    await addLog(userData.name, "exchange", "Обмін балів", moneyVal);
+                    await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, moneyVal);
                     notify("Успішно обміняно!");
-                    closeModal();
                 });
             });
         };
 
-        // --- BUY ITEM (SHOP) ---
         window.buyItem = async (id) => {
             const item = prizePool.find(p => p.id === id);
             if (!item) return;
@@ -953,7 +1014,7 @@
             openModal("ПОКУПКА", msg, async () => {
                 await runWithLoading("ПОКУПКА", `Купівля: ${item.name}\nЦіна: ${item.price} 🪙`, async () => {
                     await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
-                    await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price);
+                    await addLog(userData.name, "shop", `Купив ${item.name}`, -item.price);
                     await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price);
                     notify("Покупка успішна!");
                     closeModal();
@@ -961,86 +1022,134 @@
             });
         };
 
-        function initTrack(prizes) {
-            const track = document.getElementById('track');
-            if (!track || prizes.length < 2) return;
-            if (isSpinning) return; 
-            track.innerHTML = "";
-            for (let i = 0; i < 40; i++) {
-                const p = prizes[Math.floor(Math.random() * prizes.length)];
-                track.appendChild(createPrizeNode(p));
+        // --- TICKETS ---
+        window.openPurchaseModal = () => document.getElementById('purchaseModal').style.display = 'flex';
+        window.updateTotalCost = () => {
+            const count = parseInt(document.getElementById('ticketCount').value) || 1;
+            document.getElementById('totalCostDisplay').innerText = (count * 100) + " 🪙";
+        };
+        window.confirmPurchase = () => {
+            const count = parseInt(document.getElementById('ticketCount').value) || 1;
+            const cost = count * 100;
+            const points = userData.points || 0;
+            
+            if (cost > points && cost > 0) return notify("Недостатньо балів!");
+            
+            document.getElementById('purchaseModal').style.display = 'none';
+            openModal("КУПІВЛЯ", `Купити ${count} квитків за ${cost} балів?`, async () => {
+                 await runWithLoading("КУПІВЛЯ", `Обробка замовлення...`, async () => {
+                    await updateDoc(doc(db, "users", user.uid), { points: points - cost, roulette_passes: (userData.roulette_passes || 0) + count });
+                    notify("Квитки куплено!");
+                    closeModal();
+                 });
+            });
+        };
+
+        // --- ADMIN PRIZE MANAGMENT ---
+        window.togglePrizeInputs = () => {
+            const cat = document.getElementById('newPrizeCategory').value;
+            document.getElementById('rouletteFields').style.display = cat === 'roulette' ? 'block' : 'none';
+            document.getElementById('shopFields').style.display = cat === 'shop' ? 'block' : 'none';
+        };
+        window.toggleActionValueField = () => {
+            const act = document.getElementById('newPrizeActionType').value;
+            document.getElementById('actionValField').style.display = act === 'item' ? 'none' : 'block';
+        };
+        window.processSlotImage = (input) => {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width, h = img.height, max = 500;
+                        if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        currentSlotBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                        document.getElementById('slotImgPreview').src = currentSlotBase64;
+                        document.getElementById('slotImgPreview').style.display = 'block';
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(input.files[0]);
             }
-            track.style.transition = 'none';
-            track.style.transform = 'translateX(0)';
+        };
+        window.addPrizeToPool = async () => {
+            const name = document.getElementById('newPrizeName').value;
+            const cat = document.getElementById('newPrizeCategory').value;
+            const act = document.getElementById('newPrizeActionType').value;
+            const chance = parseFloat(document.getElementById('newPrizeChance').value);
+            const price = parseFloat(document.getElementById('newPrizePrice').value);
+            const val = document.getElementById('newPrizeActionVal').value;
             
-            // Оновлюємо час переходу з налаштувань
-            track.style.transitionDuration = `${spinDuration}s`;
-        }
-
-        function createPrizeNode(p) {
-            const el = document.createElement('div');
-            el.className = 'prize-card';
+            if (!name || !currentSlotBase64) return notify("Заповніть назву та фото!");
+            if (cat === 'shop' && !price) return notify("Вкажіть ціну!");
             
-            // Якщо адмін, показуємо шанс у превью
-            const isAdmin = userData && userData.role === 'admin';
-            let chanceBadge = "";
-            if (isAdmin) {
-                 // Тут ми не знаємо точного розміру масиву при створенні ноди, 
-                 // але логіку відображення краще зробити в renderRoulette для прев'ю
-            }
-
-            el.innerHTML = `<img src="${p.img}" style="width:110px; height:110px; object-fit:contain;"><span>${p.name}</span>`;
-            return el;
-        }
-
-        // ... (Код прокрутки та логіки виграшів залишається тим самим, просто змінимо виклик startSpin з урахуванням spinDuration)
-        async function startSpin() {
-            if (isSpinning) return;
-            const passes = userData.roulette_passes || 0;
-            if (passes < 1) return notify("Купіть квиток!");
+            await runWithLoading("ЗБЕРЕЖЕННЯ", "Збереження слоту...", async () => {
+                const data = {
+                    name, img: currentSlotBase64, category: cat, actionType: act,
+                    actionValue: act === 'item' ? '' : (val || 0),
+                    value: 0 // For win logs
+                };
+                if(cat === 'roulette') data.chance = chance || 0;
+                if(cat === 'shop') data.price = price || 0;
+                
+                if (editingId) {
+                    await updateDoc(doc(db, "roulette_prizes", editingId), data);
+                    editingId = null;
+                    document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
+                    document.getElementById('cancelEditBtn').style.display = 'none';
+                    document.getElementById('formTitle').innerText = "Створити новий слот";
+                } else {
+                    await addDoc(collection(db, "roulette_prizes"), data);
+                }
+                resetPrizeForm();
+                notify("Слот збережено!");
+            });
+        };
+        window.resetPrizeForm = () => {
+            editingId = null;
+            document.getElementById('newPrizeName').value = "";
+            document.getElementById('newPrizeImgFile').value = "";
+            document.getElementById('slotImgPreview').style.display = 'none';
+            currentSlotBase64 = null;
+            document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
+            document.getElementById('cancelEditBtn').style.display = 'none';
+            document.getElementById('formTitle').innerText = "Створити новий слот";
+        };
+        window.editPrize = (id) => {
+            const p = prizePool.find(i => i.id === id);
+            if(!p) return;
+            editingId = id;
+            document.getElementById('newPrizeName').value = p.name;
+            document.getElementById('newPrizeCategory').value = p.category;
+            currentSlotBase64 = p.img;
+            document.getElementById('slotImgPreview').src = p.img;
+            document.getElementById('slotImgPreview').style.display = 'block';
+            document.getElementById('newPrizeActionType').value = p.actionType;
+            document.getElementById('newPrizeActionVal').value = p.actionValue || '';
+            document.getElementById('newPrizeChance').value = p.chance || 0;
+            document.getElementById('newPrizePrice').value = p.price || 0;
             
-            isSpinning = true;
-            const track = document.getElementById('track');
-            const spinBtn = document.getElementById('spinBtn');
-            spinBtn.disabled = true;
-
-            await updateDoc(doc(db, "users", user.uid), { roulette_passes: passes - 1 });
+            togglePrizeInputs();
+            toggleActionValueField();
             
-            // Визначення виграшу (тут твоя логіка)
-            const items = prizePool.filter(p => !p.category || p.category === 'roulette');
-            const winningItem = items[Math.floor(Math.random() * items.length)]; // Простий рандом для прикладу
-
-            // Логіка зміщення
-            const cardWidth = 220; // ширина картки + margin
-            const totalWidth = track.scrollWidth;
-            const centerIndex = 10; // Індекс в центрі
-            const randomOffset = Math.floor(Math.random() * 180) - 90; // Невеликий рандом
+            document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ";
+            document.getElementById('cancelEditBtn').style.display = 'block';
+            document.getElementById('formTitle').innerText = "Редагування слоту";
             
-            // Розрахунок позиції виграшу
-            // Для точної логіки треба знайти індекс виграшного елементу у створеному масиві, 
-            // але для прикладу просто покрутимо на випадкове число обертів
-            const rotations = 5 + Math.floor(Math.random() * 5);
-            const moveX = -(totalWidth * rotations) + randomOffset;
+            document.getElementById('prizeForm').scrollIntoView({ behavior: 'smooth' });
+        };
+        window.deletePrize = (id) => {
+            openModal("ВИДАЛЕННЯ", "Видалити цей слот?", async () => {
+                await runWithLoading("ВИДАЛЕННЯ", "Видалення слоту...", async () => {
+                    await deleteDoc(doc(db, "roulette_prizes", id));
+                    notify("Слот видалено");
+                });
+            });
+        };
 
-            track.style.transition = `transform ${spinDuration}s cubic-bezier(0.1, 0, 0.1, 1)`;
-            track.style.transform = `translateX(${moveX}px)`;
-
-            setTimeout(async () => {
-                isSpinning = false;
-                spinBtn.disabled = false;
-                // Тут логіка видачі виграшу
-                alert(`Ви виграли: ${winningItem.name}`); // Для тесту, заміни на красиве модальне вікно
-            }, spinDuration * 1000);
-        }
-        
-        // --- ADMIN MANAGEMENT ---
-        
-        // Додавання логіки завантаження для адмінки
-        window.addPrizeToPool = () => {
-            // ... (твій існуючий код)
-        }
-
-        // Оновлений рендер адмінських слотів
         function renderManage() {
             const rouletteGrid = document.getElementById('manageRouletteGrid');
             const shopGrid = document.getElementById('manageShopGrid');
@@ -1052,9 +1161,7 @@
             const isAdmin = userData && userData.role === 'admin';
 
             prizePool.forEach(p => {
-                const chanceText = isAutoOdds 
-                    ? "Авто" 
-                    : ((p.chance || 0) + '%');
+                const chanceText = isAutoOdds ? "Авто" : ((p.chance || 0) + '%');
                 
                 const cardHTML = `
                     <div style="background:rgba(255,255,255,0.02); padding:10px; border-radius:15px; border:1px solid rgba(255,255,255,0.05); text-align:center;">
@@ -1075,18 +1182,32 @@
             });
         }
 
-        window.deletePrize = (id) => {
-            openModal("ВИДАЛЕННЯ", "Видалити цей слот?", async () => {
-                await runWithLoading("ВИДАЛЕННЯ", "Видалення слоту...", async () => {
-                    await deleteDoc(doc(db, "roulette_prizes", id));
-                    notify("Слот видалено");
-                    closeModal();
-                });
-            });
+        window.processAdminRefill = async () => {
+            const uid = document.getElementById('adminUserSelect').value;
+            const type = document.getElementById('refillType').value;
+            const amount = parseInt(document.getElementById('refillAmount').value);
+            
+            if(!uid || !amount) return notify("Оберіть користувача та суму!");
+            
+            const userRef = doc(db, "users", uid);
+            const targetUser = prizePool.find ? null : await getDoc(userRef); // Simplified for demo
+            
+            runTransaction(db, async (transaction) => {
+                const sfDoc = await transaction.get(userRef);
+                if (!sfDoc.exists()) throw "Document does not exist!";
+                const newPoints = (sfDoc.data().points || 0) + (type === 'add' ? amount : -amount);
+                transaction.update(userRef, { points: newPoints });
+            }).then(() => {
+                notify("Баланс оновлено!");
+                addLog("ADMIN", "admin", `Зміна балансу ID:${uid.slice(0,4)}`, type==='add'?amount:-amount);
+            }).catch(e => notify("Помилка: " + e));
         };
 
-        // Тут треба додати функції openModal, closeModal, addLog та інші, які є в оригінальному файлі
-        // Я опущу їх повторення, якщо вони ідентичні, але переконайся, що вони є.
+        async function addLog(name, actionType, desc, amount) {
+            await addDoc(collection(db, "roulette_logs"), {
+                userName: name, actionType, desc, amount, timestamp: serverTimestamp()
+            });
+        }
 
     </script>
 </body>
