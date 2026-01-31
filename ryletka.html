@@ -627,7 +627,7 @@
         }
     }, false);
 
-    // Debugger trap (light version)
+    // Debugger trap
     setInterval(() => {
         const startTime = performance.now();
         debugger; 
@@ -654,7 +654,7 @@
     const CARD_WIDTH = 220; 
     const TOTAL_CARDS = 100;
     let isProcessing = false; 
-    let isSpinRequested = false; // Anti-double click
+    let isSpinRequested = false; 
 
     // --- UI HELPERS ---
     window.toggleShopInfo = () => {
@@ -842,7 +842,6 @@
         if (!preview) return;
         preview.innerHTML = "";
         items.forEach(p => {
-            // PERCENTAGES REMOVED HERE
             preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                 <img src="${p.img}" style="width:50px; height:50px; object-fit: contain; margin-bottom:8px;">
                 <div style="font-size:10px; font-weight:800;">${p.name}</div>
@@ -904,53 +903,49 @@
     }
 
     window.startSpin = async () => {
-        // ANTI-DOUBLE CLICK: Strict Lock
-        if (isSpinRequested || isSpinning) return;
-        isSpinRequested = true;
-
         const btn = document.getElementById('spinBtn');
         
-        // Check tickets immediately
+        // 1. LOCKOUT (Anti-double click & -1 bug)
+        if (isSpinRequested || isSpinning) return;
+        isSpinRequested = true;
+        btn.disabled = true; // UI LOCK IMMEDIATE
+
         if (!userData || userData.roulette_passes < 1) {
             notify("Немає квитків!");
             isSpinRequested = false;
+            btn.disabled = false;
             return;
         }
 
-        // Check track integrity
-        const track = document.getElementById('track');
-        if (!track || track.children.length === 0) return notify("Помилка завантаження рулетки");
-        
-        btn.disabled = true;
-        isSpinning = true;
-
-        // 1. DEDUCT TICKET
+        // 2. DEDUCT TICKET
         try {
-            await updateDoc(doc(db, "users", user.uid), { roulette_passes: userData.roulette_passes - 1 });
-            userData.roulette_passes -= 1;
-            document.getElementById('ticketsVal').innerText = userData.roulette_passes;
+            // Safety Math.max(0, ...) ensures we never go below 0 even if data was stale
+            const newPasses = Math.max(0, (userData.roulette_passes || 0) - 1);
+            
+            await updateDoc(doc(db, "users", user.uid), { roulette_passes: newPasses });
+            userData.roulette_passes = newPasses; // Update local state immediately
+            document.getElementById('ticketsVal').innerText = newPasses;
         } catch(e) {
             notify("Помилка списання квитка");
             isSpinRequested = false;
-            isSpinning = false;
             btn.disabled = false;
             return;
         }
 
         document.getElementById('winOverlay').style.display = 'none';
 
+        const track = document.getElementById('track');
         const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
         
-        // 2. DECIDE WINNER
+        // 3. DECIDE WINNER
         const winPrize = getWinner(rouletteItems);
         if (!winPrize) {
             isSpinRequested = false;
-            isSpinning = false;
             btn.disabled = false;
             return notify("Помилка вибору призу");
         }
 
-        // 3. RIGGING: Fixed target index
+        // 4. RIGGING: Fixed target index
         const targetIndex = 55; 
         const targetCard = track.children[targetIndex];
         
@@ -961,22 +956,21 @@
             if(txt) txt.innerText = winPrize.name;
         }
 
-        // 4. PHYSICS: Calculate Scroll
+        // 5. PHYSICS: Calculate Scroll
         const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
         const targetCenter = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2);
         const scrollAmount = targetCenter - (containerWidth / 2);
 
         window.isProcessing = true;
+        isSpinning = true;
 
-        // SMOOTH STOP
         track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.2, 1)`;
         track.style.transform = `translateX(-${scrollAmount}px)`;
 
         setTimeout(async () => {
             window.isProcessing = false;
-            isSpinning = false;
-            btn.disabled = false;
-            isSpinRequested = false; // Unlock for next spin
+            isSpinning = false; // Internal logic off
+            // isSpinRequested reset happens later (bug fix #2)
 
             const overlay = document.getElementById('winOverlay');
             document.getElementById('winPrizeName').innerText = winPrize.name;
@@ -985,16 +979,21 @@
             notify(`Вітаю! Ви виграли ${winPrize.name}`);
             await processWin(winPrize);
 
-            // Hide overlay & reset
+            // 6. DELAYED RESET (Bug fix #2)
+            // Overlay stays 3.5s, then we wait 1s more.
             setTimeout(() => {
                 document.getElementById('winOverlay').style.display = 'none';
             }, 3500);
 
             setTimeout(() => {
+                // NOW Enable button
+                btn.disabled = false;
+                isSpinRequested = false; // Unlock for next spin
+                
                 track.style.transition = 'none';
                 track.style.transform = 'translateX(0px)';
                 initTrack(rouletteItems);
-            }, 3600);
+            }, 4500); // 3.5s (Overlay) + 1.0s (Cooldown)
 
         }, SPIN_TIME_SECONDS * 1000);
     };
@@ -1021,7 +1020,7 @@
     };
 
     window.updateExchangeCalc = () => {
-        let pts = parseInt(document.getElementById('exchangeAmount').value) ||1;
+        let pts = parseInt(document.getElementById('exchangeAmount').value) || 1;
         if(pts < 1) pts = 1;
         const res = Math.floor(pts * exchangeRate);
         document.getElementById('exchangeResult').innerText = res.toLocaleString();
@@ -1094,7 +1093,7 @@
         updateTotalCost();
     };
     window.updateTotalCost = () => {
-        let c = parseInt(document.getElementById('ticketCount').value) ||1;
+        let c = parseInt(document.getElementById('ticketCount').value) || 1;
         if(c < 1) c = 1;
         document.getElementById('totalCostDisplay').innerText = (c * 100) + " ⚪";
     };
