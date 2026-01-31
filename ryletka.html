@@ -8,7 +8,7 @@
     <style>
         :root {
             --primary: #22c55e;
-            --primary-glow: rgba(34,197, 94, 0.5);
+            --primary-glow: rgba(34, 197, 94, 0.5);
             --accent: #f97316;
             --accent-glow: rgba(249, 115, 22, 0.5);
             --bg: #020305;
@@ -16,7 +16,6 @@
             --glass-border: rgba(34, 197, 94, 0.3);
             --text-gray: #94a3b8;
             --danger: #ef4444;
-            --neon-blue: #0ea5e9;
             --currency: #fbbf24;
         }
 
@@ -52,8 +51,6 @@
         /* АНИМАЦИИ */
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-        @keyframes glow { 0% { box-shadow: 0 0 5px var(--primary); } 50% { box-shadow: 0 0 20px var(--primary), 0 0 10px var(--primary-bright); } 100% { box-shadow: 0 0 5px var(--primary); } }
 
         .neon-text {
             text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow);
@@ -70,7 +67,7 @@
 
         .stat-item {
             display: flex; align-items: center; gap: 8px;
-            background: rgba(255,255,255, 0.05); border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
             padding: 10px 20px; border-radius: 15px; font-weight: 800; font-size: 14px;
             transition: 0.3s;
         }
@@ -135,10 +132,6 @@
         .track {
             display: flex; position: absolute; left: 0; top: 30px;
             will-change: transform;
-            color: var(--text-gray);
-            font-size: 12px;
-            display: flex; align-items: center; justify-content: center;
-            width: 100%;
         }
         .prize-card {
             width: 200px; height: 200px; margin: 0 10px;
@@ -231,32 +224,34 @@
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
 
-        /* LOGS STYLE */
+        /* LOGS - TERMINAL STYLE */
         #logsList {
-            min-height: 400px;
+            min-height: 500px;
             background: #000000;
             border: 1px solid #333;
             border-radius: 10px;
             padding: 15px;
             font-family: 'Courier New', monospace;
             overflow-y: auto;
-            color: #ccc;
+            color: #33ff00; /* Green text like old CRT monitors */
+            font-weight: bold;
+            text-transform: uppercase;
         }
         .log-item {
             display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #222;
-            padding: 8px 0;
+            border-bottom: 1px solid #111;
+            padding: 5px 0;
             font-size: 13px;
             font-family: 'Courier New', monospace;
         }
         .log-item:hover { background: #111; }
         .log-left { display: flex; align-items: center; gap: 10px; }
         .log-icon { font-size: 16px; }
-        .log-action { color: var(--primary); font-weight: bold; }
-        .log-user { font-size: 11px; color: var(--text-gray); display: block; }
+        .log-action { color: #33ff00; font-weight: bold; }
+        .log-user { font-size: 11px; color: #888; display: block; font-family: 'Courier New', monospace; }
         .log-amount { font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #111; border: 1px solid #333; }
-        .log-amount.plus { color: var(--primary); border-color: var(--primary); }
-        .log-amount.minus { color: var(--danger); border-color: var(--danger); }
+        .log-amount.plus { color: #33ff00; border-color: #33ff00; }
+        .log-amount.minus { color: #ff3333; border-color: #ff3333; }
 
         /* PROCESSING OVERLAY */
         .processing-overlay {
@@ -359,8 +354,7 @@
                     <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
                     <div class="carousel-outer">
                         <div class="pointer"></div>
-                        <!-- 5. Текст загрузки, чтобы не было пусто -->
-                        <div id="track" class="track">ЗАВАНТАЖЕННЯ...</div>
+                        <div id="track" class="track"></div>
                     </div>
                     <div class="spin-actions">
                         <button class="btn-main btn-buy" onclick="openPurchaseModal()">
@@ -373,7 +367,6 @@
                         </button>
                     </div>
                 </div>
-                <!-- 4. Убраны проценты из превью -->
                 <h3 style="text-transform: uppercase; letter-spacing: 3px; color: var(--primary); font-size: 12px; margin-bottom: 20px;">ПРИЗИ В ЦІЙ РУЛЕТЦІ</h3>
                 <div id="prizePreview" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px;"></div>
             </section>
@@ -406,7 +399,7 @@
 
                     <!-- LOGS -->
                     <div id="tabLogs" class="admin-tab" style="display:none;">
-                        <div id="logsList">Завантаження логів...</div>
+                        <div id="logsList"></div>
                     </div>
 
                     <!-- SETTINGS -->
@@ -417,11 +410,21 @@
                                 <input type="text" id="webhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
                             </div>
 
+                            <!-- 2. Длительность прокрутки -->
                             <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius:10px;">
-                                <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
+                                <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">ТРИВАЛІСТЬ ОБЕРТАННЯ (СЕКУНДИ)</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <input type="number" id="spinDurationInput" class="input" placeholder="6" step="0.5">
+                                    <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSettings()">СОХРАНИТЬ</button>
+                                </div>
+                            </div>
+
+                            <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius:10px;">
+                                <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                                 <div style="display: flex; gap: 10px;">
                                     <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
-                                    <button id="saveSettingsBtn" class="btn-main btn-buy" onclick="window.saveSettings()">СОХРАНИТЬ</button>
+                                    <!-- В Settings, we save both -->
+                                    <button id="saveAllSettingsBtn" class="btn-main btn-buy" style="flex: 1; white-space: nowrap; max-width:none;" onclick="window.saveAllSettings()">СОХРАНИТЬ ВСЕ</button>
                                 </div>
                             </div>
 
@@ -614,9 +617,12 @@
         const db = getFirestore(app);
 
         let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
+        // 2. Параметр длительности
+        let spinDurationConfig = 6; 
         let currentSlotBase64 = null;
         let isProcessing = false; 
         const CARD_WIDTH = 220; 
+        const TOTAL_CARDS = 100; // Количество карточек в ленте
 
         window.toggleShopInfo = () => {
             const el = document.getElementById('shopInfoText');
@@ -632,13 +638,10 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
-        // 1. ДИСКОРД ЛОГИ
+        // 3. ДИСКОРД + ЛОГИ (Исправленная версия)
         async function sendLogToDiscord(type, userObj, description, amount = 0) {
-            // Проверяем URL
-            if (!webhookUrl || !webhookUrl.startsWith("https://discord")) {
-                console.warn("Webhook URL is missing or invalid.");
-                return;
-            }
+            // Проверка URL
+            if (!webhookUrl || !webhookUrl.startsWith("https://discord")) return console.warn("Discord Webhook URL is missing");
 
             let color = 0, icon = "📄", title = "Лог";
             if (type === 'buy') { color = 5793266; icon = "🛒"; title = "ПОКУПКА"; }
@@ -655,10 +658,11 @@
                 embeds: [{ title: `${icon} ${title}`, description: desc, color: color, footer: { text: `ID: ${userObj.uid}` }, timestamp: new Date().toISOString() }]
             };
             
-            try {
-                await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            try { 
+                await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); 
+                // Если не упало сюда ошибки, считаем успешным для веб интерфейса
             } catch (e) {
-                console.error("Discord send error:", e);
+                console.error("Discord Error:", e);
                 notify("Помилка відправки в Discord");
             }
         }
@@ -722,12 +726,17 @@
                     exchangeRate = snap.data().exchangeRate || 10000;
                     infoText = snap.data().infoText || "Інформація відсутня.";
                     webhookUrl = snap.data().webhookUrl || "";
+                    spinDurationConfig = snap.data().spinDuration || 6; // 2. Загрузка длительности
                     
                     const toggle = document.getElementById('autoOddsToggle');
                     if (toggle) toggle.checked = isAutoOdds;
                     
                     const exInput = document.getElementById('exchangeRateInput');
                     if(exInput) exInput.value = exchangeRate;
+
+                    // 2. Установка длительности
+                    const durInput = document.getElementById('spinDurationInput');
+                    if(durInput) durInput.value = spinDurationConfig;
 
                     const txtInput = document.getElementById('infoTextInput');
                     if(txtInput) txtInput.value = infoText;
@@ -743,25 +752,39 @@
             });
         }
 
-        window.saveSettings = async () => {
+        // 2. Сохранение всех настроек
+        window.saveAllSettings = async () => {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
-            const btn = document.getElementById('saveSettingsBtn');
+            const btn = document.getElementById('saveAllSettingsBtn');
             const originalText = btn.innerText;
             btn.innerText = "⏳ СОХРАНЕННЯ...";
             btn.disabled = true;
 
             const rate = parseFloat(document.getElementById('exchangeRateInput').value);
+            const dur = parseFloat(document.getElementById('spinDurationInput').value);
             const text = document.getElementById('infoTextInput').value;
             const url = document.getElementById('webhookUrl').value;
 
             try {
-                if (!rate) throw new Error("Вкажіть курс!");
-                exchangeRate = rate; infoText = text; webhookUrl = url;
-                await setDoc(doc(db, "configs", "roulette"), { exchangeRate: rate, infoText: text, webhookUrl: url }, { merge: true });
+                if (!rate || !dur) throw new Error("Заповніть курс і час!");
+                
+                exchangeRate = rate; infoText = text; webhookUrl = url; spinDurationConfig = dur;
+                
+                await setDoc(doc(db, "configs", "roulette"), { 
+                    exchangeRate: rate, 
+                    spinDuration: dur,
+                    infoText: text,
+                    webhookUrl: url 
+                }, { merge: true });
                 notify("Налаштування оновлено!");
                 updateShopDisplay();
-            } catch (e) { notify(e.message || "Помилка"); } finally { btn.innerText = originalText; btn.disabled = false; }
-        }
+            } catch (e) {
+                notify(e.message || "Помилка");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
 
         function updateShopDisplay() {
             const rateEl = document.getElementById('shopRateDisplay');
@@ -804,10 +827,8 @@
             const preview = document.getElementById('prizePreview');
             if (!preview) return;
             preview.innerHTML = "";
-            const isInstructor = userData && userData.role === 'instructor';
-
+            // Убираем проценты из превью (по п.4)
             items.forEach(p => {
-                // 4. Скрываем проценты в превью полностью
                 preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; margin-bottom:8px;">
                     <div style="font-size:10px; font-weight:800;">${p.name}</div>
@@ -831,23 +852,18 @@
             });
         }
 
+        // 1. "БЕСКОНЕЧНАЯ ЛЕНТА"
         function initTrack(prizes) {
             const track = document.getElementById('track');
             if (!track || prizes.length < 2) return;
             if (isSpinning) return; 
-            
-            if(track.children.length > 0) return;
+            if(track.children.length > 0) return; // Уже создано
 
-            // 5. Очищаем текст "ЗАВАНТАЖЕННЯ..."
-            track.innerHTML = "";
-
-            // Генерируем 50 карточек вперед
-            for (let i = 0; i < 50; i++) {
+            for (let i = 0; i < TOTAL_CARDS; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
-            
-            track.style.transition = 'none';
+            // Начальная позиция 0
             track.style.transform = 'translateX(0)';
         }
 
@@ -867,7 +883,7 @@
                 
                 let random = Math.random() * totalChance;
                 for (let p of prizePool) {
-                    random -= (parseFloat(p.chance) || 0);
+                    random -= (parseFloat(p.Chance) || 0);
                     if (random <= 0) return p;
                 }
                 return prizePool[prizePool.length - 1];
@@ -884,9 +900,12 @@
             const track = document.getElementById('track');
             const winPrize = getWinner();
             
-            const targetIndex = 30; 
+            // Логика: Выбираем случайный индекс во второй половине ленты (50-99)
+            // Это гарантирует, что всегда будет вращение.
+            const targetIndex = Math.floor(Math.random() * 50) + 50;
             const targetCard = track.children[targetIndex];
             
+            // Меняем карточку
             if(targetCard) {
                 const img = targetCard.querySelector('img');
                 const txt = targetCard.querySelector('span');
@@ -894,32 +913,30 @@
                 if(txt) txt.innerText = winPrize.name;
             }
             
+            // Вычисляем смещение: -(index * cardWidth) + halfWidth
+            // containerWidth/2 - cardWidth/2
             const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
-            const targetOffset = -((targetIndex * CARD_WIDTH) - (containerWidth/2) + (CARD_WIDTH/2));
+            const targetOffset = -(targetIndex * CARD_WIDTH) + (containerWidth/2) - (CARD_WIDTH/2);
             
-            track.style.transition = 'transform 5s cubic-bezier(0.1, 0, 0.1, 1)';
+            // Применяем длительность из настроек
+            const duration = parseFloat(spinDurationConfig) || 6;
+            
+            track.style.transition = `transform ${duration}s cubic-bezier(0.15, 0, 0.15, 1)`;
             track.style.transform = `translateX(${targetOffset}px)`;
             
             setTimeout(async () => {
-                isSpinning = false;
+                isSpizing = false;
                 document.getElementById('spinBtn').disabled = false;
                 
-                const winningCard = document.querySelector('.pointer').nextElementSibling; 
-                
-                if(winningCard) {
-                    track.style.transition = 'none';
-                    track.style.transform = 'translateX(0)';
-                    while(winningCard.previousElementSibling) {
-                        track.removeChild(track.firstChild);
-                    }
-                    track.appendChild(winningCard.cloneNode(true));
-                }
+                // Сбрасывать позицию не будем. Оставим на месте.
+                // В следующий раз прокрутим дальше (сменим targetIndex).
                 
                 await processWin(winPrize);
-            }, 5000);
+            }, duration * 1000);
         };
 
         async function processWin(prize) {
+            // 3. Убедимся, что есть актуальные данные
             const uSnap = await getDoc(doc(db, "users", user.uid));
             const uData = uSnap.data();
             
@@ -936,21 +953,21 @@
                 updateData.roulette_passes = (uData.roulette_passes || 0) + parseInt(prize.actionVal);
             }
             
+            // Сначала обновляем базу
             await updateDoc(doc(db, "users", user.uid), updateData);
             
-            // 1. Обновляем данные пользователя, чтобы отправить свежий баланс в Discord
-            const finalSnap = await getDoc(doc(db, "users", user.uid));
-            const finalData = finalSnap.data();
-
+            // Затем добавляем лог (получим подтверждение записи)
             await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name);
-            await sendLogToDiscord('win', { name: finalData.name, uid: user.uid }, `Виграв ${prize.name}`, prize.name);
+            
+            // И отправляем в Discord (дожидаясь завершения addLog)
+            await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
             
             notify(`Ви виграли: ${prize.name}!`);
         }
 
         window.openPurchaseModal = () => document.getElementById('purchaseModal').style.display = 'flex';
         window.updateTotalCost = () => {
-            const c = parseInt(document.getElementById('ticketCount').value) ||1;
+            const c = parseInt(document.getElementById('ticketCount').value) || 1;
             document.getElementById('totalCostDisplay').innerText = (c * 100) + " ⚪";
         };
         window.confirmPurchase = async () => {
@@ -968,7 +985,6 @@
                 await new Promise(r => setTimeout(r, 1000));
                 await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - cost, roulette_passes: (userData.roulette_passes || 0) + count });
                 await addLog(userData.name, "SHOP", `Купив квитки`, -cost);
-                await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
                 document.getElementById('purchaseModal').style.display = 'none';
                 notify(`Куплено ${count} квитків!`);
              } catch(e) { notify("Помилка"); } finally { isProcessing = false; document.getElementById('processingModal').style.display = 'none'; }
@@ -1049,18 +1065,16 @@
                 }
             });
             
-            // 2. Логи - начальное состояние и загрузка
-            const list = document.getElementById('logsList');
-            if(list) list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>Завантаження логів...</div>";
-
+            // 4. ЛОГИ (ПРОВЕРКА)
             const q = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
             onSnapshot(q, (snap) => {
+                const list = document.getElementById('logsList');
                 if(!list) return;
+                list.innerHTML = "";
                 if(snap.empty) {
-                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>Логів немає</div>";
+                    list.innerHTML = "<div style='text-align:center; color:#33ff00; padding:20px; font-family:monospace;'>[SYSTEM] No logs found.</div>";
                     return;
                 }
-                list.innerHTML = "";
                 snap.forEach(d => {
                     const l = d.data();
                     const isPlus = l.action.includes('+');
@@ -1130,7 +1144,7 @@
         function renderManageCard(p) {
             const isAdmin = userData.role === 'admin';
             
-            // 3. Отображение шанса на карточке
+            // Отображение шансов
             let chanceDisplay = "";
             if(p.category === 'shop') {
                 chanceDisplay = "Магазин";
@@ -1264,6 +1278,7 @@
                  switchAdminTab('logs', document.getElementById('admin-logs-btn'));
             }
         };
+        
         window.switchAdminTab = (tab, btn) => {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
