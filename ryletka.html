@@ -224,34 +224,34 @@
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
 
-        /* LOGS STYLE */
+        /* LOGS STYLE - TERMINAL LOOK */
         #logsList {
             min-height: 500px;
             background: #000000;
-            border: 1px solid #333;
-            border-radius: 10px;
+            border: 2px solid #333;
+            border-radius: 8px;
             padding: 15px;
-            font-family: 'Courier New', monospace;
+            font-family: 'Courier New', Courier, monospace; /* Terminal font */
             overflow-y: auto;
-            color: #33ff00;
+            color: #00ff41; /* Hacker green */
             font-weight: bold;
-            text-transform: uppercase;
+            text-transform: none;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.9);
+            font-size: 12px;
         }
-        .log-item {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid #111;
+        .log-entry {
+            border-bottom: 1px dashed #333;
             padding: 8px 0;
-            font-size: 13px;
-            font-family: 'Courier New', monospace;
+            margin-bottom: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        .log-item:hover { background: #111; }
-        .log-left { display: flex; align-items: center; gap: 10px; }
-        .log-icon { font-size: 16px; }
-        .log-action { color: var(--primary); font-weight: bold; }
-        .log-user { font-size: 11px; color: var(--text-gray); display: block; }
-        .log-amount { font-weight: bold; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #111; border: 1px solid #333; }
-        .log-amount.plus { color: var(--primary); border-color: var(--primary); }
-        .log-amount.minus { color: var(--danger); border-color: var(--danger); }
+        .log-time { color: #666; font-size: 10px; min-width: 70px; }
+        .log-user { color: #00bfff; font-weight: bold; }
+        .log-action { color: #fff; }
+        .log-desc { color: #ddd; font-weight: normal; }
+        .log-amount { color: #ffff00; margin-left: auto; font-weight: bold; }
 
         /* PROCESSING OVERLAY */
         .processing-overlay {
@@ -344,7 +344,6 @@
             <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
             <div class="carousel-outer">
                 <div class="pointer"></div>
-                <!-- Инициализация "Загрузка..." -->
                 <div id="track" class="track">ЗАВАНТАЖЕННЯ...</div>
             </div>
             <div class="spin-actions">
@@ -400,8 +399,6 @@
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">DISCORD WEBHOOK URL</label>
                         <input type="text" id="webhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
                     </div>
-
-                    <!-- Убрана настройка длительности по запросу -->
 
                     <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
@@ -600,7 +597,6 @@
 
     // Переменные
     let user = null, userData = null, roulette_active = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
-    // Жестко заданное время анимации (6 секунд)
     const SPIN_TIME_SECONDS = 6;
     
     let currentSlotBase64 = null;
@@ -624,9 +620,9 @@
         setTimeout(() => toast.remove(), 4000);
     }
 
-    async function sendLogToDiscord(type, userObj, description, amount = 0) {
+    async function sendLogToDiscord(type, userObj, description, amount = "") {
         if (!webhookUrl || !webhookUrl.startsWith("https://discord")) {
-            console.warn("Webhook URL is missing"); 
+            console.warn("Webhook URL is missing or invalid");
             return;
         }
 
@@ -637,7 +633,7 @@
         else if (type === 'exchange') { color = 11206584; icon = "💸"; title = "ОБМІН"; }
 
         let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
-        if (amount !== 0) desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
+        if (amount !== "") desc += `\n\`\`\`${amount}\`\`\``;
 
         const payload = {
             username: "Реєстр сайту",
@@ -834,7 +830,15 @@
             if (isAutoOdds) {
                 return prizes[Math.floor(Math.random() * prizes.length)];
             } else {
+                // MANUAL ODDS LOGIC
                 let totalChance = prizes.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
+                
+                // Защита: если админ не указал шансы (0%), делаем равные шансы
+                if (totalChance <= 0) {
+                     console.warn("Total chance is 0, falling back to random.");
+                     return prizes[Math.floor(Math.random() * prizes.length)];
+                }
+
                 let random = Math.random() * totalChance;
                 for (let p of prizes) {
                     random -= (parseFloat(p.chance) || 0);
@@ -856,7 +860,6 @@
 
             const { track, children, length } = getTrackData();
             if (length === 0) {
-                // Если трек пустой (например, админ удалил все призы)
                 return notify("Немає призів для гри!"); 
             }
 
@@ -864,12 +867,10 @@
             const winPrize = getWinner(prizePool);
             if (!winPrize) return notify("Помилка вибору призу");
 
-            // 2. Выбираем индекс (где-то в середине/конце ленты, чтобы крутилось долго)
-            // Индексы 0-49 уже пройдены (визуально), берем 50-99
+            // 2. Выбираем индекс
             const targetIndex = Math.floor(Math.random() * 50) + 50;
             
-            // 3. ПРИНУДИТЕЛЬНО меняем карточку на этом индексе на победителя ДО анимации
-            // Это решает проблему "вижу А, получил Б"
+            // 3. ПРИНУДИТЕЛЬНО меняем карточку на этом индексе
             const targetCard = children[targetIndex];
             if (targetCard) {
                 const img = targetCard.querySelector('img');
@@ -885,8 +886,9 @@
             
             window.isProcessing = true;
 
-            // 5. Запускаем анимацию
-            track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.15, 1)`;
+            // 5. Запускаем анимацию (ИСПРАВЛЕНА ФИЗИКА)
+            // cubic-bezier(0.25, 0.1, 0.25, 1) - быстрый старт, медленная остановка
+            track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.25, 0.1, 0.25, 1)`;
             track.style.transform = `translateX(${targetOffset}px)`;
 
             // 6. Ждем окончания анимации
@@ -895,20 +897,20 @@
                 btn.disabled = false;
                 roulette_active = false;
 
-                // Визуальная очистка старых карточек (слева от победителя)
                 const winningCard = document.querySelector('.pointer').nextElementSibling;
                 if (winningCard) {
                     while(winningCard.previousElementSibling) {
-                        track.removeChild(winningCard.previousElement);
+                        track.removeChild(winningCard.previousElementSibling);
                     }
-                    // Сброс позиции без анимации, чтобы лента начиналась с победителя
                     track.style.transition = 'none';
                     track.style.transform = 'translateX(0px)';
                 }
 
-                // --- ВАЖНО: Только СЕЙЧАС обрабатываем победу (Дискорд, База, Уведомление) ---
-                await processWin(winPrize);
+                // Уведомление о победе
                 notify(`Вітаю! Ви виграли ${winPrize.name}`);
+
+                // Обработка победы (База + Дискорд + Логи)
+                await processWin(winPrize);
 
             }, SPIN_TIME_SECONDS * 1000);
         };
@@ -932,8 +934,11 @@
 
             await updateDoc(doc(db, "users", user.uid), updateData);
 
-            await addLog(uData.name, "WIN", `Виграв на рулетці`, `Виграв ${prize.name}`);
-            await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
+            // ИСПРАВЛЕННЫЕ ЛОГИ
+            await addLog(uData.name, "WIN", `Виграв на рулетці: ${prize.name}`, prize.name);
+            
+            // Дискорд
+            await sendLogToDiscord('win', uData, `Виграв на рулетці: ${prize.name}`, prize.name);
         }
 
         // --- МАГАЗИН И ПОКУПКИ ---
@@ -961,14 +966,17 @@
              try {
                 await new Promise(r => setTimeout(r, 1000));
                 await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - cost, roulette_passes: (userData.roulette_passes || 0) + count });
-                await addLog(userData.name, "SHOP", `Купив квитки`, -cost);
-                if (webhookUrl && webhookUrl.startsWith("https://discord")) {
-                    sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
-                }
+                
+                // ИСПРАВЛЕННЫЕ ЛОГИ
+                await addLog(userData.name, "BUY", `Купив ${count} квитків`, `-${cost}⚪`);
+                
+                // Дискорд
+                await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, `-${cost}⚪`);
                 
                 document.getElementById('purchaseModal').style.display = 'none';
                 notify(`Куплено ${count} квитків!`);
              } catch(e) {
+                 console.error(e);
                  notify("Помилка"); 
              } finally { 
                  window.isProcessing = false; 
@@ -1006,19 +1014,21 @@
                 try {
                     await new Promise(r => setTimeout(r, 2000));
                     await updateDoc(doc(db, "users", user.uid), { points: currentPts - pts, currency: (userData.currency || 0) + moneyVal });
-                    await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`);
-                    if (webhookUrl && webhookUrl.startsWith("https://discord")) {
-                        await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
-                    }
+                    
+                    // Логи
+                    await addLog(userData.name, "SYSTEM", `Обмін балів на ${moneyVal} грн`, `+${moneyVal} грн`);
+                    
+                    // Дискорд
+                    await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
+                    
                     notify("Успішно обміняно!");
-                    // Сброс модалки и поля ввода
                     document.getElementById('exchangeAmount').value = 1;
                 } catch(e) { 
+                    console.error(e);
                     notify("Помилка транзакції"); 
                 } finally { 
                     window.isProcessing = false; 
                     document.getElementById('processingModal').style.display = 'none';
-                    // Гарантированное закрытие
                     closeModal();
                 }
             });
@@ -1028,7 +1038,6 @@
         window.buyItem = async (id) => {
             if (window.isProcessing) return notify("Зачекайте...");
             
-            // Ищем товар в массиве prizePool
             const item = prizePool.find(p => p.id === id);
             if (!item) {
                 console.error("Item not found", id, prizePool);
@@ -1049,12 +1058,18 @@
                 try {
                     await new Promise(r => setTimeout(r, 1500));
                     await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
-                    await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price);
-                    if (webhookUrl && webhookUrl.startsWith("https://discord")) {
-                        sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price);
-                    }
+                    
+                    // ИСПРАВЛЕННЫЕ ЛОГИ
+                    await addLog(userData.name, "BUY", `Купив у магазині: ${item.name}`, `-${item.price}⚪`);
+                    
+                    // Дискорд
+                    await sendLogToDiscord('buy', userData, `Купив у магазині: ${item.name}`, `-${item.price}⚪`);
+                    
                     notify("Покупка успішна!");
-                } catch(e) { notify("Помилка транзакції"); } finally { 
+                } catch(e) { 
+                    console.error(e);
+                    notify("Помилка транзакції"); 
+                } finally { 
                     window.isProcessing = false; 
                     document.getElementById('processingModal').style.display = 'none'; 
                     closeModal(); 
@@ -1083,22 +1098,25 @@
             onSnapshot(q, (snap) => {
                 list.innerHTML = "";
                 if(snap.empty) {
-                    list.innerHTML = "<div style='text-align:center; color:#555; font-family:monospace;'>[SYSTEM] Логів немає.</div>";
+                    list.innerHTML = "<div style='text-align:center; color:#00ff41; font-family:monospace;'>[SYSTEM] Логів немає.</div>";
                     return;
                 }
                 snap.forEach(d => {
                     const l = d.data();
-                    const isPlus = l.action.includes('+');
                     const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleTimeString('uk-UA') : '--:--';
+                    
+                    let logColor = "#fff";
+                    if(l.type === "WIN") logColor = "#ffff00";
+                    if(l.type === "BUY") logColor = "#00bfff";
+                    if(l.type === "ADMIN") logColor = "#ff00ff";
+
                     list.innerHTML += `
-                        <div class="log-item">
-                            <div class="log-left">
-                                <span class="log-icon">${isPlus ? '📈' : '📉'}</span>
-                                <div>
-                                    <div class="log-action">${l.user}</div>
-                                    <span class="log-user">[${time}] ${l.type} - ${l.desc}</span>
-                                </div>
-                            <div class="log-amount ${isPlus ? 'plus' : 'minus'}">${l.amount}</div>
+                        <div class="log-entry">
+                            <span class="log-time">[${time}]</span>
+                            <span class="log-user">${l.user}</span>
+                            <span class="log-action" style="color:${logColor}">${l.type}</span>
+                            <span class="log-desc">${l.desc}</span>
+                            <span class="log-amount">${l.amount}</span>
                         </div>
                     `;
                 });
@@ -1124,14 +1142,17 @@
                 let logDesc = "";
                 let logAmount = "";
 
-                if (type === 'add_points') { updateData.points = (data.points || 0) + amount; logDesc = "Додавання балів"; logAmount = `+${amount}`; }
-                else if (type === 'sub_points') { updateData.points = Math.max(0, (data.points || 0) - amount); logDesc = "Списання балів"; logAmount = `-${amount}`; }
-                else if (type === 'add_currency') { updateData.currency = (data.currency || 0) + amount; logDesc = "Додавання валюти"; logAmount = `+${amount} грн`; }
-                else if (type === 'sub_currency') { updateData.currency = Math.max(0, (data.currency || 0) - amount); logDesc = "Списання валюти"; logAmount = `-${amount} грн`; }
+                if (type === 'add_points') { updateData.points = (data.points || 0) + amount; logDesc = `Поповнив баланс на ${amount} балів`; logAmount = `+${amount}⚪`; }
+                else if (type === 'sub_points') { updateData.points = Math.max(0, (data.points || 0) - amount); logDesc = `Списав з балансу ${amount} балів`; logAmount = `-${amount}⚪`; }
+                else if (type === 'add_currency') { updateData.currency = (data.currency || 0) + amount; logDesc = `Поповнив баланс на ${amount} грн`; logAmount = `+${amount}₴`; }
+                else if (type === 'sub_currency') { updateData.currency = Math.max(0, (data.currency || 0) - amount); logDesc = `Списав з балансу ${amount} грн`; logAmount = `-${amount}₴`; }
                 
                 await updateDoc(doc(db, "users", uid), updateData);
+                
+                // Лог админа
                 await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
                 
+                // Дискорд админа
                 sendLogToDiscord('admin', userData, `${logDesc} (${data.name})`, logAmount);
                 
                 notify("Успішно!");
