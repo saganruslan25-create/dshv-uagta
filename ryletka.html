@@ -299,17 +299,6 @@
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
         .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top: 5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
 
-        /* Кнопка Сохранения */
-        #saveAllSettingsBtn {
-            width: 100% !important;
-            box-sizing: border-box !important;
-            height: 50px !important;
-            font-size: 16px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-
         @media (max-width: 900px) {
             .main-container { grid-template-columns: 1fr; }
             .sidebar { flex-direction: row; overflow-x: auto; position: sticky; top: 75px; z-index: 100; padding: 8px; border-radius: 0; }
@@ -412,14 +401,7 @@
                         <input type="text" id="webhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
                     </div>
 
-                    <!-- 2. Длительность прокрутки -->
-                    <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
-                        <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">ТРИВАЛІСТЬ ОБЕРТАННЯ (СЕКУНДИ)</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="number" id="spinDurationInput" class="input" placeholder="6" step="0.5">
-                            <button id="saveDurationBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSpinDuration()">СОХРАНИТИ</button>
-                        </div>
-                    </div>
+                    <!-- Убрана настройка длительности по запросу -->
 
                     <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
@@ -616,10 +598,10 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Глобальные переменные (объявлены снаружи модуля)
+    // Переменные
     let user = null, userData = null, roulette_active = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
-    // 2. Переменные для сброса кэша
-    let spinDurationConfig = 6;
+    // Жестко заданное время анимации (6 секунд)
+    const SPIN_TIME_SECONDS = 6;
     
     let currentSlotBase64 = null;
     let isProcessing = false; 
@@ -631,8 +613,7 @@
         el.classList.toggle('open');
     };
 
-    // 3. Визуализация ошибок через консоль
-    console.log("RYLETKA HTML LOADED CORRECTLY");
+    console.log("RYLETKA HTML LOADED");
 
     function notify(msg) {
         const container = document.getElementById('toastContainer');
@@ -643,7 +624,6 @@
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // 4. Логика событий (отправка в Discord)
     async function sendLogToDiscord(type, userObj, description, amount = 0) {
         if (!webhookUrl || !webhookUrl.startsWith("https://discord")) {
             console.warn("Webhook URL is missing"); 
@@ -700,18 +680,13 @@
             initTrack(prizePool.filter(p => !p.category || p.category === 'roulette'));
         });
 
-        // 2. Загрузка конфига (курс, длительность, логи)
         function startConfigSync() {
             onSnapshot(doc(db, "configs", "roulette"), (snap) => {
                 if (snap.exists()) {
                     exchangeRate = snap.data().exchangeRate || 10000;
-                    spinDurationConfig = snap.data().spinDuration || 6;
                     infoText = snap.data().infoText || "Інформація відсутня.";
                     webhookUrl = snap.data().webhookUrl || "";
                     isAutoOdds = snap.data().autoOdds || false;
-                    
-                    const input = document.getElementById('spinDurationInput');
-                    if(input) input.value = spinDurationConfig;
                     
                     const toggle = document.getElementById('autoOddsToggle');
                     if (toggle) toggle.checked = isAutoOdds;
@@ -741,17 +716,16 @@
             btn.disabled = true;
 
             const rate = parseFloat(document.getElementById('exchangeRateInput').value);
-            const dur = parseFloat(document.getElementById('spinDurationInput').value);
             const text = document.getElementById('infoTextInput').value;
             const url = document.getElementById('webhookUrl').value;
 
-            if (!rate || !dur) throw new Error("Заповніть курс і час!");
+            if (!rate) throw new Error("Заповніть курс!");
             
-            exchangeRate = rate; spinDurationConfig = dur; infoText = text; webhookUrl = url;
+            exchangeRate = rate; infoText = text; webhookUrl = url;
             
             try {
                 await setDoc(doc(db, "configs", "roulette"), { 
-                    exchangeRate, spinDuration: spinDurationConfig, infoText, webhookUrl 
+                    exchangeRate, infoText, webhookUrl 
                 }, { merge: true });
                 notify("Налаштування оновлено!");
                 updateShopDisplay();
@@ -763,28 +737,6 @@
                 btn.disabled = false; 
             }
         };
-
-        window.saveSpinDuration = async () => {
-            const btn = document.getElementById('saveDurationBtn');
-            const input = document.getElementById('spinDurationInput');
-            const val = parseFloat(input.value);
-            
-            if (!val || val < 0.5 || val > 60) return notify("Час має бути від 0.5 до 60 сек!");
-            
-            btn.innerText = "⏳ СОХРАНЕННЯ...";
-            btn.disabled = true;
-
-            try {
-                spinDurationConfig = val;
-                await setDoc(doc(db, "configs", "roulette"), { spinDuration: val }, { merge: true });
-                notify(`Час прокрутки змінено на ${val} сек`);
-            } catch(e) {
-                console.error(e); notify("Помилка збереження");
-            } finally { 
-                btn.innerText = "СОХРАНИТИ"; 
-                btn.disabled = false; 
-            }
-        }
 
         function updateShopDisplay() {
             const rateEl = document.getElementById('shopRateDisplay');
@@ -846,7 +798,7 @@
                     <img src="${p.img}">
                     <div style="font-weight:800; font-size: 14px; margin-bottom: 10px;">${p.name}</div>
                     <div class="price-tag">${p.price || 0} ⚪</div>
-                    <button class="btn-main btn-buy" style="width:100%; max-width:none; padding:14px;" onclick="buyItem('${p.id}')">КУПИТИ</button>
+                    <button class="btn-main btn-buy" style="width:100%; max-width:none; padding:14px;" onclick="window.buyItem('${p.id}')">КУПИТИ</button>
                 </div>`;
             });
         }
@@ -892,7 +844,7 @@
             }
         }
 
-        // Запуск вращения
+        // ИСПРАВЛЕННАЯ ЛОГИКА ВРАЩЕНИЯ
         window.startSpin = async () => {
             const btn = document.getElementById('spinBtn');
             
@@ -900,64 +852,65 @@
             if (!userData || userData.roulette_passes < 1) return notify("Немає квитків!");
             
             btn.disabled = true;
-            
+            roulette_active = true;
+
             const { track, children, length } = getTrackData();
             if (length === 0) {
-                const initSnap = await getDoc(doc(db, "users", user.uid));
-                if(initSnap.exists()) {
-                    const d = initSnap.data();
-                    if (d.rank && d.role && ['admin', 'instructor'].includes(d.role)) {
-                        await loadPrizes(); 
-                    } else {
-                        initTrack([]);
-                    }
-                }
+                // Если трек пустой (например, админ удалил все призы)
+                return notify("Немає призів для гри!"); 
             }
 
+            // 1. Определяем победителя СРАЗУ ЖЕ
             const winPrize = getWinner(prizePool);
-            if (!winPrize) return;
+            if (!winPrize) return notify("Помилка вибору призу");
 
+            // 2. Выбираем индекс (где-то в середине/конце ленты, чтобы крутилось долго)
+            // Индексы 0-49 уже пройдены (визуально), берем 50-99
             const targetIndex = Math.floor(Math.random() * 50) + 50;
-            const targetCard = children[targetIndex];
             
+            // 3. ПРИНУДИТЕЛЬНО меняем карточку на этом индексе на победителя ДО анимации
+            // Это решает проблему "вижу А, получил Б"
+            const targetCard = children[targetIndex];
             if (targetCard) {
                 const img = targetCard.querySelector('img');
                 const txt = targetCard.querySelector('span');
                 if(img) img.src = winPrize.img;
-                if (txt) txt.innerText = winPrize.name;
+                if(txt) txt.innerText = winPrize.name;
             }
             
+            // 4. Вычисляем смещение
             const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
             const halfWidth = CARD_WIDTH / 2;
-            // Исправлено: убрана лишняя скобка
             const targetOffset = -(targetIndex * CARD_WIDTH) + (containerWidth/2) + halfWidth;
             
             window.isProcessing = true;
 
-            const duration = parseFloat(spinDurationConfig) || 6;
-
-            track.style.transition = `transform ${duration}s cubic-bezier(0.15, 0, 0.15, 1)`;
+            // 5. Запускаем анимацию
+            track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.15, 1)`;
             track.style.transform = `translateX(${targetOffset}px)`;
 
-            setTimeout(() => {
+            // 6. Ждем окончания анимации
+            setTimeout(async () => {
                 window.isProcessing = false;
                 btn.disabled = false;
+                roulette_active = false;
 
+                // Визуальная очистка старых карточек (слева от победителя)
                 const winningCard = document.querySelector('.pointer').nextElementSibling;
-                const list = document.getElementById('logsList');
-
-                if (winningCard && list) {
-                    const logHtml = `<div class="log-item"><div class="log-left"><span class="log-icon">🎉</span><div><div class="log-action">${userData.name}</div><div class="log-user">[${new Date().toLocaleTimeString('uk-UA')}] WIN - Виграв на рулетці</div></div><div class="log-amount plus">WIN</div></div>`;
-                    list.prepend(logHtml);
+                if (winningCard) {
+                    while(winningCard.previousElementSibling) {
+                        track.removeChild(winningCard.previousElement);
+                    }
+                    // Сброс позиции без анимации, чтобы лента начиналась с победителя
+                    track.style.transition = 'none';
+                    track.style.transform = 'translateX(0px)';
                 }
 
-                track.style.transition = 'none';
-                while(winningCard.previousElementSibling) {
-                    track.removeChild(winningCard.previousElement);
-                }
-            }, duration * 1000);
+                // --- ВАЖНО: Только СЕЙЧАС обрабатываем победу (Дискорд, База, Уведомление) ---
+                await processWin(winPrize);
+                notify(`Вітаю! Ви виграли ${winPrize.name}`);
 
-            processWin(winPrize);
+            }, SPIN_TIME_SECONDS * 1000);
         };
 
         async function processWin(prize) {
@@ -981,10 +934,9 @@
 
             await addLog(uData.name, "WIN", `Виграв на рулетці`, `Виграв ${prize.name}`);
             await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
-            notify(`Ви виграли: ${prize.name}!`);
         }
 
-        // --- ДРУГАЯ И ОПЛАТА ---
+        // --- МАГАЗИН И ПОКУПКИ ---
 
         window.openPurchaseModal = () => {
             document.getElementById('purchaseModal').style.display = 'flex';
@@ -1059,15 +1011,30 @@
                         await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
                     }
                     notify("Успішно обміняно!");
-                } catch(e) { notify("Помилка транзакції"); } 
-                window.isProcessing = false; document.getElementById('processingModal').style.display = 'none';
+                    // Сброс модалки и поля ввода
+                    document.getElementById('exchangeAmount').value = 1;
+                } catch(e) { 
+                    notify("Помилка транзакції"); 
+                } finally { 
+                    window.isProcessing = false; 
+                    document.getElementById('processingModal').style.display = 'none';
+                    // Гарантированное закрытие
+                    closeModal();
+                }
             });
         };
 
+        // Исправленная функция покупки в магазине
         window.buyItem = async (id) => {
             if (window.isProcessing) return notify("Зачекайте...");
-            const item = window.prizePool.find(p => p.id === id);
-            if (!item) return;
+            
+            // Ищем товар в массиве prizePool
+            const item = prizePool.find(p => p.id === id);
+            if (!item) {
+                console.error("Item not found", id, prizePool);
+                return notify("Товар не знайдено (помилка завантаження)");
+            }
+            
             const points = userData.points || 0;
             
             const isDebt = points < (item.price || 0);
@@ -1162,7 +1129,6 @@
                 else if (type === 'add_currency') { updateData.currency = (data.currency || 0) + amount; logDesc = "Додавання валюти"; logAmount = `+${amount} грн`; }
                 else if (type === 'sub_currency') { updateData.currency = Math.max(0, (data.currency || 0) - amount); logDesc = "Списання валюти"; logAmount = `-${amount} грн`; }
                 
-                // Исправлено: убрана лишняя скобка
                 await updateDoc(doc(db, "users", uid), updateData);
                 await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
                 
@@ -1372,7 +1338,6 @@
             }
         }
 
-        // Helper for logging
         async function addLog(user, type, desc, amount) {
             await addDoc(collection(db, "roulette_logs"), {
                 user, type, desc, amount, timestamp: serverTimestamp()
