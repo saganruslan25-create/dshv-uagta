@@ -22,6 +22,16 @@
 
         * { box-sizing: border-box; }
 
+        /* ГЛОБАЛЬНЫЕ СКРОЛЛБАРЫ */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--primary); 
+            border-radius: 4px; border: 1px solid #000;
+            box-shadow: 0 0 10px var(--primary); 
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-bright); }
+
         body {
             margin: 0; padding: 0;
             background-color: var(--bg);
@@ -29,16 +39,16 @@
                 radial-gradient(circle at 50% -20%, var(--primary-glow) 0%, transparent 50%),
                 radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 40%);
             color: white; 
-            /* ПРИОРИТЕТ ЭМОДЗИ */
+            /* ПРИОРИТЕТ ЭМОДЗИ СИСТЕМНЫЙ */
             font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', 'Inter', sans-serif;
             min-height: 100vh; overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
             padding-bottom: 60px;
         }
 
-        /* ПРИНУДИТЕЛЬНЫЕ ШРИФТЫ ДЛЯ ЭЛЕМЕНТОВ */
-        button, .btn-main, .stat-item, .log-icon, .menu-btn, .price-tag, .toast, #footerRoleLabel, h1, h2, h3, h4, span, div {
-            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', 'Inter', sans-serif !important;
+        /* ПРИНУДИТЕЛЬНЫЙ КЛАСС ДЛЯ ИКОНОК (РЕШЕНИЕ КВАДРАТИКОВ) */
+        .force-emoji {
+            font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', sans-serif !important;
         }
 
         .neon-text {
@@ -92,6 +102,7 @@
         .status-segment { display: flex; align-items: center; gap: 10px; }
         .indicator-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary); }
         .page-label { color: white; background: rgba(34, 197, 94, 0.1); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--primary); }
+        .page-label.force-emoji { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif !important; }
 
         .content-section { display: none; animation: fadeIn 0.5s ease; }
         .content-section.active { display: block; }
@@ -119,8 +130,8 @@
         
         .track {
             display: flex; position: absolute; left: 0; top: 30px;
-            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
             will-change: transform;
+            /* transition is set by JS */
         }
         .prize-card {
             min-width: 200px; width: 200px; height: 200px; margin: 0 10px;
@@ -161,7 +172,7 @@
         }
         .category-label::after { content: ''; flex: 1; height: 1px; background: rgba(34, 197, 94, 0.2); }
 
-        /* SHOP CARD */
+        /* SHOP CARD & RATE */
         .shop-info-banner {
             background: rgba(34,197, 94, 0.05); border: 1px solid var(--glass-border);
             padding: 25px; border-radius: 20px; margin-bottom: 30px;
@@ -169,7 +180,7 @@
         }
         
         .shop-rate-row {
-            display: flex; justify-content: center; align-items: center; gap: 15px;
+            display: flex; justify-content: space-between; align-items: center; gap: 15px;
             font-size: 32px; font-weight: 900; color: var(--primary-bright);
             padding: 20px;
             background: rgba(0,0,0,0.3);
@@ -178,7 +189,34 @@
             box-shadow: 0 0 15px rgba(0,0,0,0.5);
         }
 
-        .shop-info-text { font-size: 14px; color: var(--text-gray); line-height: 1.6; white-space: pre-wrap; }
+        .shop-info-content {
+            max-height: 0; /* Hidden by default */
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .shop-info-content.open {
+            max-height: 500px; /* Expanded state */
+        }
+        
+        .shop-info-toggle {
+            background: rgba(34,197, 94, 0.1);
+            color: var(--primary-bright);
+            border: 1px solid var(--primary);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+        }
+        .shop-info-toggle:hover { background: rgba(34, 197, 94, 0.2); }
+
+        .shop-info-text { font-size: 14px; color: var(--text-gray); line-height: 1.6; padding-top: 10px; white-space: pre-wrap; }
 
         .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         .shop-card { 
@@ -201,7 +239,7 @@
         .log-icon { font-size: 18px; }
         .log-action { color: white; font-weight: 600; }
         .log-user { font-size: 11px; color: var(--text-gray); display: block; }
-        .log-amount { font-weight: 800; font-size: 12px; padding: 4px 8px; border-radius: 6px; background: rgba(0,0,0,0.3); }
+        .log-amount { font-weight: 800; font-size: 12px; padding: 0 8px; border-radius: 6px; background: rgba(0,0,0,0.3); }
         .log-amount.plus { color: var(--primary); }
         .log-amount.minus { color: var(--danger); }
 
@@ -215,12 +253,13 @@
         .processing-content {
             text-align: center; color: white; padding: 30px; background: var(--card-bg);
             border: 1px solid var(--glass-border); border-radius: 20px;
-            box-shadow: 0 0 50px rgba(34,197,94,0.3); max-width: 400px; width: 90%;
+            box-shadow: 0 0 50px rgba(34,197,94,0.3);
+            max-width: 400px; width: 90%;
         }
         .spinner {
             width: 50px; height: 50px; border: 5px solid rgba(34, 197, 94, 0.1);
             border-top-color: var(--primary); border-radius: 50%;
-            animation: spin 1s linear infinite; margin: 0 auto 20px;
+            animation: spin 1s linear infinite; margin: 0 auto;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -246,6 +285,7 @@
             background-color: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px;
             font-size: 12px; font-weight: 700; cursor: pointer; text-align: center;
             transition: 0.2s; width: 100%;
+            position: relative;
         }
         .file-upload-btn:hover { border-color: var(--primary); color: var(--primary-bright); }
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
@@ -260,6 +300,7 @@
             .prize-card { min-width: 140px; width: 140px; height: 140px; margin: 0 5px; }
             .prize-card img { width: 70px; height: 70px; }
             .status-bar { font-size: 8px; padding: 0 10px; }
+            .shop-rate-row { flex-direction: column; gap: 10px; align-items: stretch; }
         }
     </style>
 </head>
@@ -275,11 +316,11 @@
     </div>
 
     <header>
-        <a href="cabinet.html" style="color: var(--text-gray); text-decoration: none; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing:1px;">← НАЗАД</a>
+        <a href="cabinet.html" style="color: var(--text-gray); text-decoration: none; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">← НАЗАД</a>
         <div style="display:flex; gap:10px; align-items:center;">
-            <div class="stat-item">🪙 <span id="pointsVal">0</span></div>
-            <div class="stat-item" style="border-color: var(--currency);">💸 <span id="currencyVal">0</span> ₴</div>
-            <button class="stat-item" style="cursor: pointer; background: linear-gradient(135deg, #fbbf24, #d97706); border:none; color:black; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);" onclick="openExchangeModal()">ОБМІН</button>
+            <div class="stat-item">🪙 <span id="pointsVal" class="force-emoji">0</span></div>
+            <div class="stat-item" style="border-color: var(--currency);">💸 <span id="currencyVal" class="force-emoji">0</span> ₴</div>
+            <button class="btn-main btn-buy force-emoji" style="background: var(--currency); color: black; max-width: 120px; padding: 12px;" onclick="openExchangeModal()">ОБМІН</button>
         </div>
     </header>
 
@@ -317,13 +358,25 @@
             <!-- SHOP -->
             <section id="shopPage" class="content-section">
                 <div class="shop-info-banner">
-                    <div class="shop-rate-row">
-                        1 🪙 = <span id="shopRateDisplay">0</span> $                     </div>
-                    <div id="shopInfoText" class="shop-info-text">Завантаження...</div>
-                </div>
+                    <div class="shop-rate-row force-emoji">
+                        <div>
+                            <span style="font-size:16px; color: var(--text-gray); font-weight: 700;">Курс:</span>
+                            1 🪙 = <span id="shopRateDisplay">0</span> $                             <!-- Кнопка обмена внутри блока курса -->
+                            <button class="btn-main btn-buy force-emoji" style="background: var(--currency); color: black; max-width: 120px; padding: 12px;" onclick="openExchangeModal()">ОБМІН</button>
+                        </div>
+                    </div>
 
-                <h1 class="neon-text" style="font-size:32px; margin-bottom:30px;">МАГАЗИН</h1>
-                <div id="shopGrid" class="shop-grid"></div>
+                    <!-- СПОЙЛЕР ИНСТРУКЦИЯ -->
+                    <div class="shop-info-toggle force-emoji" onclick="toggleShopInfo()">
+                        <span class="chevron">▼</span>
+                        <span style="font-weight: 700; font-size: 14px; color: var(--primary-bright);">ІНСТРУКЦІЯ</span>
+                    </div>
+                    <div id="shopInfoContent" class="shop-info-content">
+                        <div id="shopInfoText" class="shop-info-text">Завантаження...</div>
+                    </div>
+
+                    <h1 class="neon-text" style="font-size:32px; margin-bottom:30px;">МАГАЗИН</h1>
+                    <div id="shopGrid" class="shop-grid"></div>
             </section>
 
             <!-- ADMIN -->
@@ -353,12 +406,12 @@
                                 <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                                 <div style="display: flex; gap: 10px;">
                                     <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
-                                    <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSettings()">СОХРАНИТЬ</button>
+                                    <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 100%; font-size: 14px;" onclick="window.saveSettings()">СОХРАНИТИ</button>
                                 </div>
                             </div>
 
                             <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius:10px;">
-                                <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">ІНСТРУКЦІЯ (ЯК ОТРИМАТИ БАЛИ)</label>
+                                <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">ТЕКСТ "ЯК ОТРИМАТИ БАЛИ"</label>
                                 <textarea id="infoTextInput" class="textarea" placeholder="Опишіть спосіб отримання балів..."></textarea>
                             </div>
                         </div>
@@ -397,6 +450,8 @@
                                 <div class="file-input-wrapper">
                                     <button class="file-upload-btn" type="button">📷 ЗАВАНТАЖИТИ ФОТО</button>
                                     <input type="file" id="newPrizeImgFile" accept="image/*" onchange="processSlotImage(this)">
+                                    <!-- Индикатор загрузки -->
+                                    <span id="uploadLoadingText" style="font-size:10px; display:none; color: var(--primary); margin-top:5px;">Завантаження...</span>
                                 </div>
                             </div>
                             <img id="slotImgPreview" class="img-preview-small" style="margin: 0 auto 10px auto; display: block;">
@@ -456,32 +511,31 @@
         </div>
         <div class="status-segment">
             <span>ДОСТУП: </span>
-            <span id="footerRoleLabel" style="color: var(--primary);">CIVILIAN</span>
+            <span id="footerRoleLabel" class="page-label">CIVILIAN</span>
         </div>
     </footer>
 
     <!-- EXCHANGE MODAL -->
     <div id="exchangeModal" class="modal">
         <div class="modal-inner">
-            <h3 class="neon-text" style="font-size:18px; margin:0;">ОБМІН БАЛІВ</h3>
-            <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 14px;">
-                Поточний баланс: <b style="color:var(--primary)"><span id="exCurrentPoints">0</span> 🪙</b><br>
+            <h3 class="neon-text force-emoji" style="font-size:18px; margin:0;">ОБМІН БАЛІВ</h3>
+            <p style="color: var(--text-gray); margin-bottom: 20px; font-size:14px;">
+                Поточний баланс: <b style="color:var(--primary)"><span id="exCurrentPoints" class="force-emoji">0</span> 🪙</b><br>
                 Курс: <span style="color:var(--primary-bright)">1 🪙 = <span id="exRateDisplay">0</span> ₴</span>
             </p>
 
             <div style="margin-bottom: 20px;">
-                <label style="display:block; font-size:10px; color:var(--text-gray); margin-bottom:5px;">СКІЛЬКИСТЬ БАЛІВ ДЛЯ ОБМІНУ</label>
+                <label style="display:block; font-size:10px; color:var(--text-gray); margin-bottom:5px;">СКІЛЬКІСТЬ БАЛІВ ДЛЯ ОБМІНУ</label>
                 <input type="number" id="exchangeAmount" class="input" value="1" min="1" oninput="updateExchangeCalc()">
             </div>
 
             <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid var(--currency); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
                 <span style="font-size: 12px; color: var(--text-gray);">ВИ ОТРИМАЄТЕ:</span><br>
-                <span id="exchangeResult" style="font-size: 24px; font-weight: 900; color: var(--currency);">0</span> <span style="font-size:14px;">грн</span>
+                <span id="exchangeResult" style="font-size: 28px; font-weight: 900; color: var(--currency);">0</span> <span style="font-size:14px;">грн</span>
             </div>
 
-            <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px; margin-bottom: 20px; font-size: 12px; color: #ccc;">
-                <b style="color:var(--primary);">Як отримати бали?</b><br>
-                <span id="exInfoText" style="white-space: pre-wrap; color:white;">Завантаження...</span>
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 12px; color: #ccc; white-space: pre-wrap;">
+                <b style="color:var(--primary);">Як отримати бали?</b><br><span id="exInfoText">Завантаження...</span>
             </div>
 
             <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
@@ -494,7 +548,7 @@
     <!-- PURCHASE MODAL -->
     <div id="purchaseModal" class="modal">
         <div class="modal-inner">
-            <h3 class="neon-text" style="font-size:18px; margin:0;">КУПІВЛЯ КВИТКІВ</h3>
+            <h3 class="neon-text force-emoji" style="font-size:18px; margin:0;">КУПІВЛЯ КВИТКІВ</h3>
             <p style="color: var(--text-gray); margin: 20px 0; font-size:14px;">Вартість одного квитка: <b style="color:var(--primary)">100 🪙</b></p>
             
             <div style="margin-bottom: 20px;">
@@ -517,7 +571,7 @@
     <!-- CONFIRM MODAL -->
     <div id="modal" class="modal">
         <div class="modal-inner">
-            <h3 id="modalTitle" class="neon-text" style="font-size:18px; margin:0;">ПІДТВЕРДЖЕННЯ</h3>
+            <h3 id="modalTitle" class="neon-text force-emoji" style="font-size:18px; margin:0;">ПІДТВЕРДЖЕННЯ</h3>
             <p id="modalText" style="color: var(--text-gray); margin: 25px 0; font-size:14px;"></p>
             <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="closeModal()">ВІДМІНА</button>
@@ -534,10 +588,10 @@
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
             authDomain: "dsv-gta.firebaseapp.com",
-            projectId: "dsv-gta",
+            "projectId": "dsv-gta",
             storageBucket: "dsv-gta.firebasestorage.app",
-            messagingSenderId: "661591588818",
-            appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+            "messagingSenderId": "661591588818",
+            "appId": "1:661591588818:web:a8e8dca3d061447e24d20b"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -546,7 +600,7 @@
 
         let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
         let currentSlotBase64 = null;
-        let isProcessing = false; // GLOBAL LOCK
+        let isProcessing = false;
 
         function notify(msg) {
             const container = document.getElementById('toastContainer');
@@ -578,7 +632,7 @@
                 icon = "🛠️";
                 title = "АДМІНІСТРУВАННЯ";
             } else if (type === 'exchange') {
-                color = 11206584; // Purple
+                color = 11206584; 
                 icon = "💸";
                 title = "ОБМІН";
             }
@@ -737,11 +791,29 @@
             const rateEl = document.getElementById('shopRateDisplay');
             if(rateEl) rateEl.innerText = exchangeRate;
             
-            const textEl = document.getElementById('shopInfoText');
-            if(textEl) {
-                textEl.innerHTML = infoText;
+            const txtInput = document.getElementById('infoTextInput');
+            if(txtInput) {
+                txtInput.value = infoText;
             }
         }
+
+        // --- СПОЙЛЕР ИНСТРУКЦИЯ ---
+        window.toggleShopInfo = () => {
+            const content = document.getElementById('shopInfoContent');
+            const chevron = document.querySelector('.chevron');
+            
+            if (content.classList.contains('open')) {
+                content.classList.remove('open');
+                content.style.maxHeight = '0';
+                chevron.innerText = '▼';
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('open');
+                content.style.maxHeight = '500px';
+                chevron.innerText = '▲';
+                chevron.style.transform = 'rotate(180deg)';
+            }
+        };
 
         window.toggleAutoOdds = async (val) => {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
@@ -780,7 +852,7 @@
                 const displayChance = isInstructor ? '' : chanceText;
                 
                 preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
-                    <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; margin-bottom:8px;">
+                    <img src="${p.img}" class="force-emoji" style="width:50px; height:50px; object-fit:contain; margin-bottom:8px;">
                     <div style="font-size:10px; font-weight:800;">${p.name}</div>
                     <div style="font-size:8px; color:var(--text-gray); margin-top:4px;">${displayChance}</div>
                 </div>`;
@@ -803,61 +875,48 @@
             });
         }
 
-        // --- EXCHANGE LOGIC ---
-        window.openExchangeModal = () => {
-            document.getElementById('exchangeModal').style.display = 'flex';
-            updateExchangeCalc();
-        };
+        // ИСПРАВЛЕННАЯ ОБРАБОТКА ФОТО (ФИКСИРОВАНА)
+        window.processSlotImage = (input) => {
+            const btn = input.parentElement.querySelector('.file-upload-btn');
+            const loadingTxt = document.getElementById('uploadLoadingText');
 
-        window.updateExchangeCalc = () => {
-            const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
-            const res = Math.floor(pts * exchangeRate);
-            document.getElementById('exchangeResult').innerText = res.toLocaleString();
-            document.getElementById('exCurrentPoints').innerText = userData.points || 0;
-            document.getElementById('exRateDisplay').innerText = exchangeRate;
-            document.getElementById('exInfoText').innerHTML = infoText;
-        };
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                
+                // Показываем текст загрузки
+                loadingTxt.style.display = 'inline-block';
+                btn.innerText = '⏳ Завантаження...';
+                btn.style.borderColor = 'var(--primary)';
+                btn.style.color = 'var(--primary)';
 
-        window.confirmExchange = async () => {
-            if (isProcessing) return notify("Зачекайте, триває транзакція...");
-            
-            const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
-            if(pts < 1) return notify("Мінімум 1 бал");
-            const currentPts = userData.points || 0;
-            if(pts > currentPts) return notify("Недостатньо балів!");
-
-            const moneyVal = Math.floor(pts * exchangeRate);
-            const msg = `Обміняти ${pts} балів на ${moneyVal} грн?`;
-            
-            document.getElementById('exchangeModal').style.display = 'none';
-            openModal("ОБМІН", msg, async () => {
-                isProcessing = true;
-                document.getElementById('procTitle').innerText = "ОБМІН";
-                document.getElementById('procText').innerText = `Підключення до банку...\n${pts} 🪙 ➔ ${moneyVal} грн`;
-                document.getElementById('processingModal').style.display = 'flex';
-
-                try {
-                    // ЗАДЕРЖКА 2 СЕКУНДЫ (ДЛЯ ВИЗУАЛЬНОГО ЭФФЕКТА)
-                    await new Promise(r => setTimeout(r, 2000));
-
-                    await updateDoc(doc(db, "users", user.uid), { 
-                        points: currentPts - pts,
-                        currency: (userData.currency || 0) + moneyVal
-                    });
-                    await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`);
-                    await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
+                const reader = new FileReader();
+                // ПРИКРЕПЛЯЕМ img.onload ДО чтения
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let w = img.width, h = img.height, max = 1000; 
+                    if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    currentSlotBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     
-                    notify("Успішно обміняно!");
-                } catch(e) {
-                    notify("Помилка транзакції");
-                } finally {
-                    isProcessing = false;
-                    document.getElementById('processingModal').style.display = 'none';
-                }
-            });
+                    btn.innerText = "✅ ВИБРАНО";
+                    loadingTxt.style.display = 'none';
+                    
+                    const prev = document.getElementById('slotImgPreview');
+                    prev.src = currentSlotBase64;
+                    prev.style.display = 'block';
+                };
+                img.onerror = () => {
+                    btn.innerText = "❌ Помилка";
+                    loadingTxt.style.display = 'none';
+                };
+                img.src = e.target.result;
+            };
+            }
+            reader.readAsDataURL(file);
         };
 
-        // --- BUY ITEM (SHOP) ---
         window.buyItem = async (id) => {
             if (isProcessing) return notify("Зачекайте, триває транзакція...");
             
@@ -869,11 +928,14 @@
             
             openModal("ПОКУПКА", msg, async () => {
                 isProcessing = true;
+                
+                // ПОКАЗАТЬ МОДАЛКУ ОБРАБОТКИ
                 document.getElementById('procTitle').innerText = "ПОКУПКА";
                 document.getElementById('procText').innerText = `Купівля: ${item.name}\nЦіна: ${item.price} 🪙`;
                 document.getElementById('processingModal').style.display = 'flex';
 
                 try {
+                    // ЗАДЕРЖКА
                     await new Promise(r => setTimeout(r, 1500));
 
                     await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
@@ -882,16 +944,17 @@
                     // LOG TO DISCORD
                     await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price);
                     
+                    document.getElementById('processingModal').style.display = 'none';
+                    closeModal();
                     notify("Покупка успішна!");
                 } catch(e) {
+                    document.getElementById('processingModal').style.display = 'none';
                     notify("Помилка транзакції");
                 } finally {
                     isProcessing = false;
-                    document.getElementById('processingModal').style.display = 'none';
-                    closeModal();
                 }
             });
-        };
+        }
 
         function initTrack(prizes) {
             const track = document.getElementById('track');
@@ -913,7 +976,6 @@
             return el;
         }
 
-        // --- TICKETS ---
         window.openPurchaseModal = () => {
             document.getElementById('purchaseModal').style.display = 'flex';
             updateTotalCost();
@@ -942,8 +1004,10 @@
             
             openModal("КУПІВЛЯ", msg, async () => {
                 isProcessing = true;
-                document.getElementById('procTitle').innerText = "КУПІВЛЯ";
-                document.getElementById('procText').innerText = `Обробка замовлення...\n${count} квитків за ${cost} 🪙`;
+                
+                // ПОКАЗАТЬ МОДАЛКУ ОБРАБОТКИ
+                document.getElementById('procTitle').innerText = "КУПІВЛЯ БИЛЕТІВ";
+                document.getElementById('procText').innerText = `Баланс: ${points}\nКупівля: ${count} квитків\nСписання: ${cost} 🪙`;
                 document.getElementById('processingModal').style.display = 'flex';
 
                 try {
@@ -955,15 +1019,17 @@
                     });
                     await addLog(userData.name, "SHOP", `Купив ${count} квитків`, -cost);
                     
+                    // SEND DISCORD
                     await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
-                    
+
+                    document.getElementById('processingModal').style.display = 'none';
+                    closeModal();
                     notify(`Куплено ${count} квитків!`);
                 } catch(e) {
+                    document.getElementById('processingModal').styleId.display = 'none';
                     notify("Помилка транзакції");
                 } finally {
                     isProcessing = false;
-                    document.getElementById('processingModal').style.display = 'none';
-                    closeModal();
                 }
             });
         };
@@ -992,6 +1058,8 @@
 
             const targetIdx = 60;
             const track = document.getElementById('track');
+            
+            // БЛОКИРОВКА РУЛЕТКИ ПЕРЕД АНИМАЦИЕЙ
             track.style.transition = 'none';
             track.style.transform = 'translateX(0)';
             track.innerHTML = "";
@@ -1004,6 +1072,9 @@
             const isMobile = window.innerWidth <= 900;
             const cardW = isMobile ? 150 : 220; 
             
+            // ИСПРАВЛЕНИЕ БАГА С ДЕРЖКИ
+            void track.offsetWidth(); 
+
             setTimeout(() => {
                 track.style.transition = 'transform 6s cubic-bezier(0.1, 0, 0.1, 1)';
                 const containerW = track.parentElement.clientWidth;
@@ -1019,19 +1090,21 @@
                 document.getElementById('spinBtn').disabled = false;
                 notify(`ВИТАЄМО! Ви виграли: ${winner.name}`);
                 
+                // DISCORD WIN
+                await sendLogToDiscord('win', userData, `Виграв: ${winner.name}`, 0);
+                
                 let upd = {};
                 const val = parseFloat(winner.actionValue) || 0;
 
-                // --- ЛОГІКА ВЫДАЧИ ДЕНЕГ ---
-                if (winner.actionType === 'points') upd = { points: (userData.points || 0) + val };
+                // Гроші (ВАЖНО)
+                if (winner.actionType === 'currency') upd = { currency: (userData.currency || 0) + Math.floor(val) };
+                else if (winner.actionType === 'points') upd = { points: (userData.points || 0) + val };
                 else if (winner.actionType === 'sub_points') upd = { points: (userData.points || 0) - val };
                 else if (winner.actionType === 'ticket') upd = { roulette_passes: (userData.roulette_passes || 0) + Math.floor(val) };
-                else if (winner.actionType === 'currency') upd = { currency: (userData.currency || 0) + Math.floor(val) }; // НОВИНКА
                 else upd = {};
 
                 if (Object.keys(upd).length > 0) await updateDoc(doc(db, "users", user.uid), upd);
                 await addLog("SYSTEM", userData.name, `Виграш: ${winner.name}`, 0);
-                await sendLogToDiscord('win', userData, `Виграв: ${winner.name}`, 0);
                 
                 renderRoulette();
             }, 6500);
@@ -1049,12 +1122,12 @@
             
             field.style.display = type === 'item' ? 'none' : 'block';
             
-            // ПОДПИСЬ СЕРАЯ ПРИ ВЫБОРЕ ВАЛЮТЫ
+            // ПОДПИСАТЬ СЕЛЕКТОР
             const input = field.querySelector('input');
             if(input) {
-                if(type === 'currency') {
+                if (type === 'currency') {
                     input.placeholder = "Сума в грн (автов * курс)";
-                } else if(type === 'ticket') {
+                } else if (type === 'ticket') {
                     input.placeholder = "Кількість квитків";
                 } else {
                     input.placeholder = "Значення";
@@ -1071,9 +1144,11 @@
             currentSlotBase64 = item.img || null;
             const btn = document.querySelector('.file-upload-btn');
             const prev = document.getElementById('slotImgPreview');
+            const loading = document.getElementById('uploadLoadingText');
             
             if(item.img) {
                 btn.innerText = "✅ ЗМІНИТИ ФОТО";
+                loading.style.display = 'none';
                 prev.src = item.img;
                 prev.style.display = 'block';
             } else {
@@ -1087,10 +1162,7 @@
             document.getElementById('newPrizeChance').value = item.chance || 0;
             document.getElementById('newPrizePrice').value = item.price || 0;
             
-            // Trigger input placeholder update
-            toggleActionValueField();
-
-            togglePrizeInputs(); 
+            togglePrizeInputs(); toggleActionValueField();
             document.getElementById('prizeForm').classList.add('edit-mode-active');
             document.getElementById('formTitle').innerText = 'Редагування слота';
             document.getElementById('savePrizeBtn').innerText = 'ОНОВИТИ';
@@ -1147,16 +1219,9 @@
                 const ref = doc(db, "users", id);
                 const s = await getDoc(ref);
                 const targetUser = s.data();
-                const curPoints = targetUser.points || 0;
-                const curCurrency = targetUser.currency || 0;
+                const cur = targetUser.points || 0;
                 
-                // If type is sub (minus), we subtract from points. 
-                // Wait, user said "Balance" usually means Points.
-                // Let's assume refill only affects Points unless specified? 
-                // The user prompt implies simple balance logic. Let's keep it to Points for simplicity based on previous context, unless they asked for currency refill.
-                // Actually, let's add currency refill support too if I have time. For now, stick to Points as requested in "Admin Refill" section.
-                
-                await updateDoc(ref, { points: type === 'add' ? curPoints + amt : curPoints - amt });
+                await updateDoc(ref, { points: type === 'add' ? cur + amt : cur - amt });
                 await addLog(userData.name, targetUser.name, `Адмін-корекція`, type==='add'?amt:-amt);
                 
                 const actionStr = type === 'add' ? `Нарахував ${amt} балів` : `Списав ${amt} балів`;
@@ -1204,7 +1269,7 @@
 
                 el.innerHTML = `
                     ${actionsHtml}
-                    <img src="${p.img}" style="width:35px; height:35px; object-fit:contain; margin-bottom:5px;">
+                    <img src="${p.img}" class="force-emoji" style="width:35px; height:35px; object-fit: contain; margin-bottom:5px;">
                     <div style="font-size:9px; font-weight:700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.name}</div>
                     <div style="font-size:8px; color:var(--text-gray)">${valDisplay}</div>
                 `;
@@ -1230,67 +1295,4 @@
 
                     list.innerHTML += `<div class="log-item">
                         <div class="log-left">
-                            <div class="log-icon">${icon}</div>
-                            <div>
-                                <div class="log-action">${l.action}</div>
-                                <span class="log-user">${l.from} ➔ ${l.to}</span>
-                            </div>
-                        </div>
-                        <div class="log-amount ${amountClass}">${amountSign}${l.amount !== 0 ? l.amount : ''}</div>
-                    </div>`;
-                });
-            });
-            const usersSnap = await getDocs(query(collection(db, "users")));
-            const select = document.getElementById('adminUserSelect');
-            if (!select) return;
-            select.innerHTML = '<option value="">Оберіть бійця...</option>';
-            usersSnap.forEach(d => {
-                const u = d.data();
-                if (['admin', 'instructor'].includes(u.role)) {
-                    select.innerHTML += `<option value="${d.id}">${u.name} (${u.points || 0} 🪙)</option>`;
-                }
-            });
-        }
-
-        async function addLog(from, to, action, amount) {
-            await addDoc(collection(db, "roulette_logs"), { from, to, action, amount, timestamp: serverTimestamp() });
-        }
-
-        window.openModal = (t, txt, act) => {
-            document.getElementById('modalTitle').innerText = t;
-            document.getElementById('modalText').innerText = txt;
-            document.getElementById('modalActionBtn').onclick = act;
-            document.getElementById('modal').style.display = 'flex';
-        };
-        window.closeModal = () => document.getElementById('modal').style.display = 'none';
-        
-        window.showPage = (id, btn) => {
-            document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.sidebar .menu-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(id + 'Page').classList.add('active');
-            if (btn) btn.classList.add('active');
-            
-            const label = id === 'roulette' ? 'РУЛЕТКА' : (id === 'shop' ? 'МАГАЗИН' : 'КОНСОЛЬ');
-            if (document.getElementById('footerPageLabel')) document.getElementById('footerPageLabel').innerText = label;
-            
-            localStorage.setItem('ryl_last_page', id);
-        };
-        
-        window.switchAdminTab = (tab, btn) => {
-            document.querySelectorAll('.admin-tab').forEach(t => t.style.display = 'none');
-            if (btn) {
-                const btns = btn.parentElement.querySelectorAll('.menu-btn');
-                btns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-            }
-            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
-            localStorage.setItem('ryl_last_admin_tab', tab);
-        };
-
-        window.startSpin = startSpin;
-        window.deletePrize = deletePrize;
-        window.processAdminRefill = processAdminRefill;
-        window.addPrizeToPool = addPrizeToPool;
-    </script>
-</body>
-</html>
+                            <div class="log-icon">${icon}</
