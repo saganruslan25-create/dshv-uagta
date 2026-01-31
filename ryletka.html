@@ -22,7 +22,7 @@
 
         * { box-sizing: border-box; }
 
-        /* 1. СКРОЛЛБАР В СТИЛЕ САЙТА */
+        /* СКРОЛЛБАР */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #05070a; }
         ::-webkit-scrollbar-thumb { 
@@ -45,10 +45,15 @@
             padding-bottom: 60px;
         }
 
-        /* Универсальный шрифт для всех элементов */
         button, .btn-main, .stat-item, .log-icon, .menu-btn, .price-tag, .toast, #footerRoleLabel, h1, h2, h3, h4, span, div {
             font-family: 'Inter', sans-serif !important;
         }
+
+        /* АНИМАЦИИ */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes glow { 0% { box-shadow: 0 0 5px var(--primary); } 50% { box-shadow: 0 0 20px var(--primary), 0 0 10px var(--primary-bright); } 100% { box-shadow: 0 0 5px var(--primary); } }
 
         .neon-text {
             text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow);
@@ -67,7 +72,9 @@
             display: flex; align-items: center; gap: 8px;
             background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border);
             padding: 10px 20px; border-radius: 15px; font-weight: 800; font-size: 14px;
+            transition: 0.3s;
         }
+        .stat-item:hover { background: rgba(255,255,255,0.1); }
 
         .main-container {
             display: grid; grid-template-columns: 280px 1fr; gap: 30px;
@@ -104,7 +111,6 @@
 
         .content-section { display: none; animation: fadeIn 0.5s ease; }
         .content-section.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* ROULETTE */
         .roulette-container {
@@ -128,14 +134,14 @@
         
         .track {
             display: flex; position: absolute; left: 0; top: 30px;
-            transition: transform 6s cubic-bezier(0.1, 0, 0.1, 1);
+            /* transition: transform 6s cubic-bezier(0.15, 0, 0.15, 1);  <-- Убираем анимацию отсюда, добавляем в JS */
             will-change: transform;
         }
         .prize-card {
-            min-width: 200px; width: 200px; height: 200px; margin: 0 10px;
+            width: 200px; height: 200px; margin: 0 10px;
             background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
             border-radius: 20px; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; padding: 15px;
+            justify-content: center; padding: 15px; flex-shrink: 0;
         }
         .prize-card img { width: 110px; height: 110px; object-fit: contain; }
         .prize-card span { font-size: 12px; font-weight: 900; margin-top: 12px; color: var(--text-gray); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
@@ -152,18 +158,12 @@
             max-width: 300px; width: 100%;
             position: relative; overflow: hidden;
         }
-        /* 7. Анимация пульсации для кнопки Спин */
-        .btn-spin:hover:not(:disabled) {
-            animation: pulse-green 1.5s infinite;
-        }
-        @keyframes pulse-green {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
-        }
-
-        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-main:hover:not(:disabled) { transform: translateY(-2px); }
+        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); }
+        
         .btn-buy { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4); }
+        .btn-buy:hover { box-shadow: 0 0 35px var(--accent-glow); }
+        
         .btn-spin { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
         .btn-spin:hover:not(:disabled) { border-color: var(--primary); color: white; box-shadow: 0 0 15px var(--primary-glow); }
 
@@ -171,9 +171,7 @@
         .input, .select, .textarea { 
             width: 100%; background: #000; border: 1px solid #222; color: white; 
             padding: 16px; border-radius: 12px; outline: none; box-sizing: border-box; font-family: 'Inter', sans-serif;
-            transition: 0.3s;
         }
-        .input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
         .textarea { min-height: 100px; resize: vertical; }
 
         .category-label {
@@ -209,22 +207,24 @@
             transition: max-height 0.4s ease-out, padding 0.4s ease;
         }
         .collapsible-info.open {
-            max-height: 500px;
+            max-height: 500px; 
             padding: 15px;
         }
 
         .shop-info-text { font-size: 14px; color: var(--text-gray); line-height: 1.6; white-space: pre-wrap; margin-top: 10px; }
 
-        /* 7. Анимация для карточек магазина */
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         .shop-card { 
             background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
             border-radius: 20px; padding: 25px; text-align: center; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center;
+            position: relative; overflow: hidden;
         }
+        /* Эффект наведения на карточки (Оптимизированно) */
         .shop-card:hover { 
             transform: translateY(-5px); 
-            border-color: var(--primary);
-            box-shadow: 0 5px 20px rgba(34, 197, 94, 0.2);
+            border-color: var(--primary); 
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.1); 
         }
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
@@ -265,10 +265,11 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #toastContainer { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); animation: fadeIn 0.3s; }
+        /* Анимация тоста */
+        .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); animation: slideDown 0.3s ease-out; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
-        .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; overflow: hidden; max-height: 90vh; overflow-y: auto; }
+        .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; overflow: hidden; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.3s ease; }
 
         .edit-mode-active { border-color: var(--accent) !important; box-shadow: 0 0 15px var(--accent-glow); }
 
@@ -291,26 +292,15 @@
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
         .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top: 5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
 
-        /* 6. КНОПКА СОХРАНЕНИЯ (Максимальный приоритет) */
+        /* Кнопка Сохранить */
         #saveSettingsBtn {
             width: 100% !important;
             box-sizing: border-box !important;
-            height: 55px !important;
+            height: 50px !important;
             font-size: 16px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
-        }
-        
-        /* Стили карточек слотов */
-        .manage-card-wrapper {
-            background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); 
-            border-radius: 10px; padding: 10px; position: relative; 
-            transition: transform 0.2s;
-        }
-        .manage-card-wrapper:hover {
-            transform: translateY(-3px);
-            border-color: var(--primary);
         }
 
         @media (max-width: 900px) {
@@ -319,7 +309,7 @@
             .menu-btn { white-space: nowrap; padding: 10px 15px; font-size: 11px; }
             .spin-actions { flex-direction: column; width: 100%; align-items: center; }
             .btn-main { max-width: 100%; width: 100%; }
-            .prize-card { min-width: 140px; width: 140px; height: 140px; margin: 0 5px; }
+            .prize-card { width: 140px; height: 140px; margin: 0 5px; }
             .prize-card img { width: 70px; height: 70px; }
             .status-bar { font-size: 8px; padding: 0 10px; }
         }
@@ -435,7 +425,7 @@
                             <small style="color: var(--accent); font-weight: 700;">У вас недостатньо прав для зміни балансів.</small>
                         </div>
                         <div style="display:flex; flex-direction:column; gap:15px;">
-                            <select id="adminUserSelect" class="select"><option value="">Оберіть користувача...</option></select>
+                            <select id="adminUserSelect" class="select"><option value="">Оберіть користувача (Адмін/Інструктор)...</option></select>
                             
                             <select id="refillType" class="select">
                                 <option value="add_points">НАРАХУВАТИ БАЛИ (+)</option>
@@ -468,7 +458,6 @@
                                     <input type="file" id="newPrizeImgFile" accept="image/*" onchange="processSlotImage(this)">
                                 </div>
                             </div>
-                            
                             <div style="text-align: center; margin-bottom: 10px; min-height: 50px;">
                                 <img id="slotImgPreview" class="img-preview-small" style="margin: 0 auto; display: inline-block;">
                             </div>
@@ -487,7 +476,8 @@
                                 </select>
                             </div>
                             
-                            <div id="rouletteFields" style="margin-bottom:12px;">
+                            <!-- 2. Поле шанса скрыто, если включен авто-режим -->
+                            <div id="rouletteFields" style="margin-bottom:12px; display:none;">
                                 <input type="number" step="0.001" id="newPrizeChance" class="input" placeholder="Шанс випадіння %">
                                 <small id="autoOddsHint" style="color:var(--primary); font-size:10px; display:none; margin-top:5px;">* Шанси ігноруються через активний авто-розподіл</small>
                             </div>
@@ -532,7 +522,7 @@
         </div>
     </footer>
 
-    <!-- EXCHANGE MODAL -->
+    <!-- EXCHANGE MODAL (4. Убрана таблица) -->
     <div id="exchangeModal" class="modal">
         <div class="modal-inner">
             <h3 class="neon-text" style="font-size:18px; margin:0;">ОБМІН БАЛІВ</h3>
@@ -551,7 +541,6 @@
                 <span id="exchangeResult" style="font-size: 24px; font-weight: 900; color: var(--currency);">0</span> <span style="font-size:14px;">грн</span>
             </div>
 
-            <!-- 4. Убран блок с инструкцией -->
             <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="document.getElementById('exchangeModal').style.display='none'">ВІДМІНА</button>
                 <button id="confirmExchangeBtn" class="btn-main" style="background:var(--currency); color:black; font-size:12px; flex: 1; min-width: 120px;" onclick="window.confirmExchange()">ОБМІНЯТИ</button>
@@ -597,7 +586,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -614,7 +603,7 @@
 
         let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
         let currentSlotBase64 = null;
-        let isProcessing = false; // GLOBAL LOCK
+        let isProcessing = false; 
 
         window.toggleShopInfo = () => {
             const el = document.getElementById('shopInfoText');
@@ -630,58 +619,23 @@
             setTimeout(() => toast.remove(), 4000);
         }
 
-        // --- DISCORD ---
         async function sendLogToDiscord(type, userObj, description, amount = 0) {
             if (!webhookUrl || !webhookUrl.startsWith("https://discord")) return;
-
-            let color = 0; 
-            let icon = "📄";
-            let title = "Лог";
-
-            if (type === 'buy') {
-                color = 5793266; 
-                icon = "🛒";
-                title = "ПОКУПКА";
-            } else if (type === 'win') {
-                color = 15105570; 
-                icon = "🎉";
-                title = "ВИГРАШ";
-            } else if (type === 'admin') {
-                color = 16007990; 
-                icon = "⚙️";
-                title = "АДМІНІСТРУВАННЯ";
-            } else if (type === 'exchange') {
-                color = 11206584; // Purple
-                icon = "💸";
-                title = "ОБМІН";
-            }
+            let color = 0, icon = "📄", title = "Лог";
+            if (type === 'buy') { color = 5793266; icon = "🛒"; title = "ПОКУПКА"; }
+            else if (type === 'win') { color = 15105570; icon = "🎉"; title = "ВИГРАШ"; }
+            else if (type === 'admin') { color = 16007990; icon = "⚙️"; title = "АДМІНІСТРУВАННЯ"; }
+            else if (type === 'exchange') { color = 11206584; icon = "💸"; title = "ОБМІН"; }
 
             let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
-            if (amount !== 0) {
-                desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
-            }
+            if (amount !== 0) desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
 
             const payload = {
                 username: "Реєстр сайту",
                 avatar_url: "https://cdn-icons-png.flaticon.com/512/806/806068.png",
-                embeds: [{
-                    title: `${icon} ${title}`,
-                    description: desc,
-                    color: color,
-                    footer: { text: `ID: ${userObj.uid}` },
-                    timestamp: new Date().toISOString()
-                }]
+                embeds: [{ title: `${icon} ${title}`, description: desc, color: color, footer: { text: `ID: ${userObj.uid}` }, timestamp: new Date().toISOString() }]
             };
-
-            try {
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-            } catch (e) {
-                console.error("Discord Webhook Error:", e);
-            }
+            try { await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); } catch (e) {}
         }
 
         onAuthStateChanged(auth, async (u) => {
@@ -713,7 +667,6 @@
         function applyRoleRestrictions() {
             if (!userData) return;
             const isAdmin = userData.role === 'admin';
-            
             if (!isAdmin) {
                 if (document.getElementById('prizeFormActions')) document.getElementById('prizeFormActions').style.display = 'none';
                 if (document.getElementById('instructorNotice')) document.getElementById('instructorNotice').style.display = 'block';
@@ -722,21 +675,14 @@
                 if (document.getElementById('autoOddsToggle')) document.getElementById('autoOddsToggle').disabled = true;
                 
                 const adminInputs = document.querySelectorAll('#adminPage input:not(#adminUserSelect), #adminPage textarea, #adminPage button');
-                adminInputs.forEach(inp => {
-                    if(inp.id !== 'adminUserSelect') inp.disabled = true;
-                });
+                adminInputs.forEach(inp => { if(inp.id !== 'adminUserSelect') inp.disabled = true; });
             }
         }
 
         function restorePageState() {
             const lastPage = localStorage.getItem('ryl_last_page') || 'roulette';
             const pageBtn = document.querySelector(`.sidebar button[onclick*="'${lastPage}'"]`);
-            if (pageBtn) {
-                showPage(lastPage, pageBtn);
-            } else {
-                showPage('roulette', document.getElementById('nav-roulette'));
-            }
-
+            if (pageBtn) { showPage(lastPage, pageBtn); } else { showPage('roulette', document.getElementById('nav-roulette')); }
             if (lastPage === 'admin') {
                 const lastAdminTab = localStorage.getItem('ryl_last_admin_tab') || 'logs';
                 const tabBtn = document.querySelector(`.admin-box button[onclick*="'${lastAdminTab}'"]`);
@@ -774,7 +720,6 @@
 
         window.saveSettings = async () => {
             if (userData.role !== 'admin') return notify("У вас немає прав!");
-            
             const btn = document.getElementById('saveSettingsBtn');
             const originalText = btn.innerText;
             btn.innerText = "⏳ СОХРАНЕННЯ...";
@@ -786,34 +731,18 @@
 
             try {
                 if (!rate) throw new Error("Вкажіть курс!");
-                
-                exchangeRate = rate;
-                infoText = text;
-                webhookUrl = url;
-
-                await setDoc(doc(db, "configs", "roulette"), { 
-                    exchangeRate: rate, 
-                    infoText: text,
-                    webhookUrl: url 
-                }, { merge: true });
+                exchangeRate = rate; infoText = text; webhookUrl = url;
+                await setDoc(doc(db, "configs", "roulette"), { exchangeRate: rate, infoText: text, webhookUrl: url }, { merge: true });
                 notify("Налаштування оновлено!");
                 updateShopDisplay();
-            } catch (e) {
-                notify(e.message || "Помилка");
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
+            } catch (e) { notify(e.message || "Помилка"); } finally { btn.innerText = originalText; btn.disabled = false; }
         }
 
         function updateShopDisplay() {
             const rateEl = document.getElementById('shopRateDisplay');
             if(rateEl) rateEl.innerText = exchangeRate;
-            
             const textEl = document.getElementById('shopInfoText');
-            if(textEl) {
-                textEl.innerHTML = `<div class="shop-info-text">${infoText}</div>`;
-            }
+            if(textEl) { textEl.innerHTML = `<div class="shop-info-text">${infoText}</div>`; }
         }
 
         window.toggleAutoOdds = async (val) => {
@@ -826,7 +755,12 @@
 
         function toggleAutoOddsUI(val) {
             const hint = document.getElementById('autoOddsHint');
-            if (hint) hint.style.display = val ? 'block' : 'none';
+            // 2. Скрываем поле ввода шансов если включен авто
+            const rouletteFields = document.getElementById('rouletteFields');
+            if (rouletteFields) {
+                if (val) rouletteFields.style.display = 'none';
+                else rouletteFields.style.display = 'block';
+            }
         }
 
         function loadPrizes() {
@@ -876,145 +810,24 @@
             });
         }
 
-        // --- EXCHANGE LOGIC ---
-        window.openExchangeModal = () => {
-            document.getElementById('exchangeModal').style.display = 'flex';
-            updateExchangeCalc();
-        };
-
-        window.updateExchangeCalc = () => {
-            const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
-            const res = Math.floor(pts * exchangeRate);
-            document.getElementById('exchangeResult').innerText = res.toLocaleString();
-            document.getElementById('exCurrentPoints').innerText = userData.points || 0;
-            document.getElementById('exRateDisplay').innerText = exchangeRate;
-        };
-
-        window.confirmExchange = async () => {
-            if (isProcessing) return notify("Зачекайте, триває транзакція...");
-            
-            const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
-            if(pts < 1) return notify("Мінімум 1 бал");
-            const currentPts = userData.points || 0;
-            if(pts > currentPts) return notify("Недостатньо балів!");
-
-            const moneyVal = Math.floor(pts * exchangeRate);
-            const msg = `Обміняти ${pts} балів на ${moneyVal} грн?`;
-            
-            document.getElementById('exchangeModal').style.display = 'none';
-            openModal("ОБМІН", msg, async () => {
-                isProcessing = true;
-                document.getElementById('procTitle').innerText = "ОБМІН";
-                document.getElementById('procText').innerText = `Підключення до банку...\n${pts} ⚪ ➔ ${moneyVal} грн`;
-                document.getElementById('processingModal').style.display = 'flex';
-
-                try {
-                    await new Promise(r => setTimeout(r, 2000));
-
-                    await updateDoc(doc(db, "users", user.uid), { 
-                        points: currentPts - pts,
-                        currency: (userData.currency || 0) + moneyVal
-                    });
-                    // 8. Try catch для логов
-                    try { await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`); } catch(e){}
-                    try { await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`); } catch(e){}
-                    
-                    notify("Успішно обміняно!");
-                } catch(e) {
-                    notify("Помилка транзакції");
-                } finally {
-                    isProcessing = false;
-                    document.getElementById('processingModal').style.display = 'none';
-                }
-            });
-        };
-
-        // --- BUY ITEM (SHOP) ---
-        window.buyItem = async (id) => {
-            if (isProcessing) return notify("Зачекайте, триває транзакція...");
-            
-            const item = prizePool.find(p => p.id === id);
-            if (!item) return;
-            const points = userData.points || 0;
-            const isDebt = points < (item.price || 0);
-            const msg = isDebt ? `У вас недостатньо балів (${points}). Баланс піде в борг. Купити ${item.name}?` : `Купити ${item.name} за ${item.price} балів?`;
-            
-            openModal("ПОКУПКА", msg, async () => {
-                isProcessing = true;
-                document.getElementById('procTitle').innerText = "ПОКУПКА";
-                document.getElementById('procText').innerText = `Купівля: ${item.name}\nЦіна: ${item.price} ⚪`;
-                document.getElementById('processingModal').style.display = 'flex';
-
-                try {
-                    await new Promise(r => setTimeout(r, 1500));
-
-                    await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
-                    try { await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price); } catch(e){}
-                    try { await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price); } catch(e){}
-                    
-                    notify("Покупка успішна!");
-                } catch(e) {
-                    notify("Помилка транзакції");
-                } finally {
-                    isProcessing = false;
-                    document.getElementById('processingModal').style.display = 'none';
-                    closeModal();
-                }
-            });
-        };
-
-        // 2. Weighted Random Selection (Fix for percentages)
-        function getWeightedRandomItem() {
-            if (isAutoOdds) {
-                return prizePool[Math.floor(Math.random() * prizePool.length)];
-            }
-            
-            let totalWeight = 0;
-            prizePool.forEach(p => {
-                totalWeight += (p.chance || 0);
-            });
-
-            if (totalWeight === 0) {
-                // Если шансы не заданы, рандомно (как было, защита от 0%)
-                return prizePool[Math.floor(Math.random() * prizePool.length)];
-            }
-
-            let random = Math.random() * totalWeight;
-            let cursor = 0;
-            
-            for (let p of prizePool) {
-                cursor += (p.chance || 0);
-                if (random < cursor) {
-                    return p;
-                }
-            }
-            return prizePool[0]; // fallback
-        }
-
+        // 3. ИСПРАВЛЕНА ЛОГИКА РУЛЕТКИ
         let trackOffset = 0; 
 
-        // 3. FIX EMPTY TRACK BUG
         function initTrack(prizes) {
             const track = document.getElementById('track');
             if (!track || prizes.length < 2) return;
+            if (isSpinning) return; 
             
-            // ВАЖНО: Если полоса не пустая и мы не в режиме редактирования призов, не трогаем её
-            // Это предотвращает исчезновение слотов во время игры
-            if (track.children.length > 0 && !editingId) return; 
+            if(track.children.length > 0) return;
 
-            track.style.transition = 'none';
-            track.innerHTML = ""; // Очищаем только если пусто или редактируем
-            
+            // Заполняем трек случайными призами, но достаточно длинным (40 элементов)
             for (let i = 0; i < 40; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
             
-            if (trackOffset === 0) {
-                track.style.transform = 'translateX(0)';
-            } else {
-                track.style.transform = `translateX(${trackOffset}px)`;
-            }
+            track.style.transition = 'none';
+            track.style.transform = 'translateX(0)';
         }
 
         function createPrizeNode(p) {
@@ -1022,6 +835,23 @@
             el.className = 'prize-card';
             el.innerHTML = `<img src="${p.img}"><span>${p.name}</span>`;
             return el;
+        }
+
+        // 2. АЛГОРИТМ ВЗВЕШЕННОГО ВЫБИРАННЯ
+        function getWinner() {
+            if (isAutoOdds) {
+                return prizePool[Math.floor(Math.random() * prizePool.length)];
+            } else {
+                let totalChance = prizePool.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
+                if (totalChance <= 0) return prizePool[Math.floor(Math.random() * prizePool.length)];
+                
+                let random = Math.random() * totalChance;
+                for (let p of prizePool) {
+                    random -= (parseFloat(p.chance) || 0);
+                    if (random <= 0) return p;
+                }
+                return prizePool[prizePool.length - 1];
+            }
         }
 
         window.startSpin = () => {
@@ -1034,37 +864,47 @@
             const track = document.getElementById('track');
             const cardWidth = 220; 
             
-            // ИСПРАВЛЕНО: Weighted Random
-            const winPrize = getWeightedRandomItem();
+            // 3. ОПРЕДЕЛЯЕМ ПОБЕДИТЕЛЯ СРАЗУ
+            const winPrize = getWinner();
             
-            // Находим индекс приза в массиве
-            // Чтобы визуально рулетка остановилась на нужной картинке, нужно попасть на нее
-            const prizeIndex = prizePool.indexOf(winPrize); // Индекс в пуле
+            // ДОБАВЛЯЕМ ЭТОТ ПОБЕДИТЕЛЬ В КОНЕЦ ТРЕКА
+            const winCardNode = createPrizeNode(winPrize);
+            // Добавляем 3 пустых слота после выигрыша для отступа (визуально)
+            const emptySpacer = document.createElement('div');
+            emptySpacer.style.width = "200px";
             
-            const extraSpins = 4 * (40 * cardWidth); 
-            const targetOffset = extraSpins + (prizeIndex * cardWidth);
+            track.appendChild(winCardNode);
+            track.appendChild(emptySpacer); 
             
-            trackOffset -= targetOffset;
+            // ВЫЧИСЛЯЕМ СМЕЩЕНИЕ: Нужно докрутить так, чтобы winCardNode был в центре.
+            // Центр carousel-outer это 50%. Центр карточки это offset + ширина/2.
+            // Дополнительно добавляем несколько полных прокруток для эффектности (3 круга * ширина трека)
+            const trackWidth = track.children.length * cardWidth;
+            const spinDistance = (3 * trackWidth) + (trackWidth - (cardWidth/2) - 50); 
+            // -50 это половина отступа margins и центрирование pointer
             
-            track.style.transition = 'transform 6s cubic-bezier(0.1, 0, 0.1, 1)';
+            trackOffset -= spinDistance;
+            
+            track.style.transition = 'transform 6s cubic-bezier(0.15, 0, 0.15, 1)'; // Плавное затухание
             track.style.transform = `translateX(${trackOffset}px)`;
             
             setTimeout(async () => {
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
                 
-                const actualModulo = Math.abs(trackOffset) % (40 * cardWidth);
-                const newSafeOffset = -(actualModulo + (40 * cardWidth)); 
-                
-                track.style.transition = 'none';
-                track.style.transform = `translateX(${newSafeOffset}px)`;
-                trackOffset = newSafeOffset;
-
-                try {
-                    await processWin(winPrize);
-                } catch(e) {
-                    console.error("Win process error", e);
+                // Очистка старых элементов DOM, чтобы не было переполнения памяти
+                // Удаляем все элементы ДО последнего добавленного (который мы видели)
+                while (track.children.length > 10) {
+                    track.removeChild(track.firstChild);
                 }
+                // Сбрасываем смещение без анимации, чтобы не улетели в минус бесконечность
+                // Но визуально элементы уже на месте.
+                const newOffset = - ((track.children.length - 1) * cardWidth) + 50; 
+                track.style.transition = 'none';
+                track.style.transform = `translateX(${newOffset}px)`;
+                trackOffset = newOffset;
+
+                await processWin(winPrize);
             }, 6000);
         };
 
@@ -1082,8 +922,8 @@
                 await updateDoc(doc(db, "users", user.uid), { roulette_passes: (uData.roulette_passes || 0) + parseInt(prize.actionVal) });
             }
             
-            try { await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name); } catch(e){}
-            try { await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name); } catch(e){}
+            await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name);
+            await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
             
             notify(`Ви виграли: ${prize.name}!`);
         }
@@ -1093,14 +933,11 @@
             const c = parseInt(document.getElementById('ticketCount').value) || 1;
             document.getElementById('totalCostDisplay').innerText = (c * 100) + " ⚪";
         };
-
         window.confirmPurchase = async () => {
              if (isProcessing) return notify("Зачекайте...");
              const count = parseInt(document.getElementById('ticketCount').value) || 1;
              const cost = count * 100;
-             
              if ((userData.points || 0) < cost) return notify("Недостатньо балів!");
-             
              isProcessing = true;
              document.getElementById('procTitle').innerText = "ПОКУПКА";
              document.getElementById('procText').innerText = `Оформлення замовлення...\n${count} квитків`;
@@ -1108,41 +945,100 @@
 
              try {
                 await new Promise(r => setTimeout(r, 1000));
-                await updateDoc(doc(db, "users", user.uid), { 
-                    points: (userData.points || 0) - cost,
-                    roulette_passes: (userData.roulette_passes || 0) + count
-                });
-                try { await addLog(userData.name, "SHOP", `Купив квитки`, -cost); } catch(e){}
+                await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - cost, roulette_passes: (userData.roulette_passes || 0) + count });
+                await addLog(userData.name, "SHOP", `Купив квитки`, -cost);
                 document.getElementById('purchaseModal').style.display = 'none';
                 notify(`Куплено ${count} квитків!`);
-             } catch(e) {
-                 notify("Помилка");
-             } finally {
-                 isProcessing = false;
-                 document.getElementById('processingModal').style.display = 'none';
-             }
+             } catch(e) { notify("Помилка"); } finally { isProcessing = false; document.getElementById('processingModal').style.display = 'none'; }
         };
 
-        // --- ADMIN ---
+        window.openExchangeModal = () => {
+            document.getElementById('exchangeModal').style.display = 'flex';
+            updateExchangeCalc();
+        };
+        window.updateExchangeCalc = () => {
+            const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
+            const res = Math.floor(pts * exchangeRate);
+            document.getElementById('exchangeResult').innerText = res.toLocaleString();
+            document.getElementById('exCurrentPoints').innerText = userData.points || 0;
+            document.getElementById('exRateDisplay').innerText = exchangeRate;
+        };
+        window.confirmExchange = async () => {
+            if (isProcessing) return notify("Зачекайте...");
+            const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
+            if(pts < 1) return notify("Мінімум 1 бал");
+            const currentPts = userData.points || 0;
+            if(pts > currentPts) return notify("Недостатньо балів!");
+            const moneyVal = Math.floor(pts * exchangeRate);
+            const msg = `Обміняти ${pts} балів на ${moneyVal} грн?`;
+            
+            document.getElementById('exchangeModal').style.display = 'none';
+            openModal("ОБМІН", msg, async () => {
+                isProcessing = true;
+                document.getElementById('procTitle').innerText = "ОБМІН";
+                document.getElementById('procText').innerText = `Підключення до банку...\n${pts} ⚪ ➔ ${moneyVal} грн`;
+                document.getElementById('processingModal').style.display = 'flex';
+
+                try {
+                    await new Promise(r => setTimeout(r, 2000));
+                    await updateDoc(doc(db, "users", user.uid), { points: currentPts - pts, currency: (userData.currency || 0) + moneyVal });
+                    await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`);
+                    await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
+                    notify("Успішно обміняно!");
+                } catch(e) { notify("Помилка транзакції"); } finally { isProcessing = false; document.getElementById('processingModal').style.display = 'none'; }
+            });
+        };
+
+        window.buyItem = async (id) => {
+            if (isProcessing) return notify("Зачекайте...");
+            const item = prizePool.find(p => p.id === id);
+            if (!item) return;
+            const points = userData.points || 0;
+            const isDebt = points < (item.price || 0);
+            const msg = isDebt ? `У вас недостатньо балів (${points}). Баланс піде в борг. Купити ${item.name}?` : `Купити ${item.name} за ${item.price} балів?`;
+            
+            openModal("ПОКУПКА", msg, async () => {
+                isProcessing = true;
+                document.getElementById('procTitle').innerText = "ПОКУПКА";
+                document.getElementById('procText').innerText = `Купівля: ${item.name}\nЦіна: ${item.price} ⚪`;
+                document.getElementById('processingModal').style.display = 'flex';
+
+                try {
+                    await new Promise(r => setTimeout(r, 1500));
+                    await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
+                    await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price);
+                    await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price);
+                    notify("Покупка успішна!");
+                } catch(e) { notify("Помилка транзакції"); } finally { isProcessing = false; document.getElementById('processingModal').style.display = 'none'; closeModal(); }
+            });
+        };
+
         function loadAdminData() {
-            // 1. Filter users to Admins and Instructors only
-            const q = query(collection(db, "users"), where("role", "in", ["admin", "instructor"]));
-            onSnapshot(q, (snap) => {
+            // 1. ФИЛЬТР ПОЛЬЗОВАТЕЛЕЙ (ТОЛЬКО АДМИН И ИНСТРУКТОР)
+            onSnapshot(collection(db, "users"), (snap) => {
                 const sel = document.getElementById('adminUserSelect');
                 if(sel) {
-                    sel.innerHTML = '<option value="">Оберіть користувача...</option>';
+                    sel.innerHTML = '<option value="">Оберіть користувача (Адмін/Інструктор)...</option>';
                     snap.forEach(d => {
                         const u = d.data();
-                        sel.innerHTML += `<option value="${d.id}">${u.name} (${u.points || 0}⚪, ${u.currency || 0}₴)</option>`;
+                        // Проверка роли
+                        if (u.role === 'admin' || u.role === 'instructor') {
+                            sel.innerHTML += `<option value="${d.id}">${u.name} (${u.points || 0}⚪, ${u.currency || 0}₴)</option>`;
+                        }
                     });
                 }
             });
             
-            const qLogs = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
-            onSnapshot(qLogs, (snap) => {
+            // 8. ЛОГИ (ИСПРАВЛЕНО)
+            const q = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
+            onSnapshot(q, (snap) => {
                 const list = document.getElementById('logsList');
                 if(!list) return;
                 list.innerHTML = "";
+                if(snap.empty) {
+                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px;'>Логів немає</div>";
+                    return;
+                }
                 snap.forEach(d => {
                     const l = d.data();
                     const isPlus = l.action.includes('+');
@@ -1163,19 +1059,11 @@
         }
         
         async function addLog(user, type, desc, amount) {
-            try {
-                await addDoc(collection(db, "roulette_logs"), {
-                    user, type, desc, amount, timestamp: serverTimestamp()
-                });
-            } catch(e) {
-                console.error("Log write failed", e);
-            }
+            await addDoc(collection(db, "roulette_logs"), { user, type, desc, amount, timestamp: serverTimestamp() });
         }
 
-        // 8. Process Admin Refill (Balances)
         window.processAdminRefill = async () => {
             if (userData.role !== 'admin') return notify("Access denied");
-            
             const uid = document.getElementById('adminUserSelect').value;
             const type = document.getElementById('refillType').value;
             const amount = parseFloat(document.getElementById('refillAmount').value);
@@ -1193,77 +1081,47 @@
                 let logDesc = "";
                 let logAmount = "";
 
-                if (type === 'add_points') {
-                    updateData.points = (data.points || 0) + amount;
-                    logDesc = "Додавання балів";
-                    logAmount = `+${amount}`;
-                } else if (type === 'sub_points') {
-                    updateData.points = (data.points || 0) - amount;
-                    logDesc = "Списання балів";
-                    logAmount = `-${amount}`;
-                } else if (type === 'add_currency') {
-                    updateData.currency = (data.currency || 0) + amount;
-                    logDesc = "Додавання валюти";
-                    logAmount = `+${amount} грн`;
-                } else if (type === 'sub_currency') {
-                    updateData.currency = (data.currency || 0) - amount;
-                    logDesc = "Списання валюти";
-                    logAmount = `-${amount} грн`;
-                }
+                if (type === 'add_points') { updateData.points = (data.points || 0) + amount; logDesc = "Додавання балів"; logAmount = `+${amount}`; }
+                else if (type === 'sub_points') { updateData.points = (data.points || 0) - amount; logDesc = "Списання балів"; logAmount = `-${amount}`; }
+                else if (type === 'add_currency') { updateData.currency = (data.currency || 0) + amount; logDesc = "Додавання валюти"; logAmount = `+${amount} грн`; }
+                else if (type === 'sub_currency') { updateData.currency = (data.currency || 0) - amount; logDesc = "Списання валюти"; logAmount = `-${amount} грн`; }
 
                 await updateDoc(doc(db, "users", uid), updateData);
-                try { await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount); } catch(e){}
-                try { await sendLogToDiscord('admin', userData, `${logDesc} ${data.name}`, logAmount); } catch(e){}
+                await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
+                await sendLogToDiscord('admin', userData, `${logDesc} ${data.name}`, logAmount);
                 notify("Успішно!");
-            } catch(e) {
-                notify("Помилка: " + e.message);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "ЗАСТОСУВАТИ";
-            }
+            } catch(e) { notify("Помилка: " + e.message); } finally { btn.disabled = false; btn.innerText = "ЗАСТОСУВАТИ"; }
         };
 
         function renderManage() {
             const rouletteGrid = document.getElementById('manageRouletteGrid');
             const shopGrid = document.getElementById('manageShopGrid');
             if(!rouletteGrid) return;
-            
-            rouletteGrid.innerHTML = "";
-            shopGrid.innerHTML = "";
-            
+            rouletteGrid.innerHTML = ""; shopGrid.innerHTML = "";
             const rItems = prizePool.filter(p => p.category === 'roulette' || !p.category);
             const sItems = prizePool.filter(p => p.category === 'shop');
-            
             rItems.forEach(p => rouletteGrid.innerHTML += renderManageCard(p));
             sItems.forEach(p => shopGrid.innerHTML += renderManageCard(p));
         }
         
-        // 2. Render Manage Card with Percentage Display
         function renderManageCard(p) {
             const isAdmin = userData.role === 'admin';
-            // Отображаем шанс если это рулетка (или без категории)
-            const isRoulette = !p.category || p.category === 'roulette';
-            const chanceDisplay = isRoulette ? `<div style="font-size:10px; color:var(--primary); font-weight:700; margin-top:4px;">Шанс: ${p.chance}%</div>` : '';
-
             return `
-                <div class="manage-card-wrapper">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); border-radius:10px; padding:10px; position:relative;">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; display:block; margin:0 auto;">
                     <div style="font-size:10px; text-align:center; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
-                    ${chanceDisplay}
                     ${isAdmin ? `
                         <div style="display:flex; gap:5px; margin-top:5px;">
-                            <button onclick="window.editPrize('${p.id}')" style="flex:1; background:#333; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✎</button>
-                            <button onclick="window.deletePrize('${p.id}')" style="flex:1; background:#500; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✕</button>
+                            <button onclick="editPrize('${p.id}')" style="flex:1; background:#333; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✎</button>
+                            <button onclick="deletePrize('${p.id}')" style="flex:1; background:#500; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✕</button>
                         </div>
                     ` : ''}
                 </div>
             `;
         }
         
+        // 5. ПЛАВНЫЙ СКРОЛЛ К ФОРМЕ РЕДАКТИРОВАНИЯ
         window.editPrize = (id) => {
-            // 5. Smooth Scroll to Edit Form
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
             const p = prizePool.find(x => x.id === id);
             if(!p) return;
             editingId = id;
@@ -1277,16 +1135,16 @@
             
             currentSlotBase64 = p.img;
             const prev = document.getElementById('slotImgPreview');
-            if(prev) {
-                prev.src = p.img;
-                prev.style.display = 'block';
-            }
+            if(prev) { prev.src = p.img; prev.style.display = 'block'; }
             
             togglePrizeInputs();
             toggleActionValueField();
             
             document.getElementById('cancelEditBtn').style.display = 'block';
             document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ";
+            
+            // СКРОЛЛИМ К ФОРМЕ
+            document.getElementById('prizeForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
         };
         
         window.resetPrizeForm = () => {
@@ -1301,10 +1159,7 @@
             
             currentSlotBase64 = null;
             const prev = document.getElementById('slotImgPreview');
-            if(prev) {
-                prev.style.display = 'none';
-                prev.src = '';
-            }
+            if(prev) { prev.style.display = 'none'; prev.src = ''; }
             
             togglePrizeInputs();
             toggleActionValueField();
@@ -1327,18 +1182,11 @@
                 img: currentSlotBase64
             };
             
-            if (editingId) {
-                await updateDoc(doc(db, "roulette_prizes", editingId), data);
-                resetPrizeForm();
-            } else {
-                await addDoc(collection(db, "roulette_prizes"), data);
-                resetPrizeForm();
-            }
+            if (editingId) { await updateDoc(doc(db, "roulette_prizes", editingId), data); resetPrizeForm(); } 
+            else { await addDoc(collection(db, "roulette_prizes"), data); resetPrizeForm(); }
         };
         
-        window.deletePrize = async (id) => {
-            if(confirm("Видалити слот?")) await deleteDoc(doc(db, "roulette_prizes", id));
-        };
+        window.deletePrize = async (id) => { if(confirm("Видалити слот?")) await deleteDoc(doc(db, "roulette_prizes", id)); };
 
         window.processSlotImage = (input) => {
             if (input.files && input.files[0]) {
@@ -1355,10 +1203,7 @@
                         currentSlotBase64 = canvas.toDataURL('image/jpeg', 0.7);
                         
                         const preview = document.getElementById('slotImgPreview');
-                        if (preview) {
-                            preview.src = currentSlotBase64;
-                            preview.style.display = 'block';
-                        }
+                        if (preview) { preview.src = currentSlotBase64; preview.style.display = 'block'; }
                     };
                     img.src = e.target.result;
                 };
@@ -1368,10 +1213,9 @@
         
         window.togglePrizeInputs = () => {
             const cat = document.getElementById('newPrizeCategory').value;
-            document.getElementById('rouletteFields').style.display = cat === 'roulette' ? 'block' : 'none';
+            document.getElementById('rouletteFields').style.display = cat === 'roulette' && !isAutoOdds ? 'block' : 'none';
             document.getElementById('shopFields').style.display = cat === 'shop' ? 'block' : 'none';
         };
-        
         window.toggleActionValueField = () => {
             const act = document.getElementById('newPrizeActionType').value;
             document.getElementById('actionValField').style.display = act !== 'item' ? 'block' : 'none';
@@ -1380,23 +1224,18 @@
         window.showPage = (pageId, btn) => {
             document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
             document.getElementById(pageId + 'Page').classList.add('active');
-            
             document.querySelectorAll('.sidebar button').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
-            
             document.getElementById('footerPageLabel').innerText = btn.innerText;
             localStorage.setItem('ryl_last_page', pageId);
         };
-        
         window.switchAdminTab = (tab, btn) => {
             document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
             document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = 'block';
-            
             document.querySelectorAll('.admin-box button').forEach(el => el.classList.remove('active'));
             btn.classList.add('active');
             localStorage.setItem('ryl_last_admin_tab', tab);
         };
-        
         window.openModal = (title, text, action) => {
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalText').innerText = text;
@@ -1404,7 +1243,6 @@
             btn.onclick = action;
             document.getElementById('modal').style.display = 'flex';
         };
-        
         window.closeModal = () => document.getElementById('modal').style.display = 'none';
     </script>
 </body>
