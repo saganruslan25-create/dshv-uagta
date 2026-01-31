@@ -152,6 +152,16 @@
             max-width: 300px; width: 100%;
             position: relative; overflow: hidden;
         }
+        /* 7. Анимация пульсации для кнопки Спин */
+        .btn-spin:hover:not(:disabled) {
+            animation: pulse-green 1.5s infinite;
+        }
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
         .btn-main:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-buy { background: linear-gradient(135deg, #f97316, #ea580c); color: white; box-shadow: 0 0 25px rgba(249, 115, 22, 0.4); }
         .btn-spin { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
@@ -161,7 +171,9 @@
         .input, .select, .textarea { 
             width: 100%; background: #000; border: 1px solid #222; color: white; 
             padding: 16px; border-radius: 12px; outline: none; box-sizing: border-box; font-family: 'Inter', sans-serif;
+            transition: 0.3s;
         }
+        .input:focus { border-color: var(--primary); box-shadow: 0 0 10px var(--primary-glow); }
         .textarea { min-height: 100px; resize: vertical; }
 
         .category-label {
@@ -188,7 +200,6 @@
             flex-wrap: wrap;
         }
 
-        /* 2. БЛОК СКРЫТОГО ТЕКСТА В МАГАЗИНЕ */
         .collapsible-info {
             background: rgba(0,0,0,0.2);
             border: 1px solid var(--glass-border);
@@ -198,17 +209,22 @@
             transition: max-height 0.4s ease-out, padding 0.4s ease;
         }
         .collapsible-info.open {
-            max-height: 500px; /* Достаточно для текста */
+            max-height: 500px;
             padding: 15px;
         }
 
         .shop-info-text { font-size: 14px; color: var(--text-gray); line-height: 1.6; white-space: pre-wrap; margin-top: 10px; }
 
-        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+        /* 7. Анимация для карточек магазина */
         .shop-card { 
             background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
             border-radius: 20px; padding: 25px; text-align: center; transition: 0.3s;
             display: flex; flex-direction: column; align-items: center;
+        }
+        .shop-card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--primary);
+            box-shadow: 0 5px 20px rgba(34, 197, 94, 0.2);
         }
         .shop-card img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 15px; }
         .price-tag { font-size: 22px; font-weight: 900; color: var(--primary); margin-bottom: 15px; }
@@ -249,7 +265,7 @@
         @keyframes spin { to { transform: rotate(360deg); } }
 
         #toastContainer { position: fixed; bottom: 30px; right: 30px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); }
+        .toast { background: #0a0f18; border-left: 5px solid var(--primary); color: white; padding: 18px 30px; border-radius: 12px; font-weight: 700; box-shadow: 0 10px 40px rgba(0,0,0,0.5); border: 1px solid var(--glass-border); animation: fadeIn 0.3s; }
 
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 20px; }
         .modal-inner { background: #0a0e14; border: 1px solid var(--glass-border); border-radius: 30px; padding: 40px; width: 100%; max-width: 450px; text-align: center; overflow: hidden; max-height: 90vh; overflow-y: auto; }
@@ -275,15 +291,26 @@
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
         .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top: 5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
 
-        /* 5. НОРМАЛЬНАЯ КНОПКА СОХРАНЕНИЯ */
+        /* 6. КНОПКА СОХРАНЕНИЯ (Максимальный приоритет) */
         #saveSettingsBtn {
             width: 100% !important;
             box-sizing: border-box !important;
-            height: 50px !important;
+            height: 55px !important;
             font-size: 16px !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+        }
+        
+        /* Стили карточек слотов */
+        .manage-card-wrapper {
+            background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border); 
+            border-radius: 10px; padding: 10px; position: relative; 
+            transition: transform 0.2s;
+        }
+        .manage-card-wrapper:hover {
+            transform: translateY(-3px);
+            border-color: var(--primary);
         }
 
         @media (max-width: 900px) {
@@ -314,7 +341,6 @@
         <div style="display:flex; gap:10px; align-items:center;">
             <div class="stat-item">⚪ <span id="pointsVal">0</span></div>
             <div class="stat-item" style="border-color: var(--currency);">💸 <span id="currencyVal">0</span> ₴</div>
-            <!-- Кнопка обмена теперь здесь (перенесена для удобства) -->
         </div>
     </header>
 
@@ -354,11 +380,9 @@
                 <div class="shop-info-banner">
                     <div class="shop-rate-row">
                         1 ⚪ = <span id="shopRateDisplay">0</span> ₴
-                        <!-- 3. Кнопка ОБМІН возле курса -->
                         <button style="background:var(--primary); color:black; border:none; padding:10px 20px; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; white-space:nowrap; box-shadow: 0 0 10px var(--primary-glow);" onclick="openExchangeModal()">ОБМІН</button>
                     </div>
                     
-                    <!-- 2. Скрытый блок информации -->
                     <button onclick="toggleShopInfo()" style="background:none; border:1px dashed var(--glass-border); color:var(--primary); width:100%; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; font-size:12px;">Як отримати бали? (Натисни, щоб розкрити)</button>
                     <div id="shopInfoText" class="collapsible-info">Завантаження...</div>
                 </div>
@@ -394,7 +418,6 @@
                                 <label style="font-size:10px; color:var(--text-gray); text-transform:uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                                 <div style="display: flex; gap: 10px;">
                                     <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
-                                    <!-- 5. Кнопка сохранения с нормальным размером (CSS стили выше) -->
                                     <button id="saveSettingsBtn" class="btn-main btn-buy" onclick="window.saveSettings()">СОХРАНИТЬ</button>
                                 </div>
                             </div>
@@ -414,7 +437,6 @@
                         <div style="display:flex; flex-direction:column; gap:15px;">
                             <select id="adminUserSelect" class="select"><option value="">Оберіть користувача...</option></select>
                             
-                            <!-- 8. РАСШИРЕННЫЙ ВЫБОР ТИПА ПОПОЛНЕНИЯ -->
                             <select id="refillType" class="select">
                                 <option value="add_points">НАРАХУВАТИ БАЛИ (+)</option>
                                 <option value="sub_points">СПИСАТИ БАЛИ (-)</option>
@@ -446,7 +468,7 @@
                                     <input type="file" id="newPrizeImgFile" accept="image/*" onchange="processSlotImage(this)">
                                 </div>
                             </div>
-                            <!-- 6. Исправлено отображение превью фото -->
+                            
                             <div style="text-align: center; margin-bottom: 10px; min-height: 50px;">
                                 <img id="slotImgPreview" class="img-preview-small" style="margin: 0 auto; display: inline-block;">
                             </div>
@@ -529,11 +551,7 @@
                 <span id="exchangeResult" style="font-size: 24px; font-weight: 900; color: var(--currency);">0</span> <span style="font-size:14px;">грн</span>
             </div>
 
-            <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px; margin-bottom: 20px; font-size: 12px; color: #ccc;">
-                <b style="color:var(--primary);">Як отримати бали?</b><br>
-                <span id="exInfoText" style="white-space: pre-wrap; color:white;">Завантаження...</span>
-            </div>
-
+            <!-- 4. Убран блок с инструкцией -->
             <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
                 <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="document.getElementById('exchangeModal').style.display='none'">ВІДМІНА</button>
                 <button id="confirmExchangeBtn" class="btn-main" style="background:var(--currency); color:black; font-size:12px; flex: 1; min-width: 120px;" onclick="window.confirmExchange()">ОБМІНЯТИ</button>
@@ -579,7 +597,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -598,7 +616,6 @@
         let currentSlotBase64 = null;
         let isProcessing = false; // GLOBAL LOCK
 
-        // 2. Функция переключения магазина
         window.toggleShopInfo = () => {
             const el = document.getElementById('shopInfoText');
             el.classList.toggle('open');
@@ -795,7 +812,6 @@
             
             const textEl = document.getElementById('shopInfoText');
             if(textEl) {
-                // Обновляем текст внутри скрытого блока
                 textEl.innerHTML = `<div class="shop-info-text">${infoText}</div>`;
             }
         }
@@ -872,7 +888,6 @@
             document.getElementById('exchangeResult').innerText = res.toLocaleString();
             document.getElementById('exCurrentPoints').innerText = userData.points || 0;
             document.getElementById('exRateDisplay').innerText = exchangeRate;
-            document.getElementById('exInfoText').innerHTML = infoText;
         };
 
         window.confirmExchange = async () => {
@@ -894,15 +909,15 @@
                 document.getElementById('processingModal').style.display = 'flex';
 
                 try {
-                    // ЗАДЕРЖКА 2 СЕКУНДЫ (ДЛЯ ВИЗУАЛЬНОГО ЭФФЕКТА)
                     await new Promise(r => setTimeout(r, 2000));
 
                     await updateDoc(doc(db, "users", user.uid), { 
                         points: currentPts - pts,
                         currency: (userData.currency || 0) + moneyVal
                     });
-                    await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`);
-                    await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`);
+                    // 8. Try catch для логов
+                    try { await addLog(userData.name, "SYSTEM", `Обмін балів`, `+${moneyVal} грн`); } catch(e){}
+                    try { await sendLogToDiscord('exchange', userData, `Обміняв ${pts} балів`, `+${moneyVal} грн`); } catch(e){}
                     
                     notify("Успішно обміняно!");
                 } catch(e) {
@@ -934,10 +949,8 @@
                     await new Promise(r => setTimeout(r, 1500));
 
                     await updateDoc(doc(db, "users", user.uid), { points: points - item.price });
-                    await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price);
-                    
-                    // LOG TO DISCORD
-                    await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price);
+                    try { await addLog(userData.name, "SHOP", `Купив ${item.name}`, -item.price); } catch(e){}
+                    try { await sendLogToDiscord('buy', userData, `Купив ${item.name}`, -item.price); } catch(e){}
                     
                     notify("Покупка успішна!");
                 } catch(e) {
@@ -950,29 +963,56 @@
             });
         };
 
-        // 7. ИСПРАВЛЕННАЯ ЛОГИКА РУЛЕТКИ
-        let trackOffset = 0; // Глобальная переменная для хранения текущей позиции
+        // 2. Weighted Random Selection (Fix for percentages)
+        function getWeightedRandomItem() {
+            if (isAutoOdds) {
+                return prizePool[Math.floor(Math.random() * prizePool.length)];
+            }
+            
+            let totalWeight = 0;
+            prizePool.forEach(p => {
+                totalWeight += (p.chance || 0);
+            });
 
+            if (totalWeight === 0) {
+                // Если шансы не заданы, рандомно (как было, защита от 0%)
+                return prizePool[Math.floor(Math.random() * prizePool.length)];
+            }
+
+            let random = Math.random() * totalWeight;
+            let cursor = 0;
+            
+            for (let p of prizePool) {
+                cursor += (p.chance || 0);
+                if (random < cursor) {
+                    return p;
+                }
+            }
+            return prizePool[0]; // fallback
+        }
+
+        let trackOffset = 0; 
+
+        // 3. FIX EMPTY TRACK BUG
         function initTrack(prizes) {
             const track = document.getElementById('track');
             if (!track || prizes.length < 2) return;
-            if (isSpinning) return; 
             
-            // Если трек уже заполнен, не пересоздаем, чтобы не сбросить позицию
-            if(track.children.length > 0) return;
+            // ВАЖНО: Если полоса не пустая и мы не в режиме редактирования призов, не трогаем её
+            // Это предотвращает исчезновение слотов во время игры
+            if (track.children.length > 0 && !editingId) return; 
 
+            track.style.transition = 'none';
+            track.innerHTML = ""; // Очищаем только если пусто или редактируем
+            
             for (let i = 0; i < 40; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
             
-            // Инициализируем позицию только если это первый запуск
-            // При последующих запусках позицию сбрасывать нельзя (иначе будет дергаться)
             if (trackOffset === 0) {
-                track.style.transition = 'none';
                 track.style.transform = 'translateX(0)';
             } else {
-                track.style.transition = 'none';
                 track.style.transform = `translateX(${trackOffset}px)`;
             }
         }
@@ -991,21 +1031,19 @@
             isSpinning = true;
             document.getElementById('spinBtn').disabled = true;
             
-            // 7. ФИКС ДЕРГАНИЯ: продолжаем с текущего смещения
             const track = document.getElementById('track');
-            const cardWidth = 220; // 200px width + 20px margin
+            const cardWidth = 220; 
             
-            // Выбираем случайный выигрыш (индекс внутри массива призы)
-            const prizeIndex = Math.floor(Math.random() * prizePool.length);
-            const winPrize = prizePool[prizeIndex];
+            // ИСПРАВЛЕНО: Weighted Random
+            const winPrize = getWeightedRandomItem();
             
-            // Рассчитываем расстояние. 
-            // Мы хотим попасть примерно на середину трека.
-            // Добавляем 3-5 полных кругов прокрутки + точное смещение до приза.
+            // Находим индекс приза в массиве
+            // Чтобы визуально рулетка остановилась на нужной картинке, нужно попасть на нее
+            const prizeIndex = prizePool.indexOf(winPrize); // Индекс в пуле
+            
             const extraSpins = 4 * (40 * cardWidth); 
             const targetOffset = extraSpins + (prizeIndex * cardWidth);
             
-            // НОВОЕ СМЕЩЕНИЕ = ТЕКУЩЕЕ + ЦЕЛЕВОЕ
             trackOffset -= targetOffset;
             
             track.style.transition = 'transform 6s cubic-bezier(0.1, 0, 0.1, 1)';
@@ -1014,24 +1052,23 @@
             setTimeout(async () => {
                 isSpinning = false;
                 document.getElementById('spinBtn').disabled = false;
-                // Визуально можно сбросить трек в 0 без анимации, чтобы не накапливались гигантские числа
-                // Но для бесконечного скролла лучше не трогать, пока пользователь не уйдет со страницы
-                // Для простоты, сделаем мягкий сброс (без анимации) на ближайший круг после задержки
                 
                 const actualModulo = Math.abs(trackOffset) % (40 * cardWidth);
-                const newSafeOffset = -(actualModulo + (40 * cardWidth)); // Сдвигаем на круг вперед
+                const newSafeOffset = -(actualModulo + (40 * cardWidth)); 
                 
                 track.style.transition = 'none';
                 track.style.transform = `translateX(${newSafeOffset}px)`;
                 trackOffset = newSafeOffset;
 
-                // Логика выдачи приза
-                await processWin(winPrize);
+                try {
+                    await processWin(winPrize);
+                } catch(e) {
+                    console.error("Win process error", e);
+                }
             }, 6000);
         };
 
         async function processWin(prize) {
-            // Обновляем баланс
             const uSnap = await getDoc(doc(db, "users", user.uid));
             const uData = uSnap.data();
             
@@ -1045,8 +1082,8 @@
                 await updateDoc(doc(db, "users", user.uid), { roulette_passes: (uData.roulette_passes || 0) + parseInt(prize.actionVal) });
             }
             
-            await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name);
-            await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name);
+            try { await addLog(uData.name, "WIN", `Виграв на рулетці`, prize.name); } catch(e){}
+            try { await sendLogToDiscord('win', uData, `Виграв ${prize.name}`, prize.name); } catch(e){}
             
             notify(`Ви виграли: ${prize.name}!`);
         }
@@ -1075,7 +1112,7 @@
                     points: (userData.points || 0) - cost,
                     roulette_passes: (userData.roulette_passes || 0) + count
                 });
-                await addLog(userData.name, "SHOP", `Купив квитки`, -cost);
+                try { await addLog(userData.name, "SHOP", `Купив квитки`, -cost); } catch(e){}
                 document.getElementById('purchaseModal').style.display = 'none';
                 notify(`Куплено ${count} квитків!`);
              } catch(e) {
@@ -1088,8 +1125,9 @@
 
         // --- ADMIN ---
         function loadAdminData() {
-            // Users for refill
-            onSnapshot(collection(db, "users"), (snap) => {
+            // 1. Filter users to Admins and Instructors only
+            const q = query(collection(db, "users"), where("role", "in", ["admin", "instructor"]));
+            onSnapshot(q, (snap) => {
                 const sel = document.getElementById('adminUserSelect');
                 if(sel) {
                     sel.innerHTML = '<option value="">Оберіть користувача...</option>';
@@ -1100,9 +1138,8 @@
                 }
             });
             
-            // Logs
-            const q = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
-            onSnapshot(q, (snap) => {
+            const qLogs = query(collection(db, "roulette_logs"), orderBy("timestamp", "desc"), limit(50));
+            onSnapshot(qLogs, (snap) => {
                 const list = document.getElementById('logsList');
                 if(!list) return;
                 list.innerHTML = "";
@@ -1126,12 +1163,16 @@
         }
         
         async function addLog(user, type, desc, amount) {
-            await addDoc(collection(db, "roulette_logs"), {
-                user, type, desc, amount, timestamp: serverTimestamp()
-            });
+            try {
+                await addDoc(collection(db, "roulette_logs"), {
+                    user, type, desc, amount, timestamp: serverTimestamp()
+                });
+            } catch(e) {
+                console.error("Log write failed", e);
+            }
         }
 
-        // 8. ИСПРАВЛЕНА ЛОГИКА БАЛАНСА (И БАЛЫ, И ВАЛЮТА)
+        // 8. Process Admin Refill (Balances)
         window.processAdminRefill = async () => {
             if (userData.role !== 'admin') return notify("Access denied");
             
@@ -1171,8 +1212,8 @@
                 }
 
                 await updateDoc(doc(db, "users", uid), updateData);
-                await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
-                await sendLogToDiscord('admin', userData, `${logDesc} ${data.name}`, logAmount);
+                try { await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount); } catch(e){}
+                try { await sendLogToDiscord('admin', userData, `${logDesc} ${data.name}`, logAmount); } catch(e){}
                 notify("Успішно!");
             } catch(e) {
                 notify("Помилка: " + e.message);
@@ -1197,16 +1238,22 @@
             sItems.forEach(p => shopGrid.innerHTML += renderManageCard(p));
         }
         
+        // 2. Render Manage Card with Percentage Display
         function renderManageCard(p) {
             const isAdmin = userData.role === 'admin';
+            // Отображаем шанс если это рулетка (или без категории)
+            const isRoulette = !p.category || p.category === 'roulette';
+            const chanceDisplay = isRoulette ? `<div style="font-size:10px; color:var(--primary); font-weight:700; margin-top:4px;">Шанс: ${p.chance}%</div>` : '';
+
             return `
-                <div style="background:rgba(255,255,255,0.02); border:1px solid var(--glass-border); border-radius:10px; padding:10px; position:relative;">
+                <div class="manage-card-wrapper">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit:contain; display:block; margin:0 auto;">
                     <div style="font-size:10px; text-align:center; margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${p.name}</div>
+                    ${chanceDisplay}
                     ${isAdmin ? `
                         <div style="display:flex; gap:5px; margin-top:5px;">
-                            <button onclick="editPrize('${p.id}')" style="flex:1; background:#333; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✎</button>
-                            <button onclick="deletePrize('${p.id}')" style="flex:1; background:#500; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✕</button>
+                            <button onclick="window.editPrize('${p.id}')" style="flex:1; background:#333; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✎</button>
+                            <button onclick="window.deletePrize('${p.id}')" style="flex:1; background:#500; color:white; border:none; border-radius:4px; cursor:pointer; font-size:10px;">✕</button>
                         </div>
                     ` : ''}
                 </div>
@@ -1214,6 +1261,9 @@
         }
         
         window.editPrize = (id) => {
+            // 5. Smooth Scroll to Edit Form
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             const p = prizePool.find(x => x.id === id);
             if(!p) return;
             editingId = id;
@@ -1290,7 +1340,6 @@
             if(confirm("Видалити слот?")) await deleteDoc(doc(db, "roulette_prizes", id));
         };
 
-        // 6. ИСПРАВЛЕНА ЗАГРУЗКА ФОТО
         window.processSlotImage = (input) => {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
@@ -1305,7 +1354,6 @@
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         currentSlotBase64 = canvas.toDataURL('image/jpeg', 0.7);
                         
-                        // Показываем превью сразу
                         const preview = document.getElementById('slotImgPreview');
                         if (preview) {
                             preview.src = currentSlotBase64;
