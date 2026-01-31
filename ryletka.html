@@ -19,13 +19,9 @@
             --currency: #fbbf24;
         }
 
-        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        * { box-sizing: border-box; }
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #05070a; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; box-shadow: 0 0 10px var(--primary-glow); }
-        ::-webkit-scrollbar-thumb:hover { background: #4ade80; }
-
+        /* БЛОКУВАННЯ ВИДІЛЕННЯ ТЕКСТУ */
         body {
             margin: 0; padding: 0;
             background-color: var(--bg);
@@ -37,10 +33,26 @@
             min-height: 100vh; overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
             padding-bottom: 60px;
+            user-select: none; /* Заборона виділення на всій сторінці */
+            -webkit-user-select: none;
         }
+
+        /* ДОЗВІЛ ВИДІЛЕННЯ В ПОЛЯХ ВВОДУ (для інструкторів) */
+        input, textarea {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: text;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; box-shadow: 0 0 10px var(--primary-glow); }
+        ::-webkit-scrollbar-thumb:hover { background: #4ade80; }
 
         button, .btn-main, .stat-item, .log-icon, .menu-btn, .price-tag, .toast, #footerRoleLabel, h1, h2, h3, h4, span, div {
             font-family: 'Inter', sans-serif !important;
+            user-select: none; /* Кнопки також не виділяються */
+            -webkit-user-select: none;
         }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -607,20 +619,20 @@
     // --- SECURITY: CONSOLE BLOCK ---
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.addEventListener('keydown', function(event) {
-        if (event.keyCode === 123 || // F12
-            (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74)) || // Ctrl+Shift+I/J
-            (event.ctrlKey && event.keyCode === 85)) // Ctrl+U
+        if (event.keyCode === 123 || 
+            (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74)) || 
+            (event.ctrlKey && event.keyCode === 85))
         {
             event.preventDefault();
         }
     }, false);
 
-    // Debugger trap
+    // Debugger trap (light version)
     setInterval(() => {
         const startTime = performance.now();
         debugger; 
         if (performance.now() - startTime > 100) {
-            window.location.reload(); // Reload if debugger paused execution
+            // window.location.reload(); 
         }
     }, 2000);
 
@@ -642,6 +654,7 @@
     const CARD_WIDTH = 220; 
     const TOTAL_CARDS = 100;
     let isProcessing = false; 
+    let isSpinRequested = false; // Anti-double click
 
     // --- UI HELPERS ---
     window.toggleShopInfo = () => {
@@ -829,18 +842,10 @@
         if (!preview) return;
         preview.innerHTML = "";
         items.forEach(p => {
-            // Calculate chance percentage display
-            let chanceText = "";
-            if (isAutoOdds) {
-                chanceText = (100 / items.length).toFixed(1) + "%";
-            } else {
-                chanceText = (p.chance || 0) + "%";
-            }
-
+            // PERCENTAGES REMOVED HERE
             preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                 <img src="${p.img}" style="width:50px; height:50px; object-fit: contain; margin-bottom:8px;">
                 <div style="font-size:10px; font-weight:800;">${p.name}</div>
-                <div style="font-size:8px; color:var(--primary); margin-top:2px;">${chanceText}</div>
             </div>`;
         });
         initTrack(items);
@@ -899,27 +904,34 @@
     }
 
     window.startSpin = async () => {
-        // AUTOCLICKER FIX: Lock immediately
-        if (isSpinning) return;
-        isSpinning = true;
+        // ANTI-DOUBLE CLICK: Strict Lock
+        if (isSpinRequested || isSpinning) return;
+        isSpinRequested = true;
 
         const btn = document.getElementById('spinBtn');
-        btn.disabled = true;
-
+        
+        // Check tickets immediately
         if (!userData || userData.roulette_passes < 1) {
             notify("Немає квитків!");
-            isSpinning = false;
-            btn.disabled = false;
+            isSpinRequested = false;
             return;
         }
+
+        // Check track integrity
+        const track = document.getElementById('track');
+        if (!track || track.children.length === 0) return notify("Помилка завантаження рулетки");
         
-        // 1. LISTEN: Deduct ticket IMMEDIATELY
+        btn.disabled = true;
+        isSpinning = true;
+
+        // 1. DEDUCT TICKET
         try {
             await updateDoc(doc(db, "users", user.uid), { roulette_passes: userData.roulette_passes - 1 });
             userData.roulette_passes -= 1;
             document.getElementById('ticketsVal').innerText = userData.roulette_passes;
         } catch(e) {
             notify("Помилка списання квитка");
+            isSpinRequested = false;
             isSpinning = false;
             btn.disabled = false;
             return;
@@ -927,18 +939,18 @@
 
         document.getElementById('winOverlay').style.display = 'none';
 
-        const track = document.getElementById('track');
         const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
         
-        // 2. LOGIC: Decide Winner
+        // 2. DECIDE WINNER
         const winPrize = getWinner(rouletteItems);
         if (!winPrize) {
+            isSpinRequested = false;
             isSpinning = false;
             btn.disabled = false;
             return notify("Помилка вибору призу");
         }
 
-        // 3. RIGGING: Pick a fixed target index
+        // 3. RIGGING: Fixed target index
         const targetIndex = 55; 
         const targetCard = track.children[targetIndex];
         
@@ -956,6 +968,7 @@
 
         window.isProcessing = true;
 
+        // SMOOTH STOP
         track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.2, 1)`;
         track.style.transform = `translateX(-${scrollAmount}px)`;
 
@@ -963,8 +976,8 @@
             window.isProcessing = false;
             isSpinning = false;
             btn.disabled = false;
+            isSpinRequested = false; // Unlock for next spin
 
-            // Show Win Overlay
             const overlay = document.getElementById('winOverlay');
             document.getElementById('winPrizeName').innerText = winPrize.name;
             overlay.style.display = 'flex';
@@ -972,7 +985,7 @@
             notify(`Вітаю! Ви виграли ${winPrize.name}`);
             await processWin(winPrize);
 
-            // Hide overlay after 3.5 seconds
+            // Hide overlay & reset
             setTimeout(() => {
                 document.getElementById('winOverlay').style.display = 'none';
             }, 3500);
@@ -1008,7 +1021,7 @@
     };
 
     window.updateExchangeCalc = () => {
-        let pts = parseInt(document.getElementById('exchangeAmount').value) || 1;
+        let pts = parseInt(document.getElementById('exchangeAmount').value) ||1;
         if(pts < 1) pts = 1;
         const res = Math.floor(pts * exchangeRate);
         document.getElementById('exchangeResult').innerText = res.toLocaleString();
@@ -1019,7 +1032,6 @@
     window.confirmExchange = async () => {
         if (isProcessing) return notify("Зачекайте...");
         let pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
-        // Validation check
         if (!pts || pts <= 0) return notify("Некоректна сума!");
 
         const currentPts = userData.points || 0;
@@ -1082,13 +1094,12 @@
         updateTotalCost();
     };
     window.updateTotalCost = () => {
-        let c = parseInt(document.getElementById('ticketCount').value) || 1;
+        let c = parseInt(document.getElementById('ticketCount').value) ||1;
         if(c < 1) c = 1;
         document.getElementById('totalCostDisplay').innerText = (c * 100) + " ⚪";
     };
     window.confirmPurchase = async () => {
         let count = parseInt(document.getElementById('ticketCount').value) || 1;
-        // Validation check
         if (!count || count <= 0) return notify("Некоректна кількість!");
 
         const cost = count * 100;
@@ -1102,6 +1113,11 @@
         try {
             await new Promise(r => setTimeout(r, 1000));
             await updateDoc(doc(db, "users", user.uid), { points: pts - cost, roulette_passes: (userData.roulette_passes || 0) + count });
+            
+            // Discord Log for Ticket Purchase
+            await addLog(userData.name, "SHOP", `Купив ${count} квитків`, -cost);
+            await sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
+            
             notify(`Куплено ${count} квитків!`);
         } catch(e) {
             notify("Помилка");
