@@ -19,7 +19,7 @@
             --currency: #fbbf24;
         }
 
-        * { box-sizing: border-box; }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
 
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #05070a; }
@@ -424,7 +424,7 @@
                     <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                         <div style="display: flex; gap: 10px;">
-                            <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
+                            <input type="number" id="exchangeRateInput" class="input" placeholder="Сума" min="1">
                             <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSettings()">СОХРАНИТЬ</button>
                         </div>
                     </div>
@@ -452,7 +452,7 @@
                         <option value="sub_currency">СПИСАТИ ГРОШІ (-)</option>
                     </select>
                             
-                    <input type="number" id="refillAmount" class="input" placeholder="Сума">
+                    <input type="number" id="refillAmount" class="input" placeholder="Сума" min="1">
                     <button id="processRefillBtn" class="btn-main btn-buy" style="width:100%; max-width: none;" onclick="processAdminRefill()">ЗАСТОСУВАТИ</button>
                 </div>
             </div>
@@ -495,14 +495,14 @@
                     </div>
                     
                     <div id="rouletteFields" style="margin-bottom:12px; display:none;">
-                        <input type="number" step="0.01" id="newPrizeChance" class="input" placeholder="Шанс випадіння %">
+                        <input type="number" step="0.01" id="newPrizeChance" class="input" placeholder="Шанс випадіння %" min="0">
                         <small id="autoOddsHint" style="color:var(--primary); font-size:10px; display:none; margin-top:5px;">* Шанси ігноруються через активний авто-розподіл</small>
                     </div>
                     <div id="shopFields" style="display:none; margin-bottom:12px;">
-                        <input type="number" id="newPrizePrice" class="input" placeholder="Ціна в магазині">
+                        <input type="number" id="newPrizePrice" class="input" placeholder="Ціна в магазині" min="0">
                     </div>
                     <div id="actionValField" style="display:none; margin-bottom:12px;">
-                        <input type="text" id="newPrizeActionVal" class="input" placeholder="Значення (сума балів, к-ть квитків, або грошей)">
+                        <input type="number" id="newPrizeActionVal" class="input" placeholder="Значення (сума балів, к-ть квитків, або грошей)" min="0">
                     </div>
 
                     <div id="prizeFormActions" style="display:flex; gap:10px;">
@@ -604,6 +604,26 @@
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // --- SECURITY: CONSOLE BLOCK ---
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', function(event) {
+        if (event.keyCode === 123 || // F12
+            (event.ctrlKey && event.shiftKey && (event.keyCode === 73 || event.keyCode === 74)) || // Ctrl+Shift+I/J
+            (event.ctrlKey && event.keyCode === 85)) // Ctrl+U
+        {
+            event.preventDefault();
+        }
+    }, false);
+
+    // Debugger trap
+    setInterval(() => {
+        const startTime = performance.now();
+        debugger; 
+        if (performance.now() - startTime > 100) {
+            window.location.reload(); // Reload if debugger paused execution
+        }
+    }, 2000);
+
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
         authDomain: "dsv-gta.firebaseapp.com",
@@ -619,7 +639,7 @@
 
     let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
     const SPIN_TIME_SECONDS = 6;
-    const CARD_WIDTH = 220; // 200px width + 20px margins
+    const CARD_WIDTH = 220; 
     const TOTAL_CARDS = 100;
     let isProcessing = false; 
 
@@ -673,7 +693,6 @@
             } else {
                 document.getElementById('adminBtn').style.display = 'none';
             }
-            // Init track only if not spinning and data loaded
             if (!isSpinning) initTrack(prizePool.filter(p => !p.category || p.category === 'roulette'));
         });
 
@@ -760,6 +779,7 @@
         const amount = parseInt(document.getElementById('refillAmount').value);
 
         if (!userId || !amount) return notify("Заповніть всі поля!");
+        if (amount <= 0) return notify("Сума має бути більше 0!");
         
         try {
             const targetUserSnap = await getDoc(doc(db, "users", userId));
@@ -777,8 +797,6 @@
             await addLog(targetData.name, "ADMIN", `Зміна балансу (${type})`, logAmount);
             await sendLogToDiscord('admin', userData, `Змінив баланс ${targetData.name}`, logAmount);
             notify("Баланс успішно змінено!");
-            
-            // Перезавантаження списку для оновлення балансу в Dropdown (опціонально, але краще)
             loadAdminData();
         } catch(e) {
             notify(e.message);
@@ -843,7 +861,7 @@
         });
     }
 
-    // --- ROULETTE SYSTEM (SMOOTH STOP FIX) ---
+    // --- ROULETTE SYSTEM ---
     function createPrizeNode(p) {
         const el = document.createElement('div');
         el.className = 'prize-card';
@@ -881,23 +899,32 @@
     }
 
     window.startSpin = async () => {
+        // AUTOCLICKER FIX: Lock immediately
+        if (isSpinning) return;
+        isSpinning = true;
+
         const btn = document.getElementById('spinBtn');
-        if (btn.disabled || isProcessing) return;
-        if (!userData || userData.roulette_passes < 1) return notify("Немає квитків!");
+        btn.disabled = true;
+
+        if (!userData || userData.roulette_passes < 1) {
+            notify("Немає квитків!");
+            isSpinning = false;
+            btn.disabled = false;
+            return;
+        }
         
         // 1. LISTEN: Deduct ticket IMMEDIATELY
         try {
             await updateDoc(doc(db, "users", user.uid), { roulette_passes: userData.roulette_passes - 1 });
-            // Update local UI immediately
             userData.roulette_passes -= 1;
             document.getElementById('ticketsVal').innerText = userData.roulette_passes;
         } catch(e) {
             notify("Помилка списання квитка");
+            isSpinning = false;
+            btn.disabled = false;
             return;
         }
 
-        btn.disabled = true;
-        isSpinning = true;
         document.getElementById('winOverlay').style.display = 'none';
 
         const track = document.getElementById('track');
@@ -905,10 +932,13 @@
         
         // 2. LOGIC: Decide Winner
         const winPrize = getWinner(rouletteItems);
-        if (!winPrize) return notify("Помилка вибору призу");
+        if (!winPrize) {
+            isSpinning = false;
+            btn.disabled = false;
+            return notify("Помилка вибору призу");
+        }
 
-        // 3. RIGGING: Pick a fixed target index (e.g., index 55)
-        // We will force this specific card in DOM to be winner
+        // 3. RIGGING: Pick a fixed target index
         const targetIndex = 55; 
         const targetCard = track.children[targetIndex];
         
@@ -920,23 +950,19 @@
         }
 
         // 4. PHYSICS: Calculate Scroll
-        // Center of container = containerWidth / 2
-        // Center of target card = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2)
-        // Translate = - (TargetCardCenter - ContainerCenter)
         const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
         const targetCenter = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2);
         const scrollAmount = targetCenter - (containerWidth / 2);
 
         window.isProcessing = true;
 
-        // SMOOTH STOP ANIMATION: ease-out makes it decelerate smoothly at the end
         track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.2, 1)`;
         track.style.transform = `translateX(-${scrollAmount}px)`;
 
         setTimeout(async () => {
             window.isProcessing = false;
-            btn.disabled = false;
             isSpinning = false;
+            btn.disabled = false;
 
             // Show Win Overlay
             const overlay = document.getElementById('winOverlay');
@@ -946,12 +972,16 @@
             notify(`Вітаю! Ви виграли ${winPrize.name}`);
             await processWin(winPrize);
 
-            // Optional: Reset track visually after delay so next spin is fresh
+            // Hide overlay after 3.5 seconds
+            setTimeout(() => {
+                document.getElementById('winOverlay').style.display = 'none';
+            }, 3500);
+
             setTimeout(() => {
                 track.style.transition = 'none';
                 track.style.transform = 'translateX(0px)';
                 initTrack(rouletteItems);
-            }, 3000);
+            }, 3600);
 
         }, SPIN_TIME_SECONDS * 1000);
     };
@@ -978,7 +1008,8 @@
     };
 
     window.updateExchangeCalc = () => {
-        const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
+        let pts = parseInt(document.getElementById('exchangeAmount').value) || 1;
+        if(pts < 1) pts = 1;
         const res = Math.floor(pts * exchangeRate);
         document.getElementById('exchangeResult').innerText = res.toLocaleString();
         document.getElementById('exCurrentPoints').innerText = userData.points || 0;
@@ -987,8 +1018,10 @@
 
     window.confirmExchange = async () => {
         if (isProcessing) return notify("Зачекайте...");
-        const pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
-        if(pts < 1) return notify("Мінімум 1 бал");
+        let pts = parseInt(document.getElementById('exchangeAmount').value) || 0;
+        // Validation check
+        if (!pts || pts <= 0) return notify("Некоректна сума!");
+
         const currentPts = userData.points || 0;
         if(pts > currentPts) return notify("Недостатньо балів!");
         
@@ -1049,11 +1082,15 @@
         updateTotalCost();
     };
     window.updateTotalCost = () => {
-        const c = parseInt(document.getElementById('ticketCount').value) || 1;
+        let c = parseInt(document.getElementById('ticketCount').value) || 1;
+        if(c < 1) c = 1;
         document.getElementById('totalCostDisplay').innerText = (c * 100) + " ⚪";
     };
     window.confirmPurchase = async () => {
-        const count = parseInt(document.getElementById('ticketCount').value) || 1;
+        let count = parseInt(document.getElementById('ticketCount').value) || 1;
+        // Validation check
+        if (!count || count <= 0) return notify("Некоректна кількість!");
+
         const cost = count * 100;
         const pts = userData.points || 0;
 
@@ -1088,11 +1125,9 @@
         
         usersSnap.forEach(d => {
             const data = d.data();
-            // ФІЛЬТР: Тільки адміни та інструктори
             if (['admin', 'instructor'].includes(data.role)) {
                 const pts = data.points || 0;
                 const cur = data.currency || 0;
-                // ВИВІД: Ім'я, роль, баланс
                 sel.innerHTML += `<option value="${d.id}">${data.name} (${data.role.toUpperCase()}) — ⚪${pts} / 💸${cur}</option>`;
             }
         });
@@ -1117,7 +1152,7 @@
         });
     }
 
-    // --- ADMIN PRIZE MANAGEMENT (EDIT & DELETE) ---
+    // --- ADMIN PRIZE MANAGEMENT ---
     let currentSlotBase64 = null;
 
     window.processSlotImage = (input) => {
@@ -1144,7 +1179,6 @@
         document.getElementById('actionValField').style.display = act !== 'item' ? 'block' : 'none';
     };
 
-    // Редагування слота
     window.editPrize = (id) => {
         if (userData.role !== 'admin') return notify("Тільки адмін!");
         const p = prizePool.find(x => x.id === id);
@@ -1152,12 +1186,10 @@
 
         editingId = id;
         
-        // Заповнення форми
         document.getElementById('newPrizeName').value = p.name;
         document.getElementById('newPrizeCategory').value = p.category || 'roulette';
         document.getElementById('newPrizeActionType').value = p.action || 'item';
         
-        // Перемалювання полів
         togglePrizeInputs();
         toggleActionValueField();
 
@@ -1166,22 +1198,18 @@
         
         document.getElementById('newPrizeActionVal').value = p.actionVal || "";
         
-        // Фото
         currentSlotBase64 = p.img;
         const img = document.getElementById('slotImgPreview');
         img.src = p.img;
         img.style.display = 'block';
 
-        // Зміна інтерфейсу форми
         document.getElementById('formTitle').innerText = "РЕДАГУВАТИ СЛОТ";
         document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ СЛОТ";
         document.getElementById('cancelEditBtn').style.display = 'block';
         
-        // Скрол до форми
         document.getElementById('prizeForm').scrollIntoView({behavior: "smooth"});
     };
 
-    // Збереження (Створення або Оновлення)
     window.savePrize = async () => {
         if (userData.role !== 'admin') return notify("Тільки адмін!");
         const name = document.getElementById('newPrizeName').value;
@@ -1189,12 +1217,10 @@
         const act = document.getElementById('newPrizeActionType').value;
         
         if (!name) return notify("Назва обов'язкова!");
-        // Якщо новий слот, то фото обов'язкове. Якщо редагування, можна не змінювати.
         if (!editingId && !currentSlotBase64) return notify("Фото обов'язкове!");
 
         const data = { name, category: cat, action: act };
         
-        // Оновлюємо фото тільки якщо воно є (нове або старе)
         if (currentSlotBase64) data.img = currentSlotBase64;
         
         if (cat === 'roulette') {
@@ -1226,15 +1252,12 @@
         }
     };
 
-    // Функція скидання форми (вирішено проблему з видимістю)
     window.resetPrizeForm = () => {
         editingId = null;
         document.getElementById('newPrizeName').value = "";
         document.getElementById('newPrizeImgFile').value = "";
         document.getElementById('slotImgPreview').style.display = 'none';
         currentSlotBase64 = null;
-        
-        // Повернення UI в початковий стан
         document.getElementById('formTitle').innerText = "Створити новий слот";
         document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
         document.getElementById('cancelEditBtn').style.display = 'none';
@@ -1249,8 +1272,6 @@
         shopGrid.innerHTML = "";
         
         const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
-        
-        // Розрахунок відсотків для відображення
         let totalChance = rouletteItems.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
 
         prizePool.forEach(p => {
