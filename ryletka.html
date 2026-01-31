@@ -350,7 +350,7 @@
 
 <main class="content-wrapper">
     <!-- ROULETTE -->
-    <section id="roulettePage" class="content-section">
+    <section id="roulettePage" class="content-section active">
         <div class="roulette-container">
             <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
             <div class="carousel-outer">
@@ -425,7 +425,7 @@
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="number" id="exchangeRateInput" class="input" placeholder="Сума">
-                            <button id="saveAllSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSettings()">СОХРАНИТЬ</button>
+                            <button id="saveAllSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveAllSettings()">СОХРАНИТЬ</button>
                         </div>
                     </div>
 
@@ -657,7 +657,7 @@
         else if (type === 'exchange') { color = 11206584; icon = "💸"; title = "ОБМІН"; }
 
         let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
-        if (amount !== 0) desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\```;
+        if (amount !== 0) desc += `\n\`\`\`Результат: ${amount > 0 ? '+' : ''}${amount}\`\`\``;
 
         const payload = {
             username: "Реєстр сайту",
@@ -667,7 +667,6 @@
         
         try { 
             await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            // Если не упало сюда ошибки - считаем успешным для веб интерфейса
         } catch (e) {
             console.error("Discord send error:", e);
             notify("Помилка відправки в Discord");
@@ -705,15 +704,12 @@
         function startConfigSync() {
             onSnapshot(doc(db, "configs", "roulette"), (snap) => {
                 if (snap.exists()) {
-                    // Загружаем курс
                     exchangeRate = snap.data().exchangeRate || 10000;
-                    // 2. Загружаем длительность (добавлено сейчас)
                     spinDurationConfig = snap.data().spinDuration || 6;
                     infoText = snap.data().infoText || "Інформація відсутня.";
                     webhookUrl = snap.data().webhookUrl || "";
                     isAutoOdds = snap.data().autoOdds || false;
                     
-                    // Обновляем переменные UI
                     const input = document.getElementById('spinDurationInput');
                     if(input) input.value = spinDurationConfig;
                     
@@ -755,7 +751,7 @@
             
             try {
                 await setDoc(doc(db, "configs", "roulette"), { 
-                    exchangeRate, spinDuration, infoText, webhookUrl 
+                    exchangeRate, spinDuration: spinDurationConfig, infoText, webhookUrl 
                 }, { merge: true });
                 notify("Налаштування оновлено!");
                 updateShopDisplay();
@@ -770,24 +766,22 @@
 
         window.saveSpinDuration = async () => {
             const btn = document.getElementById('saveDurationBtn');
-            const originalText = btn.innerText;
             const input = document.getElementById('spinDurationInput');
             const val = parseFloat(input.value);
             
-            if (!val) throw new Error("Вкажіть час (напр., 6)!");
+            if (!val || val < 0.5 || val > 60) return notify("Час має бути від 0.5 до 60 сек!");
             
             btn.innerText = "⏳ СОХРАНЕННЯ...";
             btn.disabled = true;
 
             try {
-                await setDoc(doc(db, "configs", "roulette"), { spinDuration: val }, { merge: true });
                 spinDurationConfig = val;
+                await setDoc(doc(db, "configs", "roulette"), { spinDuration: val }, { merge: true });
                 notify(`Час прокрутки змінено на ${val} сек`);
-                // console.log("Spin duration set to: " + spinDurationConfig);
             } catch(e) {
                 console.error(e); notify("Помилка збереження");
             } finally { 
-                btn.innerText = originalText; 
+                btn.innerText = "СОХРАНИТИ"; 
                 btn.disabled = false; 
             }
         }
@@ -810,7 +804,6 @@
         function toggleAutoOddsUI(val) {
             const hint = document.getElementById('autoOddsHint');
             const rouletteFields = document.getElementById('rouletteFields');
-            // Если включен, скрываем поле шанса, если выключен - показываем
             if (rouletteFields) {
                 if (val) rouletteFields.style.display = 'none';
                 else rouletteFields.style.display = 'block';
@@ -835,7 +828,6 @@
             if (!preview) return;
             preview.innerHTML = "";
             items.forEach(p => {
-                // Скрыли проценты полностью
                 preview.innerHTML += `<div style="background:rgba(255,255,255,0.02); padding:15px; border-radius:15px; text-align:center; border:1px solid rgba(255,255,255,0.05);">
                     <img src="${p.img}" style="width:50px; height:50px; object-fit: contain; margin-bottom:8px;">
                     <div style="font-size:10px; font-weight:800;">${p.name}</div>
@@ -860,7 +852,6 @@
         }
 
         // --- ЛОГИКА И СИСТЕМА РУЛЕТКИ ---
-        // Возвращает массив карточек и длину трека
         function getTrackData() {
             const track = document.getElementById('track');
             return { track, children: Array.from(track.children), len: track.children.length };
@@ -875,29 +866,22 @@
 
         function initTrack(prizes) {
             const track = document.getElementById('track');
-            const preview = document.getElementById('prizePreview');
             
-            // Если трек пустой, очищаем от старого текст и создаем 100 карточек
-            if (track.children.length === 0) {
+            if (track.children.length === 0 || track.innerText === "ЗАВАНТАЖЕННЯ...") {
                 track.innerHTML = "";
                 for (let i = 0; i < TOTAL_CARDS; i++) {
                     const p = prizes[Math.floor(Math.random() * prizes.length)];
                     track.appendChild(createPrizeNode(p));
                 }
-                preview.innerHTML = ""; // Сбрасываем превью, так как мы создаем новую ленту
             }
         }
 
-        // Выбор победителя (Честный)
         function getWinner(prizes) {
-            // Обработка случая "Нет призов"
             if (!prizes || prizes.length === 0) return null;
 
             if (isAutoOdds) {
-                // Если включен авто-режим, просто выбираем рандомный индекс
                 return prizes[Math.floor(Math.random() * prizes.length)];
             } else {
-                // Если ручной режим, считаем шансы
                 let totalChance = prizes.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
                 let random = Math.random() * totalChance;
                 for (let p of prizes) {
@@ -912,36 +896,30 @@
         window.startSpin = async () => {
             const btn = document.getElementById('spinBtn');
             
-            // Проверки
             if (btn.disabled) return;
             if (!userData || userData.roulette_passes < 1) return notify("Немає квитків!");
             
             btn.disabled = true;
             
             const { track, children, length } = getTrackData();
-            // Если трек пустой, инициализируем его
             if (length === 0) {
                 const initSnap = await getDoc(doc(db, "users", user.uid));
                 if(initSnap.exists()) {
                     const d = initSnap.data();
                     if (d.rank && d.role && ['admin', 'instructor'].includes(d.role)) {
-                        await loadPrizes(); // Загружаем призы для админа, если нужно
+                        await loadPrizes(); 
                     } else {
-                        // Если нет доступа к призам, используем пустой массив
                         initTrack([]);
                     }
                 }
             }
 
-            const winPrize = getWinner(prizePool); // Получаем данные победителя
-            if (!winPrize) return; // Ошибка (нет призов)
+            const winPrize = getWinner(prizePool);
+            if (!winPrize) return;
 
-            // Находим индекс (визуальный выбор индекса 50-99)
-            // Гарантируем, что индекс существует
             const targetIndex = Math.floor(Math.random() * 50) + 50;
             const targetCard = children[targetIndex];
             
-            // Обновляем карточку (победа)
             if (targetCard) {
                 const img = targetCard.querySelector('img');
                 const txt = targetCard.querySelector('span');
@@ -949,13 +927,11 @@
                 if (txt) txt.innerText = winPrize.name;
             }
             
-            // Вычисляем смещение: -(index * CARD_WIDTH) + halfWidth
-            // Ширина карточки (220), контейнер (210px), отступ (10px)
             const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
             const halfWidth = CARD_WIDTH / 2;
-            const targetOffset = -(targetIndex * CARD_WIDTH) + (containerWidth/2) + halfWidth);
+            // Исправлено: убрана лишняя скобка
+            const targetOffset = -(targetIndex * CARD_WIDTH) + (containerWidth/2) + halfWidth;
             
-            // Блокируем кнопку до следующего нажатия на 6 секунд (время анимации)
             window.isProcessing = true;
 
             const duration = parseFloat(spinDurationConfig) || 6;
@@ -967,24 +943,19 @@
                 window.isProcessing = false;
                 btn.disabled = false;
 
-                // Логика после завершения вращения
                 const winningCard = document.querySelector('.pointer').nextElementSibling;
                 const list = document.getElementById('logsList');
 
                 if (winningCard && list) {
                     const logHtml = `<div class="log-item"><div class="log-left"><span class="log-icon">🎉</span><div><div class="log-action">${userData.name}</div><div class="log-user">[${new Date().toLocaleTimeString('uk-UA')}] WIN - Виграв на рулетці</div></div><div class="log-amount plus">WIN</div></div>`;
-                    
-                    // Вставляем новый лог в начало списка (сверху)
                     list.prepend(logHtml);
                 }
 
-                // Сброс позиции после вращения (без анимации)
                 track.style.transition = 'none';
-                // Оставляем старые элементы ДО карточки, сохраняя карточку
                 while(winningCard.previousElementSibling) {
                     track.removeChild(winningCard.previousElement);
                 }
-            };
+            }, duration * 1000);
 
             processWin(winPrize);
         };
@@ -995,10 +966,8 @@
             
             let updateData = {};
             
-            // Проверка на минус
             if (prize.action === 'sub_points') {
                 const newPoints = (uData.points || 0) - parseInt(prize.actionVal);
-                // Не ниже ноль (меньше 0)
                 updateData.points = Math.max(0, newPoints);
             } else if (prize.action === 'points') {
                 updateData.points = (uData.points || 0) + parseInt(prize.actionVal);
@@ -1041,10 +1010,7 @@
                 await new Promise(r => setTimeout(r, 1000));
                 await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - cost, roulette_passes: (userData.roulette_passes || 0) + count });
                 await addLog(userData.name, "SHOP", `Купив квитки`, -cost);
-                // Отправка в Discord
-                if (!webhookUrl || !webhookUrl.startsWith("https://discord")) {
-                    // console.warn("Skipping Discord send (empty webhook)...");
-                } else {
+                if (webhookUrl && webhookUrl.startsWith("https://discord")) {
                     sendLogToDiscord('buy', userData, `Купив ${count} квитків`, -cost);
                 }
                 
@@ -1105,7 +1071,7 @@
             const points = userData.points || 0;
             
             const isDebt = points < (item.price || 0);
-            const msg = isDebt ? "Недостатньо балів! (Баланс: " + (points + " / " + (item.price || 0) + ")" : `Купити ${item.name} за ${item.price} балів?`;
+            const msg = isDebt ? "Недостатньо балів! (Баланс: " + (points + " / " + (item.price || 0) + ")") : `Купити ${item.name} за ${item.price} балів?`;
             
             openModal("ПОКУПКА", msg, async () => {
                 window.isProcessing = true;
@@ -1130,7 +1096,6 @@
         };
 
         function loadAdminData() {
-            // Фильтр по роли
             onSnapshot(collection(db, "users"), (snap) => {
                 const sel = document.getElementById('adminUserSelect');
                 if(sel) {
@@ -1144,7 +1109,6 @@
                 }
             });
             
-            // Логи (Обычная версия)
             const list = document.getElementById('logsList');
             list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>Завантаження логів...</div>";
             
@@ -1164,10 +1128,8 @@
                             <div class="log-left">
                                 <span class="log-icon">${isPlus ? '📈' : '📉'}</span>
                                 <div>
-                                    <div>
-                                        <div class="log-action">${l.user}</div>
-                                        <span class="log-user">[${time}] ${l.type} - ${l.desc}</span>
-                                    </div>
+                                    <div class="log-action">${l.user}</div>
+                                    <span class="log-user">[${time}] ${l.type} - ${l.desc}</span>
                                 </div>
                             <div class="log-amount ${isPlus ? 'plus' : 'minus'}">${l.amount}</div>
                         </div>
@@ -1199,12 +1161,11 @@
                 else if (type === 'sub_points') { updateData.points = Math.max(0, (data.points || 0) - amount); logDesc = "Списання балів"; logAmount = `-${amount}`; }
                 else if (type === 'add_currency') { updateData.currency = (data.currency || 0) + amount; logDesc = "Додавання валюти"; logAmount = `+${amount} грн`; }
                 else if (type === 'sub_currency') { updateData.currency = Math.max(0, (data.currency || 0) - amount); logDesc = "Списання валюти"; logAmount = `-${amount} грн`; }
-                }
-
+                
+                // Исправлено: убрана лишняя скобка
                 await updateDoc(doc(db, "users", uid), updateData);
                 await addLog(userData.name, "ADMIN", `${logDesc} (${data.name})`, logAmount);
                 
-                // Отправка в Дискорд (исправлено логикой)
                 sendLogToDiscord('admin', userData, `${logDesc} (${data.name})`, logAmount);
                 
                 notify("Успішно!");
@@ -1239,7 +1200,6 @@
             }
         };
 
-        // --- ОТПРАЗКИ КАЧЕТ ---
         window.editPrize = (id) => {
             const p = window.prizePool.find(x => x.id === id);
             if (!p) return;
@@ -1257,18 +1217,8 @@
             const prev = document.getElementById('slotImgPreview');
             if (prev) { prev.src = p.img; prev.style.display = 'block'; }
             
-            window.togglePrizeInputs();
-            window.toggleActionValueField();
-            window.togglePrizeInputs = (type, val) => {
-                const act = document.getElementById('newPrizeActionType').value;
-                const field = document.getElementById('actionValField');
-                if (act === 'item') field.style.display = 'none';
-                else field.style.display = 'block';
-            };
-            window.toggleActionValueField = () => {
-                const act = document.getElementById('newPrizeActionType').value;
-                document.getElementById('actionValField').style.display = act !== 'item' ? 'block' : 'none';
-            };
+            togglePrizeInputs();
+            toggleActionValueField();
 
             document.getElementById('cancelEditBtn').style.display = 'block';
             document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ";
@@ -1347,8 +1297,8 @@
             
             if (pageId === 'admin') {
                 const lastTab = localStorage.getItem('ryl_last_admin_tab') || 'logs';
-                const btn = document.querySelector(`.admin-box button[onclick*="'${lastTab}'"]`);
-                if (btn) window.switchAdminTab(lastTab, btn);
+                const tabBtn = document.querySelector(`.admin-box button[onclick*="'${lastTab}'"]`);
+                if (tabBtn) window.switchAdminTab(lastTab, tabBtn);
             }
         };
 
@@ -1369,68 +1319,10 @@
         };
         window.closeModal = () => document.getElementById('modal').style.display = 'none';
 
-        // --- ФУНКЦИИ ФАЙЛОВЫ ---
-        // Кнопка
-        const saveBtn = document.getElementById('saveAllSettingsBtn');
-        if(saveBtn) {
-            saveBtn.onclick = null;
-            saveBtn.disabled = true;
-            saveBtn.innerText = "⏳ ОБРОБКА...";
-            
-            const rate = parseFloat(document.getElementById('exchangeRateInput').value);
-            const dur = parseFloat(document.getElementById('spinDurationInput').value);
-            const text = document.getElementById('infoTextInput').value;
-            const url = document.getElementById('webhookUrl').value;
-            
-            if (!rate || !dur) throw new Error("Заповніть курс і час!");
-            
-            // Сохраняем в базу
-            exchangeRate = rate;
-            spinDurationConfig = dur;
-            infoText = text;
-            webhookUrl = url;
-            
-            setDoc(doc(db, "configs", "roulette"), { exchangeRate, spinDuration, infoText, webhookUrl }, { merge: true });
-            
-            notify("Налаштування оновлено!");
-            updateShopDisplay();
-            
-            saveBtn.innerText = "СОХРАНИТЬ";
-            saveBtn.disabled = false;
-        };
-
-        const saveSpinDuration = async () => {
-            const btn = document.getElementById('saveDurationBtn');
-            const input = document.getElementById('spinDurationInput');
-            const val = parseFloat(input.value);
-            
-            if (!val || val < 0.5 || val > 60) return notify("Час (напр., от 0.5 до 60)!");
-            
-            btn.disabled = true;
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ СОХРАНЕННЯ...";
-            
-            try {
-                const newDuration = parseFloat(val);
-                spinDurationConfig = newDuration;
-                await setDoc(doc(db, "configs", "roulette"), { spinDuration: newDuration }, { merge: true });
-                notify(`Час прокрутки змінено на ${newDuration} сек.`);
-            } catch (e) {
-                console.error("Error updating spin duration:", e);
-                notify("Помилка оновлення часу");
-            } finally {
-                btn.innerText = originalText;
-                btn.disabled = false;
-            }
-        };
-
-        // Визуалізація (DOM + Логика)
-        function renderPrizes() {
+        function renderManage() {
             const rItems = prizePool.filter(p => p.category === 'roulette' || !p.category);
             const grid = document.getElementById('manageRouletteGrid');
             const grid2 = document.getElementById('manageShopGrid');
-            const preview = document.getElementById('prizePreview');
-            const list = document.getElementById('logsList');
             const isAdmin = userData.role === 'admin';
             
             if (grid) {
@@ -1448,64 +1340,54 @@
                             <img src="${p.img}" style="width:50px; height:50px; object-fit: contain; display: block; margin: 0 auto;">
                             <div style="font-size:10px; text-align: center; margin-top: 5px;">${p.name}</div>
                             <div style="font-size:9px; text-align: center; color:var(--text-gray);">${chanceDisplay}</div>
-                            <div>
-                    `;
-                });
-            }
-
-            if (grid2) {
-                grid.innerHTML = "";
-                const sItems = prizePool.filter(p => p.category === 'shop');
-                if (sItems.length === 0) grid.innerHTML = "<div style='grid-column: 1/-1; text-align:center; padding: 50px; opacity:0.3;'>МАГАЗИН ПОРОЖНІЙ</div>";
-                sItems.forEach(p => {
-                    grid.innerHTML += `
-                        <div class="shop-card">
-                            <img src="${p.img}">
-                            <div style="font-weight:800; font-size: 14px; margin-bottom: 10px;">${p.name}</div>
-                            <div class="price-tag">${p.price || 0} ⚪</div>
-                            <button onclick="buyItem('${p.id}')" style="cursor: pointer; background:none; color:white; opacity:0.6; font-weight:bold; margin-top:10px; transition: 0.3s;">
-                                ➔ ПОЛУЧИТЬ / РЕДАГУВАТИ
-                            </div>
-                            <button class="btn-del" style="position: absolute; top: 10px; right: 10px; font-size: 10px; cursor: pointer; z-index: 10px; background: #0a0f18; color: #ef4444; border: 1px solid #ef4444; font-size: 10px; cursor: pointer; z-index: 10px; background: #0a0f18; color: #ef4444; font-size:10px; border: 1px solid #ef4444; font-size: 10px; cursor: pointer; z-index: 10px; }
-                            <span class="del-text">✖</span>
-                            <span class="del-text">✎</span>
+                            ${isAdmin ? `
+                                <div style="display:flex; justify-content:space-between; margin-top:10px;">
+                                    <button onclick="editPrize('${p.id}')" style="cursor:pointer; background:var(--primary); border:none; border-radius:4px; color:black; font-weight:bold; font-size:10px; padding:4px;">✎</button>
+                                    <button onclick="deletePrize('${p.id}')" style="cursor:pointer; background:var(--danger); border:none; border-radius:4px; color:white; font-weight:bold; font-size:10px; padding:4px;">✖</button>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                 });
             }
 
-            if (list) {
-                // Логи
-                list.innerHTML = ""; // Сначала пустая строка (или ошибка), чтобы потом JS заполнится
-            }
-
-            // Логи (реальная логика)
-            onSnapshot(q, (snap) => {
-                list.innerHTML = "";
-                if (snap.empty) {
-                    list.innerHTML = "<div style='text-align:center; color:#555; padding:20px; font-family:monospace;'>[SYSTEM] Логів немає.</div>";
-                    return;
-                }
-                snap.forEach(d => {
-                    const l = d.data();
-                    const isPlus = l.action.includes('+');
-                    const time = l.timestamp ? new Date(l.timestamp.toDate()).toLocaleTimeString('uk-UA') : '--:--';
-                    const text_color = isPlus ? '#33ff00' : '#ffaa00';
-                    
-                    list.innerHTML += `
-                        <div class="log-item">
-                            <div class="log-left">
-                                <span class="log-icon">${isPlus ? '📈' : '📉'}</span>
-                                <div>
-                                    <div class="log-action">${l.user}</div>
-                                    <span class="log-user">[${time}] ${l.type} - ${l.desc}</span>
+            if (grid2) {
+                const sItems = prizePool.filter(p => p.category === 'shop');
+                grid2.innerHTML = sItems.length === 0 ? "<div style='grid-column: 1/-1; text-align:center; padding: 50px; opacity:0.3;'>МАГАЗИН ПОРОЖНІЙ</div>" : "";
+                sItems.forEach(p => {
+                    grid2.innerHTML += `
+                        <div class="shop-card">
+                            <img src="${p.img}">
+                            <div style="font-weight:800; font-size: 14px; margin-bottom: 10px;">${p.name}</div>
+                            <div class="price-tag">${p.price || 0} ⚪</div>
+                            ${isAdmin ? `
+                                <div style="display:flex; gap:5px; margin-top:10px;">
+                                    <button onclick="editPrize('${p.id}')" style="cursor:pointer; background:var(--primary); border:none; border-radius:4px; color:black; font-weight:bold; font-size:10px; padding:4px; flex:1;">РЕДАГУВАТИ</button>
+                                    <button onclick="deletePrize('${p.id}')" style="cursor:pointer; background:var(--danger); border:none; border-radius:4px; color:white; font-weight:bold; font-size:10px; padding:4px;">✖</button>
                                 </div>
-                            </div>
-                            <div class="log-amount ${isPlus ? 'plus' : 'minus'}">${l.amount}</div>
-                        </div>`;
+                            ` : ''}
+                        </div>
+                    `;
                 });
+            }
+        }
+
+        // Helper for logging
+        async function addLog(user, type, desc, amount) {
+            await addDoc(collection(db, "roulette_logs"), {
+                user, type, desc, amount, timestamp: serverTimestamp()
             });
         }
-    </script>
+
+        function applyRoleRestrictions() {
+            if (userData.role !== 'admin') {
+                const notice = document.getElementById('instructorNotice');
+                if (notice) notice.style.display = 'block';
+                const inputs = document.querySelectorAll('#prizeForm input, #prizeForm select, #savePrizeBtn');
+                inputs.forEach(el => el.disabled = true);
+            }
+        }
+    });
+</script>
 </body>
 </html>
