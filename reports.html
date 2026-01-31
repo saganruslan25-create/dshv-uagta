@@ -203,7 +203,7 @@
     let editId = null;
 
     // --- ФУНКЦІЯ ВІДПРАВКИ В DISCORD ---
-    async function sendLogToDiscord(type, userObj, periodStr, contentText) {
+    async function sendLogToDiscord(type, userObj, periodStr) {
         if (!WEBHOOK_URL) return; 
 
         const isEdit = editId !== null;
@@ -221,7 +221,7 @@
             embeds: [{
                 title: title,
                 color: color,
-                description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Період:** ${periodStr}\n**Зміст:** \`\`\`${contentText.substring(0, 500)}${contentText.length > 500 ? '...' : ''}\`\`\``,
+                description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Період звітності:** ${periodStr}\n\n💻 Перегляньте на сайті.`,
                 footer: { text: `UID: ${userObj.uid}` },
                 timestamp: new Date().toISOString()
             }]
@@ -260,8 +260,8 @@
         try {
             if (editId) {
                 await updateDoc(doc(db, "reports", editId), { period, content });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ
-                await sendLogToDiscord('edit', currentUserData, period, content);
+                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ (без контенту)
+                await sendLogToDiscord('edit', currentUserData, period);
                 editId = null;
                 document.getElementById('mainBtn').innerText = "Опублікувати звіт";
             } else {
@@ -272,8 +272,8 @@
                     period, content,
                     timestamp: serverTimestamp()
                 });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ
-                await sendLogToDiscord('create', currentUserData, period, content);
+                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ (без контенту)
+                await sendLogToDiscord('create', currentUserData, period);
             }
             document.getElementById('repPeriod').value = "";
             document.getElementById('repContent').value = "";
