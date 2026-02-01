@@ -33,11 +33,10 @@
             min-height: 100vh; overflow-x: hidden;
             -webkit-tap-highlight-color: transparent;
             padding-bottom: 60px;
-            user-select: none; /* Заборона виділення на всій сторінці */
+            user-select: none; 
             -webkit-user-select: none;
         }
 
-        /* ДОЗВІЛ ВИДІЛЕННЯ В ПОЛЯХ ВВОДУ (для інструкторів) */
         input, textarea, select {
             user-select: text !important;
             -webkit-user-select: text !important;
@@ -51,7 +50,7 @@
 
         button, .btn-main, .stat-item, .log-icon, .menu-btn, .price-tag, .toast, #footerRoleLabel, h1, h2, h3, h4, span, div {
             font-family: 'Inter', sans-serif !important;
-            user-select: none; /* Кнопки також не виділяються */
+            user-select: none; 
             -webkit-user-select: none;
         }
 
@@ -199,6 +198,15 @@
         .btn-spin { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
         .btn-spin:hover:not(:disabled) { border-color: var(--primary); color: white; box-shadow: 0 0 15px var(--primary-glow); }
 
+        /* АДМИНСКАЯ КНОПКА СОХРАНЕНИЯ */
+        .btn-save-big {
+            width: 100%; background: var(--primary); color: black; 
+            padding: 25px; border: none; border-radius: 20px; 
+            font-weight: 900; font-size: 18px; cursor: pointer; text-transform: uppercase; 
+            transition: 0.3s; margin-top: 10px; box-shadow: 0 0 20px var(--primary-glow);
+        }
+        .btn-save-big:hover { transform: scale(1.02); background: var(--primary-bright); }
+
         .admin-box { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 30px; padding: 35px; }
         .input, .select, .textarea { 
             width: 100%; background: #000; border: 1px solid #222; color: white; 
@@ -231,17 +239,19 @@
             flex-wrap: wrap;
         }
 
+        /* SCROLLABLE TEXT AREA */
         .collapsible-info {
             background: rgba(0, 0, 0, 0.2);
             border: 1px solid var(--glass-border);
             border-radius: 15px;
-            overflow: hidden;
             max-height: 0;
-            transition: max-height 0.4s ease-out, padding 0.4s ease;
+            transition: max-height 0.4s ease-out;
+            overflow: hidden;
         }
         .collapsible-info.open {
-            max-height: 500px; 
-            padding: 15px;
+            max-height: 400px; /* Висота для прокрутки */
+            overflow-y: auto; /* Прокрутка */
+            padding: 20px;
         }
 
         .shop-info-text { font-size: 14px; color: var(--text-gray); line-height: 1.6; white-space: pre-wrap; margin-top: 10px; }
@@ -294,7 +304,6 @@
         .log-desc { color: #ddd; font-weight: normal; }
         .log-amount { color: #ffff00; margin-left: auto; font-weight: bold; }
 
-        /* PROCESSING OVERLAY */
         .processing-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9); z-index: 10000;
@@ -339,7 +348,21 @@
         .file-input-wrapper input[type=file] { font-size: 100px; position: absolute; left: 0; top: 0; opacity: 0; cursor: pointer; }
         .img-preview-small { width: 50px; height: 50px; object-fit: contain; margin-top: 5px; border-radius: 5px; display: none; border: 1px solid var(--primary); }
 
-        /* АДАПТАЦИЯ ДЛЯ ТЕЛЕФОНОВ */
+        /* КНОПКИ АДМИНКИ НА КАРТОЧКЕ */
+        .admin-card-controls {
+            position: absolute; top: 5px; right: 5px;
+            display: flex; gap: 5px;
+        }
+        .btn-control-mini {
+            width: 25px; height: 25px; border-radius: 5px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 10px; font-weight: 900;
+            border: 1px solid #333; color: #aaa; background: rgba(0,0,0,0.8);
+        }
+        .btn-control-mini.edit:hover { color: var(--accent); border-color: var(--accent); }
+        .btn-control-mini.del:hover { color: var(--danger); border-color: var(--danger); }
+        .btn-control-mini.sale { background: var(--primary); color: black; border: none; } /* Зелена кнопка % */
+
         @media (max-width: 900px) {
             .main-container { grid-template-columns: 1fr; }
             .sidebar { flex-direction: row; overflow-x: auto; position: sticky; top: 75px; z-index: 100; padding: 8px; border-radius: 0; }
@@ -351,6 +374,7 @@
             .status-bar { font-size: 8px; padding: 0 10px; }
             .shop-info-banner { padding: 15px; }
             .admin-box { padding: 20px; }
+            .btn-save-big { padding: 18px; font-size: 16px; }
         }
     </style>
 </head>
@@ -371,6 +395,7 @@
         <div class="stat-item">⚪ <span id="pointsVal">0</span></div>
         <div class="stat-item" style="border-color: var(--currency);">💸 <span id="currencyVal">0</span> ₴</div>
         <button class="stat-item" style="cursor: pointer; background: linear-gradient(135deg, #fbbf24, #d97706); border:none; color:black; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);" onclick="openExchangeModal()">ОБМІН</button>
+        <button class="stat-item" style="cursor: pointer; background: linear-gradient(135deg, #ef4444, #b91c1c); border:none; color:white; box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);" onclick="openWithdrawModal()">ВИВЕСТИ</button>
     </div>
 </header>
 
@@ -389,12 +414,10 @@
             <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
             <div class="carousel-outer">
                 <div class="pointer"></div>
-                <!-- WIN OVERLAY -->
                 <div id="winOverlay">
                     <div id="winTitle">ВИГРАШ</div>
                     <div id="winPrizeName">NAME</div>
                 </div>
-                <!-- TRACK -->
                 <div id="track" class="track">ЗАВАНТАЖЕННЯ...</div>
             </div>
             <div class="spin-actions">
@@ -455,24 +478,32 @@
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">КУРС 1 БАЛА К ИГРОВОЙ ВАЛЮТЕ ($)</label>
                         <div style="display: flex; gap: 10px;">
                             <input type="number" id="exchangeRateInput" class="input" placeholder="Сума" min="1">
-                            <button id="saveSettingsBtn" class="btn-main btn-buy" style="max-width: 150px;" onclick="window.saveSettings()">СОХРАНИТЬ</button>
                         </div>
                     </div>
 
+                    <!-- АКЦИЯ НА БИЛЕТЫ -->
                     <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
                         <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">ЦІНА КВИТКА (В БАЛАХ)</label>
-                        <div style="display: flex; gap: 10px;">
-                            <input type="number" id="ticketPriceInput" class="input" placeholder="100" min="1">
-                        </div>
+                        <input type="number" id="ticketPriceInput" class="input" placeholder="100" min="1">
                     </div>
 
                     <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
-                        <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">АКЦІЯ / СКИДКА (%)</label>
+                        <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">АКЦІЯ НА КВИТКИ (SKIDKA %)</label>
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <input type="range" id="saleSlider" class="input" min="-50" max="50" value="0" step="1" style="padding:0; height:40px;">
-                            <span id="saleValueDisplay" style="font-weight:900; color:var(--primary); width: 50px; text-align:center;">0%</span>
+                            <input type="range" id="ticketSaleSlider" class="input" min="-50" max="50" value="0" step="1" style="padding:0; height:40px;" oninput="updateTicketSaleDisplay(this.value)">
+                            <span id="ticketSaleDisplay" style="font-weight:900; color:var(--danger); width: 50px; text-align:center;">0%</span>
                         </div>
-                        <small style="color:#666; display:block; margin-top:5px;">Від -50% (дороже) до +50% (дешевше). Якщо 0 - акції немає.</small>
+                        <small style="color:#666; display:block; margin-top:5px;">Працює тільки після натискання "ЗБЕРЕГТИ".</small>
+                    </div>
+
+                    <!-- АКЦИЯ В МАГАЗИНЕ -->
+                    <div style="background: rgba(0,0,0,0.3); padding:15px; border-radius: 10px;">
+                        <label style="font-size:10px; color:var(--text-gray); text-transform: uppercase;">АКЦІЯ В МАГАЗИНЕ (SKIDKA %)</label>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <input type="range" id="shopSaleSlider" class="input" min="0" max="80" value="0" step="1" style="padding:0; height:40px;" oninput="updateShopSaleDisplay(this.value)">
+                            <span id="shopSaleDisplay" style="font-weight:900; color:var(--danger); width: 50px; text-align:center;">0%</span>
+                        </div>
+                        <small style="color:#666; display:block; margin-top:5px;">Працює тільки після натискання "ЗБЕРЕГТИ".</small>
                     </div>
 
                     <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;">
@@ -480,6 +511,8 @@
                         <textarea id="infoTextInput" class="textarea" placeholder="Опишіть спосіб отримання балів..."></textarea>
                     </div>
                 </div>
+                
+                <button id="saveSettingsBtn" class="btn-save-big" onclick="window.saveSettings()">💾 ЗБЕРЕГТИ ВСЕ НАЛАШТУВАННЯ</button>
             </div>
 
             <!-- REFILL -->
@@ -488,7 +521,6 @@
                     <small style="color: var(--accent); font-weight: 700;">У вас недостатньо прав для зміни балансів.</small>
                 </div>
                 
-                <!-- БЛОК ПОКАЗУ БАЛАНСУ ЮЗЕРА -->
                 <div id="selectedUserBalance" style="display:none; background: rgba(34, 197, 94, 0.1); border: 1px solid var(--primary); border-radius: 12px; padding: 15px; margin-bottom: 20px; gap:20px; justify-content:center;">
                     <div style="text-align:center;">
                         <small style="display:block; color:var(--text-gray); font-size:10px;">БАЛИ</small>
@@ -560,7 +592,6 @@
                         <small id="autoOddsHint" style="color:var(--primary); font-size:10px; display:none; margin-top:5px;">* Шанси ігноруються через активний авто-розподіл</small>
                     </div>
                     
-                    <!-- ПОЛЯ ДЛЯ ОБМЕНУ -->
                     <div id="exchangeFields" style="margin-bottom:12px; display:none;">
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                             <div>
@@ -576,6 +607,10 @@
 
                     <div id="shopFields" style="display:none; margin-bottom:12px;">
                         <input type="number" id="newPrizePrice" class="input" placeholder="Ціна в магазині" min="0">
+                        <div id="shopItemSaleDiv" style="margin-top:5px;">
+                            <label style="font-size:10px; color:var(--primary);">ІНДИВІДУАЛЬНА ЗНИЖКА % (Якщо 0 - глобальна)</label>
+                            <input type="number" id="shopItemSaleInput" class="input" placeholder="0" min="0" max="99">
+                        </div>
                     </div>
                     <div id="actionValField" style="display:none; margin-bottom:12px;">
                         <input type="number" id="newPrizeActionVal" class="input" placeholder="Значення (сума балів, к-ть квитків, або грошей)" min="0">
@@ -619,12 +654,11 @@
     <div class="modal-inner">
         <h3 class="neon-text" style="font-size:18px; margin:0;">ОБМІН БАЛІВ</h3>
         
-        <!-- ВЫБОР ИСТОЧНИКА -->
         <div style="margin: 20px 0;">
             <label style="display:block; font-size:10px; color:var(--text-gray); margin-bottom:5px;">ЩО МІНЯЄМО (ОТКУДА)</label>
+            <!-- Видалив опцію грошей на бали -->
             <select id="exchangeSource" class="select" onchange="updateExchangeCalc()">
                 <option value="points">БАЛИ</option>
-                <option value="currency">ГРИВНІ</option>
             </select>
         </div>
 
@@ -641,12 +675,38 @@
 
         <div style="background: rgba(251, 191, 36, 0.1); border: 1px solid var(--currency); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
             <span style="font-size: 12px; color: var(--text-gray);">ВИ ОТРИМАЄТЕ:</span><br>
-            <span id="exchangeResult" style="font-size: 24px; font-weight: 900; color: var(--currency);">0</span> <span id="exchangeResultUnit" style="font-size:14px;">грн</span>
+            <span id="exchangeResult" style="font-size: 24px; font-weight: 900; color: var(--currency);">0</span> <span style="font-size:14px;">грн</span>
         </div>
 
         <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
             <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="document.getElementById('exchangeModal').style.display='none'">ВІДМІНА</button>
             <button id="confirmExchangeBtn" class="btn-main" style="background:var(--currency); color:black; font-size:12px; flex: 1; min-width: 120px;" onclick="window.confirmExchange()">ОБМІНЯТИ</button>
+        </div>
+    </div>
+</div>
+
+<!-- WITHDRAW MODAL -->
+<div id="withdrawModal" class="modal">
+    <div class="modal-inner">
+        <h3 class="neon-text" style="font-size:18px; margin:0; color:var(--danger);">ВИВІД ГРОШЕЙ</h3>
+        <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 14px;">
+            Поточний баланс: <b style="color:var(--currency)"><span id="withdrawCurrentCurrency">0</span> ₴</b>
+        </p>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display:block; font-size:10px; color:var(--text-gray); margin-bottom:5px;">СКІЛЬКИ ВИВЕСТИ (ГРИВНІ)</label>
+            <input type="number" id="withdrawAmount" class="input" placeholder="1000" min="1" oninput="checkWithdraw()">
+        </div>
+
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <span style="font-size: 12px; color: var(--text-gray);">ЗАЛИШИТЬСЯ:</span><br>
+            <span id="withdrawRemaining" style="font-size: 24px; font-weight: 900; color: var(--danger);">0</span> <span style="font-size:14px;">грн</span>
+        </div>
+        <p style="font-size:11px; color:#666; margin-bottom:20px;">Заявка буде відправлена в Дискорд для обробки адміністрацією.</p>
+
+        <div style="display:flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn-main" style="background:#111; color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="document.getElementById('withdrawModal').style.display='none'">ВІДМІНА</button>
+            <button id="confirmWithdrawBtn" class="btn-main" style="background:var(--danger); color:white; font-size:12px; flex: 1; min-width: 120px;" onclick="window.confirmWithdraw()">ВИВЕСТИ</button>
         </div>
     </div>
 </div>
@@ -708,7 +768,6 @@
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // --- SECURITY: CONSOLE BLOCK ---
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.addEventListener('keydown', function(event) {
         if (event.keyCode === 123 || 
@@ -733,13 +792,16 @@
     const db = getFirestore(app);
 
     let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null, isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
-    let ticketPrice = 100; // Дефолтная цена
-    let salePercent = 0; // Дефолтная скидка
-    let pendingExchangePrize = null; // Для хранения приза во время обмена
+    let ticketPrice = 100; 
+    // Разделил скидки
+    let ticketSalePercent = 0; 
+    let shopSalePercent = 0;
+    
+    let pendingExchangePrize = null; 
     const SPIN_TIME_SECONDS = 6;
     const CARD_WIDTH = 220; 
     const TOTAL_CARDS = 100;
-    let isProcessing = false; // Блокировка навигации
+    let isProcessing = false; 
     let isSpinRequested = false; 
 
     // --- UI HELPERS ---
@@ -764,7 +826,8 @@
         else if (type === 'win') { color = 15105570; icon = "🎉"; title = "ВИГРАШ"; }
         else if (type === 'admin') { color = 16007990; icon = "⚙️"; title = "АДМІНІСТРУВАННЯ"; }
         else if (type === 'exchange') { color = 11206584; icon = "💸"; title = "ОБМІН"; }
-        else if (type === 'sale') { color = 16711700; icon = "%"; title = "АКЦІЯ НАЧАЛАСЬ"; } // Красный
+        else if (type === 'withdraw') { color = 16711700; icon = "💸"; title = "ВИВІД ГРОШЕЙ"; } // Красный
+        else if (type === 'sale') { color = 16711700; icon = "%"; title = "АКЦІЯ НАЧАЛАСЬ"; } 
 
         let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
         if (amount !== "") desc += `\n\`\`\`${amount}\`\`\``;
@@ -781,14 +844,11 @@
     onAuthStateChanged(auth, async (u) => {
         if (!u) { window.location.href = "index.html"; return; }
         user = u;
-        
-        // Подписка на обновление данных пользователя (для проверки isSpinning после F5)
         onSnapshot(doc(db, "users", u.uid), (s) => {
             const d = s.data();
             userData = d;
             updateHeader();
             
-            // ПРОВЕРКА ВОССТАНОВЛЕНИЯ СПИНА ПОСЛЕ F5
             if (userData.isSpinning === true) {
                 recoverSpinState();
             }
@@ -807,16 +867,10 @@
         loadPrizes();
     });
 
-    // ВОССТАНОВЛЕНИЕ СОСТОЯНИЯ
     async function recoverSpinState() {
-        if (isSpinning) return; // Уже лечим
+        if (isSpinning) return; 
         isProcessing = true; isSpinning = true;
         notify("⚠️ Відновлення результату рулетки...");
-        
-        // Находим выигрышный приз (в реальном проекте нужно хранить ID приза в userData.pendingPrize)
-        // Для упрощения: просто даем рандомный приз, так как мы не сохранили, какой именно выпал
-        // ВАЖНО: В идеале при старте спина сохранять ID приза в users/uid -> pendingPrizeId
-        // Здесь реализуем "Компенсацию": даем билетик назад, если не знаем результат
         await updateDoc(doc(db, "users", user.uid), { isSpinning: false, roulette_passes: (userData.roulette_passes || 0) + 1 });
         notify("⚠️ Ой-ой! Збій. Квиток повернено.");
         isProcessing = false; isSpinning = false;
@@ -841,7 +895,8 @@
                 webhookUrl = snap.data().webhookUrl || "";
                 isAutoOdds = snap.data().autoOdds || false;
                 ticketPrice = snap.data().ticketPrice || 100;
-                salePercent = snap.data().salePercent || 0;
+                ticketSalePercent = snap.data().ticketSalePercent || 0;
+                shopSalePercent = snap.data().shopSalePercent || 0;
                 
                 const toggle = document.getElementById('autoOddsToggle');
                 if(toggle) toggle.checked = isAutoOdds;
@@ -849,16 +904,19 @@
                 if(document.getElementById('infoTextInput')) document.getElementById('infoTextInput').value = infoText;
                 if(document.getElementById('webhookUrl')) document.getElementById('webhookUrl').value = webhookUrl;
                 
-                // НОВЫЕ ПОЛЯ
                 if(document.getElementById('ticketPriceInput')) document.getElementById('ticketPriceInput').value = ticketPrice;
-                if(document.getElementById('saleSlider')) {
-                    document.getElementById('saleSlider').value = salePercent;
-                    updateSaleDisplay(salePercent);
+                
+                // Устанавливаем значения слайдеров из конфига
+                if(document.getElementById('ticketSaleSlider')) {
+                    document.getElementById('ticketSaleSlider').value = ticketSalePercent;
+                    updateTicketSaleDisplay(ticketSalePercent);
+                }
+                if(document.getElementById('shopSaleSlider')) {
+                    document.getElementById('shopSaleSlider').value = shopSalePercent;
+                    updateShopSaleDisplay(shopSalePercent);
                 }
 
-                // Обновляем цену на кнопке
                 updatePricesUI();
-                
                 toggleAutoOddsUI(isAutoOdds);
                 renderRoulette();
                 renderShop();
@@ -868,38 +926,42 @@
     }
 
     function updatePricesUI() {
-        const finalPrice = calculateFinalPrice(ticketPrice);
+        const finalPrice = calculateFinalPrice(ticketPrice, ticketSalePercent);
         document.getElementById('ticketPriceDisplay').innerText = finalPrice;
         document.getElementById('modalTicketPrice').innerText = finalPrice;
         
-        // Бейдж Акции
         const badge = document.getElementById('saleBadge');
-        if (salePercent > 0) {
+        if (ticketSalePercent > 0) {
             badge.style.display = 'block';
             badge.style.background = 'var(--danger)';
-            badge.innerText = `АКЦІЯ -${salePercent}%`;
-        } else if (salePercent < 0) {
+            badge.innerText = `АКЦІЯ -${ticketSalePercent}%`;
+        } else if (ticketSalePercent < 0) {
             badge.style.display = 'block';
             badge.style.background = '#ff4444';
-            badge.innerText = `НАДБАВКА ${Math.abs(salePercent)}%`;
+            badge.innerText = `НАДБАВКА ${Math.abs(ticketSalePercent)}%`;
         } else {
             badge.style.display = 'none';
         }
     }
 
-    function calculateFinalPrice(basePrice) {
+    function calculateFinalPrice(basePrice, salePct) {
         if (!basePrice) return 0;
-        return Math.floor(basePrice * (1 - (salePercent / 100)));
+        return Math.floor(basePrice * (1 - (salePct / 100)));
     }
 
-    window.updateSaleDisplay = (val) => {
-        document.getElementById('saleValueDisplay').innerText = (val > 0 ? "-" : "+") + Math.abs(val) + "%";
-        if(val > 0) document.getElementById('saleValueDisplay').style.color = "var(--danger)";
-        else if (val < 0) document.getElementById('saleValueDisplay').style.color = "#ff4444";
-        else document.getElementById('saleValueDisplay').style.color = "var(--primary)";
+    // Функции обновления текста слайдера (Только визуально!)
+    window.updateTicketSaleDisplay = (val) => {
+        document.getElementById('ticketSaleDisplay').innerText = (val > 0 ? "-" : "+") + Math.abs(val) + "%";
+        if(val > 0) document.getElementById('ticketSaleDisplay').style.color = "var(--danger)";
+        else if (val < 0) document.getElementById('ticketSaleDisplay').style.color = "#ff4444";
+        else document.getElementById('ticketSaleDisplay').style.color = "var(--primary)";
     };
 
-    // --- ADMIN ---
+    window.updateShopSaleDisplay = (val) => {
+        document.getElementById('shopSaleDisplay').innerText = "-" + val + "%";
+        document.getElementById('shopSaleDisplay').style.color = "var(--danger)";
+    };
+
     window.saveSettings = async () => {
         if (userData.role !== 'admin') return notify("У вас немає прав!");
         const btn = document.getElementById('saveSettingsBtn');
@@ -912,7 +974,8 @@
             const text = document.getElementById('infoTextInput').value;
             const url = document.getElementById('webhookUrl').value;
             const tPrice = parseInt(document.getElementById('ticketPriceInput').value);
-            const sPct = parseInt(document.getElementById('saleSlider').value);
+            const tSale = parseInt(document.getElementById('ticketSaleSlider').value);
+            const sSale = parseInt(document.getElementById('shopSaleSlider').value);
 
             if (!rate) throw new Error("Заповніть курс!");
             if (!tPrice) throw new Error("Вкажіть ціну квитка!");
@@ -922,13 +985,14 @@
                 infoText: text, 
                 webhookUrl: url, 
                 ticketPrice: tPrice,
-                salePercent: sPct
+                ticketSalePercent: tSale,
+                shopSalePercent: sSale
             }, { merge: true });
             
             notify("Налаштування оновлено!");
             
-            if (sPct !== 0) {
-                sendLogToDiscord('sale', userData, `Адмін ${userData.name} встановив акцію: ${sPct}% на курс ${rate}`);
+            if (tSale !== 0 || sSale !== 0) {
+                sendLogToDiscord('sale', userData, `Адмін ${userData.name} встановив акції. Тік: ${tSale}%, Маг: ${sSale}%`);
             }
 
             updateShopDisplay();
@@ -956,7 +1020,6 @@
         if (rouletteFields) rouletteFields.style.display = val ? 'none' : 'block';
     }
 
-    // ЗАГРУЗКА БАЛАНСА ЮЗЕРА В АДМИНКЕ
     window.loadUserBalanceForAdmin = async () => {
         const uid = document.getElementById('adminUserSelect').value;
         if (!uid) {
@@ -998,13 +1061,12 @@
             await sendLogToDiscord('admin', userData, `Змінив баланс ${targetData.name}`, logAmount);
             notify("Баланс успішно змінено!");
             loadAdminData();
-            loadUserBalanceForAdmin(); // Обновить отображение
+            loadUserBalanceForAdmin();
         } catch(e) {
             notify(e.message);
         }
     };
 
-    // --- PRIZES & SHOP LOGIC ---
     function loadPrizes() {
         onSnapshot(collection(db, "roulette_prizes"), (snap) => {
             prizePool = [];
@@ -1044,11 +1106,14 @@
         if (!grid) return;
         grid.innerHTML = items.length === 0 ? "<div style='grid-column: 1/-1; text-align:center; padding: 50px; opacity:0.3;'>МАГАЗИН ПОРОЖНІЙ</div>" : "";
         items.forEach(p => {
-            // Логика скидки в магазине
-            const finalPrice = calculateFinalPrice(p.price);
-            const oldPriceHtml = (salePercent > 0) ? `<div class="old-price">${p.price} ⚪</div>` : "";
+            // Логика: сначала проверяем индивидуальную скидку товара, если нет - глобальную
+            const itemSale = p.salePercent !== undefined ? p.salePercent : shopSalePercent;
+            const finalPrice = calculateFinalPrice(p.price, itemSale);
+            const oldPriceHtml = (itemSale > 0) ? `<div class="old-price">${p.price} ⚪</div>` : "";
+            const saleBadgeHtml = (itemSale > 0) ? `<div style="position:absolute; top:10px; right:10px; background:var(--danger); color:white; font-weight:900; font-size:10px; padding:2px 6px; border-radius:4px;">-${itemSale}%</div>` : "";
 
             grid.innerHTML += `<div class="shop-card">
+                ${saleBadgeHtml}
                 <img src="${p.img}">
                 <div style="font-weight:800; font-size: 14px; margin-bottom: 10px;">${p.name}</div>
                 ${oldPriceHtml}
@@ -1072,6 +1137,7 @@
         if (track.children.length === 0 || track.innerText === "ЗАВАНТАЖЕННЯ...") {
             track.innerHTML = "";
             for (let i = 0; i < TOTAL_CARDS; i++) {
+                if(prizes.length === 0) break; // Безопасность
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
             }
@@ -1098,7 +1164,6 @@
     window.startSpin = async () => {
         const btn = document.getElementById('spinBtn');
         
-        // 1. LOCKOUT (Anti-double click & -1 bug)
         if (isSpinRequested || isSpinning || isProcessing) {
             notify("Подождите завершения действия!");
             return;
@@ -1113,11 +1178,18 @@
             return;
         }
 
-        // 2. DEDUCT TICKET & SET SPINNING STATE IN DB (FOR F5)
+        // Проверка наличия призов
+        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+        if (rouletteItems.length === 0) {
+            notify("Помилка: Немає призів для рулетки!");
+            isSpinRequested = false;
+            btn.disabled = false;
+            return;
+        }
+
         try {
             const newPasses = Math.max(0, (userData.roulette_passes || 0) - 1);
             
-            // Устанавливаем флаг спина в базу
             await updateDoc(doc(db, "users", user.uid), { 
                 roulette_passes: newPasses,
                 isSpinning: true 
@@ -1135,9 +1207,7 @@
         document.getElementById('winOverlay').style.display = 'none';
 
         const track = document.getElementById('track');
-        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
         
-        // 3. DECIDE WINNER
         const winPrize = getWinner(rouletteItems);
         if (!winPrize) {
             isSpinRequested = false; isSpinning = false;
@@ -1146,7 +1216,6 @@
             return notify("Помилка вибору призу");
         }
 
-        // 4. RIGGING: Fixed target index
         const targetIndex = 55; 
         const targetCard = track.children[targetIndex];
         
@@ -1157,15 +1226,13 @@
             if(txt) txt.innerText = winPrize.name;
         }
 
-        // 5. PHYSICS: Calculate Scroll
         const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
         const cardWidth = 220; 
-        const cardsToScroll = targetIndex + (TOTAL_CARDS * 5); // 5 full rotations
+        const cardsToScroll = targetIndex + (TOTAL_CARDS * 5); 
         const scrollDistance = cardsToScroll * cardWidth;
         
-        // Физика анимации
         isSpinning = true;
-        isProcessing = true; // Блокируем интерфейс
+        isProcessing = true; 
         
         track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 1, 0.3, 1)`;
         track.style.transform = `translateX(-${scrollDistance}px)`;
@@ -1176,25 +1243,19 @@
     };
 
     async function finishSpin(winPrize) {
-        // Сброс флагов
         isSpinning = false;
         isSpinRequested = false;
         isProcessing = false; 
         
-        // Обновляем DB
         await updateDoc(doc(db, "users", user.uid), { isSpinning: false });
 
-        // Логика приза
         if (winPrize.action === 'exchange') {
-            // Блокируем до выбора
             pendingExchangePrize = winPrize;
             showPrizeExchangeModal(winPrize);
         } else {
-            // Обычный приз
             processPrizeAction(winPrize);
         }
 
-        // Сброс колеса (визуально)
         const track = document.getElementById('track');
         track.style.transition = 'none';
         track.style.transform = 'translateX(0)';
@@ -1226,27 +1287,21 @@
         addLog(userData.name, "WIN", desc, logVal);
     }
 
-    // --- MODAL & EXCHANGE LOGIC ---
     function showPrizeExchangeModal(prize) {
         const modal = document.getElementById('prizeExchangeModal');
         modal.style.display = 'flex';
         
         document.getElementById('exchItemName').innerText = prize.name;
         
-        const pVal = prize.actionVal || 0; // Если объект не имеет полей, берем общее (но лучше валидация)
-        
-        // Если приз имеет специфические поля для обмена (добавлены в админке)
         const p = prize.exchPoints || 0; 
         const m = prize.exchMoney || 0;
 
-        // Если заполнены конкретные поля обмена
         if (p > 0 || m > 0) {
              document.getElementById('btnExchPoints').innerText = p;
              document.getElementById('btnExchMoney').innerText = m;
              document.getElementById('btnExchPoints').parentElement.style.display = 'flex';
              document.getElementById('btnExchMoney').parentElement.style.display = 'flex';
         } else {
-            // Иначе используем общее поле actionVal как баллы (fallback)
             document.getElementById('btnExchPoints').innerText = pVal;
             document.getElementById('btnExchMoney').parentElement.style.display = 'none';
         }
@@ -1278,18 +1333,15 @@
         closePrizeExchangeModal();
     };
 
-
-    // --- PURCHASE LOGIC ---
     window.openPurchaseModal = () => {
         if (isProcessing || isSpinning) return notify("Дождитесь конца спина!");
-        const modal = document.getElementById('purchaseModal');
-        modal.style.display = 'flex';
+        document.getElementById('purchaseModal').style.display = 'flex';
         updateTotalCost();
     };
 
     window.updateTotalCost = () => {
         const count = parseInt(document.getElementById('ticketCount').value) || 1;
-        const finalPrice = calculateFinalPrice(ticketPrice);
+        const finalPrice = calculateFinalPrice(ticketPrice, ticketSalePercent);
         const total = count * finalPrice;
         document.getElementById('totalCostDisplay').innerText = `${total} ⚪`;
     };
@@ -1297,7 +1349,7 @@
     window.confirmPurchase = async () => {
         if (!user || !userData) return;
         const count = parseInt(document.getElementById('ticketCount').value) || 1;
-        const finalPrice = calculateFinalPrice(ticketPrice);
+        const finalPrice = calculateFinalPrice(ticketPrice, ticketSalePercent);
         const total = count * finalPrice;
 
         if (userData.points < total) return notify("Недостаточно баллов!");
@@ -1314,7 +1366,6 @@
         }
     };
 
-    // --- EXCHANGE LOGIC (MAIN) ---
     window.openExchangeModal = () => {
         if (isProcessing || isSpinning) return notify("Дождитесь конца спина!");
         document.getElementById('exchangeModal').style.display = 'flex';
@@ -1326,42 +1377,58 @@
     };
 
     window.updateExchangeCalc = () => {
-        const source = document.getElementById('exchangeSource').value;
         const amount = parseInt(document.getElementById('exchangeAmount').value) || 0;
         let result = 0;
         let unit = "";
 
-        if (source === 'points') {
-            result = amount * exchangeRate;
-            unit = "грн";
-        } else {
-            result = amount / exchangeRate;
-            unit = "⚪";
-        }
+        result = amount * exchangeRate;
+        unit = "грн";
 
         document.getElementById('exchangeResult').innerText = result.toFixed(2);
         document.getElementById('exchangeResultUnit').innerText = unit;
     };
 
     window.confirmExchange = async () => {
-        const source = document.getElementById('exchangeSource').value;
         const amount = parseInt(document.getElementById('exchangeAmount').value) || 1;
         
-        if (source === 'points') {
-            if ((userData.points || 0) < amount) return notify("Недостаточно баллов!");
-            const money = amount * exchangeRate;
-            await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - amount, currency: (userData.currency || 0) + money });
-            notify(`Обменяно ${amount} ⚪ на ${money} ₴`);
-            await sendLogToDiscord('exchange', userData, `Обмен балов`, `-${amount}⚪ / +${money}₴`);
-        } else {
-            if ((userData.currency || 0) < amount) return notify("Недостаточно гривен!");
-            const points = amount / exchangeRate;
-            await updateDoc(doc(db, "users", user.uid), { currency: (userData.currency || 0) - amount, points: (userData.points || 0) + points });
-            notify(`Обменяно ${amount} ₴ на ${points.toFixed(2)} ⚪`);
-            await sendLogToDiscord('exchange', userData, `Обмен валют`, `-${amount}₴ / +${points.toFixed(2)}⚪`);
-        }
+        if ((userData.points || 0) < amount) return notify("Недостаточно баллов!");
+        const money = amount * exchangeRate;
+        await updateDoc(doc(db, "users", user.uid), { points: (userData.points || 0) - amount, currency: (userData.currency || 0) + money });
+        notify(`Обменяно ${amount} ⚪ на ${money} ₴`);
+        await sendLogToDiscord('exchange', userData, `Обмен балов`, `-${amount}⚪ / +${money}₴`);
         
         document.getElementById('exchangeModal').style.display = 'none';
+    };
+
+    // --- WITHDRAWAL LOGIC ---
+    window.openWithdrawModal = () => {
+        if (isProcessing || isSpinning) return notify("Дождитесь конца спина!");
+        document.getElementById('withdrawModal').style.display = 'flex';
+        if(userData) {
+            document.getElementById('withdrawCurrentCurrency').innerText = userData.currency || 0;
+        }
+        checkWithdraw();
+    };
+
+    window.checkWithdraw = () => {
+        const amount = parseInt(document.getElementById('withdrawAmount').value) || 0;
+        const remaining = (userData.currency || 0) - amount;
+        document.getElementById('withdrawRemaining').innerText = remaining;
+        document.getElementById('withdrawRemaining').style.color = remaining < 0 ? 'var(--danger)' : 'var(--text-gray)';
+    };
+
+    window.confirmWithdraw = async () => {
+        const amount = parseInt(document.getElementById('withdrawAmount').value) || 0;
+        
+        if ((userData.currency || 0) < amount) return notify("Недостаточно гривен!");
+        
+        await updateDoc(doc(db, "users", user.uid), { currency: (userData.currency || 0) - amount });
+        notify(`Заявка на вивід ${amount} грн відправлена!`);
+        
+        // Важно: Отправляем лог/сообщение в Дискорд
+        await sendLogToDiscord('withdraw', userData, `ЗАЯВКА НА ВИВІД ${amount} ГРН`, "Очікуйте виплати адміном.");
+        
+        document.getElementById('withdrawModal').style.display = 'none';
     };
 
     // --- ADMIN TABS & SAVING ---
@@ -1384,7 +1451,6 @@
     };
 
     function loadAdminData() {
-        // Load Users for Refill
         const qUsers = query(collection(db, "users"), orderBy("name", "asc"));
         onSnapshot(qUsers, (snap) => {
             const sel = document.getElementById('adminUserSelect');
@@ -1395,7 +1461,6 @@
             });
         });
 
-        // Load Logs
         const qLogs = query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50));
         onSnapshot(qLogs, (snap) => {
             const list = document.getElementById('logsList');
@@ -1439,6 +1504,9 @@
             data.chance = parseFloat(document.getElementById('newPrizeChance').value) || 0;
         } else {
             data.price = parseFloat(document.getElementById('newPrizePrice').value) || 0;
+            // Сохраняем индивидуальную скидку
+            const sSale = parseInt(document.getElementById('shopItemSaleInput').value) || 0;
+            if(sSale > 0) data.salePercent = sSale;
         }
 
         if (['points', 'currency', 'ticket', 'sub_points'].includes(actType)) {
@@ -1467,13 +1535,89 @@
         rGrid.innerHTML = ""; sGrid.innerHTML = "";
         prizePool.forEach(p => {
             const div = document.createElement('div');
-            div.style.cssText = "background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; text-align:center; border:1px solid #333; cursor:pointer; position:relative;";
+            div.style.cssText = "background:rgba(255,255,255,0.03); padding:15px; border-radius:15px; text-align:center; border:1px solid #333; cursor:pointer; position:relative; overflow:hidden;";
             div.innerHTML = `<img src="${p.img}" style="width:50px; height:50px;"><br><small>${p.name}</small>`;
             
+            // Кнопки управления
+            const controls = document.createElement('div');
+            controls.className = 'admin-card-controls';
+            controls.innerHTML = `
+                <div class="btn-control-mini edit" onclick="editPrize('${p.id}')">✎</div>
+                <div class="btn-control-mini del" onclick="deletePrize('${p.id}')">✕</div>
+            `;
+            
+            // Если это магазин, добавляем кнопку скидки
+            if (p.category === 'shop') {
+                const saleBtn = document.createElement('div');
+                saleBtn.className = 'btn-control-mini sale';
+                saleBtn.innerText = `%`;
+                saleBtn.title = "Швидка зміна ціни";
+                saleBtn.onclick = () => quickPriceChange(p.id, p.price);
+                controls.appendChild(saleBtn);
+            }
+
+            div.appendChild(controls);
+
             if (p.category === 'roulette') rGrid.appendChild(div);
             else sGrid.appendChild(div);
         });
     }
+
+    window.quickPriceChange = async (id, currentPrice) => {
+        const newPrice = prompt(`Вкажіть нову ціну для товару. Поточна: ${currentPrice}`);
+        if (newPrice !== null && newPrice !== "") {
+            try {
+                await updateDoc(doc(db, "roulette_prizes", id), { price: parseFloat(newPrice) });
+                notify("Ціну оновлено!");
+            } catch(e) { notify("Помилка"); }
+        }
+    };
+
+    window.editPrize = (id) => {
+        if (userData.role !== 'admin') return notify("Нет прав!");
+        editingId = id;
+        const p = prizePool.find(x => x.id === id);
+        if(!p) return;
+
+        document.getElementById('formTitle').innerText = "РЕДАГУВАННЯ СЛОТА";
+        document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
+        document.getElementById('cancelEditBtn').style.display = 'block';
+
+        document.getElementById('newPrizeName').value = p.name;
+        document.getElementById('newPrizeCategory').value = p.category || 'roulette';
+        document.getElementById('slotImgPreview').src = p.img;
+        document.getElementById('slotImgPreview').style.display = 'inline-block';
+        togglePrizeInputs();
+
+        if (p.category === 'roulette') {
+            document.getElementById('newPrizeChance').value = p.chance || 0;
+        } else {
+            document.getElementById('newPrizePrice').value = p.price || 0;
+            document.getElementById('shopItemSaleInput').value = p.salePercent || 0;
+        }
+
+        document.getElementById('newPrizeActionType').value = p.actionType || 'item';
+        toggleActionValueField();
+        
+        if (['points', 'currency', 'ticket', 'sub_points'].includes(p.actionType)) {
+            document.getElementById('newPrizeActionVal').value = p.actionVal || 0;
+        }
+        if (p.actionType === 'exchange') {
+            document.getElementById('exchPointsVal').value = p.exchPoints || 0;
+            document.getElementById('exchMoneyVal').value = p.exchMoney || 0;
+        }
+
+        // Скролл к форме
+        document.getElementById('prizeForm').scrollIntoView({behavior: "smooth"});
+    };
+
+    window.deletePrize = async (id) => {
+        if (userData.role !== 'admin') return notify("Нет прав!");
+        if(confirm("Видалити цей слот назавжди?")) {
+            await deleteDoc(doc(db, "roulette_prizes", id));
+            notify("Слот видалено.");
+        }
+    };
 
     window.processSlotImage = (input) => {
         if (input.files && input.files[0]) {
@@ -1504,11 +1648,11 @@
     function applyRoleRestrictions() {
         if (userData.role !== 'admin') {
             document.querySelectorAll('#adminPage input').forEach(i => i.disabled = true);
+            document.querySelectorAll('#adminPage .btn-main').forEach(i => i.disabled = true);
             document.getElementById('instructorNotice').style.display = 'block';
         }
     }
 
-    // CLOSE MODALS
     window.closeModal = () => document.getElementById('modal').style.display = 'none';
 
 </script>
