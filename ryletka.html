@@ -397,10 +397,6 @@
                 1 ⚪ = <span id="shopRateDisplay">0</span> ₴
                 <button style="background:var(--primary); color:black; border:none; padding:10px 20px; border-radius:10px; font-weight:800; cursor:pointer; font-size:14px; white-space:nowrap; box-shadow: 0 0 10px var(--primary-glow);" onclick="window.openExchangeModal()">ОБМІН</button>
             </div>
-            <!-- PROMO BANNER -->
-            <div style="background: rgba(249, 115, 22, 0.1); border: 1px solid var(--accent-glow); padding: 10px; border-radius: 10px; margin-bottom: 20px; text-align: center; min-height: 40px; align-items: center;">
-                <span style="font-size: 14px; font-weight: 800; color: var(--text-gray);">🔥 АКЦІЯ: <span style="color:white;">-20% ЗНИЖКА</span> НА ВСЕ ТОВАРИ</span></span>
-            </div>
             
             <button onclick="window.toggleShopInfo()" style="background:none; border: 1px dashed var(--glass-border); color:var(--primary); width:100%; padding:10px; border-radius:10px; font-weight: 700; cursor:pointer; font-size:12px;">Як отримати бали? (Натисни, щоб розкрити)</button>
             <div id="shopInfoText" class="collapsible-info">Завантаження...</div>
@@ -739,7 +735,7 @@
 
     function updateExchangeCalc() {
         const direction = document.getElementById('exchangeDirection').value;
-        let amount = parseInt(document.getElementById('exchangeAmount').value) || 1;
+        let amount = parseInt(document.getElementById('exchangeAmount').value) ||1;
         if(amount < 1) amount = 1;
         
         let res = 0;
@@ -844,7 +840,7 @@
     }
 
     async function confirmPurchase() {
-        let count = parseInt(document.getElementById('ticketCount').value) || 1;
+        let count = parseInt(document.getElementById('ticketCount').value) ||1;
         if (!count || count <= 0) return notify("Некоректна кількість!");
 
         const cost = count * ticketPrice;
@@ -925,7 +921,9 @@
         if (!item) return;
         const points = userData.points || 0;
         const basePrice = item.price || 0;
-        const finalPrice = Math.floor(basePrice * (1 - (discountRate / 100)));
+        // FIX 3: Removed discount logic for Shop Items
+        const finalPrice = basePrice; 
+        
         const isDebt = points < finalPrice;
         const msg = isDebt 
             ? `У вас недостатньо балів (${points}). Баланс піде в борг. Купити ${item.name}?` 
@@ -1099,7 +1097,15 @@
         localStorage.setItem('roulette_busy', 'true');
         localStorage.setItem('roulette_timestamp', Date.now());
 
-        if (!userData || userData.roulette_passes < 1) {
+        // FIX 1: Robust check for userData and tickets
+        if (!userData) {
+            isSpinRequested = false;
+            btn.disabled = false;
+            localStorage.removeItem('roulette_busy');
+            return notify("Дані користувача не завантажено");
+        }
+
+        if ((userData.roulette_passes || 0) < 1) {
             notify("Немає квитків!");
             isSpinRequested = false;
             btn.disabled = false;
@@ -1112,7 +1118,10 @@
             
             await updateDoc(doc(db, "users", user.uid), { roulette_passes: newPasses });
             userData.roulette_passes = newPasses;
-            document.getElementById('ticketsVal').innerText = newPasses;
+            
+            // Ensure element exists before updating
+            const ticketsValEl = document.getElementById('ticketsVal');
+            if(ticketsValEl) ticketsValEl.innerText = newPasses;
         } catch(e) {
             notify("Помилка списання квитка");
             isSpinRequested = false;
@@ -1126,6 +1135,14 @@
         const track = document.getElementById('track');
         const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
         
+        // Check if prizes exist
+        if (!rouletteItems || rouletteItems.length === 0) {
+             isSpinRequested = false;
+             btn.disabled = false;
+             localStorage.removeItem('roulette_busy');
+             return notify("Призи не завантажені");
+        }
+
         const winPrize = getWinner(rouletteItems);
         if (!winPrize) {
             isSpinRequested = false;
@@ -1269,7 +1286,8 @@
         else if (type === 'exchange') { color = 11206584; icon = "💸"; title = "ОБМІН"; }
 
         let desc = `**Користувач:** ${userObj.name}\n**Дія:** ${description}`;
-        if (amount !== "") desc += `\n\`\`\`\`\``;
+        // FIX 2: Added amount value correctly
+        if (amount !== "") desc += `\n**Сума:** ${amount}`;
 
         const payload = {
             username: "Реєстр сайту",
@@ -1297,16 +1315,23 @@
             } else {
                 document.getElementById('adminBtn').style.display = 'none';
             }
-            if (!isSpinning) initTrack(prizePool.filter(p => !p.category || p.category === 'roulette'));
+            if (!isSpinning) {
+                const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+                if(rouletteItems.length > 0) initTrack(rouletteItems);
+            }
         });
 
         loadPrizes();
     });
 
     function updateHeader() {
+        if (!userData) return; // Safety check
         if(document.getElementById('pointsVal')) document.getElementById('pointsVal').innerText = userData.points || 0;
         if(document.getElementById('currencyVal')) document.getElementById('currencyVal').innerText = userData.currency || 0;
-        if(document.getElementById('ticketsVal')) document.getElementById('ticketsVal').innerText = userData.roulette_passes || 0;
+        // FIX 1: Ensure userData.roulette_passes is displayed safely
+        const tickets = userData.roulette_passes || 0;
+        if(document.getElementById('ticketsVal')) document.getElementById('ticketsVal').innerText = tickets;
+        
         if(document.getElementById('footerRoleLabel')) {
             document.getElementById('footerRoleLabel').innerText = userData.role.toUpperCase();
             document.getElementById('footerRoleLabel').style.color = userData.role === 'admin' ? 'var(--primary)' : 'var(--accent)';
@@ -1398,18 +1423,16 @@
         const grid = document.getElementById('shopGrid');
         if (!grid) return;
         
+        // FIX 3: Discount logic removed for shop items
+        
         grid.innerHTML = items.length === 0 ? "<div style='grid-column: 1/-1; text-align:center; padding: 50px; opacity:0.3;'>МАГАЗИН ПОРОЖНІЙ</div>" : "";
         items.forEach(p => {
             const itemPrice = p.price || 0;
-            const finalPrice = Math.floor(itemPrice * (1 - (discountRate / 100)));
+            const finalPrice = itemPrice; // No discount
             
-            let priceHtml = `<div class="price-tag">`;
-            if (discountRate > 0) {
-                priceHtml += `<span class="price-strike">${itemPrice}</span> <span class="price-final">${finalPrice}</span>`;
-            } else {
-                priceHtml += `${finalPrice}`;
-            }
-            priceHtml += ` ⚪</div>`;
+            // Removed strike-through logic, show normal price
+            let priceHtml = `<div class="price-tag">${finalPrice} ⚪</div>`;
+            
             grid.innerHTML += `<div class="shop-card">
                 <img src="${p.img}">
                 <div style="font-weight:800; font-size: 14px; margin-bottom: 10px;">${p.name}</div>
@@ -1431,6 +1454,7 @@
         if (!track) return;
         if (track.children.length === 0 || track.innerText === "ЗАВАНТАЖЕННЯ...") {
             track.innerHTML = "";
+            if(prizes.length === 0) return;
             for (let i = 0; i < TOTAL_CARDS; i++) {
                 const p = prizes[Math.floor(Math.random() * prizes.length)];
                 track.appendChild(createPrizeNode(p));
