@@ -187,7 +187,7 @@
         appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
     };
 
-    // --- НАЛАШТУВАННЯ DISCORD WEBHOOK ДЛЯ СУБОТНИКІВ ---
+    // --- НАЛАШТУВАННЯ DISCORD WEBHOOK ---
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1467268468180258866/87zZ5VK1GBSAUFz3lfVRv0_eImhQr_CYB4Taeepqk27K_DZHtrV8UE28vqccEDwSb1Ak";
 
     const app = initializeApp(firebaseConfig);
@@ -197,16 +197,15 @@
     let currentUserData = null;
     let editId = null;
 
-    // --- ФУНКЦІЯ ВІДПРАВКИ В DISCORD ---
     async function sendLogToDiscord(type, userObj, dateStr) {
         if (!WEBHOOK_URL) return; 
 
         const isEdit = editId !== null;
-        let color = 5793266; // Зелений (новий)
+        let color = 5793266; // Зелений
         let title = "🧹 НОВИЙ ЗВІТ (СУБОТНИК)";
         
         if (isEdit) {
-            color = 16776960; // Жовтий (змінено)
+            color = 16776960; // Жовтий
             title = "✏️ ЗВІТ БУЛО ЗМІНЕНО";
         }
 
@@ -255,7 +254,6 @@
         try {
             if (editId) {
                 await updateDoc(doc(db, "subotniks", editId), { date, content, edited: true });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ (без контенту)
                 await sendLogToDiscord('edit', currentUserData, date);
                 editId = null;
                 document.getElementById('subBtn').innerText = "Опублікувати звіт";
@@ -267,7 +265,6 @@
                     date, content,
                     timestamp: serverTimestamp()
                 });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ (без контенту)
                 await sendLogToDiscord('create', currentUserData, date);
             }
             document.getElementById('subDate').value = "";
@@ -288,6 +285,7 @@
                 const isAdmin = currentUserData && currentUserData.role === 'admin';
                 const safeContent = linkify(data.content);
 
+                // ДОДАЄМО ID ДО КОНТЕНТУ, ЩОБ ВИТЯГУВАТИ ЙОГО ПРИ РЕДАГУВАННІ
                 feed.innerHTML += `
                     <div class="report-card">
                         <div class="report-header">
@@ -295,10 +293,11 @@
                             <div class="report-time">${time} ${data.edited ? '(змінено)' : ''}</div>
                         </div>
                         <div class="period-badge">🧹 ДАТА: ${data.date}</div>
-                        <div class="work-content">${safeContent}</div>
+                        <div class="work-content" id="work-content-${id}">${safeContent}</div>
                         ${(isOwner || isAdmin) ? `
                             <div class="controls">
-                                ${isOwner ? `<button class="ctrl-btn" onclick="window.startEdit('${id}', '${data.date}', \`${data.content.replace(/`/g, "\\`").replace(/\${/g, "\\${")}\`)">Змінити</button>` : ''}
+                                <!-- ВИПРАВЛЕНО: Адмін теж може редагувати, та беремо текст з DOM -->
+                                ${isOwner || isAdmin ? `<button class="ctrl-btn" onclick="window.startEdit('${id}', '${data.date}')">Змінити</button>` : ''}
                                 <button class="ctrl-btn btn-del" onclick="window.deleteSub('${id}')">Видалити</button>
                             </div>
                         ` : ''}
@@ -308,10 +307,18 @@
         });
     }
 
-    window.startEdit = (id, date, content) => {
+    // ВИПРАВЛЕНО: Беремо текст прямо з DOM елемента, щоб уникнути помилок з лапками
+    window.startEdit = (id, date) => {
         editId = id;
         document.getElementById('subDate').value = date;
-        document.getElementById('subContent').value = content;
+        
+        const contentElement = document.getElementById('work-content-' + id);
+        if(contentElement) {
+            document.getElementById('subContent').value = contentElement.innerText;
+        } else {
+            document.getElementById('subContent').value = "";
+        }
+
         document.getElementById('subBtn').innerText = "Зберегти зміни";
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -323,10 +330,8 @@
 
 <script>
     document.onkeydown = function(e) {
-        // Блокуємо F12, Ctrl+Shift+I (Інспектор), Ctrl+Shift+J (Консоль), Ctrl+U (Вихідний код)
         if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74 || e.keyCode == 67)) || (e.ctrlKey && e.keyCode == 85)) return false;
     };
-    // Автоматичне очищення консолі кожні 0.5 секунди
     setInterval(() => console.clear(), 500);
 </script>
 
