@@ -192,7 +192,7 @@
         appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
     };
 
-    // --- НАЛАШТУВАННЯ DISCORD WEBHOOK ДЛЯ ЩОТИЖНЕВИХ ЗВІТІВ ---
+    // --- НАЛАШТУВАННЯ DISCORD WEBHOOK ---
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1467268285493153893/Uf1CxmNFvEvDzHJ62I-d5h0gQQwYGVfqrehwpeJtf4Rcc_z9zMlA2M6AGtRlhEq5BRGk";
 
     const app = initializeApp(firebaseConfig);
@@ -202,16 +202,15 @@
     let currentUserData = null;
     let editId = null;
 
-    // --- ФУНКЦІЯ ВІДПРАВКИ В DISCORD ---
     async function sendLogToDiscord(type, userObj, periodStr) {
         if (!WEBHOOK_URL) return; 
 
         const isEdit = editId !== null;
-        let color = 5793266; // Зелений (новий)
+        let color = 5793266; // Зелений
         let title = "📅 НОВИЙ ЗВІТ (ЩОТИЖНЕВИЙ)";
         
         if (isEdit) {
-            color = 16776960; // Жовтий (змінено)
+            color = 16776960; // Жовтий
             title = "✏️ ЗВІТ БУЛО ЗМІНЕНО";
         }
 
@@ -260,7 +259,6 @@
         try {
             if (editId) {
                 await updateDoc(doc(db, "reports", editId), { period, content });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ РЕДАГУВАННІ (без контенту)
                 await sendLogToDiscord('edit', currentUserData, period);
                 editId = null;
                 document.getElementById('mainBtn').innerText = "Опублікувати звіт";
@@ -272,7 +270,6 @@
                     period, content,
                     timestamp: serverTimestamp()
                 });
-                // ВІДПРАВЛЯЄМО В DISCORD ПРИ СТВОРЕННІ (без контенту)
                 await sendLogToDiscord('create', currentUserData, period);
             }
             document.getElementById('repPeriod').value = "";
@@ -287,10 +284,12 @@
             feed.innerHTML = "";
             snapshot.forEach((s) => {
                 const data = s.data();
+                const id = s.id;
                 const time = data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString() : "";
                 const isAdmin = currentUserData?.role === 'admin';
                 const isOwner = currentUserData?.uid === data.ownerId;
-
+                
+                // ДОДАЄМО ID ДО КОНТЕНТУ
                 feed.innerHTML += `
                     <div class="report-card">
                         <div class="report-header">
@@ -298,10 +297,11 @@
                             <div class="report-time">${time}</div>
                         </div>
                         <div class="date-badge">📅 ДАТА: ${data.period}</div>
-                        <div class="work-content">${linkify(data.content)}</div>
+                        <div class="work-content" id="work-content-${id}">${linkify(data.content)}</div>
                         <div class="controls">
-                            ${isOwner ? `<button class="ctrl-btn" onclick="window.startEdit('${s.id}', '${data.period}', \`${data.content.replace(/`/g, "\\`").replace(/\${/g, "\\${")}\`)">РЕДАГУВАТИ</button>` : ''}
-                            ${(isOwner || isAdmin) ? `<button class="ctrl-btn btn-del" onclick="window.deleteReport('${s.id}')">ВИДАЛИТИ</button>` : ''}
+                            <!-- ВИПРАВЛЕНО: Адмін теж може редагувати, та беремо текст з DOM -->
+                            ${isOwner || isAdmin ? `<button class="ctrl-btn" onclick="window.startEdit('${id}', '${data.period}')">РЕДАГУВАТИ</button>` : ''}
+                            ${(isOwner || isAdmin) ? `<button class="ctrl-btn btn-del" onclick="window.deleteReport('${id}')">ВИДАЛИТИ</button>` : ''}
                         </div>
                     </div>
                 `;
@@ -309,10 +309,18 @@
         });
     }
 
-    window.startEdit = (id, period, content) => {
+    // ВИПРАВЛЕНО: Беремо текст прямо з DOM елемента
+    window.startEdit = (id, period) => {
         editId = id;
         document.getElementById('repPeriod').value = period;
-        document.getElementById('repContent').value = content;
+        
+        const contentElement = document.getElementById('work-content-' + id);
+        if(contentElement) {
+            document.getElementById('repContent').value = contentElement.innerText;
+        } else {
+            document.getElementById('repContent').value = "";
+        }
+
         document.getElementById('mainBtn').innerText = "ЗБЕРЕГТИ ЗМІНИ";
         window.scrollTo(0,0);
     };
