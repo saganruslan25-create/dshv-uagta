@@ -278,14 +278,9 @@
     </div>
 </div>
 
-<!-- SPIN LOCK OVERLAY -->
-<div id="spinLockOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 9998; backdrop-filter: blur(10px);">
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
-        <div class="spinner"></div>
-        <h2 style="color: var(--accent); font-size: 28px; margin: 20px 0 10px;">РУЛЕТКА КРУТИТЬСЯ</h2>
-        <p style="color: var(--text-gray);">Зачекайте завершення обертання...</p>
-        <div style="font-size: 40px; margin-top: 20px;">🎰</div>
-    </div>
+<!-- SPIN LOCK OVERLAY - ВИПРАВЛЕНО: Більше не блокує весь екран -->
+<div id="spinLockOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: transparent; z-index: 9998; pointer-events: none;">
+</div>
 </div>
 
 <header>
@@ -440,6 +435,21 @@
                             ЗБЕРЕГТИ АКЦІЮ
                         </button>
                     </div>
+                    
+                    <!-- Auto Odds Toggle -->
+                    <div style="background: rgba(255, 255, 255, 0.03); padding: 25px; border-radius: 15px; margin-top: 25px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <h4 style="color: var(--primary); margin-bottom: 20px;">🎲 Система шансів</h4>
+                        <div class="toggle-container">
+                            <span style="font-weight: 700; color: var(--text-gray);">Автоматичні шанси (рівномірні)</span>
+                            <label class="switch">
+                                <input type="checkbox" id="autoOddsToggle" onchange="toggleAutoOdds()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <p style="font-size: 12px; color: var(--text-gray); margin-top: 10px;">
+                            Якщо увімкнено - всі призи мають однакові шанси випадання незалежно від налаштованих значень.
+                        </p>
+                    </div>
                 </div>
 
                 <!-- TAB: BALANCE -->
@@ -495,9 +505,80 @@
                     </div>
                 </div>
 
-                <!-- TAB: PRIZES (original content) -->
+                <!-- TAB: PRIZES (слоти) -->
                 <div id="tabPrizes" class="admin-tab" style="display:none;">
-                    <p style="color: var(--text-gray); text-align: center;">Управління призами (оригінальний функціонал)</p>
+                    <h3 style="color: var(--primary); margin-bottom: 25px;">🎁 УПРАВЛІННЯ СЛОТАМИ</h3>
+                    
+                    <!-- Prize Management Grid -->
+                    <div style="margin-bottom: 30px;">
+                        <h4 style="color: var(--accent); margin-bottom: 15px;">🎰 СЛОТИ РУЛЕТКИ</h4>
+                        <div id="manageRouletteGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; margin-bottom: 30px;"></div>
+                        
+                        <h4 style="color: var(--currency); margin-bottom: 15px;">🛒 СЛОТИ МАГАЗИНУ</h4>
+                        <div id="manageShopGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;"></div>
+                    </div>
+                    
+                    <div id="instructorNotice" style="display: none; background: rgba(251, 191, 36, 0.1); border: 1px solid var(--currency); padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 16px; font-weight: 800; color: var(--currency); margin-bottom: 8px;">⚠️ ОБМЕЖЕНИЙ ДОСТУП</div>
+                        <p style="font-size: 12px; color: var(--text-gray); margin: 0;">
+                            Інструктори можуть тільки переглядати слоти. Створення, редагування та видалення доступно лише адміністраторам.
+                        </p>
+                    </div>
+                    
+                    <!-- Prize Form -->
+                    <div style="background: rgba(255, 255, 255, 0.03); padding: 25px; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <h4 id="formTitle" style="color: var(--primary); margin-bottom: 20px;">СТВОРИТИ НОВИЙ СЛОТ</h4>
+                        
+                        <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">Назва призу</label>
+                        <input type="text" id="newPrizeName" class="input" placeholder="Наприклад: iPhone 15" style="margin-bottom: 15px;">
+                        
+                        <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">Категорія</label>
+                        <select id="newPrizeCategory" class="select" onchange="togglePrizeSettings()" style="margin-bottom: 15px;">
+                            <option value="roulette">🎰 Рулетка</option>
+                            <option value="shop">🛒 Магазин</option>
+                        </select>
+                        
+                        <div id="rouletteSettings">
+                            <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">
+                                Шанс випадання (%) - працює тільки якщо вимкнені автошанси
+                            </label>
+                            <input type="number" id="newPrizeChance" class="input" value="10" min="0" max="100" step="0.1" style="margin-bottom: 15px;">
+                        </div>
+                        
+                        <div id="shopSettings" style="display: none;">
+                            <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">Ціна (бали)</label>
+                            <input type="number" id="newPrizePrice" class="input" value="100" min="1" style="margin-bottom: 15px;">
+                        </div>
+                        
+                        <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">Тип дії при виграші</label>
+                        <select id="newPrizeActionType" class="select" onchange="toggleActionVal()" style="margin-bottom: 15px;">
+                            <option value="item">📦 Предмет (без дій)</option>
+                            <option value="points">⚪ Нарахувати бали</option>
+                            <option value="currency">💸 Нарахувати гроші</option>
+                            <option value="ticket">🎫 Нарахувати квитки</option>
+                        </select>
+                        
+                        <div id="actionValContainer" style="display: none;">
+                            <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">Кількість для нарахування</label>
+                            <input type="number" id="newPrizeActionVal" class="input" placeholder="Введіть кількість" min="1" style="margin-bottom: 15px;">
+                        </div>
+                        
+                        <label style="font-size: 12px; color: var(--text-gray); display: block; margin-bottom: 8px;">Зображення призу</label>
+                        <input type="file" id="newPrizeImgFile" accept="image/*" onchange="previewSlotImage()" class="input" style="margin-bottom: 15px; padding: 12px;">
+                        
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <img id="slotImgPreview" style="max-width: 150px; max-height: 150px; border-radius: 10px; display: none; border: 2px solid var(--primary);">
+                        </div>
+                        
+                        <div id="prizeFormActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <button id="cancelEditBtn" onclick="window.resetPrizeForm()" class="btn-main" style="background: #333; color: white; display: none;">
+                                СКАСУВАТИ
+                            </button>
+                            <button id="savePrizeBtn" onclick="savePrize()" class="btn-main btn-buy" style="grid-column: span 2;">
+                                ЗБЕРЕГТИ
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- TAB: LOGS (original content) -->
@@ -647,6 +728,9 @@
     let currentPromotion = { isActive: false, percentage: 0, promoText: "" };
     let allUsers = [];
     let rouletteState = { isSpinning: false, spinStartTime: null, targetPrize: null, userId: null };
+    let isAutoOdds = false;
+    let editingId = null;
+    let currentSlotBase64 = null;
 
     // === HELPER FUNCTIONS ===
     function notify(msg) {
@@ -844,12 +928,16 @@
         
         snapshot.forEach(doc => {
             const user = { id: doc.id, ...doc.data() };
-            allUsers.push(user);
             
-            const option = document.createElement('option');
-            option.value = doc.id;
-            option.innerText = `${user.name} (${user.rank || 'Боєць'})`;
-            select.appendChild(option);
+            // ВИПРАВЛЕННЯ: показуємо тільки інструкторів та адмінів
+            if (user.role === 'instructor' || user.role === 'admin') {
+                allUsers.push(user);
+                
+                const option = document.createElement('option');
+                option.value = doc.id;
+                option.innerText = `${user.name} (${user.rank || user.role})`;
+                select.appendChild(option);
+            }
         });
     }
 
@@ -1332,8 +1420,13 @@
             
             document.getElementById('pointsVal').innerText = userData.points || 0;
             document.getElementById('currencyVal').innerText = userData.currency || 0;
-            document.getElementById('ticketsVal').innerText = userData.roulette_passes || 0;
+            const tickets = userData.roulette_passes || 0;
+            document.getElementById('ticketsVal').innerText = tickets;
+            document.getElementById('ticketsVal2').innerText = tickets;
             document.getElementById('footerRoleLabel').innerText = (userData.role || 'user').toUpperCase();
+            
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = tickets < 1 || isSpinning;
             
             if (['admin', 'instructor'].includes(userData.role)) {
                 document.getElementById('adminBtn').style.display = 'block';
@@ -1344,9 +1437,215 @@
 
         loadTicketPrice();
         loadPromoSettings();
+        loadAutoOdds();
         loadRouletteState();
         loadPrizes();
+        applyRoleRestrictions();
     });
+
+
+    // === AUTO ODDS SYSTEM ===
+    window.toggleAutoOdds = async function() {
+        if (userData.role !== 'admin') {
+            notify("Тільки адмін може змінювати це налаштування!");
+            document.getElementById('autoOddsToggle').checked = isAutoOdds;
+            return;
+        }
+        
+        isAutoOdds = document.getElementById('autoOddsToggle').checked;
+        
+        try {
+            await setDoc(doc(db, "settings", "autoOdds"), {
+                enabled: isAutoOdds,
+                updatedAt: serverTimestamp(),
+                updatedBy: userData.name
+            });
+            
+            notify(isAutoOdds ? 'Автоматичні шанси увімкнено!' : 'Ручні шанси відновлено!');
+            renderManage();
+            
+            await addLog('UPDATE_AUTO_ODDS', `Автошанси: ${isAutoOdds ? 'УВІМКНЕНО' : 'ВИМКНЕНО'}`);
+        } catch (err) {
+            notify('Помилка збереження: ' + err.message);
+        }
+    };
+
+    async function loadAutoOdds() {
+        try {
+            const docRef = doc(db, "settings", "autoOdds");
+            const snap = await getDoc(docRef);
+            
+            if (snap.exists()) {
+                isAutoOdds = snap.data().enabled || false;
+                document.getElementById('autoOddsToggle').checked = isAutoOdds;
+            }
+        } catch (e) {
+            console.error("Load auto odds error:", e);
+        }
+    }
+
+    // === PRIZE MANAGEMENT ===
+    window.previewSlotImage = function() {
+        const file = document.getElementById('newPrizeImgFile').files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentSlotBase64 = e.target.result;
+            const img = document.getElementById('slotImgPreview');
+            img.src = currentSlotBase64;
+            img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.togglePrizeSettings = function() {
+        const cat = document.getElementById('newPrizeCategory').value;
+        document.getElementById('rouletteSettings').style.display = cat === 'roulette' ? 'block' : 'none';
+        document.getElementById('shopSettings').style.display = cat === 'shop' ? 'block' : 'none';
+    };
+
+    window.toggleActionVal = function() {
+        const action = document.getElementById('newPrizeActionType').value;
+        document.getElementById('actionValContainer').style.display = action !== 'item' ? 'block' : 'none';
+    };
+
+    window.editPrize = function(id) {
+        if (userData.role !== 'admin') return notify("Тільки адмін може редагувати!");
+        
+        editingId = id;
+        const p = prizePool.find(prize => prize.id === id);
+        if (!p) return;
+        
+        document.getElementById('newPrizeName').value = p.name;
+        document.getElementById('newPrizeCategory').value = p.category || 'roulette';
+        togglePrizeSettings();
+        
+        document.getElementById('newPrizeActionType').value = p.action || 'item';
+        toggleActionVal();
+        
+        if (p.category === 'roulette') {
+            document.getElementById('newPrizeChance').value = p.chance || 10;
+        }
+        if (p.category === 'shop') {
+            document.getElementById('newPrizePrice').value = p.price || 0;
+        }
+        
+        document.getElementById('newPrizeActionVal').value = p.actionVal || "";
+        
+        currentSlotBase64 = p.img;
+        const img = document.getElementById('slotImgPreview');
+        img.src = p.img;
+        img.style.display = 'block';
+
+        document.getElementById('formTitle').innerText = "РЕДАГУВАТИ СЛОТ";
+        document.getElementById('savePrizeBtn').innerText = "ОНОВИТИ СЛОТ";
+        document.getElementById('cancelEditBtn').style.display = 'block';
+        
+        document.getElementById('tabPrizes').scrollIntoView({behavior: "smooth"});
+    };
+
+    window.savePrize = async () => {
+        if (userData.role !== 'admin') return notify("Тільки адмін!");
+        const name = document.getElementById('newPrizeName').value;
+        const cat = document.getElementById('newPrizeCategory').value;
+        const act = document.getElementById('newPrizeActionType').value;
+        
+        if (!name) return notify("Назва обов'язкова!");
+        if (!editingId && !currentSlotBase64) return notify("Фото обов'язкове!");
+
+        const data = { name, category: cat, action: act };
+        
+        if (currentSlotBase64) data.img = currentSlotBase64;
+        
+        if (cat === 'roulette') {
+            data.chance = parseFloat(document.getElementById('newPrizeChance').value) || 0;
+        } else {
+            data.price = parseInt(document.getElementById('newPrizePrice').value) || 0;
+        }
+
+        if (act !== 'item') {
+            data.actionVal = document.getElementById('newPrizeActionVal').value;
+        }
+
+        if (editingId) {
+            await updateDoc(doc(db, "roulette_prizes", editingId), data);
+            notify("Слот оновлено!");
+            window.resetPrizeForm();
+        } else {
+            await addDoc(collection(db, "roulette_prizes"), data);
+            notify("Слот створено!");
+            window.resetPrizeForm();
+        }
+    };
+
+    window.deletePrize = async (id) => {
+        if (userData.role !== 'admin') return notify("Тільки адмін!");
+        if(confirm("Видалити цей слот назавжди?")) {
+            await deleteDoc(doc(db, "roulette_prizes", id));
+            notify("Слот видалено");
+        }
+    };
+
+    window.resetPrizeForm = () => {
+        editingId = null;
+        document.getElementById('newPrizeName').value = "";
+        document.getElementById('newPrizeImgFile').value = "";
+        document.getElementById('slotImgPreview').style.display = 'none';
+        currentSlotBase64 = null;
+        document.getElementById('formTitle').innerText = "СТВОРИТИ НОВИЙ СЛОТ";
+        document.getElementById('savePrizeBtn').innerText = "ЗБЕРЕГТИ";
+        document.getElementById('cancelEditBtn').style.display = 'none';
+    };
+
+    function renderManage() {
+        const rouletteGrid = document.getElementById('manageRouletteGrid');
+        const shopGrid = document.getElementById('manageShopGrid');
+        if(!rouletteGrid || !shopGrid) return;
+
+        rouletteGrid.innerHTML = "";
+        shopGrid.innerHTML = "";
+        
+        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+        let totalChance = rouletteItems.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
+
+        prizePool.forEach(p => {
+            let chanceDisplay = "";
+            if (p.category === 'shop') {
+                chanceDisplay = `Ціна: ${p.price} ⚪`;
+            } else {
+                if (isAutoOdds) {
+                    chanceDisplay = `Шанс: ${(100 / rouletteItems.length).toFixed(1)}%`;
+                } else {
+                    let thisChance = parseFloat(p.chance) || 0;
+                    let percent = totalChance > 0 ? ((thisChance / totalChance) * 100).toFixed(1) : 0;
+                    chanceDisplay = `Шанс: ${thisChance}% (${percent} реальн.)`;
+                }
+            }
+
+            const html = `
+                <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:10px; text-align:center; position:relative; border:1px solid rgba(255,255,255,0.1);">
+                    <img src="${p.img}" style="width:50px; height:50px;">
+                    <div style="font-size:10px; font-weight:700; margin-top:5px; color:#fff;">${p.name}</div>
+                    <div style="font-size:9px; color:var(--primary); margin-top:2px; margin-bottom:5px;">${chanceDisplay}</div>
+                    <div style="display:flex; gap:5px; justify-content:center;">
+                        <button onclick="window.editPrize('${p.id}')" style="background:#334155; border:none; color:white; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">✏️</button>
+                        <button onclick="window.deletePrize('${p.id}')" style="background:#7f1d1d; border:none; color:white; padding:4px 8px; border-radius:4px; font-size:10px; cursor:pointer;">🗑️</button>
+                    </div>
+                </div>`;
+            
+            if (p.category === 'shop') shopGrid.innerHTML += html;
+            else rouletteGrid.innerHTML += html;
+        });
+    }
+
+    function applyRoleRestrictions() {
+        if (userData.role !== 'admin') {
+            if(document.getElementById('prizeFormActions')) document.getElementById('prizeFormActions').style.display = 'none';
+            if(document.getElementById('instructorNotice')) document.getElementById('instructorNotice').style.display = 'block';
+            if(document.getElementById('autoOddsToggle')) document.getElementById('autoOddsToggle').disabled = true;
+        }
+    }
 
     function loadPrizes() {
         onSnapshot(collection(db, "roulette_prizes"), (snap) => {
@@ -1358,6 +1657,7 @@
             
             renderRoulettePreview(rouletteItems);
             renderShop(shopItems);
+            renderManage();
             
             if (!isSpinning) {
                 initTrack(rouletteItems);
