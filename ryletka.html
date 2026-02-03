@@ -2,757 +2,1082 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ДШВ | КОЛЕСО ФОРТУНИ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ДШВ | КОЛЕСО ФОРТУНИ - ОНОВЛЕНО</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #22c55e;
+            --primary-glow: rgba(34, 197, 94, 0.5);
+            --accent: #f97316;
+            --accent-glow: rgba(249, 115, 22, 0.5);
+            --bg: #020305;
+            --card-bg: rgba(10, 15, 25, 0.9);
+            --glass-border: rgba(34, 197, 94, 0.3);
+            --text-gray: #94a3b8;
+            --danger: #ef4444;
+            --currency: #fbbf24;
         }
 
-        :root {
-            --primary: #00d4ff;
-            --secondary: #ff6b9d;
-            --danger: #ff3366;
-            --success: #00ff88;
-            --warning: #ffaa00;
-            --dark: #0a0e27;
-            --darker: #050812;
-            --card-bg: rgba(15, 20, 45, 0.8);
-            --text-primary: #ffffff;
-            --text-gray: #b0b8d4;
-            --border-color: rgba(0, 212, 255, 0.2);
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background: linear-gradient(135deg, #050812 0%, #0a0e27 50%, #1a1f4b 100%);
-            color: var(--text-primary);
+            background-color: var(--bg);
+            background-image: 
+                radial-gradient(circle at 50% -20%, var(--primary-glow) 0%, transparent 50%),
+                radial-gradient(circle at 0% 100%, rgba(14, 165, 233, 0.1) 0%, transparent 40%);
+            color: white; 
             font-family: 'Inter', sans-serif;
+            min-height: 100vh; 
             overflow-x: hidden;
-            min-height: 100vh;
-            padding-bottom: 80px;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: 70px;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
+        input, textarea, select {
+            user-select: text !important;
+            -webkit-user-select: text !important;
+            cursor: text;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 
+            0%, 100% { transform: scale(1); box-shadow: 0 0 40px var(--accent-glow); }
+            50% { transform: scale(1.02); box-shadow: 0 0 60px var(--accent-glow); }
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px var(--primary-glow); }
+            50% { box-shadow: 0 0 40px var(--primary-glow), 0 0 60px var(--primary-glow); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px var(--accent-glow), 0 0 20px var(--accent-glow);
+            letter-spacing: 3px; 
+            text-transform: uppercase;
+        }
+
+        /* HEADER */
         header {
-            display: flex;
-            justify-content: space-between;
+            display: flex; 
+            justify-content: space-between; 
             align-items: center;
-            padding: 20px;
-            border-bottom: 1px solid var(--border-color);
-            backdrop-filter: blur(10px);
-            background: rgba(5, 8, 18, 0.5);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        .main-container {
-            display: flex;
-            max-width: 1400px;
-            margin: 0 auto;
-            gap: 20px;
-            padding: 20px;
-        }
-
-        .sidebar {
-            width: 280px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .sidebar-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-        }
-
-        .sidebar-title {
-            font-size: 12px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary);
-            margin-bottom: 15px;
-        }
-
-        .balance-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 14px;
-        }
-
-        .balance-item:last-child {
-            border-bottom: none;
-        }
-
-        .balance-value {
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .content-wrapper {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .content-section {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .content-section.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* NAVIGATION TABS */
-        .nav-tabs {
-            display: flex;
+            padding: 12px 4%; 
+            background: rgba(2, 3, 5, 0.95);
+            backdrop-filter: blur(20px); 
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky; 
+            top: 0; 
+            z-index: 1000;
+            flex-wrap: wrap; 
             gap: 10px;
-            margin-bottom: 20px;
-            background: var(--card-bg);
-            padding: 10px;
-            border-radius: 12px;
-            border: 1px solid var(--border-color);
         }
 
-        .nav-tab {
-            flex: 1;
-            padding: 12px 20px;
-            background: transparent;
-            border: none;
-            color: var(--text-gray);
-            font-weight: 700;
-            font-size: 12px;
+        .header-back {
+            color: var(--text-gray); 
+            text-decoration: none; 
+            font-weight: 900; 
+            font-size: 11px; 
             text-transform: uppercase;
-            cursor: pointer;
+            padding: 8px 12px;
             border-radius: 8px;
-            transition: all 0.3s ease;
-            letter-spacing: 1px;
+            transition: 0.3s;
         }
+        .header-back:hover { background: rgba(255,255,255,0.05); }
 
-        .nav-tab:hover {
-            background: rgba(0, 212, 255, 0.1);
-        }
-
-        .nav-tab.active {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: var(--dark);
-        }
-
-        /* ROULETTE SECTION */
-        .roulette-container {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .roulette-wheel {
-            width: 300px;
-            height: 300px;
-            border-radius: 50%;
-            background: conic-gradient(
-                from 0deg,
-                #ff3366 0deg 45deg,
-                #00ff88 45deg 90deg,
-                #ffaa00 90deg 135deg,
-                #00d4ff 135deg 180deg,
-                #ff6b9d 180deg 225deg,
-                #ff3366 225deg 270deg,
-                #00ff88 270deg 315deg,
-                #ffaa00 315deg 360deg
-            );
-            border: 3px solid var(--primary);
-            position: relative;
-            box-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: spin 20s linear infinite paused;
-        }
-
-        .roulette-wheel.spinning {
-            animation: spin 0.5s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        .roulette-center {
-            width: 60px;
-            height: 60px;
-            background: var(--dark);
-            border-radius: 50%;
-            border: 3px solid var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2;
-            font-weight: 900;
-            color: var(--primary);
-            font-size: 24px;
-        }
-
-        .roulette-pointer {
-            width: 0;
-            height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid var(--primary);
-            position: absolute;
-            top: -25px;
-            z-index: 3;
-        }
-
-        .ticket-price {
-            font-size: 16px;
-            color: var(--text-gray);
-            text-align: center;
-        }
-
-        .ticket-price-value {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--primary);
-            margin: 10px 0;
-        }
-
-        .ticket-discount {
-            font-size: 12px;
-            color: var(--success);
-            font-weight: 700;
-        }
-
-        .ticket-discount.negative {
-            color: var(--danger);
-        }
-
-        .btn {
-            padding: 12px 30px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border: none;
-            color: var(--dark);
-            font-weight: 700;
-            font-size: 14px;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 212, 255, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--primary);
-            color: var(--primary);
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-            background: rgba(0, 212, 255, 0.1);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, var(--danger), var(--secondary));
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, var(--success), #00cc66);
-        }
-
-        /* SLOTS */
-        .slots-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 30px;
-        }
-
-        .slot-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .slot-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-            transform: translateY(-2px);
-        }
-
-        .slot-name {
-            font-weight: 700;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .slot-rarity {
-            font-size: 12px;
-            color: var(--text-gray);
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .slot-actions {
-            display: flex;
-            gap: 8px;
+        .header-stats {
+            display: flex; 
+            gap: 8px; 
+            align-items: center; 
             flex-wrap: wrap;
         }
 
-        .slot-action {
-            flex: 1;
-            min-width: 80px;
-            padding: 8px 12px;
-            background: rgba(0, 212, 255, 0.1);
-            border: 1px solid var(--primary);
-            border-radius: 6px;
-            color: var(--primary);
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .slot-action:hover {
-            background: var(--primary);
-            color: var(--dark);
-        }
-
-        /* MODALS */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-inner {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 30px;
-            max-width: 400px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-title {
-            font-size: 18px;
-            font-weight: 900;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--primary);
-        }
-
-        .modal-input-group {
-            margin-bottom: 15px;
-        }
-
-        .modal-label {
-            display: block;
-            font-size: 12px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-            color: var(--text-gray);
-        }
-
-        input[type="text"],
-        input[type="number"],
-        input[type="range"],
-        select {
-            width: 100%;
-            padding: 12px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            color: var(--text-primary);
-            font-family: 'Inter', sans-serif;
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus,
-        input[type="number"]:focus,
-        input[type="range"]:focus,
-        select:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
-        }
-
-        /* RANGE SLIDER */
-        input[type="range"] {
-            cursor: pointer;
-            height: 6px;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-        }
-
-        /* ADMIN SETTINGS */
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .setting-card {
-            background: rgba(0, 212, 255, 0.05);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-        }
-
-        .setting-title {
-            font-weight: 700;
+        .stat-item {
+            display: flex; 
+            align-items: center; 
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid var(--glass-border);
+            padding: 8px 14px; 
+            border-radius: 12px; 
+            font-weight: 800; 
             font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            color: var(--primary);
+            transition: 0.3s;
+            white-space: nowrap;
         }
 
-        .promo-list {
-            margin-top: 15px;
-            max-height: 300px;
-            overflow-y: auto;
+        .stat-item.currency-stat { border-color: var(--currency); }
+        .stat-item.exchange-btn {
+            cursor: pointer; 
+            background: linear-gradient(135deg, #fbbf24, #d97706); 
+            border: none; 
+            color: black;
+        }
+        .stat-item.exchange-btn:hover { transform: scale(1.05); }
+
+        /* MAIN LAYOUT */
+        .main-container {
+            display: grid; 
+            grid-template-columns: 260px 1fr; 
+            gap: 25px;
+            max-width: 1500px; 
+            margin: 20px auto; 
+            padding: 0 4%;
         }
 
-        .promo-item {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
+        .sidebar {
+            background: var(--card-bg); 
+            border: 1px solid var(--glass-border);
+            border-radius: 20px; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px;
+            height: fit-content; 
+            position: sticky; 
+            top: 100px;
+        }
+
+        .menu-btn {
+            padding: 14px 16px; 
+            border-radius: 12px; 
+            border: 1px solid transparent;
+            background: rgba(255, 255, 255, 0.03); 
+            color: white; 
+            text-align: left;
+            font-weight: 700; 
+            cursor: pointer; 
+            transition: 0.3s; 
+            font-size: 13px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            gap: 10px;
         }
-
-        .promo-delete {
-            background: var(--danger);
-            border: none;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 700;
+        .menu-btn:hover, .menu-btn.active {
+            background: rgba(34, 197, 94, 0.15); 
+            border-color: var(--primary); 
+            color: var(--primary); 
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+        }
+        .menu-btn.locked {
+            opacity: 0.5;
+            pointer-events: none;
         }
 
         /* STATUS BAR */
         .status-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 60px;
-            background: rgba(5, 8, 18, 0.95);
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-around;
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%;
+            height: 50px; 
+            background: rgba(10, 15, 25, 0.95);
+            backdrop-filter: blur(15px); 
+            border-top: 1px solid var(--glass-border);
+            display: flex; 
+            justify-content: space-between; 
             align-items: center;
-            backdrop-filter: blur(10px);
-            z-index: 99;
+            padding: 0 20px; 
+            z-index: 2000; 
+            font-size: 10px; 
+            font-weight: 800;
+            color: var(--text-gray); 
+            letter-spacing: 1px;
         }
 
-        .status-segment {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            flex: 1;
-            text-align: center;
+        .status-indicator {
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+        }
+        .status-dot {
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            background: var(--primary); 
+            box-shadow: 0 0 10px var(--primary);
+            animation: pulse 2s infinite;
+        }
+        .status-dot.spinning { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+        .content-section { display: none; animation: fadeIn 0.4s ease; }
+        .content-section.active { display: block; }
+
+        /* PROMO BANNER */
+        #promoBanner {
+            display: none;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            padding: 20px; 
+            border-radius: 20px; 
+            margin-bottom: 25px;
+            text-align: center; 
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 40px var(--accent-glow);
+            animation: pulse 2s infinite;
+            position: relative;
+            overflow: hidden;
+        }
+        #promoBanner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) rotate(45deg); }
         }
 
-        .status-segment:hover {
-            color: var(--primary);
+        .promo-badge {
+            display: inline-block;
+            background: rgba(0,0,0,0.3);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            animation: shake 0.5s infinite;
         }
 
-        .status-value {
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--primary);
-        }
-
-        /* EXCHANGE CHOICE MODAL */
-        .exchange-choice {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .exchange-option {
-            padding: 20px;
-            background: rgba(0, 212, 255, 0.05);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .exchange-option:hover {
-            border-color: var(--primary);
-            background: rgba(0, 212, 255, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .exchange-option.selected {
-            border-color: var(--primary);
-            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(255, 107, 157, 0.2));
-        }
-
-        .exchange-amount {
+        .promo-title {
             font-size: 20px;
             font-weight: 900;
-            color: var(--primary);
-            margin: 10px 0;
+            margin-bottom: 15px;
         }
 
-        .exchange-currency {
-            font-size: 12px;
+        .promo-prices {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .promo-old-price {
+            font-size: 18px;
+            color: rgba(255,255,255,0.5);
+            text-decoration: line-through;
+        }
+
+        .promo-new-price {
+            font-size: 32px;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .promo-percent {
+            margin-top: 12px;
+            background: rgba(0,0,0,0.4);
+            display: inline-block;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: 900;
+        }
+
+        /* ROULETTE */
+        .roulette-container {
+            background: linear-gradient(180deg, #0a0f18 0%, #05080f 100%);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px; 
+            padding: 40px 20px; 
+            text-align: center; 
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 0 100px rgba(34, 197, 94, 0.03);
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .roulette-title {
+            font-size: clamp(18px, 5vw, 28px);
+            margin-bottom: 30px;
+        }
+
+        .carousel-outer {
+            position: relative; 
+            height: 220px; 
+            margin: 30px 0; 
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3); 
+            border-radius: 20px;
+            mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%);
+            border: 1px solid rgba(255,255,255, 0.05);
+        }
+        
+        .pointer {
+            position: absolute; 
+            top: 0; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 4px; 
+            height: 100%; 
+            background: linear-gradient(180deg, var(--accent), transparent);
+            z-index: 100;
+            box-shadow: 0 0 20px var(--accent), 0 0 40px var(--accent);
+        }
+        .pointer::before {
+            content: '▼';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent);
+        }
+
+        .track {
+            display: flex; 
+            position: absolute; 
+            left: 0; 
+            top: 50%;
+            transform: translateY(-50%);
+            will-change: transform;
+        }
+        
+        .prize-card {
+            width: 180px; 
+            height: 180px; 
+            margin: 0 8px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255, 0.08);
+            border-radius: 16px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center;
+            justify-content: center; 
+            padding: 15px; 
+            flex-shrink: 0;
+            transition: 0.3s;
+        }
+        .prize-card img { 
+            width: 90px; 
+            height: 90px; 
+            object-fit: contain;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.1));
+        }
+        .prize-card span { 
+            font-size: 11px; 
+            font-weight: 800; 
+            margin-top: 10px; 
             color: var(--text-gray);
+            text-align: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* WIN OVERLAY */
+        #winOverlay {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0,0,0,0.85); 
+            z-index: 50;
+            display: none; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            backdrop-filter: blur(5px); 
+            animation: fadeIn 0.5s;
+        }
+
+        .win-title {
+            font-size: 36px;
+            font-weight: 900;
+            color: var(--accent);
+            text-shadow: 0 0 30px var(--accent);
+            margin-bottom: 15px;
+            animation: pulse 1s infinite;
+        }
+
+        .win-prize-name {
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 25px;
+        }
+
+        /* EXCHANGE CHOICE (новий функціонал) */
+        .exchange-choice {
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .exchange-choice-btn {
+            padding: 16px 20px;
+            border-radius: 14px;
+            border: 2px solid transparent;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .exchange-choice-btn.points-btn {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(34, 197, 94, 0.1));
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .exchange-choice-btn.points-btn:hover {
+            background: var(--primary);
+            color: black;
+        }
+
+        .exchange-choice-btn.currency-btn {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(251, 191, 36, 0.1));
+            border-color: var(--currency);
+            color: var(--currency);
+        }
+        .exchange-choice-btn.currency-btn:hover {
+            background: var(--currency);
+            color: black;
+        }
+
+        .exchange-choice-btn.keep-btn {
+            background: rgba(255,255,255,0.05);
+            border-color: var(--text-gray);
+            color: var(--text-gray);
+        }
+        .exchange-choice-btn.keep-btn:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        /* SPIN ACTIONS */
+        .spin-actions {
+            display: flex; 
+            justify-content: center; 
+            align-items: stretch;
+            gap: 15px; 
+            max-width: 600px; 
+            margin: 25px auto 0;
+            padding: 0 10px;
+        }
+
+        .btn-main {
+            flex: 1; 
+            padding: 16px 20px; 
+            border-radius: 14px; 
+            border: none; 
+            font-weight: 900;
+            cursor: pointer; 
+            text-transform: uppercase; 
+            font-size: 13px; 
+            transition: 0.3s;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 4px;
+            max-width: 280px; 
+            width: 100%; 
+            position: relative; 
+            overflow: hidden;
+        }
+        .btn-main:hover:not(:disabled) { transform: translateY(-2px); }
+        .btn-main:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.5); }
+        
+        .btn-buy { 
+            background: linear-gradient(135deg, #f97316, #ea580c); 
+            color: white; 
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.4);
+        }
+        .btn-spin { 
+            background: linear-gradient(135deg, #1e293b, #0f172a); 
+            color: #94a3b8; 
+            border: 1px solid #334155;
+        }
+        .btn-spin:not(:disabled) {
+            background: linear-gradient(135deg, var(--primary), #16a34a);
+            color: white;
+            box-shadow: 0 0 25px var(--primary-glow);
+        }
+
+        .btn-label { font-size: 14px; }
+        .btn-sub { font-size: 10px; opacity: 0.8; }
+
+        /* ADMIN STYLES */
+        .admin-box { 
+            background: var(--card-bg); 
+            border: 1px solid var(--glass-border); 
+            border-radius: 24px; 
+            padding: 25px;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+        }
+
+        .admin-tab-btn {
+            padding: 12px 18px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            background: rgba(255,255,255,0.03);
+            color: var(--text-gray);
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+        .admin-tab-btn:hover, .admin-tab-btn.active {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .input, .select, .textarea { 
+            width: 100%; 
+            background: rgba(0,0,0,0.5); 
+            border: 1px solid rgba(255,255,255,0.1); 
+            color: white; 
+            padding: 14px 16px; 
+            border-radius: 10px; 
+            outline: none; 
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+        .input:focus, .select:focus, .textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-bottom: 6px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* PROCESSING OVERLAY */
+        .info-box {
+            background: rgba(34, 197, 94, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-top: 15px;
+        }
+
+        /* TOGGLE SWITCH */
+        .toggle-container { 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between;
+            gap: 15px; 
+            background: rgba(255, 255, 255, 0.03); 
+            padding: 15px 18px; 
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+        
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { 
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; 
+            background-color: #333; transition: .4s; border-radius: 26px; 
+        }
+        .slider:before { 
+            position: absolute; content: ""; height: 20px; width: 20px; left: 3px; 
+            bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; 
+        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* BALANCE CARDS */
+        .balance-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .balance-card {
+            padding: 20px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .balance-card.points {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            border: 1px solid var(--primary);
+        }
+        .balance-card.currency {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.05));
+            border: 1px solid var(--currency);
+        }
+        .balance-card-label {
+            font-size: 10px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        .balance-card-value {
+            font-size: 26px;
+            font-weight: 900;
+        }
+        .balance-card.points .balance-card-value { color: var(--primary); }
+        .balance-card.currency .balance-card-value { color: var(--currency); }
+
+        /* SHOP */
+        .shop-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); 
+            gap: 18px; 
+        }
+
+        .shop-card { 
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+            border: 1px solid rgba(255,255, 255, 0.06);
+            border-radius: 18px; 
+            padding: 22px; 
+            text-align: center; 
+            transition: 0.3s;
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            position: relative;
+            overflow: hidden;
+        }
+        .shop-card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--primary);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .shop-card img { 
+            width: 100px; 
+            height: 100px; 
+            object-fit: contain; 
+            margin-bottom: 12px;
+            filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
+        }
+        .shop-card-name {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: white;
+        }
+        .shop-card-price { 
+            font-size: 20px; 
+            font-weight: 900; 
+            color: var(--primary); 
+            margin-bottom: 12px; 
+        }
+        .shop-card-price.on-sale {
+            color: var(--accent);
+        }
+        .shop-card-original {
+            font-size: 13px;
+            color: var(--text-gray);
+            text-decoration: line-through;
+            margin-bottom: 5px;
+        }
+        .shop-card .sale-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: var(--accent);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        /* PRIZE MANAGEMENT */
+        .manage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .manage-card {
+            background: rgba(255,255,255,0.03);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: 0.3s;
+        }
+        .manage-card:hover {
+            border-color: var(--primary);
+        }
+        .manage-card img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+        .manage-card-name {
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .manage-card-info {
+            font-size: 9px;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+        .manage-card-actions {
+            display: flex;
+            gap: 5px;
+            justify-content: center;
+        }
+        .manage-btn {
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: none;
+            font-size: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .manage-btn.edit { background: #334155; color: white; }
+        .manage-btn.delete { background: #7f1d1d; color: white; }
+
+        /* MODALS */
+        .modal { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0, 0, 0, 0.95); 
+            z-index: 5000; 
+            display: none; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .modal-inner { 
+            background: linear-gradient(180deg, #0a0e14, #050810);
+            border: 1px solid var(--glass-border); 
+            border-radius: 24px; 
+            padding: 30px; 
+            width: 100%; 
+            max-width: 450px; 
+            text-align: center; 
+            max-height: 90vh; 
+            overflow-y: auto; 
+            animation: fadeIn 0.3s;
+            margin: auto;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        .modal-btns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
         .processing-overlay {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95); 
+            z-index: 10000;
+            display: none; 
+            flex-direction: column; 
+            justify-content: center; 
+            align-items: center;
+        }
+
+        .spinner {
+            width: 50px; 
+            height: 50px; 
+            border: 4px solid rgba(34, 197, 94, 0.1);
+            border-top-color: var(--primary); 
+            border-radius: 50%;
+            animation: spin 1s linear infinite; 
+            margin-bottom: 20px;
+        }
+
+        /* TOAST NOTIFICATIONS */
+        #toastContainer { 
+            position: fixed; 
+            bottom: 70px; 
+            right: 20px; 
+            z-index: 9999; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 10px;
+            max-width: calc(100% - 40px);
+        }
+        
+        .toast { 
+            background: rgba(10, 15, 25, 0.95);
+            border-left: 4px solid var(--primary); 
+            color: white; 
+            padding: 14px 20px; 
+            border-radius: 10px; 
+            font-weight: 700;
+            font-size: 13px;
+            box-shadow: 0 10px 40px rgba(0,0,0, 0.5); 
+            animation: slideDown 0.3s ease-out;
+            backdrop-filter: blur(10px);
+        }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.warning { border-left-color: var(--currency); }
+
+        /* SPIN LOCK */
+        #spinLockOverlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            z-index: 2000;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 4000;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(3px);
         }
 
-        .processing-overlay.active {
-            display: flex;
-        }
-
-        .processing-content {
-            text-align: center;
+        .spin-lock-message {
             background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 40px;
-            min-width: 300px;
+            border: 2px solid var(--accent);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 350px;
+            animation: pulse 2s infinite;
         }
 
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid var(--border-color);
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        /* TOAST NOTIFICATIONS */
-        #toastContainer {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 5000;
-            display: flex;
-            flex-direction: column;
+        /* PRIZE PREVIEW */
+        .prize-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
             gap: 10px;
         }
 
-        .toast {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px 20px;
-            min-width: 250px;
-            animation: slideIn 0.3s ease;
+        .prize-preview-card {
+            background: rgba(255,255,255,0.02);
+            padding: 15px;
+            border-radius: 14px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .prize-preview-card img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+            margin-bottom: 8px;
+        }
+        .prize-preview-card span {
+            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-gray);
         }
 
-        .toast.success {
-            border-left: 4px solid var(--success);
+        /* LOGS */
+        .logs-container {
+            background: #000;
+            border: 2px solid #222;
+            border-radius: 12px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #00ff41;
+            max-height: 400px;
+            overflow-y: auto;
         }
 
-        .toast.error {
-            border-left: 4px solid var(--danger);
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px dashed #222;
         }
+        .log-time { color: #666; }
+        .log-user { color: #00bfff; }
+        .log-action { color: #fff; }
+        .log-desc { color: #aaa; }
 
-        .toast.warning {
-            border-left: 4px solid var(--warning);
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
+        /* RESPONSIVE */
+        @media (max-width: 1024px) {
+            .main-container { 
+                grid-template-columns: 1fr; 
+                padding: 0 3%;
             }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        /* MOBILE RESPONSIVENESS */
-        @media (max-width: 768px) {
-            .main-container {
-                flex-direction: column;
+            .sidebar { 
+                position: relative; 
+                top: 0; 
+                flex-direction: row; 
+                overflow-x: auto; 
                 padding: 10px;
+                gap: 8px;
             }
+            .menu-btn { 
+                white-space: nowrap; 
+                padding: 10px 16px;
+                font-size: 12px;
+            }
+        }
 
-            .sidebar {
+        @media (max-width: 768px) {
+            header { 
+                padding: 10px 3%;
+                gap: 8px;
+            }
+            .header-stats {
                 width: 100%;
-                flex-direction: row;
-                overflow-x: auto;
+                justify-content: center;
             }
-
-            .sidebar-card {
-                flex: 0 0 auto;
-                min-width: 200px;
-            }
-
-            .roulette-wheel {
-                width: 250px;
-                height: 250px;
-            }
-
-            .slots-container {
-                grid-template-columns: 1fr;
-            }
-
-            .modal-inner {
-                max-width: 95%;
-                padding: 20px;
-            }
-
-            .exchange-choice {
-                grid-template-columns: 1fr;
-            }
-
-            header {
-                padding: 15px;
-            }
-
-            .status-bar {
-                height: 50px;
+            .stat-item {
+                padding: 6px 10px;
+                font-size: 11px;
             }
 
             .roulette-container {
-                padding: 20px;
+                padding: 25px 15px;
+                border-radius: 20px;
             }
-        }
-
-        @media (max-width: 480px) {
-            .roulette-wheel {
-                width: 200px;
-                height: 200px;
+            .roulette-title {
+                font-size: 16px;
+                letter-spacing: 2px;
             }
 
-            .roulette-center {
-                width: 45px;
-                height: 45px;
-                font-size: 18px;
+            .carousel-outer { 
+                height: 160px;
+                margin: 20px 0;
             }
-
-            .ticket-price-value {
-                font-size: 24px;
+            .prize-card { 
+                width: 130px; 
+                height: 130px;
+                margin: 0 6px;
+                padding: 10px;
             }
-
-            .slots-container {
-                grid-template-columns: 1fr;
+            .prize-card img { 
+                width: 60px; 
+                height: 60px; 
             }
-
-            .slot-card {
-                padding: 12px;
-            }
-
-            body {
-                padding-bottom: 60px;
-            }
-
-            .status-segment {
+            .prize-card span {
                 font-size: 9px;
             }
 
-            .status-value {
+            .spin-actions { 
+                flex-direction: column; 
+                gap: 10px;
+                padding: 0;
+            }
+            .btn-main { 
+                max-width: 100%;
+                padding: 14px;
+            }
+
+            .admin-box {
+                padding: 18px;
+            }
+            .admin-tabs {
+                gap: 6px;
+            }
+            .admin-tab-btn {
+                padding: 10px 14px;
+                font-size: 11px;
+            }
+
+            .balance-cards {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .shop-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+            .shop-card {
+                padding: 15px;
+            }
+            .shop-card img {
+                width: 70px;
+                height: 70px;
+            }
+
+            .modal-inner {
+                padding: 20px;
+                border-radius: 18px;
+            }
+
+            .win-title { font-size: 28px; }
+            .win-prize-name { font-size: 18px; }
+
+            .exchange-choice-btn {
+                padding: 14px;
                 font-size: 12px;
+            }
+
+            .promo-new-price { font-size: 26px; }
+            .promo-old-price { font-size: 14px; }
+        }
+
+        @media (max-width: 400px) {
+            .carousel-outer { height: 140px; }
+            .prize-card { 
+                width: 110px; 
+                height: 110px;
+                margin: 0 5px;
+            }
+            .prize-card img { 
+                width: 50px; 
+                height: 50px; 
+            }
+
+            .shop-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-back {
+                font-size: 10px;
+                padding: 6px 10px;
             }
         }
     </style>
@@ -760,208 +1085,517 @@
 <body>
 
 <div id="toastContainer"></div>
+
+<!-- PROCESSING OVERLAY -->
 <div id="processingModal" class="processing-overlay">
-    <div class="processing-content">
+    <div style="text-align: center; padding: 30px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px; max-width: 350px; margin: 20px;">
         <div class="spinner"></div>
-        <p>Обробка...</p>
+        <h3 id="procTitle" style="color: var(--primary); margin-bottom: 10px;">ОБРОБКА</h3>
+        <p id="procText" style="color: var(--text-gray); font-size: 13px;">Завантаження...</p>
     </div>
 </div>
 
+<!-- SPIN LOCK OVERLAY -->
+<div id="spinLockOverlay">
+    <div class="spin-lock-message">
+        <div style="font-size: 40px; margin-bottom: 15px;">🎰</div>
+        <h3 style="color: var(--accent); margin-bottom: 10px;">РУЛЕТКА КРУТИТЬСЯ</h3>
+        <p style="color: var(--text-gray); font-size: 12px;">Зачекайте завершення обертання...</p>
+        <div class="spinner" style="margin: 20px auto 0;"></div>
+    </div>
+</div>
+
+<!-- HEADER -->
 <header>
-    <a href="cabinet.html" style="color: var(--text-gray); text-decoration: none; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing:1px;">← НАЗАД</a>
-    <div style="display:flex; gap:10px; align-items:center;">
-        <span id="userNameHeader" style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;"></span>
+    <a href="cabinet.html" class="header-back" id="backLink">← НАЗАД</a>
+    <div class="header-stats">
+        <div class="stat-item">⚪ <span id="pointsVal">0</span></div>
+        <div class="stat-item currency-stat">💸 <span id="currencyVal">0</span> ₴</div>
+        <button class="stat-item exchange-btn" onclick="openExchangeModal()">💱 ОБМІН</button>
     </div>
 </header>
 
+<!-- MAIN CONTAINER -->
 <div class="main-container">
-    <aside class="sidebar">
-        <div class="sidebar-card">
-            <div class="sidebar-title">ВАШІ БАЛАНСИ</div>
-            <div class="balance-item">
-                <span>Балі:</span>
-                <span class="balance-value" id="balancePoints">0</span>
-            </div>
-            <div class="balance-item">
-                <span>Гривні:</span>
-                <span class="balance-value" id="balanceMoney">0</span>
-            </div>
-        </div>
-
-        <div class="sidebar-card">
-            <div class="sidebar-title">СТАТИСТИКА</div>
-            <div class="balance-item">
-                <span>Спіни:</span>
-                <span class="balance-value" id="spinCount">0</span>
-            </div>
-            <div class="balance-item">
-                <span>Виграш:</span>
-                <span class="balance-value" id="winCount">0</span>
-            </div>
-            <div class="balance-item">
-                <span>Розіграно:</span>
-                <span class="balance-value" id="totalSpent">0</span>
-            </div>
-        </div>
+    <aside class="sidebar" id="sidebar">
+        <button id="nav-roulette" class="menu-btn active" onclick="showPage('roulette', this)">
+            🎰 <span>РУЛЕТКА</span>
+        </button>
+        <button id="nav-shop" class="menu-btn" onclick="showPage('shop', this)">
+            🛒 <span>МАГАЗИН</span>
+        </button>
+        <button id="adminBtn" class="menu-btn" style="display: none;" onclick="showPage('admin', this)">
+            ⚙️ <span>КОНСОЛЬ</span>
+        </button>
     </aside>
 
     <main class="content-wrapper">
-        <div class="nav-tabs">
-            <button class="nav-tab active" data-tab="roulette">РУЛЕТКА</button>
-            <button class="nav-tab" data-tab="shop">МАГАЗИН</button>
-            <button class="nav-tab" id="adminTabBtn" data-tab="admin" style="display:none;">АДМІН</button>
-        </div>
-
-        <!-- ROULETTE SECTION -->
+        <!-- ==================== ROULETTE PAGE ==================== -->
         <section id="roulettePage" class="content-section active">
+            <!-- PROMO BANNER -->
+            <div id="promoBanner">
+                <div class="promo-badge">🔥 АКЦІЯ 🔥</div>
+                <div class="promo-title" id="promoBannerText">СВЯТКОВА ЗНИЖКА!</div>
+                <div class="promo-prices">
+                    <span class="promo-old-price"><span id="promoOldPrice">100</span> ⚪</span>
+                    <span class="promo-new-price"><span id="promoNewPrice">80</span> ⚪</span>
+                </div>
+                <div class="promo-percent" id="promoPercentLabel">-20% ЗНИЖКА</div>
+            </div>
+
+            <!-- ROULETTE CONTAINER -->
             <div class="roulette-container">
-                <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">КОЛЕСО ФОРТУНИ</h2>
+                <h1 class="roulette-title neon-text">КОЛЕСО ФОРТУНИ</h1>
                 
-                <div class="roulette-pointer"></div>
-                <div class="roulette-wheel" id="rouletteWheel">
-                    <div class="roulette-center">►</div>
+                <div class="carousel-outer">
+                    <div class="pointer"></div>
+                    
+                    <!-- WIN OVERLAY -->
+                    <div id="winOverlay">
+                        <div class="win-title">🎉 ВИГРАШ 🎉</div>
+                        <div class="win-prize-name" id="winPrizeName">ПРИЗ</div>
+                        
+                        <!-- EXCHANGE CHOICE (для action: exchange) -->
+                        <div class="exchange-choice" id="exchangeChoice">
+                            <button class="exchange-choice-btn points-btn" id="sellPointsBtn" onclick="selectExchangeOption('points')">
+                                ⚪ Продати за <span id="sellPointsValue">0</span> балів
+                            </button>
+                            <button class="exchange-choice-btn currency-btn" id="sellCurrencyBtn" onclick="selectExchangeOption('currency')">
+                                💸 Продати за <span id="sellCurrencyValue">0</span> ₴
+                            </button>
+                            <button class="exchange-choice-btn keep-btn" onclick="selectExchangeOption('keep')">
+                                📦 Залишити собі
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="track" class="track">ЗАВАНТАЖЕННЯ...</div>
                 </div>
 
-                <div style="text-align: center; margin-top: 20px;">
-                    <div class="ticket-price">ЦІНА БІЛЕТА</div>
-                    <div class="ticket-price-value" id="ticketPrice">100</div>
-                    <div class="ticket-discount" id="discountLabel"></div>
-                </div>
-
-                <button class="btn" id="spinBtn" style="margin-top: 20px;">КРУТИТИ (100 ⚪)</button>
-
-                <div style="margin-top: 30px; padding: 20px; background: rgba(0, 212, 255, 0.05); border-radius: 8px; border: 1px solid rgba(0, 212, 255, 0.2); font-size: 13px; line-height: 1.8;">
-                    <p>📌 <strong>Як це працює:</strong></p>
-                    <p>1. Натисніть кнопку "КРУТИТИ" щоб запустити рулетку</p>
-                    <p>2. Виберіть один з 8 слотів для свого шансу на виграш</p>
-                    <p>3. Якщо повезе - оберіть як обміняти свій виграш</p>
-                    <p>4. Отримайте валюту на свій баланс</p>
-                </div>
-
-                <h3 style="margin-top: 30px; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">ДОСТУПНІ СЛОТИ</h3>
-                <div class="slots-container" id="slotsContainer">
+                <div class="spin-actions">
+                    <button class="btn-main btn-buy" onclick="openPurchaseModal()">
+                        <span class="btn-label">КУПИТИ КВИТОК</span>
+                        <span class="btn-sub" id="ticketPriceLabel">ВАРТІСТЬ: 100 ⚪</span>
+                    </button>
+                    <button class="btn-main btn-spin" id="spinBtn" onclick="startSpin()">
+                        <span class="btn-label">КРУТИТИ КОЛЕСО</span>
+                        <span class="btn-sub">КВИТКІВ: <b id="ticketsVal">0</b></span>
+                    </button>
                 </div>
             </div>
+
+            <h3 style="text-transform: uppercase; letter-spacing: 2px; color: var(--primary); font-size: 11px; margin-bottom: 15px;">
+                ПРИЗИ В ЦІЙ РУЛЕТЦІ
+            </h3>
+            <div id="prizePreview" class="prize-preview-grid"></div>
         </section>
 
-        <!-- SHOP SECTION -->
+        <!-- ==================== SHOP PAGE ==================== -->
         <section id="shopPage" class="content-section">
-            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px;">
-                <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">МАГАЗИН</h2>
-                
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;" id="shopItems">
-                </div>
-
-                <div style="margin-top: 30px; padding: 20px; background: rgba(255, 170, 0, 0.05); border: 1px solid rgba(255, 170, 0, 0.2); border-radius: 8px;">
-                    <h3 style="color: var(--warning); margin-bottom: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">АКЦІЇ 🎉</h3>
-                    <div id="promoList" style="display: flex; flex-direction: column; gap: 10px;"></div>
-                    <p style="margin-top: 15px; font-size: 12px; color: var(--text-gray);">Актуальні коди скидок для магазину</p>
-                </div>
+            <!-- SHOP PROMO BANNER -->
+            <div id="shopPromoBanner" style="display: none; background: linear-gradient(135deg, #22c55e, #16a34a); padding: 20px; border-radius: 20px; margin-bottom: 25px; text-align: center; border: 2px solid var(--primary); animation: glow 2s infinite;">
+                <div class="promo-badge" style="animation: none;">💎 РОЗПРОДАЖ 💎</div>
+                <div class="promo-title" id="shopPromoBannerText">ЗНИЖКИ В МАГАЗИНІ!</div>
+                <div class="promo-percent" id="shopPromoPercentLabel" style="background: rgba(0,0,0,0.3);">-20% НА ВСЕ</div>
             </div>
+
+            <h1 class="neon-text" style="font-size: 24px; margin-bottom: 25px;">🛒 МАГАЗИН</h1>
+            <div id="shopGrid" class="shop-grid"></div>
         </section>
 
-        <!-- ADMIN SECTION -->
+        <!-- ==================== ADMIN PAGE ==================== -->
         <section id="adminPage" class="content-section">
-            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px;">
-                <h2 style="font-size: 20px; font-weight: 900; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px;">АДМІНІСТРАЦІЯ</h2>
+            <div class="admin-box">
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" onclick="switchAdminTab('price', this)">💰 ЦІНА</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('promo', this)">🔥 АКЦІЇ</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('shopPromo', this)">🛒 АКЦІЇ МАГАЗИНУ</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('balance', this)">💎 БАЛАНС</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('prizes', this)">🎰 СЛОТИ</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('discord', this)">📢 DISCORD</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab('logs', this)">📊 ЛОГИ</button>
+                </div>
 
-                <!-- TICKET PRICE SETTINGS -->
-                <div class="setting-card">
-                    <div class="setting-title">⚙️ ЦІНА БІЛЕТА</div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <input type="number" id="ticketPriceInput" placeholder="Ціна" min="1" value="100" style="flex: 1;">
-                        <button class="btn" onclick="saveTicketPrice()" style="padding: 12px 20px;">ЗБЕРЕГТИ</button>
+                <!-- TAB: TICKET PRICE -->
+                <div id="tabPrice" class="admin-tab">
+                    <h3 style="color: var(--primary); margin-bottom: 20px;">💰 НАЛАШТУВАННЯ ЦІНИ КВИТКА</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Базова ціна квитка (в балах)</label>
+                        <input type="number" id="ticketPriceInput" class="input" placeholder="100" min="1" value="100">
+                    </div>
+                    
+                    <button onclick="saveTicketPrice()" class="btn-main btn-buy" style="width: 100%;">
+                        💾 ЗБЕРЕГТИ ЦІНУ
+                    </button>
+                    
+                    <div class="info-box">
+                        ℹ️ Поточна базова ціна: <span id="currentTicketPrice" style="color: var(--primary); font-weight: 900;">100</span> ⚪
                     </div>
                 </div>
 
-                <!-- PROMO/DISCOUNT SETTINGS -->
-                <div class="setting-card" style="margin-top: 15px;">
-                    <div class="setting-title">📊 СИСТЕМА АКЦІЙ</div>
-                    <div style="margin-top: 10px;">
-                        <div style="margin-bottom: 15px;">
-                            <label class="modal-label">ЗНИЖКА / НАЦЕНКА (%)</label>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <input type="range" id="discountSlider" min="-50" max="50" value="0" style="flex: 1;">
-                                <span style="min-width: 60px; color: var(--primary); font-weight: 700;" id="discountValue">0%</span>
+                <!-- TAB: ROULETTE PROMOTIONS -->
+                <div id="tabPromo" class="admin-tab" style="display: none;">
+                    <h3 style="color: var(--primary); margin-bottom: 20px;">🔥 АКЦІЯ РУЛЕТКИ</h3>
+                    
+                    <div class="toggle-container">
+                        <span style="font-weight: 700;">Акція активна</span>
+                        <label class="switch">
+                            <input type="checkbox" id="promoActiveToggle" onchange="togglePromo()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Знижка / Націнка (%)</label>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="range" id="promoSlider" min="-50" max="50" value="0" step="5"
+                                   style="flex: 1; height: 8px; accent-color: var(--primary);" oninput="updatePromoPreview()">
+                            <div id="promoValueDisplay" style="min-width: 70px; font-weight: 900; font-size: 18px; color: var(--primary); text-align: right;">
+                                0%
                             </div>
-                            <p style="font-size: 11px; color: var(--text-gray); margin-top: 8px;">Від -50% (скидка) до +50% (наценка)</p>
                         </div>
-
-                        <div style="margin-bottom: 15px;">
-                            <label class="modal-label">КОД АКЦІЇ (опціонально)</label>
-                            <input type="text" id="promoCode" placeholder="PROMO2025" style="margin-bottom: 10px;">
-                            <label class="modal-label">ПОСИЛАННЯ НА ДС</label>
-                            <input type="text" id="promoDiscordLink" placeholder="https://discord.com/channels/...">
-                        </div>
-
-                        <button class="btn" onclick="addPromo()" style="width: 100%;">ДОДАТИ АКЦІЮ</button>
                     </div>
-
-                    <div class="promo-list" id="promoAdminList">
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-gray); margin-bottom: 10px; text-transform: uppercase;">
+                            Попередній перегляд
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                            <span id="originalPrice" style="font-size: 16px; color: #666; text-decoration: line-through;">100 ⚪</span>
+                            <span style="font-size: 24px; color: var(--accent);">→</span>
+                            <span id="newPrice" style="font-size: 24px; color: var(--primary); font-weight: 900;">100 ⚪</span>
+                        </div>
+                        <div id="discountLabel" style="margin-top: 10px; font-size: 13px; font-weight: 800; color: var(--text-gray);">
+                            БЕЗ ЗМІН
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Текст акції</label>
+                        <input type="text" id="promoTextInput" class="input" placeholder="СВЯТКОВА АКЦІЯ! 🎉" maxlength="50">
+                    </div>
+                    
+                    <button onclick="savePromoSettings()" class="btn-main btn-buy" style="width: 100%;">
+                        💾 ЗБЕРЕГТИ АКЦІЮ
+                    </button>
+                    
+                    <div class="toggle-container" style="margin-top: 25px;">
+                        <div>
+                            <span style="font-weight: 700; display: block;">🎲 Автоматичні шанси</span>
+                            <span style="font-size: 11px; color: var(--text-gray);">Рівномірний розподіл для всіх призів</span>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="autoOddsToggle" onchange="toggleAutoOdds()">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                 </div>
 
-                <!-- SLOT MANAGEMENT -->
-                <div class="setting-card" style="margin-top: 15px;">
-                    <div class="setting-title">🎰 УПРАВЛІННЯ СЛОТАМИ</div>
-                    <button class="btn" onclick="openSlotModal()" style="width: 100%;">ДОДАТИ / РЕДАГУВАТИ СЛОТ</button>
-                    <div id="slotsAdminList" style="margin-top: 15px;"></div>
+                <!-- TAB: SHOP PROMOTIONS -->
+                <div id="tabShopPromo" class="admin-tab" style="display: none;">
+                    <h3 style="color: var(--currency); margin-bottom: 20px;">🛒 АКЦІЯ МАГАЗИНУ</h3>
+                    
+                    <div class="toggle-container">
+                        <span style="font-weight: 700;">Акція магазину активна</span>
+                        <label class="switch">
+                            <input type="checkbox" id="shopPromoActiveToggle" onchange="toggleShopPromo()">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Знижка / Націнка (%)</label>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <input type="range" id="shopPromoSlider" min="-50" max="50" value="0" step="5"
+                                   style="flex: 1; height: 8px; accent-color: var(--currency);" oninput="updateShopPromoPreview()">
+                            <div id="shopPromoValueDisplay" style="min-width: 70px; font-weight: 900; font-size: 18px; color: var(--currency); text-align: right;">
+                                0%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(0,0,0,0.3); padding: 20px; border-radius: 15px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 10px; color: var(--text-gray); margin-bottom: 10px; text-transform: uppercase;">
+                            Приклад ціни товару (100 балів)
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                            <span id="shopOriginalPrice" style="font-size: 16px; color: #666; text-decoration: line-through;">100 ⚪</span>
+                            <span style="font-size: 24px; color: var(--accent);">→</span>
+                            <span id="shopNewPrice" style="font-size: 24px; color: var(--currency); font-weight: 900;">100 ⚪</span>
+                        </div>
+                        <div id="shopDiscountLabel" style="margin-top: 10px; font-size: 13px; font-weight: 800; color: var(--text-gray);">
+                            БЕЗ ЗМІН
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Текст акції магазину</label>
+                        <input type="text" id="shopPromoTextInput" class="input" placeholder="РОЗПРОДАЖ! 💎" maxlength="50">
+                    </div>
+                    
+                    <button onclick="saveShopPromoSettings()" class="btn-main" style="width: 100%; background: linear-gradient(135deg, var(--currency), #d97706); color: black;">
+                        💾 ЗБЕРЕГТИ АКЦІЮ МАГАЗИНУ
+                    </button>
                 </div>
 
-                <!-- SHOP ITEMS MANAGEMENT -->
-                <div class="setting-card" style="margin-top: 15px;">
-                    <div class="setting-title">🛍️ УПРАВЛІННЯ МАГАЗИНОМ</div>
-                    <button class="btn" onclick="openShopModal()" style="width: 100%;">ДОДАТИ / РЕДАГУВАТИ ТОВАР</button>
-                    <div id="shopAdminList" style="margin-top: 15px;"></div>
+                <!-- TAB: BALANCE -->
+                <div id="tabBalance" class="admin-tab" style="display: none;">
+                    <h3 style="color: var(--primary); margin-bottom: 20px;">💎 ПОПОВНЕННЯ БАЛАНСУ</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Оберіть користувача</label>
+                        <select id="topUpUserSelect" class="select" onchange="updateTopUpBalances()">
+                            <option value="">-- Оберіть бійця --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- BALANCE CARDS -->
+                    <div id="currentBalances" class="balance-cards" style="display: none;">
+                        <div class="balance-card points">
+                            <div class="balance-card-label">БАЛИ</div>
+                            <div class="balance-card-value"><span id="currentPoints">0</span> ⚪</div>
+                        </div>
+                        <div class="balance-card currency">
+                            <div class="balance-card-label">ГРОШІ</div>
+                            <div class="balance-card-value"><span id="currentCurrency">0</span> ₴</div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Тип балансу</label>
+                        <select id="topUpType" class="select">
+                            <option value="points">⚪ Бали</option>
+                            <option value="currency">💸 Гроші</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Сума</label>
+                        <input type="number" id="topUpAmount" class="input" placeholder="Введіть суму" min="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Коментар (опціонально)</label>
+                        <input type="text" id="topUpComment" class="input" placeholder="Причина поповнення...">
+                    </div>
+                    
+                    <button onclick="processTopUp()" class="btn-main btn-buy" style="width: 100%;">
+                        💰 ПОПОВНИТИ
+                    </button>
+                </div>
+
+                <!-- TAB: PRIZES (SLOTS) -->
+                <div id="tabPrizes" class="admin-tab" style="display: none;">
+                    <h3 style="color: var(--primary); margin-bottom: 20px;">🎁 УПРАВЛІННЯ СЛОТАМИ</h3>
+                    
+                    <div style="margin-bottom: 25px;">
+                        <h4 style="color: var(--accent); margin-bottom: 12px; font-size: 12px;">🎰 СЛОТИ РУЛЕТКИ</h4>
+                        <div id="manageRouletteGrid" class="manage-grid"></div>
+                        
+                        <h4 style="color: var(--currency); margin-bottom: 12px; margin-top: 20px; font-size: 12px;">🛒 СЛОТИ МАГАЗИНУ</h4>
+                        <div id="manageShopGrid" class="manage-grid"></div>
+                    </div>
+                    
+                    <div id="instructorNotice" style="display: none; background: rgba(251, 191, 36, 0.1); border: 1px solid var(--currency); padding: 18px; border-radius: 12px; text-align: center; margin-bottom: 20px;">
+                        <div style="font-size: 14px; font-weight: 800; color: var(--currency); margin-bottom: 6px;">⚠️ ОБМЕЖЕНИЙ ДОСТУП</div>
+                        <p style="font-size: 11px; color: var(--text-gray); margin: 0;">
+                            Інструктори можуть тільки переглядати слоти.
+                        </p>
+                    </div>
+                    
+                    <!-- PRIZE FORM -->
+                    <div style="background: rgba(255,255,255,0.02); padding: 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 id="formTitle" style="color: var(--primary); margin-bottom: 18px; font-size: 14px;">➕ СТВОРИТИ НОВИЙ СЛОТ</h4>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Назва призу</label>
+                            <input type="text" id="newPrizeName" class="input" placeholder="Наприклад: iPhone 15">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Категорія</label>
+                            <select id="newPrizeCategory" class="select" onchange="togglePrizeSettings()">
+                                <option value="roulette">🎰 Рулетка</option>
+                                <option value="shop">🛒 Магазин</option>
+                            </select>
+                        </div>
+                        
+                        <div id="rouletteSettings">
+                            <div class="form-group">
+                                <label class="form-label">Шанс випадання (%)</label>
+                                <input type="number" id="newPrizeChance" class="input" value="10" min="0" max="100" step="0.1">
+                            </div>
+                        </div>
+                        
+                        <div id="shopSettings" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Ціна (бали)</label>
+                                <input type="number" id="newPrizePrice" class="input" value="100" min="1">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Тип дії при виграші</label>
+                            <select id="newPrizeActionType" class="select" onchange="toggleActionVal()">
+                                <option value="item">📦 Предмет (без дій)</option>
+                                <option value="points">⚪ Нарахувати бали</option>
+                                <option value="currency">💸 Нарахувати гроші</option>
+                                <option value="ticket">🎫 Нарахувати квитки</option>
+                                <option value="exchange">💱 Вибір обміну (бали/гроші/залишити)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- ACTION VALUES -->
+                        <div id="actionValContainer" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Кількість для нарахування</label>
+                                <input type="number" id="newPrizeActionVal" class="input" placeholder="Введіть кількість" min="1">
+                            </div>
+                        </div>
+                        
+                        <!-- EXCHANGE VALUES -->
+                        <div id="exchangeValContainer" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Продати за бали</label>
+                                <input type="number" id="newPrizeExchangePoints" class="input" placeholder="Наприклад: 500" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Продати за гроші (₴)</label>
+                                <input type="number" id="newPrizeExchangeCurrency" class="input" placeholder="Наприклад: 50000" min="0">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Зображення призу</label>
+                            <input type="file" id="newPrizeImgFile" accept="image/*" onchange="previewSlotImage()" class="input" style="padding: 10px;">
+                        </div>
+                        
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <img id="slotImgPreview" style="max-width: 120px; max-height: 120px; border-radius: 12px; display: none; border: 2px solid var(--primary);">
+                        </div>
+                        
+                        <div id="prizeFormActions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                            <button id="cancelEditBtn" onclick="resetPrizeForm()" class="btn-main" style="background: #333; color: white; display: none;">
+                                ✕ СКАСУВАТИ
+                            </button>
+                            <button id="savePrizeBtn" onclick="savePrize()" class="btn-main btn-buy" style="grid-column: span 2;">
+                                💾 ЗБЕРЕГТИ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB: DISCORD -->
+                <div id="tabDiscord" class="admin-tab" style="display: none;">
+                    <h3 style="color: #5865F2; margin-bottom: 20px;">📢 DISCORD WEBHOOK</h3>
+                    
+                    <div class="toggle-container">
+                        <span style="font-weight: 700;">Надсилати сповіщення в Discord</span>
+                        <label class="switch">
+                            <input type="checkbox" id="discordEnabledToggle">
+                            <span class="slider" style="background-color: #5865F2;"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Webhook URL</label>
+                        <input type="text" id="discordWebhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
+                    </div>
+                    
+                    <div class="info-box" style="margin-bottom: 20px;">
+                        <p style="margin: 0;">📌 <b>Сповіщення надсилаються при:</b></p>
+                        <ul style="margin: 10px 0 0 20px; padding: 0;">
+                            <li>Активації/деактивації акцій</li>
+                            <li>Виграші з рулетки</li>
+                            <li>Виборі обміну призу</li>
+                        </ul>
+                    </div>
+                    
+                    <button onclick="saveDiscordSettings()" class="btn-main" style="width: 100%; background: #5865F2; color: white;">
+                        💾 ЗБЕРЕГТИ НАЛАШТУВАННЯ
+                    </button>
+                    
+                    <button onclick="testDiscordWebhook()" class="btn-main" style="width: 100%; background: #333; color: white; margin-top: 10px;">
+                        🔔 ТЕСТОВЕ ПОВІДОМЛЕННЯ
+                    </button>
+                </div>
+
+                <!-- TAB: LOGS -->
+                <div id="tabLogs" class="admin-tab" style="display: none;">
+                    <h3 style="color: var(--primary); margin-bottom: 20px;">📊 ЖУРНАЛ ДІЙ</h3>
+                    <div id="logsList" class="logs-container">Завантаження логів...</div>
                 </div>
             </div>
         </section>
     </main>
 </div>
 
-<footer class="status-bar">
-    <div class="status-segment" onclick="switchTab('roulette')">
-        <div style="font-size: 16px;">🎡</div>
-        <div>РУЛЕТКА</div>
-    </div>
-    <div class="status-segment" onclick="switchTab('shop')">
-        <div style="font-size: 16px;">🛍️</div>
-        <div>МАГАЗИН</div>
-    </div>
-    <div class="status-segment" onclick="showBalance()">
-        <div style="font-size: 16px;">💰</div>
-        <div>БАЛАНС</div>
-    </div>
-</footer>
+<!-- ==================== MODALS ==================== -->
 
 <!-- EXCHANGE MODAL -->
 <div id="exchangeModal" class="modal">
     <div class="modal-inner">
-        <h2 class="modal-title">ОБМІН ВИГРАШУ</h2>
-        <div style="margin: 20px 0; padding: 15px; background: rgba(0, 212, 255, 0.05); border-radius: 8px; border: 1px solid rgba(0, 212, 255, 0.2);">
-            <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 10px;">Вибрані слот:</p>
-            <p style="font-size: 18px; font-weight: 900; color: var(--primary);" id="winSlotName"></p>
-        </div>
-
-        <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Виберіть як обміняти ваш виграш:</p>
-
-        <div class="exchange-choice">
-            <div class="exchange-option" id="exchangeOption1" onclick="selectExchange(1)">
-                <div class="exchange-currency">ОБМІН НА</div>
-                <div class="exchange-amount" id="exchangeAmount1">0</div>
-                <div class="exchange-currency" id="exchangeCurrency1">БАЛІВ</div>
+        <h2 class="modal-title">💱 ОБМІННИК</h2>
+        
+        <div class="balance-cards">
+            <div class="balance-card points">
+                <div class="balance-card-label">БАЛИ</div>
+                <div class="balance-card-value"><span id="exPointsVal">0</span> ⚪</div>
             </div>
-
-            <div class="exchange-option" id="exchangeOption2" onclick="selectExchange(2)">
-                <div class="exchange-currency">ОБМІН НА</div>
-                <div class="exchange-amount" id="exchangeAmount2">0</div>
-                <div class="exchange-currency" id="exchangeCurrency2">ГРИВЕНЬ</div>
+            <div class="balance-card currency">
+                <div class="balance-card-label">ГРОШІ</div>
+                <div class="balance-card-value"><span id="exCurrencyVal">0</span> ₴</div>
             </div>
         </div>
-
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn btn-secondary" onclick="closeExchangeModal()" style="flex: 1;">НАЗАД</button>
-            <button class="btn" id="confirmExchangeBtn" onclick="confirmExchange()" style="flex: 1;">ПІДТВЕРДИТИ</button>
+        
+        <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 10px; margin-bottom: 18px; text-align: center;">
+            <div style="font-size: 10px; color: var(--text-gray); margin-bottom: 4px;">КУРС ОБМІНУ</div>
+            <div style="font-size: 18px; font-weight: 900; color: var(--primary);">
+                1 ⚪ = <span id="exchangeRate">500</span> ₴
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Операція</label>
+            <select id="exchangeOperation" class="select" onchange="updateExchangeUI()">
+                <option value="exchange">💱 Обміняти бали на гроші</option>
+                <option value="withdrawMoney">💸 Вивести гроші з балансу</option>
+                <option value="withdrawPoints">⚪ Вивести бали з балансу</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Сума</label>
+            <input type="number" id="exchangeAmount" class="input" placeholder="Введіть суму" min="1" oninput="calculateExchange()">
+        </div>
+        
+        <div id="exchangePreview" style="display: none; background: rgba(34, 197, 94, 0.05); padding: 15px; border-radius: 12px; margin-bottom: 18px; border: 1px solid var(--glass-border);">
+            <div style="font-size: 11px; color: var(--text-gray); margin-bottom: 10px; text-align: center;">РЕЗУЛЬТАТ:</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                <div style="text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-gray);">СПИСАНО</div>
+                    <div style="font-size: 18px; font-weight: 900; color: var(--danger);">
+                        -<span id="previewFromAmount">0</span> <span id="previewFromCurrency">⚪</span>
+                    </div>
+                </div>
+                <div id="previewArrow" style="font-size: 20px; color: var(--primary);">→</div>
+                <div id="previewTo" style="text-align: center;">
+                    <div style="font-size: 10px; color: var(--text-gray);">ОТРИМАНО</div>
+                    <div style="font-size: 18px; font-weight: 900; color: var(--primary);">
+                        +<span id="previewToAmount">0</span> <span id="previewToCurrency">₴</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal-btns">
+            <button onclick="closeExchangeModal()" class="btn-main" style="background: #333; color: white;">
+                ✕ СКАСУВАТИ
+            </button>
+            <button onclick="processExchange()" id="exchangeBtn" class="btn-main btn-buy">
+                ✓ ВИКОНАТИ
+            </button>
         </div>
     </div>
 </div>
@@ -969,634 +1603,1388 @@
 <!-- PURCHASE MODAL -->
 <div id="purchaseModal" class="modal">
     <div class="modal-inner">
-        <h2 class="modal-title">ПОКУПКА</h2>
-        <div id="purchaseContent"></div>
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-            <button class="btn btn-secondary" onclick="closePurchaseModal()" style="flex: 1;">СКАСУВАТИ</button>
-            <button class="btn" id="confirmPurchaseBtn" onclick="confirmPurchase()" style="flex: 1;">КУПИТИ</button>
+        <h2 class="modal-title">🎫 КУПІВЛЯ КВИТКІВ</h2>
+        
+        <div class="form-group">
+            <label class="form-label">Кількість квитків</label>
+            <input type="number" id="ticketCount" class="input" value="1" min="1" oninput="updateTotalCost()">
+        </div>
+        
+        <div style="font-size: 28px; font-weight: 900; color: var(--primary); margin: 20px 0;">
+            ВСЬОГО: <span id="totalCostDisplay">100 ⚪</span>
+        </div>
+        
+        <div class="modal-btns">
+            <button onclick="document.getElementById('purchaseModal').style.display='none'" class="btn-main" style="background: #333; color: white;">
+                ✕ СКАСУВАТИ
+            </button>
+            <button onclick="confirmPurchase()" class="btn-main btn-buy">
+                ✓ КУПИТИ
+            </button>
         </div>
     </div>
 </div>
 
-<!-- CONFIRM MODAL -->
-<div id="modal" class="modal">
-    <div class="modal-inner">
-        <h2 class="modal-title" id="modalTitle"></h2>
-        <p id="modalContent" style="color: var(--text-gray); line-height: 1.8; margin-bottom: 20px;"></p>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-secondary" onclick="closeModal()" style="flex: 1;">СКАСУВАТИ</button>
-            <button class="btn" id="modalConfirmBtn" onclick="confirmAction()" style="flex: 1;">ПІДТВЕРДИТИ</button>
-        </div>
+<!-- STATUS BAR -->
+<div class="status-bar">
+    <div class="status-indicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">СИСТЕМА АКТИВНА</span>
     </div>
+    <div id="footerPageLabel" style="color: white; background: rgba(34, 197, 94, 0.15); padding: 4px 12px; border-radius: 6px;">
+        ROULETTE
+    </div>
+    <div id="footerRoleLabel" style="color: var(--primary);">USER</div>
 </div>
 
+<!-- ==================== JAVASCRIPT ==================== -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, orderBy, addDoc, serverTimestamp, getDocs, deleteDoc, setDoc, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, onSnapshot, getDocs, deleteDoc, serverTimestamp, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-    // FIREBASE CONFIG
     const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "YOUR_AUTH_DOMAIN",
-        projectId: "YOUR_PROJECT_ID",
-        storageBucket: "YOUR_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-        appId: "YOUR_APP_ID"
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
     };
-
+    
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // GLOBAL STATE
-    let currentUser = null;
-    let currentSlots = [];
-    let shopItems = [];
-    let promoList = [];
+    // === STATE ===
+    let user = null;
+    let userData = {};
+    let currentUID = null;
+    let prizePool = [];
     let isSpinning = false;
-    let selectedExchange = null;
-    let currentWinData = null;
-    let ticketPrice = 100;
-    let discountPercent = 0;
+    let isSpinRequested = false;
+    let currentWinPrize = null;
+    let awaitingExchangeChoice = false;
+    
+    const CARD_WIDTH = 196; // 180 + 16 margin
+    const TOTAL_CARDS = 100;
+    const SPIN_TIME_SECONDS = 8;
+    
+    let currentPromotion = { isActive: false, percentage: 0, promoText: "" };
+    let currentShopPromotion = { isActive: false, percentage: 0, promoText: "" };
+    let discordSettings = { enabled: false, webhookUrl: "" };
+    let allUsers = [];
+    let isAutoOdds = false;
+    let editingId = null;
+    let currentSlotBase64 = null;
+    let baseTicketPrice = 100;
 
-    // INITIALIZATION
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('userNameHeader').textContent = user.displayName || user.email;
-            await loadUserData();
-            await loadSlots();
-            await loadShopItems();
-            await loadPromos();
-            updateUI();
-            setupEventListeners();
-            loadSavedRoulette();
+    // === HELPER FUNCTIONS ===
+    function notify(msg, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + type;
+        toast.innerText = msg;
+        document.getElementById('toastContainer').appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+    }
+
+    function showProcessing(title, text) {
+        document.getElementById('procTitle').innerText = title;
+        document.getElementById('procText').innerText = text;
+        document.getElementById('processingModal').style.display = 'flex';
+    }
+
+    function hideProcessing() {
+        document.getElementById('processingModal').style.display = 'none';
+    }
+
+    // === DISCORD WEBHOOK ===
+    async function sendDiscordNotification(title, description, color = 0x22c55e) {
+        if (!discordSettings.enabled || !discordSettings.webhookUrl) return;
+        
+        try {
+            await fetch(discordSettings.webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    embeds: [{
+                        title: title,
+                        description: description,
+                        color: color,
+                        timestamp: new Date().toISOString(),
+                        footer: { text: 'ДШВ Рулетка' }
+                    }]
+                })
+            });
+        } catch (e) {
+            console.error('Discord webhook error:', e);
+        }
+    }
+
+    async function loadDiscordSettings() {
+        try {
+            const snap = await getDoc(doc(db, "settings", "discord"));
+            if (snap.exists()) {
+                discordSettings = snap.data();
+                document.getElementById('discordEnabledToggle').checked = discordSettings.enabled;
+                document.getElementById('discordWebhookUrl').value = discordSettings.webhookUrl || '';
+            }
+        } catch (e) { console.error("Discord settings load error:", e); }
+    }
+
+    window.saveDiscordSettings = async function() {
+        discordSettings = {
+            enabled: document.getElementById('discordEnabledToggle').checked,
+            webhookUrl: document.getElementById('discordWebhookUrl').value.trim()
+        };
+        
+        try {
+            await setDoc(doc(db, "settings", "discord"), discordSettings);
+            notify('Налаштування Discord збережено!');
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    window.testDiscordWebhook = async function() {
+        await sendDiscordNotification(
+            '🔔 Тестове повідомлення',
+            'Webhook працює коректно!',
+            0x5865F2
+        );
+        notify('Тестове повідомлення надіслано!');
+    };
+
+    // === TICKET PRICE SYSTEM ===
+    async function loadTicketPrice() {
+        try {
+            const snap = await getDoc(doc(db, "settings", "ticketPrice"));
+            if (snap.exists()) {
+                baseTicketPrice = snap.data().basePrice || 100;
+                document.getElementById('ticketPriceInput').value = baseTicketPrice;
+                document.getElementById('currentTicketPrice').innerText = baseTicketPrice;
+                updateBuyButtonPrice();
+            }
+        } catch (e) { console.error("Ticket price load error:", e); }
+    }
+
+    window.saveTicketPrice = async function() {
+        const newPrice = parseInt(document.getElementById('ticketPriceInput').value);
+        if (!newPrice || newPrice < 1) return notify('Введіть коректну ціну!', 'error');
+        
+        try {
+            await setDoc(doc(db, "settings", "ticketPrice"), {
+                basePrice: newPrice,
+                updatedAt: serverTimestamp(),
+                updatedBy: userData.name
+            });
+            
+            baseTicketPrice = newPrice;
+            document.getElementById('currentTicketPrice').innerText = newPrice;
+            updateBuyButtonPrice();
+            notify('Ціна квитка оновлена!');
+            await addLog('UPDATE_TICKET_PRICE', `Ціна: ${newPrice} балів`);
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    function updateBuyButtonPrice() {
+        const finalPrice = calculatePromoPrice();
+        document.getElementById('ticketPriceLabel').innerText = `ВАРТІСТЬ: ${finalPrice} ⚪`;
+    }
+
+    // === ROULETTE PROMOTION SYSTEM ===
+    async function loadPromoSettings() {
+        try {
+            const snap = await getDoc(doc(db, "settings", "promotion"));
+            if (snap.exists()) {
+                currentPromotion = snap.data();
+                document.getElementById('promoActiveToggle').checked = currentPromotion.isActive;
+                document.getElementById('promoSlider').value = currentPromotion.percentage || 0;
+                document.getElementById('promoTextInput').value = currentPromotion.promoText || "";
+                updatePromoPreview();
+                updatePromoBanner();
+            }
+        } catch (e) { console.error("Promo load error:", e); }
+    }
+
+    window.updatePromoPreview = function() {
+        const percentage = parseInt(document.getElementById('promoSlider').value);
+        const newPrice = Math.round(baseTicketPrice * (1 + percentage / 100));
+        
+        document.getElementById('promoValueDisplay').innerText = (percentage > 0 ? '+' : '') + percentage + '%';
+        document.getElementById('promoValueDisplay').style.color = percentage < 0 ? 'var(--primary)' : percentage > 0 ? 'var(--danger)' : 'var(--text-gray)';
+        
+        document.getElementById('originalPrice').innerText = baseTicketPrice + ' ⚪';
+        document.getElementById('newPrice').innerText = newPrice + ' ⚪';
+        
+        const newPriceEl = document.getElementById('newPrice');
+        const discountLabel = document.getElementById('discountLabel');
+        
+        if (percentage < 0) {
+            newPriceEl.style.color = 'var(--primary)';
+            discountLabel.innerHTML = `💰 ЗНИЖКА ${Math.abs(percentage)}%`;
+            discountLabel.style.color = 'var(--primary)';
+        } else if (percentage > 0) {
+            newPriceEl.style.color = 'var(--danger)';
+            discountLabel.innerHTML = `📈 НАЦІНКА +${percentage}%`;
+            discountLabel.style.color = 'var(--danger)';
         } else {
-            window.location.href = 'cabinet.html';
+            newPriceEl.style.color = 'var(--text-gray)';
+            discountLabel.innerHTML = `БЕЗ ЗМІН`;
+            discountLabel.style.color = 'var(--text-gray)';
+        }
+    };
+
+    window.togglePromo = function() {
+        const isActive = document.getElementById('promoActiveToggle').checked;
+        notify(isActive ? 'Акція активована!' : 'Акція деактивована!');
+    };
+
+    window.savePromoSettings = async function() {
+        const isActive = document.getElementById('promoActiveToggle').checked;
+        const percentage = parseInt(document.getElementById('promoSlider').value);
+        const promoText = document.getElementById('promoTextInput').value.trim();
+        
+        try {
+            await setDoc(doc(db, "settings", "promotion"), {
+                isActive, percentage, promoText,
+                updatedAt: serverTimestamp(),
+                updatedBy: userData.name
+            });
+            
+            currentPromotion = { isActive, percentage, promoText };
+            updatePromoBanner();
+            notify('Акція збережена!');
+            
+            // Discord notification
+            if (isActive) {
+                await sendDiscordNotification(
+                    '🔥 АКЦІЯ АКТИВОВАНА',
+                    `**${promoText || 'Акція'}**\nЗнижка/націнка: ${percentage}%`,
+                    percentage < 0 ? 0x22c55e : 0xf97316
+                );
+            }
+            
+            await addLog('UPDATE_PROMOTION', `${isActive ? 'АКТИВНА' : 'НЕАКТИВНА'}, ${percentage}%`);
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    function updatePromoBanner() {
+        const banner = document.getElementById('promoBanner');
+        
+        if (currentPromotion.isActive && currentPromotion.percentage !== 0) {
+            banner.style.display = 'block';
+            const newPrice = calculatePromoPrice();
+            const percentage = currentPromotion.percentage;
+            
+            document.getElementById('promoBannerText').innerText = currentPromotion.promoText || 'АКЦІЯ!';
+            document.getElementById('promoOldPrice').innerText = baseTicketPrice;
+            document.getElementById('promoNewPrice').innerText = newPrice;
+            
+            const label = document.getElementById('promoPercentLabel');
+            if (percentage < 0) {
+                label.innerText = `${Math.abs(percentage)}% ЗНИЖКА`;
+                label.style.background = 'var(--primary)';
+            } else {
+                label.innerText = `+${percentage}% НАЦІНКА`;
+                label.style.background = 'var(--danger)';
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+        
+        updateBuyButtonPrice();
+    }
+
+    function calculatePromoPrice() {
+        if (currentPromotion.isActive) {
+            return Math.round(baseTicketPrice * (1 + currentPromotion.percentage / 100));
+        }
+        return baseTicketPrice;
+    }
+
+    // === SHOP PROMOTION SYSTEM ===
+    async function loadShopPromoSettings() {
+        try {
+            const snap = await getDoc(doc(db, "settings", "shopPromotion"));
+            if (snap.exists()) {
+                currentShopPromotion = snap.data();
+                document.getElementById('shopPromoActiveToggle').checked = currentShopPromotion.isActive;
+                document.getElementById('shopPromoSlider').value = currentShopPromotion.percentage || 0;
+                document.getElementById('shopPromoTextInput').value = currentShopPromotion.promoText || "";
+                updateShopPromoPreview();
+                updateShopPromoBanner();
+            }
+        } catch (e) { console.error("Shop promo load error:", e); }
+    }
+
+    window.updateShopPromoPreview = function() {
+        const percentage = parseInt(document.getElementById('shopPromoSlider').value);
+        const examplePrice = 100;
+        const newPrice = Math.round(examplePrice * (1 + percentage / 100));
+        
+        document.getElementById('shopPromoValueDisplay').innerText = (percentage > 0 ? '+' : '') + percentage + '%';
+        document.getElementById('shopPromoValueDisplay').style.color = percentage < 0 ? 'var(--currency)' : percentage > 0 ? 'var(--danger)' : 'var(--text-gray)';
+        
+        document.getElementById('shopOriginalPrice').innerText = examplePrice + ' ⚪';
+        document.getElementById('shopNewPrice').innerText = newPrice + ' ⚪';
+        
+        const label = document.getElementById('shopDiscountLabel');
+        if (percentage < 0) {
+            label.innerHTML = `💰 ЗНИЖКА ${Math.abs(percentage)}%`;
+            label.style.color = 'var(--currency)';
+        } else if (percentage > 0) {
+            label.innerHTML = `📈 НАЦІНКА +${percentage}%`;
+            label.style.color = 'var(--danger)';
+        } else {
+            label.innerHTML = `БЕЗ ЗМІН`;
+            label.style.color = 'var(--text-gray)';
+        }
+    };
+
+    window.toggleShopPromo = function() {
+        const isActive = document.getElementById('shopPromoActiveToggle').checked;
+        notify(isActive ? 'Акція магазину активована!' : 'Акція магазину деактивована!');
+    };
+
+    window.saveShopPromoSettings = async function() {
+        const isActive = document.getElementById('shopPromoActiveToggle').checked;
+        const percentage = parseInt(document.getElementById('shopPromoSlider').value);
+        const promoText = document.getElementById('shopPromoTextInput').value.trim();
+        
+        try {
+            await setDoc(doc(db, "settings", "shopPromotion"), {
+                isActive, percentage, promoText,
+                updatedAt: serverTimestamp(),
+                updatedBy: userData.name
+            });
+            
+            currentShopPromotion = { isActive, percentage, promoText };
+            updateShopPromoBanner();
+            renderShop(prizePool.filter(p => p.category === 'shop'));
+            notify('Акція магазину збережена!');
+            
+            if (isActive) {
+                await sendDiscordNotification(
+                    '🛒 АКЦІЯ МАГАЗИНУ',
+                    `**${promoText || 'Розпродаж'}**\nЗнижка/націнка: ${percentage}%`,
+                    0xfbbf24
+                );
+            }
+            
+            await addLog('UPDATE_SHOP_PROMOTION', `${isActive ? 'АКТИВНА' : 'НЕАКТИВНА'}, ${percentage}%`);
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    function updateShopPromoBanner() {
+        const banner = document.getElementById('shopPromoBanner');
+        
+        if (currentShopPromotion.isActive && currentShopPromotion.percentage !== 0) {
+            banner.style.display = 'block';
+            document.getElementById('shopPromoBannerText').innerText = currentShopPromotion.promoText || 'РОЗПРОДАЖ!';
+            
+            const label = document.getElementById('shopPromoPercentLabel');
+            const percentage = currentShopPromotion.percentage;
+            if (percentage < 0) {
+                label.innerText = `${Math.abs(percentage)}% ЗНИЖКА НА ВСЕ`;
+            } else {
+                label.innerText = `+${percentage}% НАЦІНКА`;
+            }
+        } else {
+            banner.style.display = 'none';
+        }
+    }
+
+    function calculateShopPrice(originalPrice) {
+        if (currentShopPromotion.isActive) {
+            return Math.round(originalPrice * (1 + currentShopPromotion.percentage / 100));
+        }
+        return originalPrice;
+    }
+
+    // === BALANCE MANAGEMENT ===
+    async function loadUsersForTopUp() {
+        const snapshot = await getDocs(collection(db, "users"));
+        allUsers = [];
+        const select = document.getElementById('topUpUserSelect');
+        select.innerHTML = '<option value="">-- Оберіть бійця --</option>';
+        
+        snapshot.forEach(d => {
+            const user = { id: d.id, ...d.data() };
+            if (user.role === 'instructor' || user.role === 'admin') {
+                allUsers.push(user);
+                const option = document.createElement('option');
+                option.value = d.id;
+                option.innerText = `${user.name} (${user.rank || user.role})`;
+                select.appendChild(option);
+            }
+        });
+    }
+
+    window.updateTopUpBalances = function() {
+        const userId = document.getElementById('topUpUserSelect').value;
+        const balancesDiv = document.getElementById('currentBalances');
+        
+        if (!userId) {
+            balancesDiv.style.display = 'none';
+            return;
+        }
+        
+        const user = allUsers.find(u => u.id === userId);
+        if (user) {
+            balancesDiv.style.display = 'grid';
+            document.getElementById('currentPoints').innerText = user.points || 0;
+            document.getElementById('currentCurrency').innerText = user.currency || 0;
+        }
+    };
+
+    window.processTopUp = async function() {
+        const userId = document.getElementById('topUpUserSelect').value;
+        const type = document.getElementById('topUpType').value;
+        const amount = parseInt(document.getElementById('topUpAmount').value);
+        const comment = document.getElementById('topUpComment').value.trim();
+        
+        if (!userId) return notify('Оберіть користувача!', 'error');
+        if (!amount || amount < 1) return notify('Введіть коректну суму!', 'error');
+        
+        try {
+            const userRef = doc(db, "users", userId);
+            const userSnap = await getDoc(userRef);
+            const currentValue = userSnap.data()[type] || 0;
+            
+            await updateDoc(userRef, { [type]: currentValue + amount });
+            
+            const userName = userSnap.data().name;
+            const typeLabel = type === 'points' ? 'балів' : 'гривень';
+            
+            notify(`+${amount} ${typeLabel} для ${userName}!`);
+            await addLog('TOP_UP_BALANCE', `${userName}: +${amount} ${typeLabel}${comment ? ' (' + comment + ')' : ''}`);
+            
+            // Reset form
+            document.getElementById('topUpUserSelect').value = '';
+            document.getElementById('topUpAmount').value = '';
+            document.getElementById('topUpComment').value = '';
+            document.getElementById('currentBalances').style.display = 'none';
+            
+            await loadUsersForTopUp();
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    // === EXCHANGE SYSTEM ===
+    window.openExchangeModal = function() {
+        if (isSpinning || awaitingExchangeChoice) {
+            notify('Зачекайте завершення рулетки!', 'warning');
+            return;
+        }
+        document.getElementById('exchangeModal').style.display = 'flex';
+        document.getElementById('exPointsVal').innerText = userData.points || 0;
+        document.getElementById('exCurrencyVal').innerText = userData.currency || 0;
+        document.getElementById('exchangeAmount').value = '';
+        document.getElementById('exchangePreview').style.display = 'none';
+        updateExchangeUI();
+    };
+
+    window.closeExchangeModal = function() {
+        document.getElementById('exchangeModal').style.display = 'none';
+    };
+
+    window.updateExchangeUI = function() {
+        const operation = document.getElementById('exchangeOperation').value;
+        const btn = document.getElementById('exchangeBtn');
+        const arrow = document.getElementById('previewArrow');
+        const toDiv = document.getElementById('previewTo');
+        
+        switch(operation) {
+            case 'exchange':
+                btn.innerText = '💱 ОБМІНЯТИ';
+                break;
+            case 'withdrawMoney':
+                btn.innerText = '💸 ВИВЕСТИ';
+                break;
+            case 'withdrawPoints':
+                btn.innerText = '⚪ ВИВЕСТИ';
+                break;
+        }
+        
+        calculateExchange();
+    };
+
+    window.calculateExchange = function() {
+        const operation = document.getElementById('exchangeOperation').value;
+        const amount = parseInt(document.getElementById('exchangeAmount').value);
+        const preview = document.getElementById('exchangePreview');
+        
+        if (!amount || amount < 1) {
+            preview.style.display = 'none';
+            return;
+        }
+        
+        preview.style.display = 'block';
+        const rate = 500;
+        const toDiv = document.getElementById('previewTo');
+        const arrow = document.getElementById('previewArrow');
+        
+        switch(operation) {
+            case 'exchange':
+                document.getElementById('previewFromAmount').innerText = amount;
+                document.getElementById('previewFromCurrency').innerText = '⚪';
+                document.getElementById('previewToAmount').innerText = amount * rate;
+                document.getElementById('previewToCurrency').innerText = '₴';
+                toDiv.style.display = 'block';
+                arrow.style.display = 'block';
+                break;
+            case 'withdrawMoney':
+                document.getElementById('previewFromAmount').innerText = amount;
+                document.getElementById('previewFromCurrency').innerText = '₴';
+                toDiv.style.display = 'none';
+                arrow.style.display = 'none';
+                break;
+            case 'withdrawPoints':
+                document.getElementById('previewFromAmount').innerText = amount;
+                document.getElementById('previewFromCurrency').innerText = '⚪';
+                toDiv.style.display = 'none';
+                arrow.style.display = 'none';
+                break;
+        }
+    };
+
+    window.processExchange = async function() {
+        const operation = document.getElementById('exchangeOperation').value;
+        const amount = parseInt(document.getElementById('exchangeAmount').value);
+        
+        if (!amount || amount < 1) return notify('Введіть коректну суму!', 'error');
+        
+        const userRef = doc(db, "users", currentUID);
+        const rate = 500;
+        
+        try {
+            switch(operation) {
+                case 'exchange':
+                    if (userData.points < amount) return notify('Недостатньо балів!', 'error');
+                    await updateDoc(userRef, {
+                        points: userData.points - amount,
+                        currency: (userData.currency || 0) + (amount * rate)
+                    });
+                    notify(`Обміняно ${amount} ⚪ на ${amount * rate} ₴`);
+                    await addLog('EXCHANGE', `${amount} балів → ${amount * rate} гривень`);
+                    break;
+                    
+                case 'withdrawMoney':
+                    if ((userData.currency || 0) < amount) return notify('Недостатньо грошей!', 'error');
+                    await updateDoc(userRef, { currency: userData.currency - amount });
+                    notify(`Виведено ${amount} ₴`);
+                    await addLog('WITHDRAW_MONEY', `${amount} гривень`);
+                    break;
+                    
+                case 'withdrawPoints':
+                    if (userData.points < amount) return notify('Недостатньо балів!', 'error');
+                    await updateDoc(userRef, { points: userData.points - amount });
+                    notify(`Виведено ${amount} ⚪`);
+                    await addLog('WITHDRAW_POINTS', `${amount} балів`);
+                    break;
+            }
+            
+            closeExchangeModal();
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    // === SPIN LOCK SYSTEM ===
+    function lockNavigation() {
+        isSpinning = true;
+        localStorage.setItem('rouletteSpinning', 'true');
+        localStorage.setItem('rouletteSpinStart', Date.now().toString());
+        
+        document.getElementById('spinLockOverlay').style.display = 'flex';
+        document.getElementById('statusDot').classList.add('spinning');
+        document.getElementById('statusText').innerText = 'РУЛЕТКА КРУТИТЬСЯ...';
+        
+        document.querySelectorAll('.menu-btn, .header-back').forEach(el => {
+            el.classList.add('locked');
+        });
+    }
+
+    function unlockNavigation() {
+        isSpinning = false;
+        isSpinRequested = false;
+        localStorage.removeItem('rouletteSpinning');
+        localStorage.removeItem('rouletteSpinStart');
+        localStorage.removeItem('roulettePrize');
+        
+        if (!awaitingExchangeChoice) {
+            document.getElementById('spinLockOverlay').style.display = 'none';
+        }
+        
+        document.getElementById('statusDot').classList.remove('spinning');
+        document.getElementById('statusText').innerText = 'СИСТЕМА АКТИВНА';
+        
+        document.querySelectorAll('.menu-btn, .header-back').forEach(el => {
+            el.classList.remove('locked');
+        });
+    }
+
+    function checkSpinState() {
+        const spinning = localStorage.getItem('rouletteSpinning');
+        const spinStart = parseInt(localStorage.getItem('rouletteSpinStart') || '0');
+        const savedPrize = localStorage.getItem('roulettePrize');
+        
+        if (spinning === 'true') {
+            const elapsed = (Date.now() - spinStart) / 1000;
+            
+            if (elapsed < SPIN_TIME_SECONDS) {
+                // Continue spinning
+                lockNavigation();
+                
+                const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+                if (rouletteItems.length > 0) {
+                    initTrack(rouletteItems);
+                    
+                    // Resume animation
+                    const remainingTime = SPIN_TIME_SECONDS - elapsed;
+                    const track = document.getElementById('track');
+                    const containerWidth = document.querySelector('.carousel-outer')?.offsetWidth || 400;
+                    const targetIndex = 55;
+                    const targetCenter = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2);
+                    const scrollAmount = targetCenter - (containerWidth / 2);
+                    
+                    track.style.transition = `transform ${remainingTime}s cubic-bezier(0.15, 0, 0.2, 1)`;
+                    track.style.transform = `translateX(-${scrollAmount}px)`;
+                    
+                    setTimeout(() => {
+                        if (savedPrize) {
+                            try {
+                                currentWinPrize = JSON.parse(savedPrize);
+                                showWinResult(currentWinPrize);
+                            } catch (e) {
+                                unlockNavigation();
+                            }
+                        } else {
+                            unlockNavigation();
+                        }
+                    }, remainingTime * 1000);
+                }
+            } else if (savedPrize) {
+                // Spin finished, show result
+                try {
+                    currentWinPrize = JSON.parse(savedPrize);
+                    showWinResult(currentWinPrize);
+                } catch (e) {
+                    unlockNavigation();
+                }
+            } else {
+                unlockNavigation();
+            }
+        }
+    }
+
+    // === TICKET PURCHASE ===
+    window.openPurchaseModal = function() {
+        if (isSpinning || awaitingExchangeChoice) {
+            notify('Зачекайте завершення рулетки!', 'warning');
+            return;
+        }
+        document.getElementById('purchaseModal').style.display = 'flex';
+        document.getElementById('ticketCount').value = 1;
+        updateTotalCost();
+    };
+
+    window.updateTotalCost = function() {
+        let count = parseInt(document.getElementById('ticketCount').value) || 1;
+        if (count < 1) count = 1;
+        const price = calculatePromoPrice();
+        document.getElementById('totalCostDisplay').innerText = (count * price) + " ⚪";
+    };
+
+    window.confirmPurchase = async function() {
+        let count = parseInt(document.getElementById('ticketCount').value) || 1;
+        if (count <= 0) return notify("Некоректна кількість!", 'error');
+
+        const price = calculatePromoPrice();
+        const cost = count * price;
+        const pts = userData.points || 0;
+
+        if (pts < cost) return notify("Недостатньо балів!", 'error');
+        
+        document.getElementById('purchaseModal').style.display = 'none';
+        showProcessing("КВИТКИ", `Купівля ${count} квитків...`);
+
+        try {
+            await updateDoc(doc(db, "users", currentUID), { 
+                points: pts - cost, 
+                roulette_passes: (userData.roulette_passes || 0) + count 
+            });
+            
+            await addLog('TICKET_PURCHASE', `${count} квитків за ${cost} балів`);
+            notify(`Куплено ${count} квитків!`);
+        } catch(e) {
+            notify("Помилка: " + e.message, 'error');
+        } finally {
+            hideProcessing();
+        }
+    };
+
+    // === SPIN LOGIC ===
+    function createPrizeNode(p) {
+        const el = document.createElement('div');
+        el.className = 'prize-card';
+        el.innerHTML = `<img src="${p.img || 'https://via.placeholder.com/90'}"><span>${p.name || 'Prize'}</span>`;
+        return el;
+    }
+
+    function initTrack(prizes) {
+        const track = document.getElementById('track');
+        if (!track || prizes.length === 0) return;
+        
+        track.innerHTML = "";
+        for (let i = 0; i < TOTAL_CARDS; i++) {
+            const p = prizes[Math.floor(Math.random() * prizes.length)];
+            track.appendChild(createPrizeNode(p));
+        }
+    }
+
+    window.startSpin = async function() {
+        if (isSpinRequested || isSpinning || awaitingExchangeChoice) return;
+        
+        if (!userData || userData.roulette_passes < 1) {
+            notify("Немає квитків!", 'error');
+            return;
+        }
+        
+        isSpinRequested = true;
+        const spinBtn = document.getElementById('spinBtn');
+        spinBtn.disabled = true;
+        
+        lockNavigation();
+        
+        try {
+            await updateDoc(doc(db, "users", currentUID), { 
+                roulette_passes: Math.max(0, (userData.roulette_passes || 0) - 1) 
+            });
+            
+            document.getElementById('winOverlay').style.display = 'none';
+            document.getElementById('exchangeChoice').style.display = 'none';
+            
+            const track = document.getElementById('track');
+            const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+            
+            if (rouletteItems.length === 0) {
+                notify('Немає призів в рулетці!', 'error');
+                unlockNavigation();
+                spinBtn.disabled = false;
+                return;
+            }
+            
+            // Select winner based on chances
+            let winPrize;
+            if (isAutoOdds) {
+                winPrize = rouletteItems[Math.floor(Math.random() * rouletteItems.length)];
+            } else {
+                const totalChance = rouletteItems.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
+                let rand = Math.random() * totalChance;
+                for (const prize of rouletteItems) {
+                    rand -= parseFloat(prize.chance) || 0;
+                    if (rand <= 0) {
+                        winPrize = prize;
+                        break;
+                    }
+                }
+                if (!winPrize) winPrize = rouletteItems[0];
+            }
+            
+            currentWinPrize = winPrize;
+            localStorage.setItem('roulettePrize', JSON.stringify(winPrize));
+            
+            // Place winning prize at target position
+            const targetIndex = 55;
+            const targetCard = track.children[targetIndex];
+            if (targetCard) {
+                const img = targetCard.querySelector('img');
+                const txt = targetCard.querySelector('span');
+                if (img) img.src = winPrize.img || 'https://via.placeholder.com/90';
+                if (txt) txt.innerText = winPrize.name;
+            }
+            
+            // Animate
+            const containerWidth = document.querySelector('.carousel-outer').offsetWidth;
+            const targetCenter = (targetIndex * CARD_WIDTH) + (CARD_WIDTH / 2);
+            const scrollAmount = targetCenter - (containerWidth / 2);
+            
+            track.style.transition = `transform ${SPIN_TIME_SECONDS}s cubic-bezier(0.15, 0, 0.2, 1)`;
+            track.style.transform = `translateX(-${scrollAmount}px)`;
+            
+            setTimeout(() => {
+                showWinResult(winPrize);
+            }, SPIN_TIME_SECONDS * 1000);
+            
+        } catch(e) {
+            notify("Помилка: " + e.message, 'error');
+            unlockNavigation();
+            spinBtn.disabled = false;
+        }
+    };
+
+    async function showWinResult(prize) {
+        document.getElementById('winPrizeName').innerText = prize.name;
+        document.getElementById('winOverlay').style.display = 'flex';
+        
+        notify(`🎉 Виграш: ${prize.name}`);
+        
+        // Check if exchange action
+        if (prize.action === 'exchange') {
+            awaitingExchangeChoice = true;
+            
+            document.getElementById('sellPointsValue').innerText = prize.exchangePoints || 0;
+            document.getElementById('sellCurrencyValue').innerText = prize.exchangeCurrency || 0;
+            document.getElementById('exchangeChoice').style.display = 'flex';
+            
+            // Keep lock overlay but allow choice buttons
+            document.getElementById('spinLockOverlay').style.display = 'none';
+        } else {
+            // Auto process regular wins
+            await processWin(prize, null);
+            
+            setTimeout(() => {
+                resetAfterWin();
+            }, 3000);
+        }
+    }
+
+    window.selectExchangeOption = async function(option) {
+        if (!currentWinPrize) return;
+        
+        const prize = currentWinPrize;
+        awaitingExchangeChoice = false;
+        
+        showProcessing("ОБРОБКА", "Зберігаємо ваш вибір...");
+        
+        await processWin(prize, option);
+        
+        hideProcessing();
+        
+        // Discord notification
+        let choiceText = option === 'points' ? `Продав за ${prize.exchangePoints} балів` :
+                        option === 'currency' ? `Продав за ${prize.exchangeCurrency} ₴` :
+                        'Залишив собі';
+        
+        await sendDiscordNotification(
+            '🎰 ВИБІР ПРИЗУ',
+            `**${userData.name}** виграв **${prize.name}**\n${choiceText}`,
+            option === 'keep' ? 0x94a3b8 : 0x22c55e
+        );
+        
+        notify(`${choiceText}!`);
+        
+        resetAfterWin();
+    };
+
+    async function processWin(prize, exchangeOption) {
+        try {
+            const action = prize.action || 'item';
+            const actionVal = parseInt(prize.actionVal) || 0;
+            
+            if (action === 'points') {
+                await updateDoc(doc(db, "users", currentUID), {
+                    points: (userData.points || 0) + actionVal
+                });
+            } else if (action === 'currency') {
+                await updateDoc(doc(db, "users", currentUID), {
+                    currency: (userData.currency || 0) + actionVal
+                });
+            } else if (action === 'ticket') {
+                await updateDoc(doc(db, "users", currentUID), {
+                    roulette_passes: (userData.roulette_passes || 0) + actionVal
+                });
+            } else if (action === 'exchange' && exchangeOption) {
+                if (exchangeOption === 'points') {
+                    await updateDoc(doc(db, "users", currentUID), {
+                        points: (userData.points || 0) + (parseInt(prize.exchangePoints) || 0)
+                    });
+                } else if (exchangeOption === 'currency') {
+                    await updateDoc(doc(db, "users", currentUID), {
+                        currency: (userData.currency || 0) + (parseInt(prize.exchangeCurrency) || 0)
+                    });
+                }
+            }
+            
+            await addLog('ROULETTE_WIN', `Виграв: ${prize.name}${exchangeOption ? ' (' + exchangeOption + ')' : ''}`);
+            
+            // Discord win notification (only for non-exchange or keep)
+            if (action !== 'exchange' || exchangeOption === 'keep') {
+                await sendDiscordNotification(
+                    '🎰 ВИГРАШ З РУЛЕТКИ',
+                    `**${userData.name}** виграв **${prize.name}**!`,
+                    0xf97316
+                );
+            }
+        } catch (e) {
+            console.error("Process win error:", e);
+        }
+    }
+
+    function resetAfterWin() {
+        document.getElementById('winOverlay').style.display = 'none';
+        document.getElementById('exchangeChoice').style.display = 'none';
+        
+        const track = document.getElementById('track');
+        track.style.transition = 'none';
+        track.style.transform = 'translateX(0)';
+        
+        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+        initTrack(rouletteItems);
+        
+        currentWinPrize = null;
+        unlockNavigation();
+        
+        const spinBtn = document.getElementById('spinBtn');
+        spinBtn.disabled = (userData.roulette_passes || 0) < 1;
+    }
+
+    // === LOGS ===
+    async function addLog(action, desc) {
+        try {
+            await addDoc(collection(db, "logs"), {
+                user: userData.name || 'Unknown',
+                action: action,
+                desc: desc,
+                timestamp: serverTimestamp()
+            });
+        } catch (e) { console.error("Add log error:", e); }
+    }
+
+    function loadLogs() {
+        const q = query(collection(db, "logs"), orderBy("timestamp", "desc"), limit(50));
+        onSnapshot(q, (snap) => {
+            const list = document.getElementById('logsList');
+            if (!list) return;
+            list.innerHTML = "";
+            snap.forEach(d => {
+                const data = d.data();
+                const time = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString() : "???";
+                list.innerHTML += `
+                    <div class="log-entry">
+                        <span class="log-time">[${time}]</span>
+                        <span class="log-user">${data.user}</span>
+                        <span class="log-action"> ${data.action}</span>
+                        <span class="log-desc"> - ${data.desc}</span>
+                    </div>`;
+            });
+        });
+    }
+
+    // === AUTO ODDS ===
+    window.toggleAutoOdds = async function() {
+        if (userData.role !== 'admin') {
+            notify("Тільки адмін!", 'error');
+            document.getElementById('autoOddsToggle').checked = isAutoOdds;
+            return;
+        }
+        
+        isAutoOdds = document.getElementById('autoOddsToggle').checked;
+        
+        try {
+            await setDoc(doc(db, "settings", "autoOdds"), {
+                enabled: isAutoOdds,
+                updatedAt: serverTimestamp()
+            });
+            notify(isAutoOdds ? 'Автошанси увімкнено!' : 'Ручні шанси!');
+            renderManage();
+        } catch (e) {
+            notify('Помилка: ' + e.message, 'error');
+        }
+    };
+
+    async function loadAutoOdds() {
+        try {
+            const snap = await getDoc(doc(db, "settings", "autoOdds"));
+            if (snap.exists()) {
+                isAutoOdds = snap.data().enabled || false;
+                document.getElementById('autoOddsToggle').checked = isAutoOdds;
+            }
+        } catch (e) { console.error("Auto odds load error:", e); }
+    }
+
+    // === PRIZE MANAGEMENT ===
+    window.previewSlotImage = function() {
+        const file = document.getElementById('newPrizeImgFile').files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            currentSlotBase64 = e.target.result;
+            const img = document.getElementById('slotImgPreview');
+            img.src = currentSlotBase64;
+            img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    };
+
+    window.togglePrizeSettings = function() {
+        const cat = document.getElementById('newPrizeCategory').value;
+        document.getElementById('rouletteSettings').style.display = cat === 'roulette' ? 'block' : 'none';
+        document.getElementById('shopSettings').style.display = cat === 'shop' ? 'block' : 'none';
+    };
+
+    window.toggleActionVal = function() {
+        const action = document.getElementById('newPrizeActionType').value;
+        document.getElementById('actionValContainer').style.display = 
+            (action === 'points' || action === 'currency' || action === 'ticket') ? 'block' : 'none';
+        document.getElementById('exchangeValContainer').style.display = 
+            action === 'exchange' ? 'block' : 'none';
+    };
+
+    window.editPrize = function(id) {
+        if (userData.role !== 'admin') return notify("Тільки адмін!", 'error');
+        
+        editingId = id;
+        const p = prizePool.find(prize => prize.id === id);
+        if (!p) return;
+        
+        document.getElementById('newPrizeName').value = p.name;
+        document.getElementById('newPrizeCategory').value = p.category || 'roulette';
+        togglePrizeSettings();
+        
+        document.getElementById('newPrizeActionType').value = p.action || 'item';
+        toggleActionVal();
+        
+        if (p.category !== 'shop') {
+            document.getElementById('newPrizeChance').value = p.chance || 10;
+        }
+        if (p.category === 'shop') {
+            document.getElementById('newPrizePrice').value = p.price || 0;
+        }
+        
+        document.getElementById('newPrizeActionVal').value = p.actionVal || "";
+        document.getElementById('newPrizeExchangePoints').value = p.exchangePoints || "";
+        document.getElementById('newPrizeExchangeCurrency').value = p.exchangeCurrency || "";
+        
+        currentSlotBase64 = p.img;
+        const img = document.getElementById('slotImgPreview');
+        img.src = p.img;
+        img.style.display = 'block';
+
+        document.getElementById('formTitle').innerText = "✏️ РЕДАГУВАТИ СЛОТ";
+        document.getElementById('savePrizeBtn').innerText = "💾 ОНОВИТИ";
+        document.getElementById('savePrizeBtn').style.gridColumn = 'span 1';
+        document.getElementById('cancelEditBtn').style.display = 'block';
+        
+        document.getElementById('tabPrizes').scrollIntoView({behavior: "smooth"});
+    };
+
+    window.savePrize = async function() {
+        if (userData.role !== 'admin') return notify("Тільки адмін!", 'error');
+        
+        const name = document.getElementById('newPrizeName').value.trim();
+        const cat = document.getElementById('newPrizeCategory').value;
+        const act = document.getElementById('newPrizeActionType').value;
+        
+        if (!name) return notify("Назва обов'язкова!", 'error');
+        if (!editingId && !currentSlotBase64) return notify("Фото обов'язкове!", 'error');
+
+        const data = { name, category: cat, action: act };
+        
+        if (currentSlotBase64) data.img = currentSlotBase64;
+        
+        if (cat === 'roulette') {
+            data.chance = parseFloat(document.getElementById('newPrizeChance').value) || 10;
+        } else {
+            data.price = parseInt(document.getElementById('newPrizePrice').value) || 100;
+        }
+
+        if (act === 'points' || act === 'currency' || act === 'ticket') {
+            data.actionVal = document.getElementById('newPrizeActionVal').value;
+        }
+        
+        if (act === 'exchange') {
+            data.exchangePoints = document.getElementById('newPrizeExchangePoints').value;
+            data.exchangeCurrency = document.getElementById('newPrizeExchangeCurrency').value;
+        }
+
+        try {
+            if (editingId) {
+                await updateDoc(doc(db, "roulette_prizes", editingId), data);
+                notify("Слот оновлено!");
+            } else {
+                await addDoc(collection(db, "roulette_prizes"), data);
+                notify("Слот створено!");
+            }
+            resetPrizeForm();
+        } catch (e) {
+            notify("Помилка: " + e.message, 'error');
+        }
+    };
+
+    window.deletePrize = async function(id) {
+        if (userData.role !== 'admin') return notify("Тільки адмін!", 'error');
+        if (confirm("Видалити цей слот?")) {
+            await deleteDoc(doc(db, "roulette_prizes", id));
+            notify("Слот видалено");
+        }
+    };
+
+    window.resetPrizeForm = function() {
+        editingId = null;
+        document.getElementById('newPrizeName').value = "";
+        document.getElementById('newPrizeImgFile').value = "";
+        document.getElementById('slotImgPreview').style.display = 'none';
+        document.getElementById('newPrizeActionVal').value = "";
+        document.getElementById('newPrizeExchangePoints').value = "";
+        document.getElementById('newPrizeExchangeCurrency').value = "";
+        currentSlotBase64 = null;
+        document.getElementById('formTitle').innerText = "➕ СТВОРИТИ НОВИЙ СЛОТ";
+        document.getElementById('savePrizeBtn').innerText = "💾 ЗБЕРЕГТИ";
+        document.getElementById('savePrizeBtn').style.gridColumn = 'span 2';
+        document.getElementById('cancelEditBtn').style.display = 'none';
+    };
+
+    function renderManage() {
+        const rouletteGrid = document.getElementById('manageRouletteGrid');
+        const shopGrid = document.getElementById('manageShopGrid');
+        if (!rouletteGrid || !shopGrid) return;
+
+        rouletteGrid.innerHTML = "";
+        shopGrid.innerHTML = "";
+        
+        const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+        const totalChance = rouletteItems.reduce((sum, p) => sum + (parseFloat(p.chance) || 0), 0);
+
+        prizePool.forEach(p => {
+            let infoText = "";
+            if (p.category === 'shop') {
+                const finalPrice = calculateShopPrice(p.price || 0);
+                infoText = `${finalPrice} ⚪`;
+            } else {
+                if (isAutoOdds) {
+                    infoText = `${(100 / rouletteItems.length).toFixed(1)}%`;
+                } else {
+                    const realPercent = totalChance > 0 ? ((parseFloat(p.chance) || 0) / totalChance * 100).toFixed(1) : 0;
+                    infoText = `${realPercent}%`;
+                }
+            }
+
+            const html = `
+                <div class="manage-card">
+                    <img src="${p.img || 'https://via.placeholder.com/50'}">
+                    <div class="manage-card-name">${p.name}</div>
+                    <div class="manage-card-info">${infoText}</div>
+                    <div class="manage-card-actions">
+                        <button class="manage-btn edit" onclick="editPrize('${p.id}')">✏️</button>
+                        <button class="manage-btn delete" onclick="deletePrize('${p.id}')">🗑️</button>
+                    </div>
+                </div>`;
+            
+            if (p.category === 'shop') {
+                shopGrid.innerHTML += html;
+            } else {
+                rouletteGrid.innerHTML += html;
+            }
+        });
+        
+        if (rouletteGrid.innerHTML === '') {
+            rouletteGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-gray); padding: 20px;">Немає слотів</div>';
+        }
+        if (shopGrid.innerHTML === '') {
+            shopGrid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-gray); padding: 20px;">Немає товарів</div>';
+        }
+    }
+
+    function loadPrizes() {
+        onSnapshot(collection(db, "roulette_prizes"), (snap) => {
+            prizePool = [];
+            snap.forEach(d => prizePool.push({ id: d.id, ...d.data() }));
+            
+            const rouletteItems = prizePool.filter(p => !p.category || p.category === 'roulette');
+            const shopItems = prizePool.filter(p => p.category === 'shop');
+            
+            renderRoulettePreview(rouletteItems);
+            renderShop(shopItems);
+            renderManage();
+            
+            if (!isSpinning) {
+                initTrack(rouletteItems);
+            }
+            
+            // Check for resumed spin state
+            setTimeout(() => checkSpinState(), 500);
+        });
+    }
+
+    function renderRoulettePreview(items) {
+        const preview = document.getElementById('prizePreview');
+        if (!preview) return;
+        preview.innerHTML = "";
+        
+        if (items.length === 0) {
+            preview.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-gray); padding: 30px;">Немає призів</div>';
+            return;
+        }
+        
+        items.forEach(p => {
+            preview.innerHTML += `
+                <div class="prize-preview-card">
+                    <img src="${p.img || 'https://via.placeholder.com/50'}">
+                    <span>${p.name}</span>
+                </div>`;
+        });
+    }
+
+    function renderShop(items) {
+        const grid = document.getElementById('shopGrid');
+        if (!grid) return;
+        
+        if (items.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 50px; color: var(--text-gray);">МАГАЗИН ПОРОЖНІЙ</div>';
+            return;
+        }
+        
+        grid.innerHTML = "";
+        items.forEach(p => {
+            const originalPrice = p.price || 0;
+            const finalPrice = calculateShopPrice(originalPrice);
+            const hasDiscount = currentShopPromotion.isActive && currentShopPromotion.percentage !== 0;
+            
+            grid.innerHTML += `
+                <div class="shop-card">
+                    ${hasDiscount ? `<div class="sale-badge">${currentShopPromotion.percentage > 0 ? '+' : ''}${currentShopPromotion.percentage}%</div>` : ''}
+                    <img src="${p.img || 'https://via.placeholder.com/100'}">
+                    <div class="shop-card-name">${p.name}</div>
+                    ${hasDiscount ? `<div class="shop-card-original">${originalPrice} ⚪</div>` : ''}
+                    <div class="shop-card-price ${hasDiscount ? 'on-sale' : ''}">${finalPrice} ⚪</div>
+                    <button class="btn-main btn-buy" style="width: 100%; padding: 12px;" onclick="buyShopItem('${p.id}')">
+                        КУПИТИ
+                    </button>
+                </div>`;
+        });
+    }
+
+    window.buyShopItem = async function(id) {
+        if (isSpinning || awaitingExchangeChoice) {
+            notify('Зачекайте завершення рулетки!', 'warning');
+            return;
+        }
+        
+        const item = prizePool.find(p => p.id === id);
+        if (!item) return;
+        
+        const finalPrice = calculateShopPrice(item.price || 0);
+        const points = userData.points || 0;
+        
+        if (points < finalPrice) {
+            notify('Недостатньо балів!', 'error');
+            return;
+        }
+        
+        showProcessing("ПОКУПКА", `Купівля: ${item.name}`);
+        
+        try {
+            await updateDoc(doc(db, "users", currentUID), { 
+                points: points - finalPrice 
+            });
+            
+            await addLog('SHOP_PURCHASE', `${item.name} за ${finalPrice} балів`);
+            notify('Покупка успішна!');
+        } catch(e) {
+            notify("Помилка: " + e.message, 'error');
+        } finally {
+            hideProcessing();
+        }
+    };
+
+    // === NAVIGATION ===
+    window.showPage = function(pageId, btn) {
+        if (isSpinning || awaitingExchangeChoice) {
+            notify('Зачекайте завершення рулетки!', 'warning');
+            return;
+        }
+        
+        document.querySelectorAll('.content-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(pageId + 'Page').classList.add('active');
+        
+        document.querySelectorAll('.sidebar .menu-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+
+        document.getElementById('footerPageLabel').innerText = pageId.toUpperCase();
+    };
+
+    window.switchAdminTab = function(tabId, btn) {
+        document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
+        
+        const tabName = tabId.charAt(0).toUpperCase() + tabId.slice(1);
+        const tab = document.getElementById('tab' + tabName);
+        if (tab) tab.style.display = 'block';
+        
+        document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+    };
+
+    // === AUTH & INIT ===
+    onAuthStateChanged(auth, async (u) => {
+        if (!u) {
+            window.location.href = "login.html";
+            return;
+        }
+        
+        user = u;
+        currentUID = u.uid;
+        
+        // Listen to user data
+        onSnapshot(doc(db, "users", u.uid), (s) => {
+            userData = s.data() || {};
+            
+            document.getElementById('pointsVal').innerText = userData.points || 0;
+            document.getElementById('currencyVal').innerText = userData.currency || 0;
+            
+            const tickets = userData.roulette_passes || 0;
+            document.getElementById('ticketsVal').innerText = tickets;
+            document.getElementById('footerRoleLabel').innerText = (userData.role || 'user').toUpperCase();
+            
+            const spinBtn = document.getElementById('spinBtn');
+            spinBtn.disabled = tickets < 1 || isSpinning || awaitingExchangeChoice;
+            
+            if (['admin', 'instructor'].includes(userData.role)) {
+                document.getElementById('adminBtn').style.display = 'flex';
+                loadUsersForTopUp();
+                loadLogs();
+                
+                if (userData.role !== 'admin') {
+                    document.getElementById('instructorNotice').style.display = 'block';
+                    document.getElementById('prizeFormActions').style.display = 'none';
+                }
+            }
+        });
+
+        // Load all settings
+        await loadTicketPrice();
+        await loadPromoSettings();
+        await loadShopPromoSettings();
+        await loadAutoOdds();
+        await loadDiscordSettings();
+        loadPrizes();
+    });
+
+    // Prevent back navigation during spin
+    window.addEventListener('beforeunload', (e) => {
+        if (isSpinning || awaitingExchangeChoice) {
+            e.preventDefault();
+            e.returnValue = '';
         }
     });
 
-    // LOAD USER DATA
-    async function loadUserData() {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-            const data = userSnap.data();
-            updateBalance(data.balancePoints || 0, data.balanceMoney || 0);
-            document.getElementById('spinCount').textContent = data.spinCount || 0;
-            document.getElementById('winCount').textContent = data.winCount || 0;
-            document.getElementById('totalSpent').textContent = data.totalSpent || 0;
+    // Block back link
+    document.getElementById('backLink').addEventListener('click', (e) => {
+        if (isSpinning || awaitingExchangeChoice) {
+            e.preventDefault();
+            notify('Зачекайте завершення рулетки!', 'warning');
         }
-    }
-
-    // LOAD SLOTS
-    async function loadSlots() {
-        const slotsRef = collection(db, 'slots');
-        const slotsSnap = await getDocs(slotsRef);
-        currentSlots = [];
-        slotsSnap.forEach(doc => {
-            currentSlots.push({ id: doc.id, ...doc.data() });
-        });
-        renderSlots();
-    }
-
-    // RENDER SLOTS
-    function renderSlots() {
-        const container = document.getElementById('slotsContainer');
-        container.innerHTML = '';
-        
-        currentSlots.forEach((slot, index) => {
-            const slotEl = document.createElement('div');
-            slotEl.className = 'slot-card';
-            slotEl.innerHTML = `
-                <div class="slot-name">${slot.name}</div>
-                <div class="slot-rarity">${slot.rarity || 'ЗВИЧАЙНИЙ'}</div>
-                <div class="slot-actions">
-                    <button class="slot-action" onclick="openExchange('${slot.id}', '${slot.name}', ${slot.pointsValue}, ${slot.moneyValue})">ОБМІН</button>
-                </div>
-            `;
-            container.appendChild(slotEl);
-        });
-    }
-
-    // LOAD SHOP ITEMS
-    async function loadShopItems() {
-        const shopRef = collection(db, 'shopItems');
-        const shopSnap = await getDocs(shopRef);
-        shopItems = [];
-        shopSnap.forEach(doc => {
-            shopItems.push({ id: doc.id, ...doc.data() });
-        });
-        renderShop();
-    }
-
-    // RENDER SHOP
-    function renderShop() {
-        const container = document.getElementById('shopItems');
-        container.innerHTML = '';
-        
-        shopItems.forEach(item => {
-            const itemEl = document.createElement('div');
-            itemEl.className = 'slot-card';
-            
-            let priceText = '';
-            if (item.priceType === 'points') {
-                const discountedPrice = Math.round(item.price * (1 + discountPercent / 100));
-                priceText = `${discountedPrice} ⚪`;
-            } else if (item.priceType === 'money') {
-                const discountedPrice = Math.round(item.price * (1 + discountPercent / 100));
-                priceText = `${discountedPrice} ₴`;
-            }
-            
-            itemEl.innerHTML = `
-                <div class="slot-name">${item.name}</div>
-                <div class="slot-rarity">${priceText}</div>
-                <div class="slot-actions">
-                    <button class="slot-action" onclick="buyItem('${item.id}', '${item.name}', ${item.price}, '${item.priceType}')">КУПИТИ</button>
-                </div>
-            `;
-            container.appendChild(itemEl);
-        });
-    }
-
-    // LOAD PROMOS
-    async function loadPromos() {
-        const promosRef = collection(db, 'promos');
-        const promosSnap = await getDocs(promosRef);
-        promoList = [];
-        promosSnap.forEach(doc => {
-            promoList.push({ id: doc.id, ...doc.data() });
-        });
-        renderPromos();
-    }
-
-    // RENDER PROMOS
-    function renderPromos() {
-        const userContainer = document.getElementById('promoList');
-        const adminContainer = document.getElementById('promoAdminList');
-        
-        userContainer.innerHTML = '';
-        adminContainer.innerHTML = '';
-        
-        if (promoList.length === 0) {
-            userContainer.innerHTML = '<p style="font-size: 12px; color: var(--text-gray);">Актуальних акцій немає</p>';
-        }
-        
-        promoList.forEach(promo => {
-            const promoEl = document.createElement('div');
-            promoEl.style.cssText = 'background: rgba(0, 212, 255, 0.05); padding: 12px; border-radius: 6px; border: 1px solid rgba(0, 212, 255, 0.2); font-size: 12px;';
-            promoEl.innerHTML = `
-                <strong>${promo.code}</strong> - ${promo.discount}%
-                <p style="color: var(--text-gray); margin-top: 5px;">${promo.discordLink ? '📍 ' + promo.discordLink : ''}</p>
-            `;
-            userContainer.appendChild(promoEl);
-            
-            const adminPromoEl = document.createElement('div');
-            adminPromoEl.className = 'promo-item';
-            adminPromoEl.innerHTML = `
-                <span><strong>${promo.code}</strong> - ${promo.discount}%</span>
-                <button class="promo-delete" onclick="deletePromo('${promo.id}')">ВИДАЛИТИ</button>
-            `;
-            adminContainer.appendChild(adminPromoEl);
-        });
-    }
-
-    // SETUP EVENT LISTENERS
-    function setupEventListeners() {
-        document.querySelectorAll('.nav-tab').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                switchTab(e.target.dataset.tab);
-            });
-        });
-
-        document.getElementById('spinBtn').addEventListener('click', startSpin);
-        document.getElementById('discountSlider').addEventListener('input', updateDiscount);
-
-        // Check if user is admin
-        checkAdmin();
-    }
-
-    // CHECK ADMIN
-    async function checkAdmin() {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists() && userSnap.data().isAdmin) {
-            document.getElementById('adminTabBtn').style.display = 'block';
-        }
-    }
-
-    // SWITCH TAB
-    function switchTab(tabName) {
-        document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active'));
-        document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
-        
-        document.getElementById(tabName + 'Page').classList.add('active');
-        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    }
-
-    // UPDATE DISCOUNT
-    function updateDiscount() {
-        const slider = document.getElementById('discountSlider');
-        discountPercent = parseInt(slider.value);
-        
-        const value = document.getElementById('discountValue');
-        value.textContent = (discountPercent >= 0 ? '+' : '') + discountPercent + '%';
-        
-        const label = document.getElementById('discountLabel');
-        if (discountPercent > 0) {
-            label.textContent = '+' + discountPercent + '% НАЦЕНКА';
-            label.classList.remove('negative');
-        } else if (discountPercent < 0) {
-            label.textContent = discountPercent + '% СКИДКА';
-            label.classList.add('negative');
-        } else {
-            label.textContent = '';
-        }
-        
-        updateTicketPriceDisplay();
-        renderShop();
-    }
-
-    // UPDATE TICKET PRICE DISPLAY
-    function updateTicketPriceDisplay() {
-        const basePrice = ticketPrice;
-        const finalPrice = Math.round(basePrice * (1 + discountPercent / 100));
-        document.getElementById('ticketPrice').textContent = finalPrice;
-        document.getElementById('spinBtn').textContent = `КРУТИТИ (${finalPrice} ⚪)`;
-    }
-
-    // SAVE TICKET PRICE
-    async function saveTicketPrice() {
-        const input = document.getElementById('ticketPriceInput');
-        ticketPrice = parseInt(input.value) || 100;
-        
-        const adminRef = doc(db, 'settings', 'roulette');
-        await updateDoc(adminRef, { ticketPrice });
-        
-        updateTicketPriceDisplay();
-        showToast('Ціна білета оновлена', 'success');
-    }
-
-    // ADD PROMO
-    async function addPromo() {
-        const code = document.getElementById('promoCode').value;
-        const discordLink = document.getElementById('promoDiscordLink').value;
-        const discount = parseInt(document.getElementById('discountSlider').value);
-        
-        if (!code || discount === 0) {
-            showToast('Заповніть усі поля', 'error');
-            return;
-        }
-        
-        const promosRef = collection(db, 'promos');
-        await addDoc(promosRef, {
-            code,
-            discount,
-            discordLink,
-            createdAt: serverTimestamp()
-        });
-        
-        document.getElementById('promoCode').value = '';
-        document.getElementById('promoDiscordLink').value = '';
-        document.getElementById('discountSlider').value = '0';
-        updateDiscount();
-        
-        await loadPromos();
-        showToast('Акція додана', 'success');
-        
-        // Send Discord notification
-        sendDiscordNotification(`🎉 **НОВА АКЦІЯ** 🎉\n**Код:** ${code}\n**Скидка:** ${discount >= 0 ? '+' : ''}${discount}%`);
-    }
-
-    // DELETE PROMO
-    async function deletePromo(id) {
-        const promoRef = doc(db, 'promos', id);
-        await deleteDoc(promoRef);
-        await loadPromos();
-        showToast('Акція видалена', 'success');
-    }
-
-    // START SPIN
-    async function startSpin() {
-        if (isSpinning) {
-            showToast('Рулетка вже крутиться', 'warning');
-            return;
-        }
-
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        
-        const finalPrice = Math.round(ticketPrice * (1 + discountPercent / 100));
-        
-        if (userData.balancePoints < finalPrice) {
-            showToast('Недостатньо балів', 'error');
-            return;
-        }
-
-        isSpinning = true;
-        document.getElementById('spinBtn').disabled = true;
-        
-        // Block navigation
-        disableNavigation();
-        
-        const wheel = document.getElementById('rouletteWheel');
-        wheel.classList.add('spinning');
-        
-        // Save spinning state
-        saveSpinningState(true);
-        
-        const spins = Math.floor(Math.random() * 5) + 3;
-        const randomSlot = Math.floor(Math.random() * 8);
-        const finalDegrees = randomSlot * 45 + Math.random() * 45;
-        const totalRotation = spins * 360 + finalDegrees;
-        
-        wheel.style.transform = `rotate(${totalRotation}deg)`;
-        
-        setTimeout(async () => {
-            wheel.classList.remove('spinning');
-            isSpinning = false;
-            
-            // Deduct points
-            await updateDoc(userRef, {
-                balancePoints: userData.balancePoints - finalPrice,
-                spinCount: (userData.spinCount || 0) + 1,
-                totalSpent: (userData.totalSpent || 0) + finalPrice
-            });
-            
-            const selectedSlot = currentSlots[randomSlot];
-            currentWinData = {
-                slotId: selectedSlot.id,
-                slotName: selectedSlot.name,
-                pointsValue: selectedSlot.pointsValue,
-                moneyValue: selectedSlot.moneyValue
-            };
-            
-            openExchange(selectedSlot.id, selectedSlot.name, selectedSlot.pointsValue, selectedSlot.moneyValue);
-            
-            // Save spinning state
-            saveSpinningState(false);
-            
-            // Re-enable navigation when exchange modal appears
-            
-            document.getElementById('spinBtn').disabled = false;
-        }, 3000);
-    }
-
-    // OPEN EXCHANGE
-    function openExchange(slotId, slotName, pointsValue, moneyValue) {
-        currentWinData = { slotId, slotName, pointsValue, moneyValue };
-        
-        document.getElementById('winSlotName').textContent = slotName;
-        document.getElementById('exchangeAmount1').textContent = pointsValue;
-        document.getElementById('exchangeAmount2').textContent = moneyValue;
-        
-        selectedExchange = null;
-        document.getElementById('exchangeOption1').classList.remove('selected');
-        document.getElementById('exchangeOption2').classList.remove('selected');
-        
-        document.getElementById('exchangeModal').classList.add('active');
-    }
-
-    // SELECT EXCHANGE
-    function selectExchange(option) {
-        selectedExchange = option;
-        document.getElementById('exchangeOption1').classList.remove('selected');
-        document.getElementById('exchangeOption2').classList.remove('selected');
-        document.getElementById('exchangeOption' + option).classList.add('selected');
-    }
-
-    // CONFIRM EXCHANGE
-    async function confirmExchange() {
-        if (!selectedExchange) {
-            showToast('Виберіть варіант обміну', 'warning');
-            return;
-        }
-
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        
-        let updateData = {
-            winCount: (userData.winCount || 0) + 1
-        };
-        
-        if (selectedExchange === 1) {
-            updateData.balancePoints = (userData.balancePoints || 0) + currentWinData.pointsValue;
-            updateData.lastWin = {
-                slotName: currentWinData.slotName,
-                amount: currentWinData.pointsValue,
-                type: 'points',
-                timestamp: serverTimestamp()
-            };
-        } else {
-            updateData.balanceMoney = (userData.balanceMoney || 0) + currentWinData.moneyValue;
-            updateData.lastWin = {
-                slotName: currentWinData.slotName,
-                amount: currentWinData.moneyValue,
-                type: 'money',
-                timestamp: serverTimestamp()
-            };
-        }
-        
-        await updateDoc(userRef, updateData);
-        
-        closeExchangeModal();
-        enableNavigation();
-        loadUserData();
-        
-        showToast('Виграш обміняний!', 'success');
-        
-        // Send Discord notification
-        const type = selectedExchange === 1 ? 'БАЛІВ' : 'ГРИВЕНЬ';
-        const amount = selectedExchange === 1 ? currentWinData.pointsValue : currentWinData.moneyValue;
-        sendDiscordNotification(`🎰 **ВИГРАШ** 🎰\n**Користувач:** ${currentUser.displayName}\n**Слот:** ${currentWinData.slotName}\n**Призова:** ${amount} ${type}`);
-    }
-
-    // CLOSE EXCHANGE MODAL
-    function closeExchangeModal() {
-        document.getElementById('exchangeModal').classList.remove('active');
-        selectedExchange = null;
-    }
-
-    // BUY ITEM
-    function buyItem(itemId, itemName, price, priceType) {
-        const discountedPrice = Math.round(price * (1 + discountPercent / 100));
-        
-        let content = `
-            <div style="padding: 15px; background: rgba(0, 212, 255, 0.05); border-radius: 8px; margin-bottom: 20px;">
-                <p style="font-size: 12px; color: var(--text-gray); margin-bottom: 10px;">ТОВАР</p>
-                <p style="font-size: 16px; font-weight: 900; color: var(--primary);">${itemName}</p>
-                <p style="font-size: 14px; margin-top: 10px;">Ціна: <strong style="color: var(--primary);">${discountedPrice} ${priceType === 'points' ? '⚪' : '₴'}</strong></p>
-            </div>
-        `;
-        
-        document.getElementById('purchaseContent').innerHTML = content;
-        
-        window.currentPurchaseData = {
-            itemId,
-            itemName,
-            price: discountedPrice,
-            priceType
-        };
-        
-        document.getElementById('purchaseModal').classList.add('active');
-    }
-
-    // CONFIRM PURCHASE
-    async function confirmPurchase() {
-        const data = window.currentPurchaseData;
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        
-        if (data.priceType === 'points') {
-            if (userData.balancePoints < data.price) {
-                showToast('Недостатньо балів', 'error');
-                return;
-            }
-            
-            await updateDoc(userRef, {
-                balancePoints: userData.balancePoints - data.price,
-                inventory: [...(userData.inventory || []), data.itemName]
-            });
-        } else {
-            if (userData.balanceMoney < data.price) {
-                showToast('Недостатньо грошей', 'error');
-                return;
-            }
-            
-            await updateDoc(userRef, {
-                balanceMoney: userData.balanceMoney - data.price,
-                inventory: [...(userData.inventory || []), data.itemName]
-            });
-        }
-        
-        closePurchaseModal();
-        loadUserData();
-        showToast('Товар куплений!', 'success');
-    }
-
-    // CLOSE PURCHASE MODAL
-    function closePurchaseModal() {
-        document.getElementById('purchaseModal').classList.remove('active');
-    }
-
-    // DISABLE/ENABLE NAVIGATION
-    function disableNavigation() {
-        document.querySelectorAll('.nav-tab, .status-segment, a[href]').forEach(el => {
-            el.style.pointerEvents = 'none';
-            el.style.opacity = '0.5';
-        });
-    }
-
-    function enableNavigation() {
-        document.querySelectorAll('.nav-tab, .status-segment, a[href]').forEach(el => {
-            el.style.pointerEvents = 'auto';
-            el.style.opacity = '1';
-        });
-    }
-
-    // SAVE/LOAD SPINNING STATE
-    function saveSpinningState(spinning) {
-        sessionStorage.setItem('rouletteSpin', JSON.stringify({
-            spinning,
-            timestamp: Date.now()
-        }));
-    }
-
-    function loadSavedRoulette() {
-        const saved = JSON.parse(sessionStorage.getItem('rouletteSpin'));
-        if (saved && saved.spinning && Date.now() - saved.timestamp < 10000) {
-            isSpinning = true;
-            disableNavigation();
-            showToast('Рулетка продовжує крутитися...', 'warning');
-        }
-    }
-
-    // UPDATE BALANCE
-    function updateBalance(points, money) {
-        document.getElementById('balancePoints').textContent = points;
-        document.getElementById('balanceMoney').textContent = money;
-        updateTicketPriceDisplay();
-    }
-
-    // SHOW BALANCE MODAL
-    function showBalance() {
-        const userRef = doc(db, 'users', currentUser.uid);
-        getDoc(userRef).then(snap => {
-            const data = snap.data();
-            const content = `
-                <div style="display: grid; gap: 15px;">
-                    <div style="padding: 15px; background: rgba(0, 212, 255, 0.1); border-radius: 8px; border: 1px solid rgba(0, 212, 255, 0.3);">
-                        <p style="color: var(--text-gray); font-size: 12px; margin-bottom: 8px; text-transform: uppercase;">БАЛІ</p>
-                        <p style="font-size: 24px; font-weight: 900; color: var(--primary);">${data.balancePoints || 0}</p>
-                    </div>
-                    <div style="padding: 15px; background: rgba(0, 212, 255, 0.1); border-radius: 8px; border: 1px solid rgba(0, 212, 255, 0.3);">
-                        <p style="color: var(--text-gray); font-size: 12px; margin-bottom: 8px; text-transform: uppercase;">ГРИВНІ</p>
-                        <p style="font-size: 24px; font-weight: 900; color: var(--primary);">${data.balanceMoney || 0}</p>
-                    </div>
-                    <button class="btn" onclick="openTopUpModal()" style="width: 100%;">ПОПОВНИТИ БАЛАНС</button>
-                </div>
-            `;
-            
-            document.getElementById('modalTitle').textContent = 'ВАШ БАЛАНС';
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('modal').classList.add('active');
-        });
-    }
-
-    // UPDATE UI
-    function updateUI() {
-        loadUserData();
-    }
-
-    // HELPER FUNCTIONS
-    function showToast(message, type = 'info') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = 'toast ' + type;
-        toast.textContent = message;
-        container.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.remove();
-        }, 3000);
-    }
-
-    function closeModal() {
-        document.getElementById('modal').classList.remove('active');
-    }
-
-    function sendDiscordNotification(message) {
-        // Send to Discord webhook
-        const webhookUrl = 'YOUR_DISCORD_WEBHOOK_URL';
-        fetch(webhookUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ content: message })
-        }).catch(err => console.log('Discord notification sent'));
-    }
-
-    // Global functions for HTML
-    window.switchTab = switchTab;
-    window.openExchange = openExchange;
-    window.selectExchange = selectExchange;
-    window.confirmExchange = confirmExchange;
-    window.closeExchangeModal = closeExchangeModal;
-    window.buyItem = buyItem;
-    window.confirmPurchase = confirmPurchase;
-    window.closePurchaseModal = closePurchaseModal;
-    window.saveTicketPrice = saveTicketPrice;
-    window.addPromo = addPromo;
-    window.deletePromo = deletePromo;
-    window.showBalance = showBalance;
-    window.closeModal = closeModal;
-    window.sendDiscordNotification = sendDiscordNotification;
-    window.disableNavigation = disableNavigation;
-    window.enableNavigation = enableNavigation;
-
+    });
 </script>
 
 </body>
