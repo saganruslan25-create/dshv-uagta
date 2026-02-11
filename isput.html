@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ДШВ | ІСПИТ ЦЕНТР</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* ============================================ */
+        /* ===== ЧАСТИНА 1: CSS ЗМІННІ ТА БАЗОВІ ====== */
+        /* ============================================ */
+        :root {
+            --primary: #00ff44;
+            --primary-bright: #e0ffe8;
+            --primary-glow: rgba(0, 255, 68, 0.7);
+            --bg: #030507;
+            --card-bg: rgba(10, 12, 16, 0.6);
+            --glass-border: rgba(0, 255, 68, 0.3);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.6);
+            --warning: #fbbf24;
+            --text-gray: #94a3b8;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(0, 255, 68, 0.25), transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(0, 255, 68, 0.25), transparent 50%);
+            background-size: 100% 100%;
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        * { box-sizing: border-box; }
+        input, textarea, select { user-select: text !important; -webkit-user-select: text !important; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+            box-shadow: 0 0 10px var(--primary);
+        }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 2: АНІМАЦІЇ ================== */
+        /* ============================================ */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px rgba(0, 255, 68, 0.3); }
+            50% { box-shadow: 0 0 30px rgba(0, 255, 68, 0.6); }
+            100% { box-shadow: 0 0 15px rgba(0, 255, 68, 0.3); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 3: ШАПКА (HEADER) ============ */
+        /* ============================================ */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 5%; background: rgba(3, 5, 7, 0.85);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        .logo-box {
+            background: var(--primary); color: black; padding: 6px 14px;
+            border-radius: 8px; font-weight: 900; text-decoration: none; font-size: 14px;
+            text-transform: uppercase; box-shadow: 0 0 20px var(--primary);
+            letter-spacing: 1px; cursor: pointer; display: inline-block;
+            transition: all 0.3s ease;
+        }
+        .logo-box:hover { box-shadow: 0 0 35px var(--primary); transform: translateY(-1px); }
+        .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .btn-header {
+            background: rgba(255,255,255, 0.05); border: 1px solid var(--primary);
+            color: var(--primary-bright); padding: 8px 16px; border-radius: 10px;
+            font-weight: 900; cursor: pointer; font-size: 12px;
+            text-transform: uppercase; transition: all 0.3s ease;
+        }
+        .btn-header:hover {
+            background: var(--primary); color: black;
+            box-shadow: 0 0 15px var(--primary);
+        }
+        .btn-header.active { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); }
+        .btn-role-toggle {
+            background: rgba(251, 191, 36, 0.15); border: 1px solid var(--warning);
+            color: var(--warning); padding: 8px 16px; border-radius: 10px;
+            font-weight: 900; cursor: pointer; font-size: 12px; transition: all 0.3s ease;
+        }
+        .btn-role-toggle.user-mode {
+            background: rgba(255,255,255, 0.05); border: 1px solid #555; color: var(--text-gray);
+        }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 4: КАРТКИ ==================== */
+        /* ============================================ */
+        .main-content { padding: 30px 5%; max-width: 1200px; margin: 0 auto; }
+
+        .card {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 20px; backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4); padding: 25px;
+            transition: all 0.3s ease; position: relative;
+        }
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(0, 255, 68, 0.3), inset 0 0 15px rgba(0, 255, 68, 0.05);
+            transform: translateY(-3px);
+        }
+        .card-hero {
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 40px rgba(0, 255, 68, 0.15);
+        }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; }
+        .stat-box {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px; padding: 15px; text-align: center;
+        }
+        .stat-emoji { font-size: 24px; margin-bottom: 8px; }
+        .stat-value { font-size: 24px; font-weight: 900; margin-bottom: 4px; text-shadow: 0 0 15px currentColor; }
+        .stat-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--text-gray); }
+
+        .tests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+        .test-card { cursor: pointer; }
+        .test-card .emoji-box {
+            width: 56px; height: 56px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 24px;
+            background: rgba(0, 255, 68, 0.1); border: 1px solid rgba(0, 255, 68, 0.2);
+        }
+        .badge {
+            padding: 4px 10px; border-radius: 8px; font-size: 10px;
+            font-weight: 900; text-transform: uppercase;
+        }
+        .badge-green { background: rgba(0,255,68,0.1); color: var(--primary); border: 1px solid rgba(0,255,68,0.2); }
+        .badge-yellow { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
+        .badge-red { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+
+        .btn-start {
+            background: var(--primary); color: black; padding: 8px 16px;
+            border-radius: 8px; font-weight: 900; font-size: 12px;
+            border: none; cursor: pointer; text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 255, 68, 0.3); transition: all 0.3s ease;
+        }
+        .btn-start:hover { box-shadow: 0 0 25px var(--primary); }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 5: РЕЗУЛЬТАТИ ================ */
+        /* ============================================ */
+        .result-item {
+            background: var(--card-bg); border-radius: 12px; padding: 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px; transition: all 0.3s ease;
+        }
+        .result-item.passed { border: 1px solid rgba(0,255,68,0.2); }
+        .result-item.failed { border: 1px solid rgba(239,68,68,0.2); }
+
+        .score-circle {
+            width: 130px; height: 130px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+            background: rgba(0,0,0,0.3);
+        }
+        .score-circle.passed { border: 4px solid var(--primary); box-shadow: 0 0 30px rgba(0,255,68,0.4); }
+        .score-circle.failed { border: 4px solid var(--danger); box-shadow: 0 0 30px rgba(239,68,68,0.4); }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 6: ТЕСТУВАННЯ ================ */
+        /* ============================================ */
+        .progress-bar-wrap {
+            width: 100%; height: 8px; border-radius: 10px;
+            background: rgba(255,255,255,0.05); overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%; border-radius: 10px;
+            background: var(--primary); box-shadow: 0 0 10px var(--primary);
+            transition: width 0.5s ease;
+        }
+
+        .answer-btn {
+            display: flex; align-items: center; gap: 15px; padding: 15px;
+            border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 14px;
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08);
+            color: white; width: 100%; text-align: left; transition: all 0.2s ease;
+            margin-bottom: 10px;
+        }
+        .answer-btn:hover { border-color: rgba(0,255,68,0.5); background: rgba(0,255,68,0.05); }
+        .answer-btn.selected { border-color: var(--primary); background: rgba(0,255,68,0.1); color: var(--primary-bright); }
+        .answer-btn.correct { border-color: var(--primary); background: rgba(0,255,68,0.15); color: var(--primary-bright); }
+        .answer-btn.wrong { border-color: var(--danger); background: rgba(239,68,68,0.15); color: #ff8888; }
+
+        .letter-box {
+            width: 32px; height: 32px; border-radius: 8px; display: flex;
+            align-items: center; justify-content: center; font-weight: 900; font-size: 12px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-gray); flex-shrink: 0; transition: all 0.2s ease;
+        }
+        .answer-btn.selected .letter-box { background: var(--primary); color: black; border-color: var(--primary); }
+
+        .btn-confirm {
+            padding: 15px 40px; border-radius: 12px; font-weight: 900; font-size: 14px;
+            cursor: pointer; text-transform: uppercase; border: none; transition: all 0.3s ease;
+        }
+        .btn-confirm.active { background: var(--primary); color: black; box-shadow: 0 0 20px var(--primary); }
+        .btn-confirm.disabled { background: rgba(255,255,255,0.05); color: #555; border: 1px solid #333; cursor: default; opacity: 0.5; }
+        .btn-confirm.pulse { animation: pulseGlow 1.5s infinite; }
+
+        .btn-cancel {
+            background: none; color: var(--danger); border: 1px solid var(--danger);
+            padding: 15px 25px; border-radius: 12px; font-weight: 900; font-size: 14px;
+            cursor: pointer; text-transform: uppercase; transition: all 0.3s ease;
+        }
+        .btn-cancel:hover { background: var(--danger); color: white; }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.05); color: var(--primary);
+            border: 1px solid var(--primary); padding: 12px 25px; border-radius: 12px;
+            font-weight: 900; font-size: 13px; cursor: pointer; text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); }
+
+        .btn-danger {
+            background: none; color: var(--danger); border: 1px solid var(--danger);
+            padding: 10px 20px; border-radius: 10px; font-weight: 800; font-size: 12px;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        .timer-badge {
+            padding: 5px 12px; border-radius: 8px; font-size: 12px; font-weight: 800;
+        }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 7: СТВОРЕННЯ ТЕСТУ =========== */
+        /* ============================================ */
+        .form-label {
+            display: block; font-size: 11px; font-weight: 800; color: var(--text-gray);
+            text-transform: uppercase; margin-bottom: 8px;
+        }
+        .form-input {
+            width: 100%; background: #000; border: 1px solid #333; color: white;
+            padding: 12px; border-radius: 10px; font-size: 14px; outline: none;
+            font-family: 'Inter', sans-serif; transition: all 0.3s ease;
+        }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 15px rgba(0,255,68,0.3); }
+        .form-select {
+            width: 100%; background: #000; border: 1px solid #333; color: white;
+            padding: 12px; border-radius: 10px; font-size: 14px; outline: none;
+            font-family: 'Inter', sans-serif; cursor: pointer;
+        }
+
+        .correct-btn {
+            width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-weight: 900; font-size: 11px;
+            transition: all 0.3s ease; border: 2px solid #555;
+            background: transparent; color: #555;
+        }
+        .correct-btn.active {
+            background: var(--primary); border-color: var(--primary);
+            color: black; box-shadow: 0 0 10px var(--primary);
+        }
+
+        .emoji-pick {
+            width: 36px; height: 36px; border-radius: 8px; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); border: 1px solid #333; transition: all 0.3s ease;
+        }
+        .emoji-pick.active { background: var(--primary); border-color: var(--primary); }
+
+        .error-box {
+            background: rgba(239,68,68,0.1); border: 1px solid var(--danger);
+            border-radius: 12px; padding: 15px; margin-bottom: 20px;
+            color: var(--danger); font-size: 13px; font-weight: 700;
+            animation: shake 0.3s ease;
+        }
+
+        .section-title {
+            font-size: 18px; font-weight: 900; text-transform: uppercase;
+            color: var(--primary-bright); text-shadow: 0 0 15px var(--primary);
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        }
+        .section-title .accent { color: var(--primary); }
+
+        .review-item {
+            background: var(--card-bg); border-radius: 12px; padding: 18px; margin-bottom: 10px;
+        }
+        .review-item.correct-review { border-left: 4px solid var(--primary); border: 1px solid rgba(0,255,68,0.2); border-left-width: 4px; }
+        .review-item.wrong-review { border-left: 4px solid var(--danger); border: 1px solid rgba(239,68,68,0.2); border-left-width: 4px; }
+
+        .manage-item {
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 12px; padding: 20px; margin-bottom: 12px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;
+            transition: all 0.3s ease;
+        }
+        .manage-item:hover { border-color: var(--glass-border); box-shadow: 0 0 20px rgba(0,255,68,0.1); }
+
+        /* ФУТЕР */
+        footer {
+            text-align: center; padding: 25px; margin-top: 40px;
+            border-top: 1px solid rgba(0,255,68,0.1); color: var(--text-gray); font-size: 11px;
+        }
+
+        /* ============================================ */
+        /* ===== ЧАСТИНА 8: АДАПТИВНІСТЬ ============== */
+        /* ============================================ */
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .tests-grid { grid-template-columns: 1fr; }
+            header { padding: 12px 15px; }
+            .header-right { gap: 6px; }
+            .btn-header, .btn-role-toggle { font-size: 10px; padding: 6px 10px; }
+            .logo-box { font-size: 11px; padding: 5px 10px; }
+            .main-content { padding: 20px 15px; }
+            .manage-item { flex-direction: column; align-items: flex-start; }
+        }
+
+        /* Приховуємо всі в'юхи крім активного */
+        .view { display: none; }
+        .view.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 9: HEADER HTML =============== -->
+    <!-- ============================================ -->
+    <header>
+        <a href="cabinet.html" class="logo-box">ДШВ</a>
+        <div class="header-right">
+            <button class="btn-header" id="btnHome" onclick="showView('home')">🏠 ГОЛОВНА</button>
+            <button class="btn-header" id="btnCreate" onclick="showView('create')" style="display:none;">➕ СТВОРИТИ</button>
+            <button class="btn-header" id="btnManage" onclick="showView('manage')" style="display:none;">⚙️ КЕРУВАННЯ</button>
+            <button class="btn-role-toggle" id="btnRole" onclick="toggleRole()">👑 АДМІН</button>
+        </div>
+    </header>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 10: ГОЛОВНА СТОРІНКА ========= -->
+    <!-- ============================================ -->
+    <div id="viewHome" class="view active">
+        <div class="main-content">
+            <!-- Герой блок -->
+            <div class="card card-hero" style="margin-bottom: 25px; animation: fadeInUp 0.4s ease both;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="font-size: 30px; font-weight: 900; text-transform: uppercase; color: var(--primary-bright); text-shadow: 0 0 20px var(--primary); letter-spacing: 2px; margin: 0 0 8px 0;">
+                        📋 ІСПИТ ЦЕНТР
+                    </h1>
+                    <p style="color: var(--text-gray); font-size: 13px; margin: 0;">
+                        Система тестування та перевірки знань особового складу
+                    </p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-emoji">📝</div>
+                        <div class="stat-value" id="statTests" style="color: white;">0</div>
+                        <div class="stat-label">ТЕСТІВ</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-emoji">✅</div>
+                        <div class="stat-value" id="statPassed" style="color: var(--primary);">0</div>
+                        <div class="stat-label">СКЛАДЕНО</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-emoji">❌</div>
+                        <div class="stat-value" id="statFailed" style="color: var(--danger);">0</div>
+                        <div class="stat-label">ПРОВАЛЕНО</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-emoji">📊</div>
+                        <div class="stat-value" id="statAvg" style="color: var(--warning);">0%</div>
+                        <div class="stat-label">СЕР. БАЛИ</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Адмін інфо -->
+            <div id="adminInfoBanner" style="display: none; background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.3); border-radius: 12px; padding: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; animation: fadeInUp 0.4s ease 0.1s both;">
+                <span style="font-size: 24px;">👑</span>
+                <div>
+                    <p style="font-size: 13px; font-weight: 800; color: var(--warning); margin: 0 0 3px 0;">РЕЖИМ АДМІНІСТРАТОРА</p>
+                    <p style="font-size: 11px; color: var(--text-gray); margin: 0;">Ви можете створювати, редагувати та видаляти тести</p>
+                </div>
+            </div>
+
+            <!-- Список тестів -->
+            <div style="margin-bottom: 25px;">
+                <h2 class="section-title"><span class="accent">▎</span> ДОСТУПНІ ТЕСТИ</h2>
+                <div id="testsGrid" class="tests-grid"></div>
+                <div id="noTests" style="display: none; text-align: center; padding: 60px 20px;">
+                    <p style="font-size: 50px; margin-bottom: 15px;">📭</p>
+                    <p style="font-size: 16px; font-weight: 800; color: var(--text-gray);">Тестів поки немає</p>
+                </div>
+            </div>
+
+            <!-- Останні результати -->
+            <div id="resultsSection" style="display: none;">
+                <h2 class="section-title"><span class="accent">▎</span> ОСТАННІ РЕЗУЛЬТАТИ</h2>
+                <div id="resultsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 11: ІНТРО ТЕСТУ ============== -->
+    <!-- ============================================ -->
+    <div id="viewIntro" class="view">
+        <div class="main-content" style="max-width: 700px;">
+            <div class="card card-hero" style="text-align: center; animation: modalPop 0.4s ease;">
+                <div id="introEmoji" style="font-size: 60px; margin-bottom: 15px;"></div>
+                <h1 id="introTitle" style="font-size: 24px; font-weight: 900; text-transform: uppercase; color: var(--primary-bright); text-shadow: 0 0 15px var(--primary); margin: 0 0 10px 0;"></h1>
+                <p id="introDesc" style="color: var(--text-gray); font-size: 13px; margin: 0 0 25px 0;"></p>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 30px;">
+                    <div class="stat-box">
+                        <div id="introCount" style="font-size: 20px; font-weight: 900; color: var(--primary-bright); margin-bottom: 3px;"></div>
+                        <div class="stat-label">ПИТАНЬ</div>
+                    </div>
+                    <div class="stat-box">
+                        <div id="introPass" style="font-size: 20px; font-weight: 900; color: var(--primary-bright); margin-bottom: 3px;"></div>
+                        <div class="stat-label">ПРОХІДНИЙ</div>
+                    </div>
+                    <div class="stat-box">
+                        <div style="font-size: 20px; font-weight: 900; color: var(--primary-bright); margin-bottom: 3px;">30с</div>
+                        <div class="stat-label">ЧАС/ПИТАННЯ</div>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button class="btn-confirm active" onclick="startTest()" style="font-size: 14px;">🚀 ПОЧАТИ ТЕСТ</button>
+                    <button class="btn-cancel" onclick="showView('home')">НАЗАД</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 12: ПРОХОДЖЕННЯ ТЕСТУ ======== -->
+    <!-- ============================================ -->
+    <div id="viewTest" class="view">
+        <div class="main-content" style="max-width: 800px;">
+            <!-- Прогрес -->
+            <div style="margin-bottom: 20px; animation: fadeInUp 0.3s ease;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span id="questionCounter" style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--primary);"></span>
+                    <div id="timerBadge" class="timer-badge"></div>
+                </div>
+                <div class="progress-bar-wrap">
+                    <div id="progressBar" class="progress-bar-fill" style="width: 0%;"></div>
+                </div>
+            </div>
+
+            <!-- Питання -->
+            <div id="questionCard" class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                    <div id="questionNumber" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; background: var(--primary); color: black;"></div>
+                    <h2 id="questionText" style="font-size: 17px; font-weight: 700; color: var(--primary-bright); margin: 0;"></h2>
+                </div>
+                <div id="answersContainer"></div>
+            </div>
+
+            <!-- Кнопки -->
+            <div style="display: flex; justify-content: center; gap: 15px;">
+                <button id="btnConfirmAnswer" class="btn-confirm disabled" onclick="confirmAnswer()">ПІДТВЕРДИТИ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 13: РЕЗУЛЬТАТИ =============== -->
+    <!-- ============================================ -->
+    <div id="viewResults" class="view">
+        <div class="main-content" style="max-width: 700px;">
+            <!-- Герой результат -->
+            <div id="resultHero" class="card" style="text-align: center; margin-bottom: 25px; animation: modalPop 0.5s ease;">
+                <div id="resultEmoji" style="font-size: 70px; margin-bottom: 15px;"></div>
+                <h1 id="resultTitle" style="font-size: 28px; font-weight: 900; text-transform: uppercase; margin: 0 0 8px 0;"></h1>
+                <p id="resultSubtitle" style="color: var(--text-gray); font-size: 13px; margin: 0 0 25px 0;"></p>
+
+                <div style="display: flex; justify-content: center; margin-bottom: 25px;">
+                    <div id="scoreCircle" class="score-circle">
+                        <div id="scorePercent" style="font-size: 30px; font-weight: 900;"></div>
+                        <div style="font-size: 10px; font-weight: 800; color: var(--text-gray);">РЕЗУЛЬТАТ</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 25px;">
+                    <div class="stat-box">
+                        <div id="resCorrect" style="font-size: 20px; font-weight: 900; color: var(--primary);"></div>
+                        <div class="stat-label">ПРАВИЛЬНИХ</div>
+                    </div>
+                    <div class="stat-box">
+                        <div id="resWrong" style="font-size: 20px; font-weight: 900; color: var(--danger);"></div>
+                        <div class="stat-label">ПОМИЛОК</div>
+                    </div>
+                    <div class="stat-box">
+                        <div id="resPassReq" style="font-size: 20px; font-weight: 900; color: var(--warning);"></div>
+                        <div class="stat-label">ПРОХІДНИЙ</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn-secondary" onclick="retryTest()">🔄 ПРОЙТИ ЗНОВУ</button>
+                    <button class="btn-confirm active" onclick="showView('home')">🏠 НА ГОЛОВНУ</button>
+                </div>
+            </div>
+
+            <!-- Детальний розбір -->
+            <h2 class="section-title"><span class="accent">▎</span> ДЕТАЛЬНИЙ РОЗБІР</h2>
+            <div id="reviewList"></div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 14: СТВОРЕННЯ ТЕСТУ ========== -->
+    <!-- ============================================ -->
+    <div id="viewCreate" class="view">
+        <div class="main-content" style="max-width: 800px;">
+            <h1 class="section-title" style="animation: fadeInUp 0.4s ease;"><span class="accent">▎</span> ➕ СТВОРЕННЯ ТЕСТУ</h1>
+
+            <div id="createError" class="error-box" style="display: none;"></div>
+
+            <!-- Основна інформація -->
+            <div class="card" style="margin-bottom: 20px; animation: fadeInUp 0.4s ease 0.05s both;">
+                <h3 style="font-size: 13px; font-weight: 900; text-transform: uppercase; color: var(--primary); margin: 0 0 18px 0;">ОСНОВНА ІНФОРМАЦІЯ</h3>
+
+                <div style="margin-bottom: 15px;">
+                    <label class="form-label">Назва тесту</label>
+                    <input type="text" id="cTitle" class="form-input" placeholder="Напр.: Базова підготовка бійця">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label class="form-label">Опис</label>
+                    <textarea id="cDesc" class="form-input" rows="3" placeholder="Короткий опис тесту..." style="resize: none;"></textarea>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label class="form-label">Категорія</label>
+                        <select id="cCategory" class="form-select">
+                            <option>Базова підготовка</option>
+                            <option>Тактика</option>
+                            <option>Медицина</option>
+                            <option>Зброя</option>
+                            <option>Статут</option>
+                            <option>Радіозв'язок</option>
+                            <option>Інше</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Емодзі</label>
+                        <div id="emojiPicker" style="display: flex; flex-wrap: wrap; gap: 5px;"></div>
+                    </div>
+                    <div>
+                        <label class="form-label">Прохідний бал: <span id="passScoreLabel">60</span>%</label>
+                        <input type="range" id="cPassScore" min="10" max="100" step="5" value="60" style="width: 100%; accent-color: var(--primary); cursor: pointer;" oninput="document.getElementById('passScoreLabel').innerText=this.value">
+                        <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-gray);"><span>10%</span><span>100%</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Питання -->
+            <h3 style="font-size: 13px; font-weight: 900; text-transform: uppercase; color: var(--primary); margin: 0 0 15px 0;">📝 ПИТАННЯ (<span id="qCountLabel">1</span>)</h3>
+            <div id="questionsContainer"></div>
+
+            <button onclick="addQuestion()" style="width: 100%; padding: 15px; border-radius: 12px; font-weight: 900; font-size: 13px; cursor: pointer; background: rgba(0,255,68,0.05); border: 1px dashed var(--glass-border); color: var(--primary); text-transform: uppercase; margin-bottom: 25px; transition: all 0.3s ease;" onmouseenter="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 20px rgba(0,255,68,0.2)';" onmouseleave="this.style.borderColor='var(--glass-border)'; this.style.boxShadow='none';">
+                ➕ ДОДАТИ ПИТАННЯ
+            </button>
+
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <button class="btn-confirm active" onclick="saveTest()">💾 ЗБЕРЕГТИ ТЕСТ</button>
+                <button class="btn-cancel" onclick="showView('home')">СКАСУВАТИ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 15: КЕРУВАННЯ ТЕСТАМИ ========= -->
+    <!-- ============================================ -->
+    <div id="viewManage" class="view">
+        <div class="main-content" style="max-width: 900px;">
+            <h1 class="section-title" style="animation: fadeInUp 0.4s ease;"><span class="accent">▎</span> ⚙️ КЕРУВАННЯ ТЕСТАМИ</h1>
+
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px;">
+                <div class="stat-box"><div id="mTests" class="stat-value" style="color: var(--primary); font-size: 22px;">0</div><div class="stat-label">ТЕСТІВ</div></div>
+                <div class="stat-box"><div id="mQuestions" class="stat-value" style="color: var(--warning); font-size: 22px;">0</div><div class="stat-label">ПИТАНЬ</div></div>
+                <div class="stat-box"><div id="mResults" class="stat-value" style="color: var(--primary-bright); font-size: 22px;">0</div><div class="stat-label">РЕЗУЛЬТАТІВ</div></div>
+                <div class="stat-box"><div id="mSuccessRate" class="stat-value" style="color: var(--primary); font-size: 22px;">—</div><div class="stat-label">% УСПІХУ</div></div>
+            </div>
+
+            <div class="card" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <span style="font-size: 13px; font-weight: 800; color: var(--text-gray);">🛠️ Швидкі дії</span>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-danger" onclick="clearAllResults()">🗑️ ОЧИСТИТИ РЕЗУЛЬТАТИ</button>
+                    <button class="btn-secondary" onclick="showView('home')" style="font-size: 12px; padding: 10px 18px;">🏠 НА ГОЛОВНУ</button>
+                </div>
+            </div>
+
+            <h3 style="font-size: 13px; font-weight: 900; text-transform: uppercase; color: var(--primary); margin: 0 0 15px 0;">📋 СПИСОК ТЕСТІВ</h3>
+            <div id="manageList"></div>
+            <div id="manageEmpty" style="display: none; text-align: center; padding: 60px; background: var(--card-bg); border: 1px dashed var(--glass-border); border-radius: 20px;">
+                <p style="font-size: 50px;">📭</p>
+                <p style="font-weight: 800; color: var(--text-gray);">Тестів немає</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer>
+        <span style="color: var(--primary); font-weight: 900;">ДШВ</span> | ІСПИТ ЦЕНТР © <script>document.write(new Date().getFullYear())</script>
+    </footer>
+
+    <!-- ============================================ -->
+    <!-- ===== ЧАСТИНА 16: JAVASCRIPT =============== -->
+    <!-- ============================================ -->
+    <script>
+        // =============================
+        // ЧАСТИНА 16.1: СХОВИЩЕ (localStorage)
+        // =============================
+        const TESTS_KEY = 'dsv_tests';
+        const RESULTS_KEY = 'dsv_test_results';
+        const ROLE_KEY = 'dsv_user_role';
+
+        function getTests() {
+            try {
+                const d = localStorage.getItem(TESTS_KEY);
+                if (d) return JSON.parse(d);
+                const defaults = getDefaultTests();
+                saveTests(defaults);
+                return defaults;
+            } catch(e) { return getDefaultTests(); }
+        }
+        function saveTests(tests) { localStorage.setItem(TESTS_KEY, JSON.stringify(tests)); }
+        function getResults() {
+            try { const d = localStorage.getItem(RESULTS_KEY); return d ? JSON.parse(d) : []; } catch(e) { return []; }
+        }
+        function saveResultToStorage(result) {
+            const r = getResults(); r.unshift(result);
+            localStorage.setItem(RESULTS_KEY, JSON.stringify(r));
+        }
+        function clearAllResults() {
+            if (confirm('Очистити всю історію результатів?')) {
+                localStorage.setItem(RESULTS_KEY, JSON.stringify([]));
+                renderManage(); renderHome();
+            }
+        }
+        function getRole() { return localStorage.getItem(ROLE_KEY) || 'user'; }
+        function setRole(r) { localStorage.setItem(ROLE_KEY, r); }
+
+        function getDefaultTests() {
+            return [
+                {
+                    id: 'def1', title: 'Базова підготовка бійця', emoji: '🎖️',
+                    description: 'Перевірка базових знань з військової підготовки та статуту підрозділу ДШВ.',
+                    category: 'Базова підготовка', passingScore: 60, createdAt: Date.now(), createdBy: 'Система',
+                    questions: [
+                        { id:'q1', text:'Що означає абревіатура ДШВ?', answers:[
+                            {id:'a1',text:'Десантно-штурмові війська',isCorrect:true},
+                            {id:'a2',text:'Дивізійні штабні війська',isCorrect:false},
+                            {id:'a3',text:'Допоміжні штурмові відділи',isCorrect:false},
+                            {id:'a4',text:'Державна штурмова варта',isCorrect:false}
+                        ]},
+                        { id:'q2', text:'Який колір береті носять бійці ДШВ?', answers:[
+                            {id:'a1',text:'Чорний',isCorrect:false},
+                            {id:'a2',text:'Марунового (бордового) кольору',isCorrect:true},
+                            {id:'a3',text:'Зелений',isCorrect:false},
+                            {id:'a4',text:'Синій',isCorrect:false}
+                        ]},
+                        { id:'q3', text:'Яке перше правило безпеки при поводженні зі зброєю?', answers:[
+                            {id:'a1',text:'Завжди вважати зброю зарядженою',isCorrect:true},
+                            {id:'a2',text:'Тримати палець на спусковому гачку',isCorrect:false},
+                            {id:'a3',text:'Направляти зброю на ціль',isCorrect:false},
+                            {id:'a4',text:'Зняти з запобіжника',isCorrect:false}
+                        ]},
+                        { id:'q4', text:'Що таке "позивний" у військовому контексті?', answers:[
+                            {id:'a1',text:'Номер телефону бійця',isCorrect:false},
+                            {id:'a2',text:'Кодове ім\'я для радіозв\'язку',isCorrect:true},
+                            {id:'a3',text:'Звання бійця',isCorrect:false},
+                            {id:'a4',text:'Номер підрозділу',isCorrect:false}
+                        ]},
+                        { id:'q5', text:'Скільки бійців зазвичай входять до складу відділення?', answers:[
+                            {id:'a1',text:'3-5',isCorrect:false},
+                            {id:'a2',text:'7-12',isCorrect:true},
+                            {id:'a3',text:'20-30',isCorrect:false},
+                            {id:'a4',text:'50+',isCorrect:false}
+                        ]}
+                    ]
+                },
+                {
+                    id: 'def2', title: 'Тактична підготовка', emoji: '⚔️',
+                    description: 'Тест на знання тактичних дій та бойових процедур.',
+                    category: 'Тактика', passingScore: 70, createdAt: Date.now()-86400000, createdBy: 'Система',
+                    questions: [
+                        { id:'q1', text:'Що таке "сектор обстрілу"?', answers:[
+                            {id:'a1',text:'Зона відповідальності бійця для ведення вогню',isCorrect:true},
+                            {id:'a2',text:'Склад боєприпасів',isCorrect:false},
+                            {id:'a3',text:'Тип зброї',isCorrect:false},
+                            {id:'a4',text:'Команда до відступу',isCorrect:false}
+                        ]},
+                        { id:'q2', text:'Яка формація руху для максимального фронтального вогню?', answers:[
+                            {id:'a1',text:'Колона',isCorrect:false},
+                            {id:'a2',text:'Лінія (шеренга)',isCorrect:true},
+                            {id:'a3',text:'Клин',isCorrect:false},
+                            {id:'a4',text:'Ромб',isCorrect:false}
+                        ]},
+                        { id:'q3', text:'Що означає команда "Контакт лівий"?', answers:[
+                            {id:'a1',text:'Повернути ліворуч',isCorrect:false},
+                            {id:'a2',text:'Противник зліва',isCorrect:true},
+                            {id:'a3',text:'Зупинитися',isCorrect:false},
+                            {id:'a4',text:'Перезарядити зброю',isCorrect:false}
+                        ]}
+                    ]
+                }
+            ];
+        }
+
+        // =============================
+        // ЧАСТИНА 16.2: НАВІГАЦІЯ
+        // =============================
+        let currentView = 'home';
+
+        function showView(name) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById('view' + name.charAt(0).toUpperCase() + name.slice(1)).classList.add('active');
+            currentView = name;
+            window.scrollTo({top: 0, behavior: 'smooth'});
+
+            // Підсвітка кнопок
+            document.querySelectorAll('.btn-header').forEach(b => b.classList.remove('active'));
+            const btnMap = { home:'btnHome', create:'btnCreate', manage:'btnManage' };
+            if (btnMap[name]) document.getElementById(btnMap[name]).classList.add('active');
+
+            if (name === 'home') renderHome();
+            if (name === 'create') initCreateView();
+            if (name === 'manage') renderManage();
+        }
+
+        function updateRoleUI() {
+            const role = getRole();
+            const btn = document.getElementById('btnRole');
+            const btnCreate = document.getElementById('btnCreate');
+            const btnManage = document.getElementById('btnManage');
+            const banner = document.getElementById('adminInfoBanner');
+
+            if (role === 'admin') {
+                btn.innerHTML = '👑 АДМІН';
+                btn.className = 'btn-role-toggle';
+                btnCreate.style.display = 'inline-block';
+                btnManage.style.display = 'inline-block';
+                banner.style.display = 'flex';
+            } else {
+                btn.innerHTML = '👤 БІЄЦЬ';
+                btn.className = 'btn-role-toggle user-mode';
+                btnCreate.style.display = 'none';
+                btnManage.style.display = 'none';
+                banner.style.display = 'none';
+            }
+        }
+
+        function toggleRole() {
+            setRole(getRole() === 'admin' ? 'user' : 'admin');
+            updateRoleUI();
+            renderHome();
+        }
+
+        // =============================
+        // ЧАСТИНА 16.3: ГОЛОВНА СТОРІНКА
+        // =============================
+        function renderHome() {
+            const tests = getTests();
+            const results = getResults();
+
+            // Статистика
+            document.getElementById('statTests').innerText = tests.length;
+            document.getElementById('statPassed').innerText = results.filter(r => r.passed).length;
+            document.getElementById('statFailed').innerText = results.filter(r => !r.passed).length;
+            const avg = results.length > 0 ? Math.round(results.reduce((s,r) => s + r.percentage, 0) / results.length) : 0;
+            document.getElementById('statAvg').innerText = avg + '%';
+
+            // Тести
+            const grid = document.getElementById('testsGrid');
+            const noTests = document.getElementById('noTests');
+            grid.innerHTML = '';
+
+            if (tests.length === 0) {
+                noTests.style.display = 'block';
+                grid.style.display = 'none';
+            } else {
+                noTests.style.display = 'none';
+                grid.style.display = 'grid';
+                tests.forEach((test, i) => {
+                    const card = document.createElement('div');
+                    card.className = 'card test-card';
+                    card.style.animation = `fadeInUp 0.4s ease ${i * 0.08}s both`;
+                    card.onclick = () => openTestIntro(test.id);
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:15px;">
+                            <div class="emoji-box">${test.emoji}</div>
+                            <span class="badge badge-green">${test.questions.length} питань</span>
+                        </div>
+                        <h3 style="font-size:16px; font-weight:900; text-transform:uppercase; color:var(--primary-bright); text-shadow:0 0 10px rgba(0,255,68,0.3); margin:0 0 8px 0;">${test.title}</h3>
+                        <p style="font-size:12px; color:var(--text-gray); margin:0 0 15px 0; line-height:1.5;">${test.description}</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <span class="badge badge-yellow">${test.category}</span>
+                                <span style="font-size:10px; color:var(--text-gray);">Прохідний: ${test.passingScore}%</span>
+                            </div>
+                            <div class="btn-start">ПРОЙТИ →</div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+
+            // Результати
+            const resSection = document.getElementById('resultsSection');
+            const resList = document.getElementById('resultsList');
+            if (results.length > 0) {
+                resSection.style.display = 'block';
+                resList.innerHTML = '';
+                results.slice(0, 5).forEach((r, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'result-item ' + (r.passed ? 'passed' : 'failed');
+                    item.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s both`;
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <span style="font-size:24px;">${r.passed ? '✅' : '❌'}</span>
+                            <div>
+                                <p style="font-size:13px; font-weight:800; margin:0 0 3px 0;">${r.testTitle}</p>
+                                <p style="font-size:10px; color:var(--text-gray); margin:0;">${new Date(r.completedAt).toLocaleString('uk-UA')}</p>
+                            </div>
+                        </div>
+                        <div style="font-size:18px; font-weight:900; padding:5px 15px; border-radius:8px; color:${r.passed?'var(--primary)':'var(--danger)'}; background:${r.passed?'rgba(0,255,68,0.1)':'rgba(239,68,68,0.1)'};">${r.percentage}%</div>
+                    `;
+                    resList.appendChild(item);
+                });
+            } else {
+                resSection.style.display = 'none';
+            }
+        }
+
+        // =============================
+        // ЧАСТИНА 16.4: ІНТРО ТЕСТУ
+        // =============================
+        let activeTestId = null;
+
+        function openTestIntro(testId) {
+            const test = getTests().find(t => t.id === testId);
+            if (!test) return;
+            activeTestId = testId;
+            document.getElementById('introEmoji').innerText = test.emoji;
+            document.getElementById('introTitle').innerText = test.title;
+            document.getElementById('introDesc').innerText = test.description;
+            document.getElementById('introCount').innerText = test.questions.length;
+            document.getElementById('introPass').innerText = test.passingScore + '%';
+            showView('intro');
+        }
+
+        // =============================
+        // ЧАСТИНА 16.5: ПРОХОДЖЕННЯ ТЕСТУ
+        // =============================
+        let testState = {
+            test: null, currentQ: 0, selectedAnswer: null,
+            confirmed: false, answers: [], timeLeft: 30, timerInterval: null
+        };
+
+        function startTest() {
+            const test = getTests().find(t => t.id === activeTestId);
+            if (!test) return;
+            testState = {
+                test, currentQ: 0, selectedAnswer: null,
+                confirmed: false, answers: [], timeLeft: 30, timerInterval: null
+            };
+            showView('test');
+            renderQuestion();
+            startTimer();
+        }
+
+        function renderQuestion() {
+            const { test, currentQ, selectedAnswer, confirmed } = testState;
+            const q = test.questions[currentQ];
+            const progress = (currentQ / test.questions.length) * 100;
+
+            document.getElementById('questionCounter').innerText = `Питання ${currentQ + 1} з ${test.questions.length}`;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('questionNumber').innerText = currentQ + 1;
+            document.getElementById('questionText').innerText = q.text;
+
+            // Таймер
+            updateTimerDisplay();
+
+            // Відповіді
+            const container = document.getElementById('answersContainer');
+            container.innerHTML = '';
+            const correctAns = q.answers.find(a => a.isCorrect);
+
+            q.answers.forEach((ans, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                const letter = String.fromCharCode(65 + idx);
+
+                if (confirmed) {
+                    if (ans.id === correctAns.id) btn.classList.add('correct');
+                    else if (ans.id === selectedAnswer && ans.id !== correctAns.id) btn.classList.add('wrong');
+                } else if (selectedAnswer === ans.id) {
+                    btn.classList.add('selected');
+                }
+
+                btn.style.animation = `slideIn 0.3s ease ${idx * 0.05}s both`;
+
+                let icon = '';
+                if (confirmed && ans.id === correctAns.id) icon = '<span style="margin-left:auto; font-size:18px;">✅</span>';
+                if (confirmed && ans.id === selectedAnswer && ans.id !== correctAns.id) icon = '<span style="margin-left:auto; font-size:18px;">❌</span>';
+
+                btn.innerHTML = `
+                    <div class="letter-box">${letter}</div>
+                    <span style="flex:1;">${ans.text}</span>
+                    ${icon}
+                `;
+
+                if (!confirmed) {
+                    btn.onclick = () => selectAnswer(ans.id);
+                }
+                container.appendChild(btn);
+            });
+
+            // Кнопка
+            const btnConfirm = document.getElementById('btnConfirmAnswer');
+            if (confirmed) {
+                btnConfirm.className = 'btn-confirm active pulse';
+                btnConfirm.innerText = currentQ < test.questions.length - 1 ? 'ДАЛІ →' : '🏁 ЗАВЕРШИТИ';
+                btnConfirm.onclick = nextQuestion;
+            } else {
+                btnConfirm.className = selectedAnswer ? 'btn-confirm active' : 'btn-confirm disabled';
+                btnConfirm.innerText = 'ПІДТВЕРДИТИ';
+                btnConfirm.onclick = confirmAnswer;
+            }
+        }
+
+        function selectAnswer(id) {
+            if (testState.confirmed) return;
+            testState.selectedAnswer = id;
+            renderQuestion();
+        }
+
+        function confirmAnswer() {
+            if (!testState.selectedAnswer || testState.confirmed) return;
+            testState.confirmed = true;
+            stopTimer();
+            renderQuestion();
+        }
+
+        function nextQuestion() {
+            const { test, currentQ, selectedAnswer } = testState;
+            const q = test.questions[currentQ];
+            const correctAns = q.answers.find(a => a.isCorrect);
+            const isCorrect = selectedAnswer === correctAns.id;
+
+            testState.answers.push({
+                questionId: q.id,
+                selectedAnswerId: selectedAnswer || '',
+                isCorrect
+            });
+
+            if (currentQ < test.questions.length - 1) {
+                testState.currentQ++;
+                testState.selectedAnswer = null;
+                testState.confirmed = false;
+                testState.timeLeft = 30;
+                renderQuestion();
+                startTimer();
+            } else {
+                finishTest();
+            }
+        }
+
+        function handleTimeUp() {
+            const { test, currentQ } = testState;
+            const q = test.questions[currentQ];
+            testState.answers.push({
+                questionId: q.id,
+                selectedAnswerId: '',
+                isCorrect: false
+            });
+
+            if (currentQ < test.questions.length - 1) {
+                testState.currentQ++;
+                testState.selectedAnswer = null;
+                testState.confirmed = false;
+                testState.timeLeft = 30;
+                renderQuestion();
+                startTimer();
+            } else {
+                finishTest();
+            }
+        }
+
+        function startTimer() {
+            stopTimer();
+            testState.timeLeft = 30;
+            updateTimerDisplay();
+            testState.timerInterval = setInterval(() => {
+                testState.timeLeft--;
+                updateTimerDisplay();
+                if (testState.timeLeft <= 0) {
+                    stopTimer();
+                    handleTimeUp();
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (testState.timerInterval) {
+                clearInterval(testState.timerInterval);
+                testState.timerInterval = null;
+            }
+        }
+
+        function updateTimerDisplay() {
+            const badge = document.getElementById('timerBadge');
+            const t = testState.timeLeft;
+            const danger = t <= 10;
+            badge.style.color = danger ? 'var(--danger)' : 'var(--warning)';
+            badge.style.background = danger ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)';
+            badge.style.border = `1px solid ${danger ? 'rgba(239,68,68,0.3)' : 'rgba(251,191,36,0.3)'}`;
+            badge.innerText = '⏱ ' + t + 'с';
+        }
+
+        function finishTest() {
+            stopTimer();
+            const { test, answers } = testState;
+            const correct = answers.filter(a => a.isCorrect).length;
+            const percentage = Math.round((correct / test.questions.length) * 100);
+            const passed = percentage >= test.passingScore;
+
+            const result = {
+                testId: test.id, testTitle: test.title,
+                score: correct, totalQuestions: test.questions.length,
+                percentage, passed, completedAt: Date.now(), answers
+            };
+            saveResultToStorage(result);
+            renderResults(result);
+            showView('results');
+        }
+
+        function retryTest() {
+            if (activeTestId) {
+                startTest();
+            }
+        }
+
+        // =============================
+        // ЧАСТИНА 16.6: РЕЗУЛЬТАТИ
+        // =============================
+        function renderResults(result) {
+            const test = getTests().find(t => t.id === result.testId) || testState.test;
+            const passed = result.passed;
+
+            const hero = document.getElementById('resultHero');
+            hero.style.border = `2px solid ${passed ? 'var(--primary)' : 'var(--danger)'}`;
+            hero.style.boxShadow = `0 0 50px ${passed ? 'rgba(0,255,68,0.3)' : 'rgba(239,68,68,0.3)'}`;
+
+            document.getElementById('resultEmoji').innerText = passed ? '🎉' : '😔';
+            document.getElementById('resultTitle').innerText = passed ? 'ТЕСТ СКЛАДЕНО!' : 'ТЕСТ НЕ СКЛАДЕНО';
+            document.getElementById('resultTitle').style.color = passed ? 'var(--primary-bright)' : '#ff8888';
+            document.getElementById('resultTitle').style.textShadow = `0 0 20px ${passed ? 'var(--primary)' : 'var(--danger)'}`;
+            document.getElementById('resultSubtitle').innerText = passed
+                ? 'Вітаємо! Ви успішно пройшли тестування.'
+                : 'Не хвилюйтесь, спробуйте ще раз після підготовки.';
+
+            const circle = document.getElementById('scoreCircle');
+            circle.className = 'score-circle ' + (passed ? 'passed' : 'failed');
+            document.getElementById('scorePercent').innerText = result.percentage + '%';
+            document.getElementById('scorePercent').style.color = passed ? 'var(--primary)' : 'var(--danger)';
+
+            document.getElementById('resCorrect').innerText = result.score;
+            document.getElementById('resWrong').innerText = result.totalQuestions - result.score;
+            document.getElementById('resPassReq').innerText = (test ? test.passingScore : '?') + '%';
+
+            // Детальний розбір
+            const reviewList = document.getElementById('reviewList');
+            reviewList.innerHTML = '';
+            if (test) {
+                test.questions.forEach((q, i) => {
+                    const ua = result.answers[i];
+                    const correctAns = q.answers.find(a => a.isCorrect);
+                    const userAns = q.answers.find(a => a.id === (ua ? ua.selectedAnswerId : ''));
+
+                    const item = document.createElement('div');
+                    item.className = 'review-item ' + (ua && ua.isCorrect ? 'correct-review' : 'wrong-review');
+                    item.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s both`;
+
+                    let answerInfo = '';
+                    if (userAns) {
+                        answerInfo = `<p style="font-size:12px; margin:0 0 3px 0; color:${ua.isCorrect ? 'var(--primary)' : 'var(--danger)'};">Ваша відповідь: ${userAns.text}</p>`;
+                    } else {
+                        answerInfo = `<p style="font-size:12px; margin:0 0 3px 0; color:var(--danger);">Час вийшов — відповідь не надано</p>`;
+                    }
+                    if (!ua || !ua.isCorrect) {
+                        answerInfo += `<p style="font-size:12px; margin:0; color:var(--primary);">Правильна: ${correctAns ? correctAns.text : '?'}</p>`;
+                    }
+
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:flex-start; gap:12px;">
+                            <span style="font-size:18px;">${ua && ua.isCorrect ? '✅' : '❌'}</span>
+                            <div style="flex:1;">
+                                <p style="font-size:13px; font-weight:700; margin:0 0 8px 0;">${q.text}</p>
+                                ${answerInfo}
+                            </div>
+                        </div>
+                    `;
+                    reviewList.appendChild(item);
+                });
+            }
+        }
+
+        // =============================
+        // ЧАСТИНА 16.7: СТВОРЕННЯ ТЕСТУ
+        // =============================
+        const EMOJIS = ['📋','⚔️','🎖️','🏴','📖','🧠','💣','🎯','🔫','🗺️','🏥','📡','🛡️','⭐'];
+        let createQuestions = [];
+        let selectedEmoji = '📋';
+
+        function initCreateView() {
+            document.getElementById('cTitle').value = '';
+            document.getElementById('cDesc').value = '';
+            document.getElementById('cCategory').value = 'Базова підготовка';
+            document.getElementById('cPassScore').value = 60;
+            document.getElementById('passScoreLabel').innerText = '60';
+            document.getElementById('createError').style.display = 'none';
+            selectedEmoji = '📋';
+            createQuestions = [makeEmptyQuestion()];
+            renderEmojiPicker();
+            renderCreateQuestions();
+        }
+
+        function renderEmojiPicker() {
+            const picker = document.getElementById('emojiPicker');
+            picker.innerHTML = '';
+            EMOJIS.forEach(e => {
+                const btn = document.createElement('button');
+                btn.className = 'emoji-pick' + (selectedEmoji === e ? ' active' : '');
+                btn.innerText = e;
+                btn.onclick = () => { selectedEmoji = e; renderEmojiPicker(); };
+                picker.appendChild(btn);
+            });
+        }
+
+        function makeEmptyQuestion() {
+            return {
+                id: genId(), text: '',
+                answers: [
+                    { id: genId(), text: '', isCorrect: false },
+                    { id: genId(), text: '', isCorrect: false },
+                    { id: genId(), text: '', isCorrect: false },
+                    { id: genId(), text: '', isCorrect: false }
+                ]
+            };
+        }
+
+        function genId() { return Math.random().toString(36).substr(2, 8) + Date.now().toString(36); }
+
+        function renderCreateQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            document.getElementById('qCountLabel').innerText = createQuestions.length;
+
+            createQuestions.forEach((q, qi) => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.marginBottom = '15px';
+                card.style.animation = 'fadeInUp 0.3s ease';
+
+                let answersHTML = '';
+                q.answers.forEach((a, ai) => {
+                    const letter = String.fromCharCode(65 + ai);
+                    answersHTML += `
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                            <button class="correct-btn ${a.isCorrect ? 'active' : ''}" onclick="setCorrect(${qi},${ai})">${a.isCorrect ? '✓' : letter}</button>
+                            <input type="text" class="form-input" value="${escHtml(a.text)}" placeholder="Варіант ${letter}..."
+                                style="flex:1; padding:10px; font-size:13px; border-color:${a.isCorrect ? 'var(--primary)' : '#333'};"
+                                oninput="updateAnswerText(${qi},${ai},this.value)"
+                                onfocus="this.style.borderColor='var(--primary)'"
+                                onblur="this.style.borderColor='${a.isCorrect ? 'var(--primary)' : '#333'}'">
+                            ${q.answers.length > 2 ? `<button onclick="removeAnswer(${qi},${ai})" style="width:28px; height:28px; border-radius:8px; background:rgba(239,68,68,0.1); color:var(--danger); border:1px solid rgba(239,68,68,0.2); cursor:pointer; font-size:12px; flex-shrink:0;">✕</button>` : ''}
+                        </div>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:15px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:12px; background:var(--primary); color:black;">${qi+1}</div>
+                            <span style="font-size:13px; font-weight:800; color:var(--primary-bright);">Питання ${qi+1}</span>
+                        </div>
+                        ${createQuestions.length > 1 ? `<button class="btn-danger" onclick="removeQuestion(${qi})" style="font-size:11px; padding:6px 12px;">🗑️ ВИДАЛИТИ</button>` : ''}
+                    </div>
+                    <input type="text" class="form-input" value="${escHtml(q.text)}" placeholder="Введіть текст питання..."
+                        style="margin-bottom:15px;" oninput="updateQuestionText(${qi},this.value)"
+                        onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='#333'">
+                    <label class="form-label" style="font-size:10px;">ВАРІАНТИ ВІДПОВІДЕЙ (клікніть кружок щоб обрати правильну)</label>
+                    ${answersHTML}
+                    ${q.answers.length < 6 ? `<button onclick="addAnswerTo(${qi})" style="font-size:11px; font-weight:800; padding:6px 12px; border-radius:8px; cursor:pointer; background:rgba(0,255,68,0.05); color:var(--primary); border:1px dashed rgba(0,255,68,0.3); margin-top:5px;">+ ДОДАТИ ВАРІАНТ</button>` : ''}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function escHtml(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+        function updateQuestionText(qi, val) { createQuestions[qi].text = val; }
+        function updateAnswerText(qi, ai, val) { createQuestions[qi].answers[ai].text = val; }
+        function setCorrect(qi, ai) {
+            createQuestions[qi].answers.forEach((a, i) => a.isCorrect = (i === ai));
+            renderCreateQuestions();
+        }
+        function removeAnswer(qi, ai) {
+            if (createQuestions[qi].answers.length <= 2) return;
+            createQuestions[qi].answers.splice(ai, 1);
+            renderCreateQuestions();
+        }
+        function addAnswerTo(qi) {
+            if (createQuestions[qi].answers.length >= 6) return;
+            createQuestions[qi].answers.push({ id: genId(), text: '', isCorrect: false });
+            renderCreateQuestions();
+        }
+        function addQuestion() {
+            createQuestions.push(makeEmptyQuestion());
+            renderCreateQuestions();
+        }
+        function removeQuestion(qi) {
+            if (createQuestions.length <= 1) return;
+            createQuestions.splice(qi, 1);
+            renderCreateQuestions();
+        }
+
+        function saveTest() {
+            const title = document.getElementById('cTitle').value.trim();
+            const desc = document.getElementById('cDesc').value.trim();
+            const category = document.getElementById('cCategory').value;
+            const passScore = parseInt(document.getElementById('cPassScore').value);
+            const errBox = document.getElementById('createError');
+
+            function showErr(msg) { errBox.style.display = 'block'; errBox.innerText = '⚠️ ' + msg; window.scrollTo({top:0,behavior:'smooth'}); }
+
+            if (!title) return showErr('Введіть назву тесту');
+            if (!desc) return showErr('Введіть опис тесту');
+
+            for (let i = 0; i < createQuestions.length; i++) {
+                const q = createQuestions[i];
+                if (!q.text.trim()) return showErr(`Питання ${i+1}: введіть текст питання`);
+                const filled = q.answers.filter(a => a.text.trim());
+                if (filled.length < 2) return showErr(`Питання ${i+1}: мінімум 2 варіанти відповіді`);
+                if (!q.answers.some(a => a.isCorrect)) return showErr(`Питання ${i+1}: оберіть правильну відповідь`);
+                const ca = q.answers.find(a => a.isCorrect);
+                if (ca && !ca.text.trim()) return showErr(`Питання ${i+1}: правильна відповідь не може бути пустою`);
+            }
+
+            errBox.style.display = 'none';
+
+            const cleanQ = createQuestions.map(q => ({
+                ...q, answers: q.answers.filter(a => a.text.trim())
+            }));
+
+            const newTest = {
+                id: genId(), title, description: desc, questions: cleanQ,
+                createdAt: Date.now(), createdBy: 'Адміністратор',
+                category, passingScore: passScore, emoji: selectedEmoji
+            };
+
+            const tests = getTests();
+            tests.push(newTest);
+            saveTests(tests);
+            showView('home');
+        }
+
+        // =============================
+        // ЧАСТИНА 16.8: КЕРУВАННЯ
+        // =============================
+        function renderManage() {
+            const tests = getTests();
+            const results = getResults();
+
+            document.getElementById('mTests').innerText = tests.length;
+            document.getElementById('mQuestions').innerText = tests.reduce((s,t) => s + t.questions.length, 0);
+            document.getElementById('mResults').innerText = results.length;
+
+            if (results.length > 0) {
+                const rate = Math.round((results.filter(r=>r.passed).length / results.length) * 100);
+                document.getElementById('mSuccessRate').innerText = rate + '%';
+            } else {
+                document.getElementById('mSuccessRate').innerText = '—';
+            }
+
+            const list = document.getElementById('manageList');
+            const empty = document.getElementById('manageEmpty');
+            list.innerHTML = '';
+
+            if (tests.length === 0) {
+                empty.style.display = 'block';
+                list.style.display = 'none';
+            } else {
+                empty.style.display = 'none';
+                list.style.display = 'block';
+                tests.forEach((test, i) => {
+                    const tResults = results.filter(r => r.testId === test.id);
+                    const passRate = tResults.length > 0 ? Math.round((tResults.filter(r=>r.passed).length / tResults.length) * 100) : null;
+
+                    const item = document.createElement('div');
+                    item.className = 'manage-item';
+                    item.style.animation = `fadeInUp 0.3s ease ${i * 0.05}s both`;
+                    item.innerHTML = `
+                        <div style="display:flex; align-items:center; gap:15px;">
+                            <div class="emoji-box" style="width:48px; height:48px; font-size:20px;">${test.emoji}</div>
+                            <div>
+                                <p style="font-size:13px; font-weight:800; margin:0 0 5px 0;">${test.title}</p>
+                                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                                    <span class="badge badge-yellow" style="font-size:9px;">${test.category}</span>
+                                    <span style="font-size:10px; color:var(--text-gray);">${test.questions.length} питань</span>
+                                    <span style="font-size:10px; color:var(--text-gray);">Прохідний: ${test.passingScore}%</span>
+                                    ${passRate !== null ? `<span style="font-size:10px; color:${passRate >= 50 ? 'var(--primary)' : 'var(--danger)'};">Успіх: ${passRate}% (${tResults.length} спроб)</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <button class="btn-danger" onclick="deleteTestById('${test.id}','${escHtml(test.title)}')">🗑️ ВИДАЛИТИ</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            }
+        }
+
+        function deleteTestById(id, title) {
+            if (confirm('Видалити тест "' + title + '"? Цю дію неможливо скасувати.')) {
+                const tests = getTests().filter(t => t.id !== id);
+                saveTests(tests);
+                renderManage();
+                renderHome();
+            }
+        }
+
+        // =============================
+        // ЧАСТИНА 16.9: ІНІЦІАЛІЗАЦІЯ
+        // =============================
+        updateRoleUI();
+        renderHome();
+    </script>
+
+</body>
+</html>
