@@ -73,7 +73,7 @@ input, textarea {
 
 /* ANIMATIONS */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(20px); }
+  from { opacity: 1; transform: translateY(0); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -137,6 +137,25 @@ header {
 }
 
 .header-right {
+  .header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+}
+
+.user-name-header {
+  color: var(--primary-bright);
+  font-weight: 900;
+  font-size: 14px;
+  text-shadow: 0 0 15px rgba(0,255,68,0.4);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.role-badge {
+  padding: 6px 14px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -202,7 +221,12 @@ header {
 
 .view {
   display: none;
-  animation: fadeIn 0.5s ease;
+  opacity: 1 !important;
+}
+
+.view.active { 
+  display: block;
+  opacity: 1 !important;
 }
 
 .view.active { display: block; }
@@ -783,6 +807,37 @@ header {
     gap: 10px;
   }
 }
+  /* USER NAME HEADER FIX */
+.user-name-header {
+  color: var(--primary-bright) !important;
+  font-weight: 900 !important;
+  font-size: 14px !important;
+  text-shadow: 0 0 15px rgba(0,255,68,0.4) !important;
+  letter-spacing: 0.8px !important;
+  text-transform: uppercase !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+  /* FIX FLICKERING */
+.view,
+.form-card,
+.setting-block,
+.admin-list-panel,
+.manage-card,
+.review-card,
+.test-card,
+.stat-card {
+  animation: none !important;
+  opacity: 1 !important;
+  will-change: auto !important;
+}
+
+.view.active {
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+</style>
 </style>
 </head>
 <body>
@@ -1334,7 +1389,20 @@ function renderQuestion() {
   const hasFree = q.allowFree;
   const freeActive = answers[currentQ]?.type === 'free';
   const freeVal = freeActive ? answers[currentQ]?.value : '';
-
+  
+// ФОТО ПИТАННЯ
+let questionPhotosHtml = '';
+if (q.photos && q.photos.length > 0) {
+  questionPhotosHtml = `
+    <div style="margin-bottom:15px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+      ${q.photos.map(p => `
+        <img src="${p.url}" 
+             style="width:100%;height:100px;object-fit:cover;border-radius:10px;cursor:zoom-in;border:1px solid rgba(255,255,255,0.1)" 
+             onclick="openLightbox('${p.url}')">
+      `).join('')}
+    </div>
+  `;
+}
   document.getElementById('quizContainer').innerHTML = `
     <div class="quiz-progress-bar">
       <div class="quiz-progress-fill" style="width:${progress}%"></div>
@@ -1343,8 +1411,11 @@ function renderQuestion() {
       <div class="quiz-q-num">Питання ${currentQ + 1} з ${total} • <span style="color:var(--primary)">${pps} б.</span></div>
       <div class="quiz-timer" id="timerDisplay">${timeLeft}</div>
     </div>
-    <div class="quiz-question"><h3>${q.text}</h3></div>
-    ${answersHtml}
+<div class="quiz-question">
+  <h3>${q.text}</h3>
+  ${questionPhotosHtml}
+</div>
+${answersHtml}
     ${hasFree ? `<div class="free-answer-area">
       <div class="free-answer-toggle${freeActive ? ' active' : ''}" onclick="toggleFreeAnswer()">✍️ Написати свій варіант</div>
       ${freeActive ? `<textarea class="free-input" id="freeInput" placeholder="Введіть вашу відповідь...">${freeVal}</textarea>` : ''}
@@ -1601,9 +1672,27 @@ function renderCreateForm(testData) {
   }
 
   // Рендер питань
-  let qBlocks = qs.map((q, qi) => {
-    let opts = '';
-    if (q.answerType === 'table') {
+let qBlocks = qs.map((q, qi) => {
+  // ФОТО ДЛЯ ПИТАННЯ
+  let questionPhotosHtml = '';
+  if (q.photos && q.photos.length > 0) {
+    questionPhotosHtml = `
+      <div style="margin-bottom:12px">
+        <label class="form-label">📸 Фото до питання</label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:8px">
+          ${q.photos.map((photo, pi) => `
+            <div style="position:relative;border-radius:8px;overflow:hidden">
+              <img src="${photo.url}" style="width:100%;height:80px;object-fit:cover;cursor:zoom-in" onclick="openLightbox('${photo.url}')">
+              <button class="photo-delete-mini" onclick="deleteQuestionPhoto(${qi}, ${pi})">✕</button>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  let opts = '';
+  if (q.answerType === 'table') {
       const cols = q.tableData?.columns || [];
       const rows = q.tableData?.rows || [];
       const correctRow = q.tableData?.correctRowIndex || 0;
@@ -1633,10 +1722,26 @@ function renderCreateForm(testData) {
       opts += `<button class="add-opt-btn" onclick="addOption(${qi})">+ Додати варіант</button>`;
     }
 
-    return `<div class="q-block" id="qblock-${qi}">
-      <div class="q-block-head">
-        <span class="q-num">Питання ${qi + 1}</span>
-        <button class="q-del" onclick="delQuestion(${qi})">🗑</button>
+return `<div class="q-block" id="qblock-${qi}">
+  <div class="q-block-head">
+    <span class="q-num">Питання ${qi + 1}</span>
+    <button class="q-del" onclick="delQuestion(${qi})">🗑</button>
+  </div>
+  
+  <textarea class="form-input" placeholder="Текст питання..." id="qtext-${qi}"
+    style="margin-bottom:12px;min-height:80px;resize:vertical">${q.text.replace(/"/g, '&quot;')}</textarea>
+  
+  ${questionPhotosHtml}
+  
+  <input type="file" id="qPhotoInput-${qi}" accept="image/*" style="display:none" onchange="handleQuestionPhoto(this, ${qi})">
+  <button class="btn btn-secondary" onclick="document.getElementById('qPhotoInput-${qi}').click()" 
+          style="width:100%;padding:8px;font-size:11px;margin-bottom:12px">
+    📷 Додати фото до питання
+  </button>
+  
+  <div style="margin-bottom:10px">
+    <label class="form-label">Час на питання (секунд)</label>
+    <input class="form-input" type="number" id="qtime-${qi}"
       </div>
       <textarea class="form-input" placeholder="Текст питання..." id="qtext-${qi}" style="margin-bottom:12px;min-height:80px;resize:vertical">${q.text.replace(/"/g, '&quot;')}</textarea>
       <div style="margin-bottom:10px">
@@ -1761,6 +1866,73 @@ function processTestImage(file) {
 }
 
 window.deleteTestPhoto = pi => {
+  /* PHOTO FOR QUESTIONS */
+window.handleQuestionPhoto = (input, qi) => {
+  if (input.files && input.files[0]) {
+    processQuestionImage(input.files[0], qi);
+  }
+};
+
+function processQuestionImage(file, qi) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height, max = 600;
+      
+      if (w > h) {
+        if (w > max) { h *= max / w; w = max; }
+      } else {
+        if (h > max) { w *= max / h; h = max; }
+      }
+      
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const base64 = canvas.toDataURL('image/jpeg', 0.7);
+      
+      const qs = getFormQuestions();
+      if (!qs[qi].photos) qs[qi].photos = [];
+      qs[qi].photos.push({url: base64});
+      
+      const currentData = {
+        name: document.getElementById('testName').value,
+        description: document.getElementById('testDesc').value,
+        emoji: document.getElementById('testEmoji').value,
+        maxScore: parseInt(document.getElementById('testMaxScore').value),
+        passScore: parseInt(document.getElementById('testPassScore').value),
+        photos: currentTestPhotos,
+        agreementText: document.getElementById('agreementText').value,
+        questions: qs
+      };
+      
+      renderCreateForm(currentData);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+window.deleteQuestionPhoto = (qi, pi) => {
+  const qs = getFormQuestions();
+  if (qs[qi].photos && qs[qi].photos[pi]) {
+    qs[qi].photos.splice(pi, 1);
+  }
+  
+  const currentData = {
+    name: document.getElementById('testName').value,
+    description: document.getElementById('testDesc').value,
+    emoji: document.getElementById('testEmoji').value,
+    maxScore: parseInt(document.getElementById('testMaxScore').value),
+    passScore: parseInt(document.getElementById('testPassScore').value),
+    photos: currentTestPhotos,
+    agreementText: document.getElementById('agreementText').value,
+    questions: qs
+  };
+  
+  renderCreateForm(currentData);
+};
   currentTestPhotos.splice(pi, 1);
   renderCreateForm({
     name: document.getElementById('testName').value,
@@ -1811,16 +1983,23 @@ function getFormQuestions() {
       });
     }
 
-    const sw = document.getElementById('freeSwitch-' + qi);
-    qs.push({
-      text,
-      options: opts,
-      allowFree: sw?.classList.contains('on') || false,
-      timeLimit,
-      answerType: tableMode ? 'table' : 'normal',
-      tableData
-    });
-  });
+const sw = document.getElementById('freeSwitch-' + qi);
+
+// Зберігаємо існуючі фото
+let existingPhotos = [];
+if (qs[qi] && qs[qi].photos) {
+  existingPhotos = qs[qi].photos;
+}
+
+qs.push({
+  text,
+  options: opts,
+  allowFree: sw?.classList.contains('on') || false,
+  timeLimit,
+  answerType: tableMode ? 'table' : 'normal',
+  tableData,
+  photos: existingPhotos
+});
 
   return qs;
 }
