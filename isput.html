@@ -1680,11 +1680,89 @@ let qBlocks = qs.map((q, qi) => {
       <div style="margin-bottom:12px">
         <label class="form-label">📸 Фото до питання</label>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-top:8px">
-          ${q.photos.map((photo, pi) => `
-            <div style="position:relative;border-radius:8px;overflow:hidden">
+          ${q.photos.map((photo, pi) => {
+            return `<div style="position:relative;border-radius:8px;overflow:hidden">
               <img src="${photo.url}" style="width:100%;height:80px;object-fit:cover;cursor:zoom-in" onclick="openLightbox('${photo.url}')">
               <button class="photo-delete-mini" onclick="deleteQuestionPhoto(${qi}, ${pi})">✕</button>
-            </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  let opts = '';
+  if (q.answerType === 'table') {
+    const cols = q.tableData?.columns || [];
+    const rows = q.tableData?.rows || [];
+    const correctRow = q.tableData?.correctRowIndex || 0;
+    
+    opts = `<div class="table-builder">
+      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:8px">СТОВПЦІ ТАБЛИЦІ</div>
+      <div class="table-builder-head" id="tableCols-${qi}">
+        ${cols.map((c, ci) => {
+          return `<input class="table-col-input" placeholder="Стовпець ${ci + 1}" value="${c}" data-qi="${qi}" data-ci="${ci}">`;
+        }).join('')}
+      </div>
+      <button class="add-opt-btn" onclick="addTableColumn(${qi})" style="margin-bottom:10px">+ Додати стовпець</button>
+      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:8px">РЯДКИ ТАБЛИЦІ</div>
+      <div class="table-builder-rows" id="tableRows-${qi}">
+        ${rows.map((row, ri) => {
+          return `<div class="table-row-builder">
+            <div class="opt-radio${ri === correctRow ? ' checked' : ''}" onclick="toggleTableCorrect(${qi},${ri})"></div>
+            ${cols.map((c, ci) => {
+              return `<input class="table-cell-input" placeholder="${c}" value="${row[ci] || ''}" data-qi="${qi}" data-ri="${ri}" data-ci="${ci}">`;
+            }).join('')}
+            <button class="opt-del" onclick="delTableRow(${qi},${ri})">✕</button>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="add-opt-btn" onclick="addTableRow(${qi})">+ Додати рядок</button>
+    </div>`;
+  } else {
+    opts = q.options.map((o, oi) => {
+      return `<div class="opt-row">
+        <div class="opt-radio${o.correct ? ' checked' : ''}" onclick="toggleCorrect(${qi},${oi})"></div>
+        <input class="opt-input" placeholder="Варіант ${letters[oi] || oi + 1}" value="${o.text.replace(/"/g, '&quot;')}" data-qi="${qi}" data-oi="${oi}">
+        <button class="opt-del" onclick="delOption(${qi},${oi})">✕</button>
+      </div>`;
+    }).join('');
+    opts += `<button class="add-opt-btn" onclick="addOption(${qi})">+ Додати варіант</button>`;
+  }
+
+  return `<div class="q-block" id="qblock-${qi}">
+    <div class="q-block-head">
+      <span class="q-num">Питання ${qi + 1}</span>
+      <button class="q-del" onclick="delQuestion(${qi})">🗑</button>
+    </div>
+    
+    <textarea class="form-input" placeholder="Текст питання..." id="qtext-${qi}" style="margin-bottom:12px;min-height:80px;resize:vertical">${q.text.replace(/"/g, '&quot;')}</textarea>
+    
+    ${questionPhotosHtml}
+    
+    <input type="file" id="qPhotoInput-${qi}" accept="image/*" style="display:none" onchange="handleQuestionPhoto(this, ${qi})">
+    <button class="btn btn-secondary" onclick="document.getElementById('qPhotoInput-${qi}').click()" style="width:100%;padding:8px;font-size:11px;margin-bottom:12px">
+      📷 Додати фото до питання
+    </button>
+    
+    <div style="margin-bottom:10px">
+      <label class="form-label">Час на питання (секунд)</label>
+      <input class="form-input" type="number" id="qtime-${qi}" value="${q.timeLimit || 30}" min="5" max="600">
+    </div>
+    
+    <div class="table-toggle-create" onclick="toggleTableMode(${qi})">
+      <div class="toggle-switch${q.answerType === 'table' ? ' on' : ''}" id="tableSwitch-${qi}"></div>
+      Режим таблиці
+    </div>
+    
+    <div id="opts-${qi}" style="margin-top:12px">${opts}</div>
+    
+    <div class="free-toggle-create" onclick="toggleFreeCreate(${qi})">
+      <div class="toggle-switch${q.allowFree ? ' on' : ''}" id="freeSwitch-${qi}"></div>
+      Дозволити вільну відповідь
+    </div>
+  </div>`;
+}).join('');
           `).join('')}
         </div>
       </div>
