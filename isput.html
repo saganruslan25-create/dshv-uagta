@@ -9,7 +9,7 @@
 :root{--primary:#00ff44;--primary-bright:#e0ffe8;--primary-glow:rgba(0,255,68,0.7);--primary-dim:rgba(0,255,68,0.15);--bg:#030507;--card-bg:rgba(10,12,16,0.85);--glass-border:rgba(0,255,68,0.3);--danger:#ef4444;--danger-glow:rgba(239,68,68,0.6);--warning:#fbbf24;--warning-glow:rgba(251,191,36,0.5);--info:#3b82f6;--info-glow:rgba(59,130,246,0.5);--text-gray:#94a3b8;--text-light:#cbd5e1;--success:#10b981;--card-hover:rgba(0,255,68,0.08)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:white;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none}
-body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 15% 50%,rgba(0,255,68,0.08),transparent 60%),radial-gradient(ellipse at 85% 20%,rgba(0,255,68,0.06),transparent 60%),radial-gradient(ellipse at 50% 80%,rgba(0,255,68,0.04),transparent 60%);pointer-events:none;z-index:0}
+body::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at 15% 50%,rgba(0,255,68,0.18),transparent 50%),radial-gradient(ellipse at 85% 20%,rgba(0,255,68,0.15),transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(0,255,68,0.12),transparent 50%);pointer-events:none;z-index:0}
 input,textarea{user-select:text!important;-webkit-user-select:text!important}
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:#0a0d12}
@@ -102,6 +102,18 @@ header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:1px
 .intro-card .emoji{font-size:64px;margin-bottom:20px;display:block;animation:float 3s ease-in-out infinite}
 .intro-card h2{font-size:24px;font-weight:900;margin-bottom:10px}
 .intro-card p{color:var(--text-gray);font-size:13px;margin-bottom:8px}
+
+/* AGREEMENT SECTION */
+.agreement-section{background:rgba(0,255,68,0.05);border:1px solid rgba(0,255,68,0.2);border-radius:16px;padding:20px;margin:25px 0;text-align:left}
+.agreement-image{width:100%;max-width:500px;margin:15px auto;border-radius:12px;border:2px solid var(--glass-border);display:block}
+.agreement-text{font-size:13px;color:var(--text-light);margin-bottom:15px;line-height:1.6;max-height:200px;overflow-y:auto;padding:12px;background:rgba(0,0,0,0.3);border-radius:10px}
+.agreement-checkbox-wrapper{display:flex;align-items:center;gap:12px;cursor:pointer;padding:12px;border-radius:10px;background:rgba(0,0,0,0.2);transition:0.3s;margin-top:15px}
+.agreement-checkbox-wrapper:hover{background:rgba(0,255,68,0.08)}
+.custom-checkbox{width:24px;height:24px;border:2px solid rgba(255,255,255,0.3);border-radius:6px;position:relative;transition:0.3s;flex-shrink:0}
+.custom-checkbox.checked{background:var(--primary);border-color:var(--primary);box-shadow:0 0 10px var(--primary-glow)}
+.custom-checkbox.checked::after{content:'✓';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:black;font-weight:900;font-size:16px}
+.agreement-label{font-size:13px;font-weight:600;color:white;user-select:none}
+
 /* QUIZ */
 .quiz-container{max-width:700px;margin:20px auto}
 .quiz-progress-bar{width:100%;height:6px;background:rgba(255,255,255,0.05);border-radius:10px;margin-bottom:25px;overflow:hidden}
@@ -182,6 +194,13 @@ header::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:1px
 .form-input::placeholder{color:rgba(255,255,255,0.2)}
 .form-row-inline{display:grid;grid-template-columns:1fr 1fr;gap:15px}
 .form-hint{font-size:11px;color:var(--text-gray);margin-top:5px}
+
+/* IMAGE UPLOAD FOR AGREEMENT */
+.image-upload-section{margin:15px 0;padding:15px;background:rgba(0,0,0,0.2);border:1px dashed rgba(0,255,68,0.2);border-radius:12px}
+.image-preview{max-width:100%;max-height:300px;border-radius:10px;margin-top:10px;border:2px solid var(--glass-border)}
+.btn-upload-img{background:rgba(0,255,68,0.1);border:1px solid var(--primary);color:var(--primary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;transition:0.3s;display:inline-block;margin-top:10px}
+.btn-upload-img:hover{background:var(--primary);color:black}
+
 /* QUESTION BUILDER */
 .q-block{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:20px;margin-bottom:15px;transition:0.3s;position:relative}
 .q-block.error{border-color:var(--danger)!important;animation:shake 0.5s;box-shadow:0 0 20px var(--danger-glow)}
@@ -363,25 +382,42 @@ header{flex-direction:column;gap:10px;padding:15px 10px}
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import{getFirestore,doc,getDoc,getDocs,collection,updateDoc}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import{getFirestore,doc,getDoc,getDocs,collection,updateDoc,addDoc,deleteDoc,onSnapshot,serverTimestamp,query,orderBy}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 const app=initializeApp({apiKey:"AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",authDomain:"dsv-gta.firebaseapp.com",projectId:"dsv-gta",storageBucket:"dsv-gta.firebasestorage.app",messagingSenderId:"661591588818",appId:"1:661591588818:web:a8e8dca3d061447e24d20b"});
 const auth=getAuth(app),db=getFirestore(app);
 /* ===== STATE ===== */
 let ME={name:'Невідомий',role:'fighter',uid:''};
 let allUsers=[];
-let tests=JSON.parse(localStorage.getItem('isput_tests')||'[]');
-let results=JSON.parse(localStorage.getItem('isput_results')||'[]');
+let tests=[];
+let results=[];
 let reviewers=JSON.parse(localStorage.getItem('isput_reviewers')||'[]');
 let adminList=JSON.parse(localStorage.getItem('isput_admins')||'[]');
 let webhookUrl=localStorage.getItem('isput_webhook')||'';
 let currentTest=null,currentQ=0,answers={},timer=null,timeLeft=30;
 let editingTestId=null;
-const save=()=>{localStorage.setItem('isput_tests',JSON.stringify(tests));localStorage.setItem('isput_results',JSON.stringify(results));localStorage.setItem('isput_reviewers',JSON.stringify(reviewers));localStorage.setItem('isput_admins',JSON.stringify(adminList));localStorage.setItem('isput_webhook',webhookUrl)};
+let agreementAccepted=false;
+const saveLocal=()=>{localStorage.setItem('isput_reviewers',JSON.stringify(reviewers));localStorage.setItem('isput_admins',JSON.stringify(adminList));localStorage.setItem('isput_webhook',webhookUrl)};
 const letters='АБВГҐДЕЖЗИ';
 const isAdmin=()=>ME.role==='admin'||adminList.includes(ME.name);
 const isReviewer=()=>isAdmin()||reviewers.includes(ME.name);
 const genId=()=>Date.now().toString(36)+Math.random().toString(36).substr(2,5);
 const now=()=>{const d=new Date();return d.toLocaleDateString('uk')+' '+d.toLocaleTimeString('uk',{hour:'2-digit',minute:'2-digit'})};
+
+/* ===== FIREBASE REALTIME LISTENERS ===== */
+onSnapshot(query(collection(db,'tests'),orderBy('createdAt','desc')),(snapshot)=>{
+tests=[];
+snapshot.forEach(docSnap=>{tests.push({id:docSnap.id,...docSnap.data()})});
+if(document.querySelector('.view.active')?.id==='viewHome')renderHome();
+if(document.querySelector('.view.active')?.id==='viewManage')renderManage();
+});
+
+onSnapshot(query(collection(db,'results'),orderBy('timestamp','desc')),(snapshot)=>{
+results=[];
+snapshot.forEach(docSnap=>{results.push({id:docSnap.id,...docSnap.data()})});
+if(document.querySelector('.view.active')?.id==='viewHome')renderHome();
+if(document.querySelector('.view.active')?.id==='viewReview')renderReview();
+});
+
 /* ===== FIREBASE AUTH ===== */
 onAuthStateChanged(auth,async u=>{
 if(!u){window.location.href='index.html';return}
@@ -517,16 +553,30 @@ document.getElementById('myResults').innerHTML=`<div class="results-table"><tabl
 /* ===== INTRO ===== */
 window.startIntro=id=>{
 const t=tests.find(x=>x.id===id);if(!t)return;
-// Check pending OR auto that wasn't reviewed
 const myResults=results.filter(r=>r.testId===id&&r.userId===ME.uid);
 const hasPending=myResults.find(r=>r.status==='pending');
 const hasAutoNotReviewed=myResults.find(r=>r.status==='auto'&&!r.reviewedByHuman);
 if(hasPending||hasAutoNotReviewed){
 alert('⚠️ Попередній іспит ще не перевірено людиною! Дочекайтесь результату.');return}
 currentTest=t;
+agreementAccepted=false;
 const pps=t.maxScore>0?Math.round(t.maxScore/t.questions.length*10)/10:0;
 let totalTime=0;
 t.questions.forEach(q=>{totalTime+=(q.timeLimit||30)});
+
+let agreementHTML='';
+if(t.agreementImage||t.agreementText){
+agreementHTML=`<div class="agreement-section">
+<h3 style="font-size:16px;font-weight:800;color:var(--primary);margin-bottom:15px">📜 Умови проходження іспиту</h3>
+${t.agreementImage?`<img src="${t.agreementImage}" class="agreement-image">`:''}
+${t.agreementText?`<div class="agreement-text">${t.agreementText.replace(/\n/g,'<br>')}</div>`:''}
+<div class="agreement-checkbox-wrapper" onclick="toggleAgreement()">
+<div class="custom-checkbox" id="agreementCheckbox"></div>
+<div class="agreement-label">Я ознайомився і погоджуюсь з умовами</div>
+</div>
+</div>`;
+}
+
 document.getElementById('introCard').innerHTML=`
 <span class="emoji">${t.emoji||'📝'}</span>
 <h2>${t.name}</h2>
@@ -541,14 +591,36 @@ document.getElementById('introCard').innerHTML=`
 <div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:15px">
 <div style="font-size:22px;font-weight:900;color:var(--success)">${pps}</div><div style="font-size:10px;color:var(--text-gray);margin-top:4px">БАЛІВ ЗА ПИТАННЯ</div></div>
 </div>
+${agreementHTML}
 <div class="btn-group">
-<button class="btn btn-primary" onclick="beginQuiz()">🚀 РОЗПОЧАТИ ІСПИТ</button>
+<button class="btn btn-primary" onclick="beginQuiz()" id="startTestBtn" ${(t.agreementImage||t.agreementText)?'disabled':''}>🚀 РОЗПОЧАТИ ІСПИТ</button>
 <button class="btn btn-secondary" onclick="showView('home')">← Назад</button>
 </div>`;
 showView('intro');
 };
+
+window.toggleAgreement=()=>{
+agreementAccepted=!agreementAccepted;
+const cb=document.getElementById('agreementCheckbox');
+const btn=document.getElementById('startTestBtn');
+if(agreementAccepted){
+cb.classList.add('checked');
+btn.disabled=false;
+btn.style.opacity='1';
+}else{
+cb.classList.remove('checked');
+btn.disabled=true;
+btn.style.opacity='0.5';
+}
+};
+
 /* ===== QUIZ ===== */
-window.beginQuiz=()=>{currentQ=0;answers={};showView('quiz');renderQuestion()};
+window.beginQuiz=()=>{
+if(currentTest&&(currentTest.agreementImage||currentTest.agreementText)&&!agreementAccepted){
+alert('❌ Спочатку потрібно прийняти умови!');return;
+}
+currentQ=0;answers={};showView('quiz');renderQuestion()
+};
 function renderQuestion(){
 if(!currentTest)return;
 const q=currentTest.questions[currentQ];
@@ -560,7 +632,6 @@ timeLeft=q.timeLimit||30;
 
 let answersHtml='';
 if(q.answerType==='table'){
-// TABLE ANSWER
 const cols=q.tableData.columns;
 const rows=q.tableData.rows;
 answersHtml=`<div class="answer-table-wrapper"><table class="answer-table">
@@ -568,7 +639,6 @@ answersHtml=`<div class="answer-table-wrapper"><table class="answer-table">
 <tbody>${rows.map((row,ri)=>`<tr>${cols.map((c,ci)=>`<td>${row[ci]||''}</td>`).join('')}<td style="text-align:center"><div class="table-radio${answers[currentQ]?.value===ri?' checked':''}" onclick="selectTableAnswer(${ri})"></div></td></tr>`).join('')}</tbody>
 </table></div>`;
 }else{
-// NORMAL BUTTONS
 answersHtml=`<div class="quiz-answers">${q.options.map((o,i)=>{
 const sel=answers[currentQ]?.type==='choice'&&answers[currentQ]?.value===i;
 return`<div class="answer-btn${sel?' selected':''}" onclick="selectAnswer(${i})">
@@ -627,7 +697,7 @@ if(currentQ>=currentTest.questions.length-1){finishQuiz()}
 else{currentQ++;renderQuestion()}
 };
 /* ===== FINISH ===== */
-function finishQuiz(){
+async function finishQuiz(){
 const t=currentTest;
 const total=t.questions.length;
 const pps=t.maxScore>0?t.maxScore/total:0;
@@ -664,15 +734,49 @@ details.push(d);
 score=Math.round(score*100)/100;
 const needsReview=hasFreeAnswers;
 const status=needsReview?'pending':'auto';
-const result={id:genId(),testId:t.id,testName:t.name,userId:ME.uid,userName:ME.name,score,maxScore:t.maxScore,passScore:t.passScore,details,date:now(),status,reviewer:needsReview?null:'SYSTEM',reviewedByHuman:false};
-results.push(result);save();
+try{
+await addDoc(collection(db,'results'),{
+testId:t.id,
+testName:t.name,
+userId:ME.uid,
+userName:ME.name,
+score,
+maxScore:t.maxScore,
+passScore:t.passScore,
+details,
+date:now(),
+status,
+reviewer:needsReview?null:'SYSTEM',
+reviewedByHuman:false,
+timestamp:serverTimestamp()
+});
 if(!needsReview){
 if(score>=t.passScore)addNotif(`✅ Іспит "${t.name}" автоматично перевірено: ${score}/${t.maxScore}. Очікуйте підтвердження людиною.`);
 else addNotif(`❌ Іспит "${t.name}" не складено: ${score}/${t.maxScore}. Очікуйте підтвердження людиною.`);
 }else{sendTestWebhookNotify();addNotif(`⏳ Іспит "${t.name}" відправлено на перевірку`)}
-renderResult(result);showView('result');
+}catch(e){alert('Помилка збереження результату: '+e.message);console.error(e)}
 }
 /* ===== RESULT ===== */
+onSnapshot(query(collection(db,'results'),orderBy('timestamp','desc')),(snapshot)=>{
+results=[];
+snapshot.forEach(docSnap=>{
+const data=docSnap.data();
+if(data.userId===ME.uid&&data.testId===currentTest?.id){
+const newResult={id:docSnap.id,...data};
+const existing=results.find(r=>r.id===newResult.id);
+if(!existing||existing.status!==newResult.status){
+renderResult(newResult);
+showView('result');
+}
+results.push(newResult);
+}else{
+results.push({id:docSnap.id,...data});
+}
+});
+if(document.querySelector('.view.active')?.id==='viewHome')renderHome();
+if(document.querySelector('.view.active')?.id==='viewReview')renderReview();
+});
+
 function renderResult(r){
 const t=tests.find(x=>x.id===r.testId);
 const passScore=t?t.passScore:0;
@@ -703,11 +807,15 @@ el.innerHTML=`
 <button class="btn btn-secondary" onclick="showView('home')">🏠 На головну</button>
 </div>`;
 }
+
 /* ===== CREATE / EDIT ===== */
+let currentAgreementImage=null;
+
 function renderCreateForm(testData){
 editingTestId=testData?testData.id:null;
+currentAgreementImage=testData?.agreementImage||null;
 document.getElementById('createTitle').innerHTML=editingTestId?'✏️ Редагувати іспит':'➕ Створити іспит';
-const t=testData||{name:'',description:'',emoji:'📝',maxScore:12,passScore:8,questions:[]};
+const t=testData||{name:'',description:'',emoji:'📝',maxScore:12,passScore:8,questions:[],agreementText:'',agreementImage:''};
 const qs=t.questions.length>0?t.questions:[{text:'',options:[{text:'',correct:false},{text:'',correct:false},{text:'',correct:false},{text:'',correct:false}],allowFree:false,timeLimit:30,answerType:'normal'}];
 let qBlocks=qs.map((q,qi)=>{
 let opts='';
@@ -751,6 +859,9 @@ return`<div class="q-block" id="qblock-${qi}">
 <div class="toggle-switch${q.allowFree?' on':''}" id="freeSwitch-${qi}"></div>
 Дозволити вільну відповідь
 </div></div>`}).join('');
+
+const agreementImagePreview=currentAgreementImage?`<img src="${currentAgreementImage}" class="image-preview" id="agreementImgPreview">`:'';
+
 document.getElementById('createForm').innerHTML=`
 <div class="form-card">
 <div class="form-row-inline">
@@ -763,6 +874,19 @@ document.getElementById('createForm').innerHTML=`
 <div class="form-row"><label class="form-label">Прохідний бал</label><input class="form-input" id="testPassScore" type="number" value="${t.passScore}" min="0"></div>
 </div>
 <div class="form-hint" id="scoreHint">💎 За кожне правильне питання: ${qs.length>0?Math.round(t.maxScore/qs.length*100)/100:0} балів</div>
+
+<div class="form-row" style="margin-top:25px">
+<label class="form-label">📜 Текст угоди / інструкції (необов'язково)</label>
+<textarea class="form-input" id="agreementText" rows="4" placeholder="Введіть текст угоди або інструкції перед початком тесту...">${t.agreementText||''}</textarea>
+</div>
+
+<div class="image-upload-section">
+<label class="form-label">🖼 Зображення для угоди (необов'язково)</label>
+<input type="file" id="agreementImageInput" accept="image/*" style="display:none" onchange="handleAgreementImage(this)">
+<button class="btn-upload-img" onclick="document.getElementById('agreementImageInput').click()">📷 ОБРАТИ ЗОБРАЖЕННЯ</button>
+${agreementImagePreview}
+${currentAgreementImage?'<button class="btn-danger" onclick="removeAgreementImage()" style="margin-left:10px;padding:6px 12px;font-size:11px">✕ Видалити</button>':''}
+</div>
 </div>
 <div class="section-title">📋 Питання</div>
 <div id="questionsContainer">${qBlocks}</div>
@@ -774,6 +898,42 @@ ${webhookUrl?'<button class="btn btn-info" onclick="sendTestMsg()">📩 Тест
 </div>`;
 document.getElementById('testMaxScore').addEventListener('input',updateScoreHint);
 }
+
+window.handleAgreementImage=(input)=>{
+if(input.files&&input.files[0]){
+const file=input.files[0];
+const reader=new FileReader();
+reader.onload=(e)=>{
+const img=new Image();
+img.onload=()=>{
+const canvas=document.createElement('canvas');
+let w=img.width,h=img.height,max=1000;
+if(w>h){if(w>max){h*=max/w;w=max}}else{if(h>max){w*=max/h;h=max}}
+canvas.width=w;canvas.height=h;
+canvas.getContext('2d').drawImage(img,0,0,w,h);
+currentAgreementImage=canvas.toDataURL('image/jpeg',0.8);
+const preview=document.getElementById('agreementImgPreview');
+if(preview){preview.src=currentAgreementImage}
+else{
+const container=document.querySelector('.image-upload-section');
+container.innerHTML+=`<img src="${currentAgreementImage}" class="image-preview" id="agreementImgPreview">
+<button class="btn-danger" onclick="removeAgreementImage()" style="margin-left:10px;padding:6px 12px;font-size:11px">✕ Видалити</button>`;
+}
+};
+img.src=e.target.result;
+};
+reader.readAsDataURL(file);
+}
+};
+
+window.removeAgreementImage=()=>{
+currentAgreementImage=null;
+const preview=document.getElementById('agreementImgPreview');
+if(preview)preview.remove();
+const btn=document.querySelector('.image-upload-section .btn-danger');
+if(btn)btn.remove();
+};
+
 function updateScoreHint(){
 const ms=parseInt(document.getElementById('testMaxScore').value)||0;
 const cnt=document.querySelectorAll('.q-block').length;
@@ -818,7 +978,7 @@ window.toggleCorrect=(qi,oi)=>{
 const qs=getFormQuestions();
 qs[qi].options.forEach((o,i)=>o.correct=i===oi);
 rebuildQuestions(qs);
-};
+  };
 window.delOption=(qi,oi)=>{const qs=getFormQuestions();qs[qi].options.splice(oi,1);rebuildQuestions(qs)};
 window.addOption=qi=>{const qs=getFormQuestions();qs[qi].options.push({text:'',correct:false});rebuildQuestions(qs)};
 window.delQuestion=qi=>{const qs=getFormQuestions();qs.splice(qi,1);rebuildQuestions(qs);updateScoreHint()};
@@ -909,12 +1069,13 @@ return`<div class="q-block" id="qblock-${qi}">
 Дозволити вільну відповідь
 </div></div>`}).join('');
 }
-window.saveTest=()=>{
+window.saveTest=async()=>{
 const name=document.getElementById('testName').value.trim();
 const desc=document.getElementById('testDesc').value.trim();
 const emoji=document.getElementById('testEmoji').value.trim()||'📝';
 const maxScore=parseInt(document.getElementById('testMaxScore').value)||12;
 const passScore=parseInt(document.getElementById('testPassScore').value)||8;
+const agreementText=document.getElementById('agreementText').value.trim();
 const qs=getFormQuestions();
 if(!name){alert('❌ Введіть назву іспиту!');return}
 for(let i=0;i<qs.length;i++){
@@ -935,13 +1096,34 @@ if(el){el.classList.add('error');el.scrollIntoView({behavior:'smooth',block:'cen
 alert(`❌ Питання ${i+1}: оберіть правильну відповідь або увімкніть вільну відповідь!`);return}
 }
 }
-const testObj={id:editingTestId||genId(),name,
-               description:desc,emoji,maxScore,passScore,questions:qs,createdAt:now(),createdBy:ME.name};
-if(editingTestId){const idx=tests.findIndex(t=>t.id===editingTestId);if(idx>=0)tests[idx]=testObj}
-else{tests.push(testObj)}
-save();editingTestId=null;
-addNotif(`📝 Іспит "${name}" ${editingTestId?'оновлено':'створено'}!`);
-alert('✅ Іспит збережено!');showView('home');
+const testObj={
+name,
+description:desc,
+emoji,
+maxScore,
+passScore,
+questions:qs,
+agreementText,
+agreementImage:currentAgreementImage||'',
+createdBy:ME.name,
+createdAt:now()
+};
+try{
+if(editingTestId){
+await updateDoc(doc(db,'tests',editingTestId),{...testObj,updatedAt:serverTimestamp()});
+addNotif(`📝 Іспит "${name}" оновлено!`);
+}else{
+await addDoc(collection(db,'tests'),{...testObj,createdAt:serverTimestamp()});
+addNotif(`📝 Іспит "${name}" створено!`);
+}
+editingTestId=null;
+currentAgreementImage=null;
+alert('✅ Іспит збережено!');
+showView('home');
+}catch(e){
+alert('Помилка збереження: '+e.message);
+console.error(e);
+}
 };
 window.sendTestMsg=()=>{
 sendWebhook({title:'🧪 ТЕСТОВЕ ПОВІДОМЛЕННЯ',color:0x3b82f6,description:'Це тестове повідомлення з ІСПИТ ЦЕНТРУ ДШВ.',fields:[{name:'👤 Відправник',value:ME.name,inline:true},{name:'📅 Дата',value:now(),inline:true}],footer:{text:'ДШВ | ІСПИТ ЦЕНТР'},timestamp:new Date().toISOString()});
@@ -977,25 +1159,38 @@ ${hasFreeQ?`<div style="margin-top:15px;padding:15px;background:rgba(251,191,36,
 </div></div>`:'<div class="btn-group"><button class="btn btn-primary" onclick="approveResult(\''+r.id+'\')">✅ Схвалити</button><button class="btn btn-danger" onclick="rejectResult(\''+r.id+'\')">❌ Відхилити</button></div>'}
 </div>`}).join('');
 }
-window.approveResult=id=>{
+window.approveResult=async(id)=>{
 const r=results.find(x=>x.id===id);if(!r)return;
 const t=tests.find(x=>x.id===r.testId);
 const pps=t?t.maxScore/t.questions.length:0;
 r.details.forEach(d=>{if(d.status==='pending'){d.status='correct';d.points=pps;r.score+=pps}});
 r.score=Math.round(r.score*100)/100;
-r.status='approved';r.reviewer=ME.name;r.reviewedByHuman=true;save();
+try{
+await updateDoc(doc(db,'results',id),{
+score:r.score,
+details:r.details,
+status:'approved',
+reviewer:ME.name,
+reviewedByHuman:true
+});
 sendTestResultWebhook(r,t||{passScore:0,maxScore:r.maxScore,name:r.testName},ME.name);
 addNotif(`✅ Результат ${r.userName} схвалено перевіряючим ${ME.name}`);
-renderReview();
+}catch(e){alert('Помилка: '+e.message)}
 };
-window.rejectResult=id=>{
+window.rejectResult=async(id)=>{
 const r=results.find(x=>x.id===id);if(!r)return;
 const t=tests.find(x=>x.id===r.testId);
 r.details.forEach(d=>{if(d.status==='pending'){d.status='wrong';d.points=0}});
-r.status='rejected';r.reviewer=ME.name;r.reviewedByHuman=true;save();
+try{
+await updateDoc(doc(db,'results',id),{
+details:r.details,
+status:'rejected',
+reviewer:ME.name,
+reviewedByHuman:true
+});
 sendTestResultWebhook(r,t||{passScore:0,maxScore:r.maxScore,name:r.testName},ME.name);
 addNotif(`❌ Результат ${r.userName} відхилено перевіряючим ${ME.name}`);
-renderReview();
+}catch(e){alert('Помилка: '+e.message)}
 };
 /* ===== MANAGE ===== */
 function renderManage(){
@@ -1012,9 +1207,37 @@ return`<div class="manage-card">
 <button class="btn btn-danger" onclick="deleteTest('${t.id}')" style="padding:8px 14px;font-size:11px">🗑</button>
 </div></div>`}).join('');
 }
-window.editTest=id=>{const t=tests.find(x=>x.id===id);if(t){renderCreateForm(t);showView('create')}};
-window.clearTestResults=id=>{if(confirm('Очистити всі результати цього іспиту?')){results=results.filter(r=>r.testId!==id);save();renderManage()}};
-window.deleteTest=id=>{if(confirm('Видалити іспит?')){tests=tests.filter(t=>t.id!==id);results=results.filter(r=>r.testId!==id);save();renderManage();addNotif('🗑 Іспит видалено')}};
+window.editTest=async(id)=>{
+const t=tests.find(x=>x.id===id);
+if(t){
+editingTestId=id;
+renderCreateForm(t);
+showView('create');
+}
+};
+window.clearTestResults=async(id)=>{
+if(confirm('Очистити всі результати цього іспиту?')){
+try{
+const toDelete=results.filter(r=>r.testId===id);
+for(const r of toDelete){
+await deleteDoc(doc(db,'results',r.id));
+}
+addNotif('🧹 Результати очищено');
+}catch(e){alert('Помилка: '+e.message)}
+}
+};
+window.deleteTest=async(id)=>{
+if(confirm('Видалити іспит?')){
+try{
+await deleteDoc(doc(db,'tests',id));
+const toDelete=results.filter(r=>r.testId===id);
+for(const r of toDelete){
+await deleteDoc(doc(db,'results',r.id));
+}
+addNotif('🗑 Іспит видалено');
+}catch(e){alert('Помилка: '+e.message)}
+}
+};
 /* ===== SETTINGS ===== */
 function renderSettings(){
 document.getElementById('settingsContent').innerHTML=`
@@ -1035,8 +1258,8 @@ document.getElementById('settingsContent').innerHTML=`
 </div>
 </div>`;
 }
-window.saveWebhook=()=>{webhookUrl=document.getElementById('webhookInput').value.trim();save();alert('✅ Webhook збережено!')};
-window.removeReviewer=n=>{reviewers=reviewers.filter(r=>r!==n);save();renderSettings()};
+window.saveWebhook=()=>{webhookUrl=document.getElementById('webhookInput').value.trim();saveLocal();alert('✅ Webhook збережено!')};
+window.removeReviewer=n=>{reviewers=reviewers.filter(r=>r!==n);saveLocal();renderSettings()};
 window.filterPeople=(type)=>{
 const input=document.getElementById(type+'Search');
 const drop=document.getElementById(type+'Dropdown');
@@ -1051,8 +1274,8 @@ return`<div class="people-item" onclick="selectPerson('${type}','${u.name}')"><s
 drop.classList.add('show');
 };
 window.selectPerson=(type,name)=>{
-if(type==='reviewer'&&!reviewers.includes(name)){reviewers.push(name);save();renderSettings()}
-if(type==='admin'&&!adminList.includes(name)){adminList.push(name);save();renderAdminList();buildNav()}
+if(type==='reviewer'&&!reviewers.includes(name)){reviewers.push(name);saveLocal();renderSettings()}
+if(type==='admin'&&!adminList.includes(name)){adminList.push(name);saveLocal();renderAdminList();buildNav()}
 document.querySelectorAll('.people-list').forEach(d=>d.classList.remove('show'));
 };
 document.addEventListener('click',e=>{if(!e.target.closest('.people-dropdown'))document.querySelectorAll('.people-list').forEach(d=>d.classList.remove('show'))});
@@ -1069,7 +1292,7 @@ document.getElementById('adminListContent').innerHTML=`
 </div>
 </div>`;
 }
-window.removeAdmin=n=>{adminList=adminList.filter(a=>a!==n);save();renderAdminList();buildNav()};
+window.removeAdmin=n=>{adminList=adminList.filter(a=>a!==n);saveLocal();renderAdminList();buildNav()};
 /* ===== INIT ===== */
 renderNotifs();
 /* SECURITY */
@@ -1077,3 +1300,4 @@ document.onkeydown=e=>{if(e.keyCode===123||(e.ctrlKey&&e.shiftKey&&[73,74,67].in
 </script>
 </body>
 </html>
+```
