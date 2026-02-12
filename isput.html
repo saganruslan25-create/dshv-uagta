@@ -6,6 +6,123 @@
 <title>ДШВ | ІСПИТ ЦЕНТР</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
+  /* ЯСКРАВІШИЙ ФОН */
+body::before {
+  background: 
+    radial-gradient(ellipse at 15% 50%, rgba(0,255,68,0.15), transparent 50%),
+    radial-gradient(ellipse at 85% 20%, rgba(0,255,68,0.12), transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(0,255,68,0.10), transparent 50%);
+  animation: bgPulse 8s ease-in-out infinite;
+}
+
+@keyframes bgPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* CHECKBOX УГОДИ */
+.agreement-box {
+  background: rgba(251,191,36,0.05);
+  border: 1px solid rgba(251,191,36,0.3);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+.agreement-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.agreement-check input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.agreement-text {
+  font-size: 13px;
+  color: var(--text-light);
+  line-height: 1.6;
+}
+
+.agreement-text strong {
+  color: var(--warning);
+  font-weight: 800;
+}
+
+/* PHOTO GALLERY В ТЕСТІ */
+.test-photos-section {
+  margin-bottom: 25px;
+}
+
+.test-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.test-photo-item {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: zoom-in;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: 0.3s;
+}
+
+.test-photo-item:hover {
+  transform: scale(1.05);
+  border-color: var(--primary);
+  box-shadow: 0 0 20px rgba(0,255,68,0.3);
+}
+
+.test-photo-item img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+}
+
+.photo-delete-mini {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(239,68,68,0.9);
+  color: white;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-photo-btn {
+  background: rgba(0,255,68,0.1);
+  border: 2px dashed var(--primary);
+  color: var(--primary);
+  padding: 12px 24px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 13px;
+  transition: 0.3s;
+  margin-top: 15px;
+}
+
+.upload-photo-btn:hover {
+  background: rgba(0,255,68,0.2);
+  transform: translateY(-2px);
+}
 :root{--primary:#00ff44;--primary-bright:#e0ffe8;--primary-glow:rgba(0,255,68,0.7);--primary-dim:rgba(0,255,68,0.15);--bg:#030507;--card-bg:rgba(10,12,16,0.85);--glass-border:rgba(0,255,68,0.3);--danger:#ef4444;--danger-glow:rgba(239,68,68,0.6);--warning:#fbbf24;--warning-glow:rgba(251,191,36,0.5);--info:#3b82f6;--info-glow:rgba(59,130,246,0.5);--text-gray:#94a3b8;--text-light:#cbd5e1;--success:#10b981;--card-hover:rgba(0,255,68,0.08)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:white;font-family:'Inter',sans-serif;min-height:100vh;overflow-x:hidden;user-select:none;-webkit-user-select:none}
@@ -367,38 +484,121 @@ import{getFirestore,doc,getDoc,getDocs,collection,updateDoc}from"https://www.gst
 const app=initializeApp({apiKey:"AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",authDomain:"dsv-gta.firebaseapp.com",projectId:"dsv-gta",storageBucket:"dsv-gta.firebasestorage.app",messagingSenderId:"661591588818",appId:"1:661591588818:web:a8e8dca3d061447e24d20b"});
 const auth=getAuth(app),db=getFirestore(app);
 /* ===== STATE ===== */
-let ME={name:'Невідомий',role:'fighter',uid:''};
-let allUsers=[];
-let tests=JSON.parse(localStorage.getItem('isput_tests')||'[]');
-let results=JSON.parse(localStorage.getItem('isput_results')||'[]');
-let reviewers=JSON.parse(localStorage.getItem('isput_reviewers')||'[]');
-let adminList=JSON.parse(localStorage.getItem('isput_admins')||'[]');
-let webhookUrl=localStorage.getItem('isput_webhook')||'';
-let currentTest=null,currentQ=0,answers={},timer=null,timeLeft=30;
-let editingTestId=null;
-const save=()=>{localStorage.setItem('isput_tests',JSON.stringify(tests));localStorage.setItem('isput_results',JSON.stringify(results));localStorage.setItem('isput_reviewers',JSON.stringify(reviewers));localStorage.setItem('isput_admins',JSON.stringify(adminList));localStorage.setItem('isput_webhook',webhookUrl)};
-const letters='АБВГҐДЕЖЗИ';
-const isAdmin=()=>ME.role==='admin'||adminList.includes(ME.name);
-const isReviewer=()=>isAdmin()||reviewers.includes(ME.name);
-const genId=()=>Date.now().toString(36)+Math.random().toString(36).substr(2,5);
-const now=()=>{const d=new Date();return d.toLocaleDateString('uk')+' '+d.toLocaleTimeString('uk',{hour:'2-digit',minute:'2-digit'})};
+/* ===== STATE ===== */
+let ME = {name: 'Невідомий', role: 'fighter', uid: ''};
+let allUsers = [];
+let tests = []; // ❌ ВИДАЛИТИ localStorage
+let results = JSON.parse(localStorage.getItem('isput_results') || '[]');
+let reviewers = JSON.parse(localStorage.getItem('isput_reviewers') || '[]');
+let adminList = JSON.parse(localStorage.getItem('isput_admins') || '[]');
+let webhookUrl = localStorage.getItem('isput_webhook') || '';
+let currentTest = null, currentQ = 0, answers = {}, timer = null, timeLeft = 30;
+let editingTestId = null;
+let agreementAccepted = false; // ✅ НОВИЙ
+
+const save = () => {
+  // ❌ ВИДАЛИТИ tests з localStorage
+  localStorage.setItem('isput_results', JSON.stringify(results));
+  localStorage.setItem('isput_reviewers', JSON.stringify(reviewers));
+  localStorage.setItem('isput_admins', JSON.stringify(adminList));
+  localStorage.setItem('isput_webhook', webhookUrl);
+};
 /* ===== FIREBASE AUTH ===== */
 onAuthStateChanged(auth,async u=>{
-if(!u){window.location.href='index.html';return}
-ME.uid=u.uid;
-try{
-const snap=await getDoc(doc(db,'users',u.uid));
-if(snap.exists()){const d=snap.data();ME.name=d.name||'Невідомий';ME.role=d.role||'fighter'}
-const all=await getDocs(collection(db,'users'));
-allUsers=[];all.forEach(s=>{const d=s.data();allUsers.push({uid:s.id,name:d.name||'---',role:d.role||'fighter'})});
-}catch(e){console.log('Firebase err:',e)}
-document.getElementById('headerName').textContent=ME.name;
-const rb=document.getElementById('headerRole');
-if(ME.role==='admin'){rb.textContent='АДМІН';rb.className='role-badge role-admin'}
-else if(ME.role==='instructor'){rb.textContent='ІНСТРУКТОР';rb.className='role-badge role-instructor'}
-else{rb.textContent='БІЄЦЬ';rb.className='role-badge role-fighter'}
-buildNav();showView('home');
+onAuthStateChanged(auth, async u => {
+  if (!u) {
+    window.location.href = 'index.html';
+    return;
+  }
+  ME.uid = u.uid;
+  
+  try {
+    const snap = await getDoc(doc(db, 'users', u.uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      ME.name = d.name || 'Невідомий';
+      ME.role = d.role || 'fighter';
+    }
+    
+    const all = await getDocs(collection(db, 'users'));
+    allUsers = [];
+    all.forEach(s => {
+      const d = s.data();
+      allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
+    });
+
+    // ✅ ЗАВАНТАЖЕННЯ ТЕСТІВ З FIREBASE
+    loadTestsFromFirebase();
+    
+  } catch (e) {
+    console.log('Firebase err:', e);
+  }
+
+  document.getElementById('headerName').textContent = ME.name;
+  const rb = document.getElementById('headerRole');
+  if (ME.role === 'admin') {
+    rb.textContent = 'АДМІН';
+    rb.className = 'role-badge role-admin';
+  } else if (ME.role === 'instructor') {
+    rb.textContent = 'ІНСТРУКТОР';
+    rb.className = 'role-badge role-instructor';
+  } else {
+    rb.textContent = 'БІЄЦЬ';
+    rb.className = 'role-badge role-fighter';
+  }
+
+  buildNav();
+  showView('home');
 });
+  /* ===== FIREBASE TESTS ===== */
+async function loadTestsFromFirebase() {
+  const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
+  onSnapshot(q, snapshot => {
+    tests = [];
+    snapshot.forEach(doc => {
+      tests.push({id: doc.id, ...doc.data()});
+    });
+    // Оновлюємо інтерфейс
+    if (document.querySelector('.view.active')?.id === 'viewHome') renderHome();
+    if (document.querySelector('.view.active')?.id === 'viewManage') renderManage();
+  });
+}
+
+async function saveTestToFirebase(testObj) {
+  try {
+    if (editingTestId) {
+      // Оновлення
+      await updateDoc(doc(db, 'tests', editingTestId), testObj);
+      addNotif(`📝 Іспит "${testObj.name}" оновлено!`);
+    } else {
+      // Створення
+      const docRef = await addDoc(collection(db, 'tests'), {
+        ...testObj,
+        createdAt: serverTimestamp()
+      });
+      addNotif(`📝 Іспит "${testObj.name}" створено!`);
+    }
+    return true;
+  } catch (e) {
+    console.error('Save error:', e);
+    alert('❌ Помилка збереження: ' + e.message);
+    return false;
+  }
+}
+
+async function deleteTestFromFirebase(id) {
+  try {
+    await deleteDoc(doc(db, 'tests', id));
+    // Видаляємо результати
+    results = results.filter(r => r.testId !== id);
+    save();
+    addNotif('🗑 Іспит видалено');
+    return true;
+  } catch (e) {
+    alert('Помилка видалення: ' + e.message);
+    return false;
+  }
+}
 /* ===== NOTIFICATIONS ===== */
 let notifs=JSON.parse(localStorage.getItem('isput_notifs')||'[]');
 function addNotif(text){notifs.unshift({text,time:now(),read:false});if(notifs.length>20)notifs.pop();localStorage.setItem('isput_notifs',JSON.stringify(notifs));renderNotifs()}
@@ -460,7 +660,108 @@ const btns=document.querySelectorAll('.nav-btn');
 const map={home:0,create:1,manage:2,settings:3,adminList:4,review:isAdmin()?5:1};
 if(btns[map[v]])btns[map[v]].classList.add('active');
 if(v==='home')renderHome();
-if(v==='create')renderCreateForm();
+function renderCreateForm(testData) {
+  editingTestId = testData ? testData.id : null;
+  document.getElementById('createTitle').innerHTML = editingTestId ? '✏️ Редагувати іспит' : '➕ Створити іспит';
+
+  const t = testData || {
+    name: '',
+    description: '',
+    emoji: '📝',
+    maxScore: 12,
+    passScore: 8,
+    questions: [],
+    photos: [], // ✅ ФОТО
+    agreementText: 'Я ознайомлений з правилами проходження іспиту та зобов\'язуюсь дотримуватись їх.' // ✅ УГОДА
+  };
+
+  const qs = t.questions.length > 0 ? t.questions : [{
+    text: '',
+    options: [{text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}],
+    allowFree: false,
+    timeLimit: 30,
+    answerType: 'normal'
+  }];
+
+  // ✅ РЕНДЕР ФОТО
+  let photosHtml = '';
+  if (t.photos && t.photos.length > 0) {
+    photosHtml = `<div class="test-photo-grid">
+      ${t.photos.map((photo, pi) => `
+        <div class="test-photo-item">
+          <img src="${photo.url}" alt="Фото ${pi + 1}">
+          <button class="photo-delete-mini" onclick="deleteTestPhoto(${pi})">✕</button>
+        </div>
+      `).join('')}
+    </div>`;
+  }
+
+  let qBlocks = qs.map((q, qi) => {
+    // ... (ЗАЛИШИТИ ПОПЕРЕДНІЙ КОД для qBlocks)
+    // Тут без змін - той самий код з питаннями
+  }).join('');
+
+  document.getElementById('createForm').innerHTML = `
+    <div class="form-card">
+      <div class="form-row-inline">
+        <div class="form-row">
+          <label class="form-label">Назва іспиту</label>
+          <input class="form-input" id="testName" value="${t.name.replace(/"/g, '&quot;')}" placeholder="Назва...">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Емодзі</label>
+          <input class="form-input" id="testEmoji" value="${t.emoji}" placeholder="📝" style="text-align:center;font-size:24px">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <label class="form-label">Опис</label>
+        <textarea class="form-input" id="testDesc" rows="2" placeholder="Опис іспиту...">${t.description || ''}</textarea>
+      </div>
+
+      <div class="form-row-inline">
+        <div class="form-row">
+          <label class="form-label">Макс. бал</label>
+          <input class="form-input" id="testMaxScore" type="number" value="${t.maxScore}" min="1">
+        </div>
+        <div class="form-row">
+          <label class="form-label">Прохідний бал</label>
+          <input class="form-input" id="testPassScore" type="number" value="${t.passScore}" min="0">
+        </div>
+      </div>
+
+      <div class="form-hint" id="scoreHint">💎 За кожне правильне питання: ${qs.length > 0 ? Math.round(t.maxScore / qs.length * 100) / 100 : 0} балів</div>
+    </div>
+
+    <!-- ✅ ФОТОГАЛЕРЕЯ -->
+    <div class="form-card test-photos-section">
+      <h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:12px">📸 Фотогалерея тесту</h4>
+      <p style="font-size:11px;color:var(--text-gray);margin-bottom:15px">Додайте зображення, які будуть показані перед початком іспиту</p>
+      ${photosHtml}
+      <input type="file" id="testPhotoInput" accept="image/*" style="display:none" onchange="handleTestPhoto(this)">
+      <button class="upload-photo-btn" onclick="document.getElementById('testPhotoInput').click()">📷 Додати фото</button>
+    </div>
+
+    <!-- ✅ КОРИСТУВАЦЬКА УГОДА -->
+    <div class="form-card">
+      <h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:12px">📜 Користувацька угода</h4>
+      <p style="font-size:11px;color:var(--text-gray);margin-bottom:10px">Текст, який користувач повинен прийняти перед початком</p>
+      <textarea class="form-input" id="agreementText" rows="3" placeholder="Я ознайомлений з правилами...">${t.agreementText || ''}</textarea>
+    </div>
+
+    <div class="section-title">📋 Питання</div>
+    <div id="questionsContainer">${qBlocks}</div>
+
+    <button class="btn btn-secondary" onclick="addQuestion()" style="width:100%;margin-bottom:20px">+ Додати питання</button>
+
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="saveTest()">💾 ${editingTestId ? 'Зберегти зміни' : 'Створити іспит'}</button>
+      <button class="btn btn-secondary" onclick="showView('home')">Скасувати</button>
+    </div>
+  `;
+
+  document.getElementById('testMaxScore').addEventListener('input', updateScoreHint);
+}
 if(v==='review')renderReview();
 if(v==='manage')renderManage();
 if(v==='settings')renderSettings();
