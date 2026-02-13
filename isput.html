@@ -1578,6 +1578,103 @@ text-align: center;
 margin-bottom: 30px;
 }
 /* Mobile responsive */
+  /* Public test form */
+.public-screen {
+max-width: 600px;
+margin: 0 auto;
+}
+
+.public-header {
+text-align: center;
+margin-bottom: 30px;
+}
+
+.public-header .emoji-big {
+font-size: 64px;
+display: block;
+margin-bottom: 15px;
+}
+
+.public-header h2 {
+font-size: 22px;
+font-weight: 900;
+color: var(--primary-bright);
+margin-bottom: 8px;
+}
+
+.public-header .desc {
+font-size: 13px;
+color: var(--text-gray);
+}
+
+.public-info-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 10px;
+margin: 20px 0;
+text-align: center;
+}
+
+.public-info-item {
+padding: 15px;
+border-radius: 12px;
+border: 1px solid;
+}
+
+.public-info-item .num {
+font-size: 22px;
+font-weight: 900;
+}
+
+.public-info-item .label {
+font-size: 10px;
+color: var(--text-gray);
+margin-top: 4px;
+text-transform: uppercase;
+}
+
+.public-photos-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+gap: 10px;
+margin: 15px 0;
+}
+
+.public-photos-grid img {
+width: 100%;
+height: 100px;
+object-fit: cover;
+border-radius: 12px;
+border: 1px solid rgba(255,255,255,0.1);
+cursor: pointer;
+transition: 0.3s;
+}
+
+.public-photos-grid img:hover {
+transform: scale(1.05);
+border-color: var(--primary);
+}
+
+.public-notice {
+margin-top: 30px;
+padding: 20px;
+background: rgba(0,255,68,0.05);
+border: 1px solid rgba(0,255,68,0.15);
+border-radius: 12px;
+text-align: center;
+}
+
+.public-notice .title {
+font-size: 13px;
+font-weight: 700;
+color: var(--primary-bright);
+}
+
+.public-notice .text {
+font-size: 11px;
+color: var(--text-gray);
+margin-top: 5px;
+}
 @media(max-width: 768px) {
 .stats-row {
 grid-template-columns: 1fr 1fr;
@@ -1670,9 +1767,15 @@ gap: 10px;
 <div id="historyContent"></div>
 </div>
 <!-- Адмін список -->
+<!-- Адмін список -->
 <div class="view" id="viewAdminList">
 <div class="section-title">👑 Адмін права в іспитах</div>
 <div id="adminListContent"></div>
+</div>
+
+<!-- Публічний іспит -->
+<div class="view" id="viewPublic">
+<div id="publicContent"></div>
 </div>
 </div>
 <!-- Lightbox для фото -->
@@ -1787,8 +1890,18 @@ await deleteTest(contextMenuTestId);
 window.contextCopyLink = () => {
 hideContextMenu();
 if (contextMenuTestId) {
-const url = window.location.origin + '/public-test.html?id=' + contextMenuTestId;
+const url = window.location.origin + window.location.pathname + '?public=' + contextMenuTestId;
 navigator.clipboard.writeText(url).then(() => {
+const notif = document.getElementById('linkCopiedNotif');
+notif.classList.add('show');
+setTimeout(() => notif.classList.remove('show'), 3000);
+}).catch(() => {
+const ta = document.createElement('textarea');
+ta.value = url;
+document.body.appendChild(ta);
+ta.select();
+document.execCommand('copy');
+document.body.removeChild(ta);
 const notif = document.getElementById('linkCopiedNotif');
 notif.classList.add('show');
 setTimeout(() => notif.classList.remove('show'), 3000);
@@ -1982,44 +2095,27 @@ if (notifs.length > 20) notifs.pop();
 localStorage.setItem('isput_notifs', JSON.stringify(notifs));
 }
 // Auth
+// Auth
 onAuthStateChanged(auth, async u => {
 if (!u) {
 window.location.href = 'index.html';
 return;
 }
 ME.uid = u.uid;
+
 try {
 const snap = await getDoc(doc(db, 'users', u.uid));
-if (snap.exists()) {
-const d = snap.data();
-ME.name = d.name || 'Невідомий';
-ME.role = d.role || 'fighter';
-}
-const all = await getDocs(collection(db, 'users'));
-allUsers = [];
-all.forEach(s => {
-const d = s.data();
-allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
-});
-loadTestsFromFirebase();
+// ... багато коду тут ...
 } catch (e) {
 console.log('Firebase err:', e);
 }
+
 document.getElementById('headerName').textContent = ME.name;
-const rb = document.getElementById('headerRole');
-if (ME.role === 'admin') {
-rb.textContent = 'АДМІН';
-rb.className = 'role-badge role-admin';
-} else if (ME.role === 'instructor') {
-rb.textContent = 'ІНСТРУКТОР';
-rb.className = 'role-badge role-instructor';
-} else {
-rb.textContent = 'БІЄЦЬ';
-rb.className = 'role-badge role-fighter';
-}
+// ... ще код ...
+
 buildNav();
 showView('home');
-});
+});   // <--- ОСЬ ДО ЦЬОГО ВКЛЮЧНО
 function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
@@ -2094,31 +2190,33 @@ return false;
 }
 function buildNav() {
 const tabs = document.getElementById('navTabs');
-let html = '<button class="nav-btn active" onclick="showView(\'home\')">🏠
-Головна</button>';
+let html = '<button class="nav-btn active" onclick="showView(\'home\')">🏠 Головна</button>';
+
 if (isAdmin()) {
-html += '<button class="nav-btn" onclick="showView(\'create\')">➕ Створити</button>';
+html += '<button class="nav-btn" onclick="editingTestId=null;showView(\'create\')">➕ Створити</button>';
 html += '<button class="nav-btn" onclick="showView(\'manage\')">⚙️ Керувати</button>';
 html += '<button class="nav-btn" onclick="showView(\'history\')">📊 Списки</button>';
 html += '<button class="nav-btn" onclick="showView(\'settings\')">🔧 Настройки</button>';
 html += '<button class="nav-btn" onclick="showView(\'adminList\')">👑 Адміни</button>';
 }
+
 if (isReviewer()) {
 html += '<button class="nav-btn" onclick="showView(\'review\')">🔍 Перевірка</button>';
 }
+
 tabs.innerHTML = html;
 }
 window.showView = v => {
 document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-document.getElementById('view' + v.charAt(0).toUpperCase() +
-v.slice(1)).classList.add('active');
+document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
 const btns = document.querySelectorAll('.nav-btn');
-const map = {home: 0, create: 1, manage: 2, history: 3, settings: 4, adminList: 5, review:
-isAdmin() ? 6 : 1};
+const map = {home: 0, create: 1, manage: 2, history: 3, settings: 4, adminList: 5, review: isAdmin() ? 6 : 1};
 if (btns[map[v]]) btns[map[v]].classList.add('active');
+
 if (v === 'home') renderHome();
-if (v === 'create') renderCreateForm();
+if (v === 'create' && !editingTestId) renderCreateForm();
 if (v === 'review') renderReview();
 if (v === 'manage') renderManage();
 if (v === 'settings') renderSettings();
@@ -3046,8 +3144,13 @@ ${t.maxScore}б • Прохід: ${t.passScore}б • Пройшли: ${passed}
 window.editTest = id => {
 const t = tests.find(x => x.id === id);
 if (t) {
+editingTestId = id;
 renderCreateForm(t);
-showView('create');
+document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+document.getElementById('viewCreate').classList.add('active');
+document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+const btns = document.querySelectorAll('.nav-btn');
+if (btns[1]) btns[1].classList.add('active');
 }
 };
 window.clearTestResults = async (id) => {
