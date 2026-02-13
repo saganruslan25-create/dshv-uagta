@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ДШВ | ІСПИТ ЦЕНТР v2</title>
+<title>ДШВ | ІСПИТ ЦЕНТР v2.1</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -94,7 +94,7 @@ border-radius: 12px;
 padding: 6px;
 z-index: 9999;
 display: none;
-min-width: 180px;
+min-width: 200px;
 backdrop-filter: blur(20px);
 box-shadow: 0 10px 40px rgba(0,0,0,0.9), 0 0 20px rgba(0,255,68,0.2);
 animation: slideDown 0.2s ease;
@@ -105,7 +105,7 @@ display: block;
 .context-menu-item {
 padding: 10px 14px;
 cursor: pointer;
-font-size: 12px;
+font-size: 13px;
 font-weight: 600;
 border-radius: 8px;
 transition: 0.2s;
@@ -128,7 +128,7 @@ background: rgba(255,255,255,0.1);
 margin: 4px 0;
 }
 
-/* Modal для публічного посилання */
+/* Modal */
 .modal-overlay {
 position: fixed;
 top: 0;
@@ -150,7 +150,7 @@ background: var(--card-bg);
 border: 1px solid var(--glass-border);
 border-radius: 20px;
 padding: 30px;
-max-width: 500px;
+max-width: 550px;
 width: 90%;
 backdrop-filter: blur(20px);
 animation: fadeIn 0.3s ease;
@@ -173,7 +173,7 @@ margin: 15px 0;
 font-family: 'Courier New', monospace;
 }
 
-/* Score controls для review */
+/* Score controls */
 .score-controls {
 display: flex;
 align-items: center;
@@ -188,7 +188,7 @@ width: 32px;
 height: 32px;
 border-radius: 8px;
 cursor: pointer;
-font-size: 16px;
+font-size: 18px;
 font-weight: 900;
 display: flex;
 align-items: center;
@@ -211,7 +211,7 @@ background: rgba(239,68,68,0.2);
 font-size: 16px;
 font-weight: 900;
 color: var(--primary);
-min-width: 60px;
+min-width: 70px;
 text-align: center;
 background: rgba(0,255,68,0.05);
 border-radius: 8px;
@@ -334,6 +334,8 @@ font-weight: 900;
 max-width: 1200px;
 margin: 0 auto;
 padding: 30px 20px;
+position: relative;
+z-index: 1;
 }
 
 .view {
@@ -889,7 +891,7 @@ display: block;
 
 .results-table table {
 width: 100%;
-min-width: 600px;
+min-width: 700px;
 }
 
 .results-table th {
@@ -1688,7 +1690,7 @@ gap: 10px;
 <body>
 
 <header>
-<a href="cabinet.html" class="logo-box">⚔ ДШВ</a>
+<a href="#" onclick="showView('home'); return false;" class="logo-box">⚔ ДШВ</a>
 <div class="header-right">
 <div class="nav-tabs" id="navTabs"></div>
 <span class="user-name-header" id="headerName">...</span>
@@ -1757,12 +1759,12 @@ gap: 10px;
 <div class="context-menu-item danger" onclick="contextDeleteTest()">🗑 Видалити іспит</div>
 </div>
 
-<!-- Modal для публічного посилання -->
+<!-- Modal публічне посилання -->
 <div id="publicLinkModal" class="modal-overlay">
 <div class="modal-box">
 <h3>🔗 Публічне посилання на іспит</h3>
 <p style="font-size:12px;color:var(--text-gray);margin-bottom:15px">
-Це посилання можуть використовувати люди без облікового запису. Вони введуть своє ім'я, посаду і складуть тест.
+Це посилання можуть використовувати люди без облікового запису. Вони введуть своє ім'я, посаду, підрозділ і складуть тест.
 </p>
 <div class="link-display" id="publicLinkDisplay"></div>
 <div class="btn-group">
@@ -1810,7 +1812,7 @@ let editingTestId = null;
 let agreementAccepted = false;
 let currentTestPhotos = [];
 let contextTestId = null;
-let questionScores = {}; // Для зберігання балів по питаннях в перевірці
+let questionScores = {}; // Для контролю балів
 
 const save = () => {
 localStorage.setItem('isput_results', JSON.stringify(results));
@@ -1829,13 +1831,12 @@ const d = new Date();
 return d.toLocaleDateString('uk') + ' ' + d.toLocaleTimeString('uk', {hour: '2-digit', minute: '2-digit'});
 };
 
-// ============================================
-// 🔔 СИСТЕМА DISCORD ПОВІДОМЛЕНЬ
-// ============================================
+// ============================
+// DISCORD
+// ============================
 
 async function sendDiscordNotification(type, data) {
 if (!webhookUrl) return;
-
 let embed = {};
 const timestamp = new Date().toISOString();
 
@@ -1853,7 +1854,7 @@ fields: [
 {name: '⏱ Загальний час', value: `${data.totalTime}с`, inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1869,7 +1870,7 @@ fields: [
 {name: '🎯 Бали', value: `${data.passScore}/${data.maxScore}`, inline: true},
 {name: '📅 Дата оновлення', value: data.date, inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1883,7 +1884,7 @@ fields: [
 {name: '👤 Видалив', value: data.deletedBy, inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1907,7 +1908,7 @@ fields: [
 {name: '🔍 Статус', value: statusText, inline: true},
 {name: '🤖 Перевірка', value: data.status === 'pending' ? 'Потрібна ручна перевірка' : 'Автоматична', inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1925,7 +1926,7 @@ fields: [
 {name: '📅 Дата перевірки', value: data.date, inline: true},
 {name: '💬 Коментар', value: data.status === 'approved' ? '✅ Іспит пройдено успішно!' : '✅ Затверджено', inline: false}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1943,7 +1944,7 @@ fields: [
 {name: '📅 Дата перевірки', value: data.date, inline: true},
 {name: '💬 Причина', value: 'Вільні відповіді не зараховані', inline: false}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1958,7 +1959,7 @@ fields: [
 {name: '🗑 Видалено результатів', value: data.count.toString(), inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1972,7 +1973,7 @@ fields: [
 {name: '➕ Додав', value: data.addedBy, inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -1987,7 +1988,7 @@ fields: [
 {name: '🔑 Права', value: 'Повний доступ до системи', inline: false},
 {name: '📅 Дата', value: data.date, inline: true}
 ],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2.1'},
 timestamp: timestamp
 };
 break;
@@ -2003,10 +2004,6 @@ body: JSON.stringify({embeds: [embed]})
 console.log('Discord webhook error:', e);
 }
 }
-
-// ============================================
-// 🔧 ОСНОВНІ ФУНКЦІЇ
-// ============================================
 
 let notifs = JSON.parse(localStorage.getItem('isput_notifs') || '[]');
 
@@ -2151,7 +2148,6 @@ if (isAdmin()) {
 html += '<button class="nav-btn" onclick="showView(\'create\')">➕ Створити</button>';
 html += '<button class="nav-btn" onclick="showView(\'manage\')">⚙️ Керувати</button>';
 html += '<button class="nav-btn" onclick="showView(\'settings\')">🔧 Настройки</button>';
-html += '<button class="nav-btn" onclick="showView(\'history\')">📜 Історія</button>';
 html += '<button class="nav-btn" onclick="showView(\'adminList\')">👑 Адміни</button>';
 }
 
@@ -2172,10 +2168,9 @@ const map = {
 home: 0, 
 create: 1, 
 manage: 2, 
-settings: 3, 
-history: 4,
-adminList: 5, 
-review: isAdmin() ? 6 : 1
+settings: 3,
+adminList: 4, 
+review: isAdmin() ? 5 : 1
 };
 if (btns[map[v]]) btns[map[v]].classList.add('active');
 
@@ -2188,9 +2183,9 @@ if (v === 'adminList') renderAdminList();
 if (v === 'history') renderHistory();
 };
 
-// ============================================
-// 📜 ІСТОРІЯ ВСІХ РЕЗУЛЬТАТІВ
-// ============================================
+// =================================
+// ІСТОРІЯ РЕЗУЛЬТАТІВ
+// =================================
 
 function renderHistory() {
 if (results.length === 0) {
@@ -2198,11 +2193,14 @@ document.getElementById('historyContent').innerHTML = '<div style="color:var(--t
 return;
 }
 
-// Сортуємо за датою (найновіші зверху)
 const sorted = [...results].sort((a, b) => {
-const dateA = new Date(a.date.split(' ').reverse().join(' '));
-const dateB = new Date(b.date.split(' ').reverse().join(' '));
-return dateB - dateA;
+const extractDate = (dateStr) => {
+const parts = dateStr.split(' ');
+const dateParts = parts[0].split('.');
+const timeParts = parts[1].split(':');
+return new Date(dateParts[2], dateParts[1] - 1, dateParts[0], timeParts[0], timeParts[1]);
+};
+return extractDate(b.date) - extractDate(a.date);
 });
 
 let rows = sorted.map(r => {
@@ -2280,9 +2278,9 @@ document.getElementById('historyContent').innerHTML = `
 `;
 }
 
-// ============================================
-// 🖱️ КОНТЕКСТНЕ МЕНЮ ДЛЯ ТЕСТІВ
-// ============================================
+// =================================
+// КОНТЕКСТНЕ МЕНЮ
+// =================================
 
 function renderHome() {
 const myRes = results.filter(r => r.userId === ME.uid);
@@ -2325,7 +2323,6 @@ const pps = t.maxScore > 0 ? Math.round(t.maxScore / t.questions.length * 10) / 
 let totalTime = 0;
 t.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
 
-// Додаємо контекстне меню тільки для адмінів
 const contextAttr = isAdmin() ? `oncontextmenu="showContextMenu(event, '${t.id}'); return false;"` : '';
 
 return `<div class="test-card" onclick="startIntro('${t.id}')" ${contextAttr}>
@@ -2479,20 +2476,575 @@ function hideContextMenu() {
 document.getElementById('contextMenu').classList.remove('active');
 }
 
-// Закриваємо контекстне меню при кліку поза ним
 document.addEventListener('click', (e) => {
 if (!e.target.closest('.context-menu')) {
 hideContextMenu();
 }
 });
 
-// Закриваємо modal при кліку поза ним
 document.getElementById('publicLinkModal').addEventListener('click', (e) => {
 if (e.target.id === 'publicLinkModal') {
 closePublicLinkModal();
 }
 });
 
+// =================================
+// ПЕРЕВІРКА З БАЛАМИ +/-
+// =================================
+
+function renderReview() {
+const pending = results.filter(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman));
+
+if (pending.length === 0) {
+document.getElementById('reviewList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає відповідей для перевірки ✓</div>';
+return;
+}
+
+document.getElementById('reviewList').innerHTML = pending.map(r => {
+const t = tests.find(x => x.id === r.testId);
+const pps = t ? t.maxScore / t.questions.length : 0;
+
+// Ініціалізуємо бали для кожного питання
+if (!questionScores[r.id]) {
+questionScores[r.id] = {};
+r.details.forEach((d, i) => {
+questionScores[r.id][i] = d.points;
+});
+}
+
+let questionsHtml = r.details.map((d, i) => {
+let cls = d.status === 'correct' ? 'auto-ok' : d.status === 'pending' ? 'pending' : 'auto-fail';
+const currentScore = questionScores[r.id][i] || 0;
+
+let scoreControlsHtml = '';
+if (d.status === 'pending') {
+scoreControlsHtml = `
+<div class="score-controls">
+<button class="score-btn minus" onclick="adjustQuestionScore('${r.id}', ${i}, -${pps.toFixed(1)})">−</button>
+<span class="score-display">${currentScore.toFixed(1)} б.</span>
+<button class="score-btn" onclick="adjustQuestionScore('${r.id}', ${i}, ${pps.toFixed(1)})">+</button>
+</div>
+`;
+} else {
+scoreControlsHtml = `<span class="q-points" style="color:${d.status === 'correct' ? 'var(--primary)' : 'var(--danger)'}">
+${d.status === 'correct' ? '+' : ''}${currentScore.toFixed(1)} б.
+</span>`;
+}
+
+return `<div class="review-q ${cls}">
+<div class="q-title">${i + 1}. ${d.qText}</div>
+<div class="q-answer">Відповідь: <b>${d.userAnswer}</b></div>
+${d.status !== 'pending' ? `<div class="q-correct">Правильно: ${d.correctAnswer}</div>` : ''}
+<div>${scoreControlsHtml}</div>
+</div>`;
+}).join('');
+
+// Рахуємо підсумковий бал
+let totalScore = 0;
+r.details.forEach((d, i) => {
+totalScore += questionScores[r.id][i] || 0;
+});
+
+const hasFreeQ = r.details.some(d => d.status === 'pending');
+
+return `<div class="review-card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px">
+<div>
+<h3 style="font-size:16px;font-weight:800">${r.userName}</h3>
+<div style="font-size:12px;color:var(--text-gray)">${r.testName || 'Іспит'} • ${r.date}</div>
+</div>
+<div style="font-size:18px;font-weight:900;color:var(--primary)">${totalScore.toFixed(1)} / ${r.maxScore} б.</div>
+</div>
+${questionsHtml}
+<div class="btn-group" style="margin-top:15px">
+<button class="btn btn-primary" onclick="approveResultWithScores('${r.id}')">✅ Схвалити</button>
+<button class="btn btn-danger" onclick="rejectResultWithScores('${r.id}')">❌ Відхилити</button>
+</div>
+</div>`;
+}).join('');
+}
+
+window.adjustQuestionScore = (resultId, questionIndex, delta) => {
+if (!questionScores[resultId]) questionScores[resultId] = {};
+const current = questionScores[resultId][questionIndex] || 0;
+const newScore = Math.max(0, current + delta);
+questionScores[resultId][questionIndex] = newScore;
+renderReview();
+};
+
+window.approveResultWithScores = async (id) => {
+const r = results.find(x => x.id === id);
+if (!r) return;
+
+// Оновлюємо бали з контролів
+let totalScore = 0;
+r.details.forEach((d, i) => {
+const score = questionScores[id][i] || 0;
+d.points = score;
+totalScore += score;
+if (score > 0) {
+d.status = 'correct';
+} else {
+d.status = 'wrong';
+}
+});
+
+r.score = Math.round(totalScore * 100) / 100;
+r.status = 'approved';
+r.reviewer = ME.name;
+r.reviewedByHuman = true;
+save();
+
+addNotif(`✅ Результат ${r.userName} схвалено перевіряючим ${ME.name}`);
+
+await sendDiscordNotification('RESULT_APPROVED', {
+userName: r.userName,
+testName: r.testName,
+finalScore: r.score,
+maxScore: r.maxScore,
+reviewer: ME.name,
+status: 'approved',
+date: now()
+});
+
+delete questionScores[id];
+renderReview();
+};
+
+window.rejectResultWithScores = async (id) => {
+const r = results.find(x => x.id === id);
+if (!r) return;
+
+r.details.forEach((d, i) => {
+if (d.status === 'pending') {
+d.status = 'wrong';
+d.points = 0;
+}
+});
+
+r.status = 'rejected';
+r.reviewer = ME.name;
+r.reviewedByHuman = true;
+save();
+
+addNotif(`❌ Результат ${r.userName} відхилено перевіряючим ${ME.name}`);
+
+await sendDiscordNotification('RESULT_REJECTED', {
+userName: r.userName,
+testName: r.testName,
+score: r.score,
+maxScore: r.maxScore,
+reviewer: ME.name,
+date: now()
+});
+
+delete questionScores[id];
+renderReview();
+};
+
+// =================================
+// РЕШТА КОДУ (запуск тестів тощо)
+// =================================
+
+window.startIntro = id => {
+const t = tests.find(x => x.id === id);
+if (!t) return;
+
+const myResults = results.filter(r => r.testId === id && r.userId === ME.uid);
+const hasPending = myResults.find(r => r.status === 'pending');
+const hasAutoNotReviewed = myResults.find(r => r.status === 'auto' && !r.reviewedByHuman);
+
+if (hasPending || hasAutoNotReviewed) {
+alert('⚠️ Попередній іспит ще не перевірено людиною! Дочекайтесь результату.');
+return;
+}
+
+currentTest = t;
+agreementAccepted = false;
+
+const pps = t.maxScore > 0 ? Math.round(t.maxScore / t.questions.length * 10) / 10 : 0;
+let totalTime = 0;
+t.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
+
+let photosHtml = '';
+if (t.photos && t.photos.length > 0) {
+photosHtml = `
+<div style="margin:25px 0">
+<h4 style="font-size:14px;font-weight:800;margin-bottom:15px;color:var(--primary-bright)">📸 Матеріали іспиту</h4>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+${t.photos.map(p => `
+<img src="${p.url}" style="width:100%;height:100px;object-fit:cover;border-radius:12px;cursor:zoom-in;border:1px solid rgba(255,255,255,0.1)" onclick="openLightbox('${p.url}')">
+`).join('')}
+</div>
+</div>
+`;
+}
+
+let agreementHtml = '';
+if (t.agreementText && t.agreementText.trim()) {
+agreementHtml = `
+<div class="agreement-box">
+<label class="agreement-check">
+<input type="checkbox" id="agreementCheckbox" onchange="toggleAgreement()">
+<div class="agreement-text">
+<strong>📜 Користувацька угода:</strong><br>
+${t.agreementText}
+</div>
+</label>
+</div>
+`;
+} else {
+agreementAccepted = true;
+}
+
+document.getElementById('introCard').innerHTML = `
+<span class="emoji">${t.emoji || '📝'}</span>
+<h2>${t.name}</h2>
+<p>${t.description || ''}</p>
+${photosHtml}
+<div style="margin:25px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center">
+<div style="background:rgba(0,255,68,0.05);border:1px solid rgba(0,255,68,0.15);border-radius:12px;padding:15px">
+<div style="font-size:22px;font-weight:900;color:var(--primary)">${t.questions.length}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px">ПИТАНЬ</div>
+</div>
+<div style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:12px;padding:15px">
+<div style="font-size:22px;font-weight:900;color:var(--warning)">${t.passScore}/${t.maxScore}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px">ПРОХІДНИЙ БАЛ</div>
+</div>
+<div style="background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.15);border-radius:12px;padding:15px">
+<div style="font-size:22px;font-weight:900;color:var(--info)">⏱ ${totalTime}с</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px">ЗАГАЛЬНИЙ ЧАС</div>
+</div>
+<div style="background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);border-radius:12px;padding:15px">
+<div style="font-size:22px;font-weight:900;color:var(--success)">${pps}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px">БАЛІВ ЗА ПИТАННЯ</div>
+</div>
+</div>
+${agreementHtml}
+<div class="btn-group">
+<button class="btn btn-primary" onclick="beginQuiz()" id="startQuizBtn" ${!agreementAccepted ? 'disabled' : ''}>
+🚀 РОЗПОЧАТИ ІСПИТ
+</button>
+<button class="btn btn-secondary" onclick="showView('home')">← Назад</button>
+</div>
+`;
+
+showView('intro');
+};
+
+window.toggleAgreement = () => {
+const checkbox = document.getElementById('agreementCheckbox');
+agreementAccepted = checkbox.checked;
+const btn = document.getElementById('startQuizBtn');
+btn.disabled = !agreementAccepted;
+};
+
+window.openLightbox = url => {
+const lb = document.getElementById('lightbox');
+const img = document.getElementById('lightboxImg');
+img.src = url;
+lb.classList.add('active');
+document.body.style.overflow = 'hidden';
+};
+
+window.closeLightbox = () => {
+const lb = document.getElementById('lightbox');
+lb.classList.remove('active');
+document.body.style.overflow = 'auto';
+};
+
+window.beginQuiz = () => {
+if (!agreementAccepted) {
+alert('⚠️ Потрібно прийняти користувацьку угоду!');
+return;
+}
+currentQ = 0;
+answers = {};
+showView('quiz');
+renderQuestion();
+};
+
+function renderQuestion() {
+if (!currentTest) return;
+
+const q = currentTest.questions[currentQ];
+const total = currentTest.questions.length;
+const pps = currentTest.maxScore > 0 ? Math.round(currentTest.maxScore / total * 10) / 10 : 0;
+const progress = ((currentQ) / total) * 100;
+
+clearInterval(timer);
+timeLeft = q.timeLimit || 30;
+
+let qPhotoHtml = '';
+if (q.photo) {
+qPhotoHtml = `<div class="quiz-question-photo">
+<img src="${q.photo}" onclick="openLightbox('${q.photo}')" alt="Фото питання">
+</div>`;
+}
+
+let answersHtml = '';
+if (q.answerType === 'table') {
+const cols = q.tableData.columns;
+const rows = q.tableData.rows;
+answersHtml = `<div class="answer-table-wrapper"><table class="answer-table">
+<thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}<th style="width:60px">Вибір</th></tr></thead>
+<tbody>${rows.map((row, ri) => `<tr>${cols.map((c, ci) => `<td>${row[ci] || ''}</td>`).join('')}<td style="text-align:center"><div class="table-radio${answers[currentQ]?.value === ri ? ' checked' : ''}" onclick="selectTableAnswer(${ri})"></div></td></tr>`).join('')}</tbody>
+</table></div>`;
+} else {
+answersHtml = `<div class="quiz-answers">${q.options.map((o, i) => {
+const sel = answers[currentQ]?.type === 'choice' && answers[currentQ]?.value === i;
+return `<div class="answer-btn${sel ? ' selected' : ''}" onclick="selectAnswer(${i})">
+<div class="answer-letter">${letters[i] || i + 1}</div>
+<div>${o.text}</div>
+</div>`;
+}).join('')}</div>`;
+}
+
+const hasFree = q.allowFree;
+const freeActive = answers[currentQ]?.type === 'free';
+const freeVal = freeActive ? answers[currentQ]?.value : '';
+
+document.getElementById('quizContainer').innerHTML = `
+<div class="quiz-progress-bar">
+<div class="quiz-progress-fill" style="width:${progress}%"></div>
+</div>
+<div class="quiz-header">
+<div class="quiz-q-num">Питання ${currentQ + 1} з ${total} • <span style="color:var(--primary)">${pps} б.</span></div>
+<div class="quiz-timer" id="timerDisplay">${timeLeft}</div>
+</div>
+<div class="quiz-question">
+<h3>${q.text}</h3>
+${qPhotoHtml}
+</div>
+${answersHtml}
+${hasFree ? `<div class="free-answer-area">
+<div class="free-answer-toggle${freeActive ? ' active' : ''}" onclick="toggleFreeAnswer()">✍️ Написати свій варіант</div>
+${freeActive ? `<textarea class="free-input" id="freeInput" placeholder="Введіть вашу відповідь...">${freeVal}</textarea>` : ''}
+</div>` : ''}
+<div class="btn-group">
+${currentQ > 0 ? '<button class="btn btn-secondary" onclick="prevQuestion()">← Назад</button>' : ''}
+<button class="btn btn-primary" onclick="nextQuestion()">${currentQ === total - 1 ? '🏁 Завершити' : 'Далі →'}</button>
+</div>
+`;
+
+startTimer();
+}
+
+function startTimer() {
+const el = () => document.getElementById('timerDisplay');
+timer = setInterval(() => {
+timeLeft--;
+const d = el();
+if (d) {
+d.textContent = timeLeft;
+if (timeLeft <= 10) d.classList.add('danger');
+else d.classList.remove('danger');
+}
+if (timeLeft <= 0) {
+clearInterval(timer);
+nextQuestion();
+}
+}, 1000);
+}
+
+window.selectAnswer = i => {
+answers[currentQ] = {type: 'choice', value: i};
+renderQuestion();
+};
+
+window.selectTableAnswer = i => {
+answers[currentQ] = {type: 'choice', value: i};
+renderQuestion();
+};
+
+window.toggleFreeAnswer = () => {
+if (answers[currentQ]?.type === 'free') {
+delete answers[currentQ];
+} else {
+answers[currentQ] = {type: 'free', value: ''};
+}
+renderQuestion();
+};
+
+window.prevQuestion = () => {
+if (currentQ > 0) {
+clearInterval(timer);
+currentQ--;
+renderQuestion();
+}
+};
+
+window.nextQuestion = () => {
+const fi = document.getElementById('freeInput');
+if (fi && answers[currentQ]?.type === 'free') {
+answers[currentQ].value = fi.value;
+}
+
+clearInterval(timer);
+
+if (currentQ >= currentTest.questions.length - 1) {
+finishQuiz();
+} else {
+currentQ++;
+renderQuestion();
+}
+};
+
+async function finishQuiz() {
+const t = currentTest;
+const total = t.questions.length;
+const pps = t.maxScore > 0 ? t.maxScore / total : 0;
+
+let score = 0;
+let details = [];
+let hasFreeAnswers = false;
+let correctCount = 0;
+
+t.questions.forEach((q, i) => {
+const ans = answers[i];
+let d = {
+qText: q.text,
+answered: false,
+correct: false,
+points: 0,
+userAnswer: '',
+correctAnswer: '',
+isFree: false,
+status: 'wrong'
+};
+
+let correctIdx = -1;
+if (q.answerType === 'table') {
+correctIdx = q.tableData.correctRowIndex;
+const rows = q.tableData.rows;
+d.correctAnswer = correctIdx >= 0 ? rows[correctIdx].join(' | ') : '—';
+} else {
+correctIdx = q.options.findIndex(o => o.correct);
+d.correctAnswer = correctIdx >= 0 ? q.options[correctIdx].text : '—';
+}
+
+if (!ans) {
+d.userAnswer = 'Без відповіді';
+d.status = 'wrong';
+} else if (ans.type === 'choice') {
+if (q.answerType === 'table') {
+const rows = q.tableData.rows;
+d.userAnswer = rows[ans.value] ? rows[ans.value].join(' | ') : '—';
+} else {
+d.userAnswer = q.options[ans.value]?.text || '—';
+}
+d.answered = true;
+if (ans.value === correctIdx) {
+d.correct = true;
+d.points = pps;
+score += pps;
+d.status = 'correct';
+correctCount++;
+} else {
+d.status = 'wrong';
+}
+} else if (ans.type === 'free') {
+d.userAnswer = ans.value || 'Порожньо';
+d.answered = true;
+d.isFree = true;
+d.status = 'pending';
+hasFreeAnswers = true;
+}
+
+details.push(d);
+});
+
+score = Math.round(score * 100) / 100;
+const needsReview = hasFreeAnswers;
+const status = needsReview ? 'pending' : 'auto';
+
+const result = {
+id: genId(),
+testId: t.id,
+testName: t.name,
+userId: ME.uid,
+userName: ME.name,
+score,
+maxScore: t.maxScore,
+passScore: t.passScore,
+details,
+date: now(),
+status,
+reviewer: needsReview ? null : 'SYSTEM',
+reviewedByHuman: false
+};
+
+results.push(result);
+save();
+
+const userRoleText = ME.role === 'admin' ? '👑 Адмін' : ME.role === 'instructor' ? '⭐ Інструктор' : '⚔️ Бієць';
+await sendDiscordNotification('QUIZ_COMPLETED', {
+testName: t.name,
+userName: ME.name,
+userRole: userRoleText,
+score: score,
+maxScore: t.maxScore,
+passScore: t.passScore,
+correctAnswers: correctCount,
+totalQuestions: total,
+passed: score >= t.passScore,
+status: status,
+date: now()
+});
+
+if (!needsReview) {
+if (score >= t.passScore) {
+addNotif(`✅ Іспит "${t.name}" автоматично перевірено: ${score}/${t.maxScore}. Очікуйте підтвердження людиною.`);
+} else {
+addNotif(`❌ Іспит "${t.name}" не складено: ${score}/${t.maxScore}. Очікуйте підтвердження людиною.`);
+}
+} else {
+addNotif(`⏳ Іспит "${t.name}" відправлено на перевірку`);
+}
+
+renderResult(result);
+showView('result');
+}
+
+function renderResult(r) {
+const t = tests.find(x => x.id === r.testId);
+const passScore = t ? t.passScore : 0;
+const isPending = r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman);
+const passed = !isPending && r.score >= passScore && r.reviewedByHuman;
+
+let detailsHtml = r.details.map((d, i) => {
+let markClass = d.status === 'correct' ? 'ok' : d.status === 'pending' ? 'pend' : 'no';
+let markIcon = d.status === 'correct' ? '✓' : d.status === 'pending' ? '?' : '✗';
+let pointsText = d.status === 'correct' ? `+${Math.round(d.points * 10) / 10} б.` : d.status === 'pending' ? 'На перевірці' : '0 б.';
+
+return `<div class="result-detail">
+<div class="mark ${markClass}">${markIcon}</div>
+<div style="flex:1">
+<div style="font-size:13px;font-weight:700;margin-bottom:4px;word-wrap:break-word">${i + 1}. ${d.qText}</div>
+<div style="font-size:12px;color:var(--text-light);word-wrap:break-word">Ваша відповідь: <b>${d.userAnswer}</b></div>
+${d.status !== 'pending' ? `<div style="font-size:11px;color:var(--primary);margin-top:2px;word-wrap:break-word">Правильно: ${d.correctAnswer}</div>` : ''}
+<div style="font-size:11px;font-weight:800;color:${d.status === 'correct' ? 'var(--primary)' : d.status === 'pending' ? 'var(--warning)' : 'var(--danger)'};margin-top:3px">${pointsText}</div>
+</div>
+</div>`;
+}).join('');
+
+const el = document.getElementById('resultScreen');
+el.innerHTML = `
+<div class="result-circle ${isPending ? '' : passed ? 'pass' : 'fail'}">
+<div class="result-score" style="color:${isPending ? 'var(--warning)' : passed ? 'var(--primary)' : 'var(--danger)'}">${r.score}</div>
+<div class="result-max">з ${r.maxScore} балів</div>
+</div>
+<div class="result-status ${isPending ? '' : passed ? 'pass' : 'fail'}">${isPending ? '⏳ НА ПЕРЕВІРЦІ' : passed ? '✅ ІСПИТ СКЛАДЕНО' : '❌ НЕ СКЛАДЕНО'}</div>
+<p style="color:var(--text-gray);font-size:13px;margin-bottom:25px">${isPending ? 'Очікуйте перевірки людиною' : 'Прохідний бал: ' + passScore + ' балів'}</p>
+<div style="text-align:left">${detailsHtml}</div>
+<div class="btn-group">
+<button class="btn btn-primary" onclick="startIntro('${r.testId}')" ${isPending ? 'disabled' : ''} style="${isPending ? 'opacity:0.5;cursor:not-allowed' : ''}">
+${isPending ? '⏳ Очікуйте перевірки' : '🔄 Пройти знову'}
+</button>
+<button class="btn btn-secondary" onclick="showView('home')">🏠 На головну</button>
+</div>
+`;
+}
   // ============================================
 // ЧАСТИНА 2 - ДОДАЙТЕ ЦЕЙ КОД ПЕРЕД </script>
 // ============================================
@@ -3247,7 +3799,7 @@ return false;
 }
 };
 
-// Продовження в наступній частині...
+console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.1 - Готово!');
 </script>
 </body>
 </html>
