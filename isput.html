@@ -2545,13 +2545,175 @@ ${isPending ? '⏳ Очікуйте перевірки' : '🔄 Пройти з�
 }
 
 function renderCreateForm(testData) {
-// Якщо передано testData, встановлюємо editingTestId
+// ПРАВИЛЬНА ЛОГІКА ДЛЯ РЕДАГУВАННЯ
 if (testData && testData.id) {
 editingTestId = testData.id;
+currentTestPhotos = testData.photos || [];
 } else {
 editingTestId = null;
+currentTestPhotos = [];
 }
+
 document.getElementById('createTitle').innerHTML = editingTestId ? '✏️ Редагувати іспит' : '➕ Створити іспит';
+
+const t = testData || {
+name: '',
+description: '',
+emoji: '📝',
+maxScore: 12,
+passScore: 8,
+questions: [],
+photos: [],
+agreementText: 'Я ознайомлений з правилами проходження іспиту та зобов\'язуюсь дотримуватись їх.'
+};
+
+// Перевірка на пусті питання
+const qs = (t.questions && t.questions.length > 0) ? t.questions : [{
+text: '',
+options: [{text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}],
+allowFree: false,
+timeLimit: 30,
+answerType: 'normal',
+photo: null
+}];
+
+let photosHtml = '';
+if (currentTestPhotos.length > 0) {
+photosHtml = `<div class="test-photo-grid">
+${currentTestPhotos.map((photo, pi) => `
+<div class="test-photo-item">
+<img src="${photo.url}" alt="Фото ${pi + 1}">
+<button class="photo-delete-mini" onclick="deleteTestPhoto(${pi})">✕</button>
+</div>
+`).join('')}
+</div>`;
+}
+
+let qBlocks = qs.map((q, qi) => {
+let qPhotoHtml = '';
+if (q.photo) {
+qPhotoHtml = `<div class="question-photo-section">
+<div class="question-photo-preview">
+<img src="${q.photo}" alt="Фото питання">
+<button class="question-photo-delete" onclick="deleteQuestionPhoto(${qi})">✕</button>
+</div>
+</div>`;
+} else {
+qPhotoHtml = `<div class="question-photo-section">
+<input type="file" id="qPhotoInput-${qi}" accept="image/*" style="display:none" onchange="handleQuestionPhoto(this, ${qi})">
+<button class="add-question-photo-btn" onclick="document.getElementById('qPhotoInput-${qi}').click()">📷 Додати фото до питання</button>
+</div>`;
+}
+
+let opts = '';
+if (q.answerType === 'table') {
+const cols = q.tableData?.columns || [];
+const rows = q.tableData?.rows || [];
+const correctRow = q.tableData?.correctRowIndex || 0;
+
+opts = `<div class="table-builder">
+<div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:8px">СТОВПЦІ ТАБЛИЦІ</div>
+<div class="table-builder-head" id="tableCols-${qi}">
+${cols.map((c, ci) => `<input class="table-col-input" placeholder="Стовпець ${ci + 1}" value="${c}" data-qi="${qi}" data-ci="${ci}">`).join('')}
+</div>
+<button class="add-opt-btn" onclick="addTableColumn(${qi})" style="margin-bottom:10px">+ Додати стовпець</button>
+<div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:8px">РЯДКИ ТАБЛИЦІ</div>
+<div class="table-builder-rows" id="tableRows-${qi}">
+${rows.map((row, ri) => `<div class="table-row-builder">
+<div class="opt-radio${ri === correctRow ? ' checked' : ''}" onclick="toggleTableCorrect(${qi},${ri})"></div>
+${cols.map((c, ci) => `<input class="table-cell-input" placeholder="${c}" value="${row[ci] || ''}" data-qi="${qi}" data-ri="${ri}" data-ci="${ci}">`).join('')}
+<button class="opt-del" onclick="delTableRow(${qi},${ri})">✕</button>
+</div>`).join('')}
+</div>
+<button class="add-opt-btn" onclick="addTableRow(${qi})">+ Додати рядок</button>
+</div>`;
+} else {
+opts = q.options.map((o, oi) => `<div class="opt-row">
+<div class="opt-radio${o.correct ? ' checked' : ''}" onclick="toggleCorrect(${qi},${oi})"></div>
+<input class="opt-input" placeholder="Варіант ${letters[oi] || oi + 1}" value="${o.text.replace(/"/g, '&quot;')}" data-qi="${qi}" data-oi="${oi}">
+<button class="opt-del" onclick="delOption(${qi},${oi})">✕</button>
+</div>`).join('');
+opts += `<button class="add-opt-btn" onclick="addOption(${qi})">+ Додати варіант</button>`;
+}
+
+return `<div class="q-block" id="qblock-${qi}">
+<div class="q-block-head">
+<span class="q-num">Питання ${qi + 1}</span>
+<button class="q-del" onclick="delQuestion(${qi})">🗑</button>
+</div>
+<textarea class="form-input" placeholder="Текст питання..." id="qtext-${qi}" style="margin-bottom:12px;min-height:80px;resize:vertical">${q.text.replace(/"/g, '&quot;')}</textarea>
+${qPhotoHtml}
+<div style="margin-bottom:10px">
+<label class="form-label">Час на питання (секунд)</label>
+<input class="form-input" type="number" id="qtime-${qi}" value="${q.timeLimit || 30}" min="5" max="600">
+</div>
+<div class="table-toggle-create" onclick="toggleTableMode(${qi})">
+<div class="toggle-switch${q.answerType === 'table' ? ' on' : ''}" id="tableSwitch-${qi}"></div>
+Режим таблиці
+</div>
+<div id="opts-${qi}" style="margin-top:12px">${opts}</div>
+<div class="free-toggle-create" onclick="toggleFreeCreate(${qi})">
+<div class="toggle-switch${q.allowFree ? ' on' : ''}" id="freeSwitch-${qi}"></div>
+Дозволити вільну відповідь
+</div>
+</div>`;
+}).join('');
+
+document.getElementById('createForm').innerHTML = `
+<div class="form-card">
+<div class="form-row-inline">
+<div class="form-row">
+<label class="form-label">Назва іспиту</label>
+<input class="form-input" id="testName" value="${(t.name || '').replace(/"/g, '&quot;')}" placeholder="Назва...">
+</div>
+<div class="form-row">
+<label class="form-label">Емодзі</label>
+<input class="form-input" id="testEmoji" value="${t.emoji || '📝'}" placeholder="📝" style="text-align:center;font-size:24px">
+</div>
+</div>
+<div class="form-row">
+<label class="form-label">Опис</label>
+<textarea class="form-input" id="testDesc" rows="2" placeholder="Опис іспиту...">${t.description || ''}</textarea>
+</div>
+<div class="form-row-inline">
+<div class="form-row">
+<label class="form-label">Макс. бал</label>
+<input class="form-input" id="testMaxScore" type="number" value="${t.maxScore || 12}" min="1">
+</div>
+<div class="form-row">
+<label class="form-label">Прохідний бал</label>
+<input class="form-input" id="testPassScore" type="number" value="${t.passScore || 8}" min="0">
+</div>
+</div>
+<div class="form-hint" id="scoreHint">💎 За кожне правильне питання: ${qs.length > 0 ? Math.round((t.maxScore || 12) / qs.length * 100) / 100 : 0} балів</div>
+</div>
+
+<div class="form-card test-photos-section">
+<h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:12px">📸 Фотогалерея тесту</h4>
+<p style="font-size:11px;color:var(--text-gray);margin-bottom:15px">Додайте зображення, які будуть показані перед початком іспиту</p>
+${photosHtml}
+<input type="file" id="testPhotoInput" accept="image/*" style="display:none" onchange="handleTestPhoto(this)">
+<button class="upload-photo-btn" onclick="document.getElementById('testPhotoInput').click()">📷 Додати фото</button>
+</div>
+
+<div class="form-card">
+<h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:12px">📜 Користувацька угода</h4>
+<p style="font-size:11px;color:var(--text-gray);margin-bottom:10px">Текст, який користувач повинен прийняти перед початком</p>
+<textarea class="form-input" id="agreementText" rows="3" placeholder="Я ознайомлений з правилами...">${t.agreementText || ''}</textarea>
+</div>
+
+<div class="section-title">📋 Питання</div>
+<div id="questionsContainer">${qBlocks}</div>
+<button class="btn btn-secondary" onclick="addQuestion()" style="width:100%;margin-bottom:20px">+ Додати питання</button>
+
+<div class="btn-group">
+<button class="btn btn-primary" onclick="saveTest()">💾 ${editingTestId ? 'Зберегти зміни' : 'Створити іспит'}</button>
+<button class="btn btn-secondary" onclick="showView('home')">Скасувати</button>
+</div>
+`;
+
+document.getElementById('testMaxScore').addEventListener('input', updateScoreHint);
+}
 
 const t = testData || {
 name: '',
@@ -3192,22 +3354,28 @@ return `<div class="manage-card">
 
 window.editTest = id => {
 const t = tests.find(x => x.id === id);
-if (t) {
-editingTestId = t.id; // ОСЬ ЦЕ БУЛО ПРОПУЩЕНО!
-currentTestPhotos = t.photos || [];
-renderCreateForm({
-id: t.id,
-name: t.name,
-description: t.description,
-emoji: t.emoji,
-maxScore: t.maxScore,
-passScore: t.passScore,
-questions: t.questions,
-photos: t.photos || [],
-agreementText: t.agreementText || ''
-});
-showView('create');
+if (!t) {
+alert('❌ Іспит не знайдено!');
+return;
 }
+
+// Створюємо повну копію об'єкта
+const testCopy = {
+id: t.id,
+name: t.name || '',
+description: t.description || '',
+emoji: t.emoji || '📝',
+maxScore: t.maxScore || 12,
+passScore: t.passScore || 8,
+questions: JSON.parse(JSON.stringify(t.questions || [])),
+photos: JSON.parse(JSON.stringify(t.photos || [])),
+agreementText: t.agreementText || ''
+};
+
+console.log('Editing test:', testCopy);
+
+renderCreateForm(testCopy);
+showView('create');
 };
 
 window.clearTestResults = async (id) => {
