@@ -2130,7 +2130,185 @@ const lb = document.getElementById('lightbox');
 lb.classList.remove('active');
 document.body.style.overflow = 'auto';
 };
+// Додайте ці функції перед console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.0...')
 
+function renderCreateForm() {
+  const form = document.getElementById('createForm');
+  const title = document.getElementById('createTitle');
+  
+  if (editingTestId) {
+    title.textContent = '✏️ Редагувати іспит';
+  } else {
+    title.textContent = '➕ Створити іспит';
+  }
+  
+  // Тут має бути ваша форма створення іспиту
+  form.innerHTML = `
+    <div class="form-card">
+      <p style="color:var(--text-gray);text-align:center;padding:40px;">
+        Форма створення іспиту (функцію потрібно реалізувати)
+      </p>
+    </div>
+  `;
+}
+
+function renderManage() {
+  const list = document.getElementById('manageList');
+  
+  if (tests.length === 0) {
+    list.innerHTML = '<p style="color:var(--text-gray);text-align:center;padding:40px;">Немає іспитів для керування</p>';
+    return;
+  }
+  
+  list.innerHTML = tests.map(t => `
+    <div class="manage-card">
+      <div>
+        <h4 style="margin-bottom:5px;">${t.emoji || '📝'} ${t.name}</h4>
+        <p style="font-size:12px;color:var(--text-gray);">${t.questions.length} питань | ${t.passScore}/${t.maxScore} балів</p>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-warning" onclick="editTest('${t.id}')">✏️ Редагувати</button>
+        <button class="btn btn-danger" onclick="deleteTest('${t.id}')">🗑 Видалити</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderSettings() {
+  const content = document.getElementById('settingsContent');
+  
+  content.innerHTML = `
+    <div class="setting-block">
+      <h4>🔗 Discord Webhook</h4>
+      <input type="text" class="form-input" id="webhookInput" 
+        value="${webhookUrl}" placeholder="https://discord.com/api/webhooks/...">
+      <button class="btn btn-primary" onclick="saveWebhook()" style="margin-top:15px;">💾 Зберегти</button>
+    </div>
+    
+    <div class="setting-block">
+      <h4>🔍 Перевіряючі</h4>
+      <div id="reviewersList"></div>
+      <div style="margin-top:15px;">
+        <select class="form-input" id="newReviewer">
+          <option value="">Виберіть користувача...</option>
+          ${allUsers.filter(u => !reviewers.includes(u.name) && u.name !== ME.name)
+            .map(u => `<option value="${u.name}">${u.name} (${u.role})</option>`).join('')}
+        </select>
+        <button class="btn btn-primary" onclick="addReviewer()" style="margin-top:10px;">➕ Додати перевіряючого</button>
+      </div>
+    </div>
+  `;
+  
+  updateReviewersList();
+}
+
+function renderAdminList() {
+  const content = document.getElementById('adminListContent');
+  
+  content.innerHTML = `
+    <div class="admin-list-panel">
+      <h4 style="margin-bottom:15px;">👑 Адміністратори системи</h4>
+      <div id="adminsList"></div>
+      <div style="margin-top:20px;">
+        <select class="form-input" id="newAdmin">
+          <option value="">Виберіть користувача...</option>
+          ${allUsers.filter(u => !adminList.includes(u.name) && u.name !== ME.name)
+            .map(u => `<option value="${u.name}">${u.name} (${u.role})</option>`).join('')}
+        </select>
+        <button class="btn btn-primary" onclick="addAdmin()" style="margin-top:10px;">➕ Додати адміна</button>
+      </div>
+    </div>
+  `;
+  
+  updateAdminsList();
+}
+
+function updateReviewersList() {
+  const list = document.getElementById('reviewersList');
+  if (!list) return;
+  
+  list.innerHTML = reviewers.map(r => `
+    <div class="reviewer-chip">
+      ${r}
+      <button onclick="removeReviewer('${r}')">×</button>
+    </div>
+  `).join('') || '<p style="color:var(--text-gray);font-size:12px;">Немає перевіряючих</p>';
+}
+
+function updateAdminsList() {
+  const list = document.getElementById('adminsList');
+  if (!list) return;
+  
+  list.innerHTML = adminList.map(a => `
+    <div class="reviewer-chip">
+      ${a}
+      <button onclick="removeAdmin('${a}')">×</button>
+    </div>
+  `).join('') || '<p style="color:var(--text-gray);font-size:12px;">Немає адмінів</p>';
+}
+
+window.saveWebhook = () => {
+  webhookUrl = document.getElementById('webhookInput').value.trim();
+  save();
+  alert('✅ Webhook збережено!');
+};
+
+window.addReviewer = async () => {
+  const sel = document.getElementById('newReviewer');
+  const name = sel.value;
+  if (!name) return;
+  
+  reviewers.push(name);
+  save();
+  
+  await sendDiscordNotification('REVIEWER_ADDED', {
+    reviewerName: name,
+    addedBy: ME.name,
+    date: now()
+  });
+  
+  renderSettings();
+};
+
+window.removeReviewer = (name) => {
+  reviewers = reviewers.filter(r => r !== name);
+  save();
+  updateReviewersList();
+};
+
+window.addAdmin = async () => {
+  const sel = document.getElementById('newAdmin');
+  const name = sel.value;
+  if (!name) return;
+  
+  adminList.push(name);
+  save();
+  
+  await sendDiscordNotification('ADMIN_ADDED', {
+    adminName: name,
+    addedBy: ME.name,
+    date: now()
+  });
+  
+  renderAdminList();
+};
+
+window.removeAdmin = (name) => {
+  adminList = adminList.filter(a => a !== name);
+  save();
+  updateAdminsList();
+};
+
+window.editTest = (id) => {
+  editingTestId = id;
+  showView('create');
+};
+
+window.deleteTest = async (id) => {
+  if (!confirm('❌ Видалити цей іспит?')) return;
+  await deleteTestFromFirebase(id);
+};
+  
 console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.0 - Готово з Discord інтеграцією!');
   </script>
 </body>
