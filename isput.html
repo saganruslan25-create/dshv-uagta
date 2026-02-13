@@ -2094,28 +2094,7 @@ notifs.unshift({text, time: now(), read: false});
 if (notifs.length > 20) notifs.pop();
 localStorage.setItem('isput_notifs', JSON.stringify(notifs));
 }
-// Auth
-// Auth
-onAuthStateChanged(auth, async u => {
-if (!u) {
-window.location.href = 'index.html';
-return;
-}
-ME.uid = u.uid;
-
-try {
-const snap = await getDoc(doc(db, 'users', u.uid));
-// ... багато коду тут ...
-} catch (e) {
-console.log('Firebase err:', e);
-}
-
-document.getElementById('headerName').textContent = ME.name;
-// ... ще код ...
-
-buildNav();
-showView('home');
-});   // <--- ОСЬ ДО ЦЬОГО ВКЛЮЧНО
+  
 function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
@@ -3515,6 +3494,366 @@ buildNav();
 }
 document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
 };
+  // Перевірка публічного режиму
+let isPublicMode = false;
+let publicTestId = null;
+let publicUser = { firstName: '', lastName: '', unit: '' };
+let publicCurrentQ = 0;
+let publicAnswers = {};
+let publicTimer = null;
+let publicTimeLeft = 30;
+let publicTestData = null;
+
+function checkPublicMode() {
+const params = new URLSearchParams(window.location.search);
+publicTestId = params.get('public');
+return !!publicTestId;
+}
+
+onAuthStateChanged(auth, async u => {
+if (checkPublicMode()) {
+isPublicMode = true;
+document.querySelector('header').style.display = 'none';
+await loadPublicTest();
+return;
+}
+
+if (!u) {
+window.location.href = 'index.html';
+return;
+}
+ME.uid = u.uid;
+
+try {
+const snap = await getDoc(doc(db, 'users', u.uid));
+if (snap.exists()) {
+const d = snap.data();
+ME.name = d.name || 'Невідомий';
+ME.role = d.role || 'fighter';
+}
+const all = await getDocs(collection(db, 'users'));
+allUsers = [];
+all.forEach(s => {
+const d = s.data();
+allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
+});
+loadTestsFromFirebase();
+} catch (e) {
+console.log('Firebase err:', e);
+}
+
+document.getElementById('headerName').textContent = ME.name;
+const rb = document.getElementById('headerRole');
+if (ME.role === 'admin') {
+rb.textContent = 'АДМІН';
+rb.className = 'role-badge role-admin';
+} else if (ME.role === 'instructor') {
+rb.textContent = 'ІНСТРУКТОР';
+rb.className = 'role-badge role-instructor';
+} else {
+rb.textContent = 'БІЄЦЬ';
+rb.className = 'role-badge role-fighter';
+}
+
+buildNav();
+showView('home');
+});
+
+async function loadPublicTest() {
+document.querySelectorAll('.view').forEach(function(el) { el.classList.remove('active'); });
+document.getElementById('viewPublic').classList.add('active');
+
+document.getElementById('publicContent').innerHTML = '<div class="public-screen" style="text-align:center;padding:60px 20px"><div style="width:50px;height:50px;border:4px solid rgba(0,255,68,0.2);border-top:4px solid var(--primary);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px"></div><div style="font-size:16px;font-weight:700">Завантаження іспиту...</div></div>';
+
+try {
+const snap = await getDoc(doc(db, 'tests', publicTestId));
+if (!snap.exists()) {
+document.getElementById('publicContent').innerHTML = '<div class="public-screen" style="text-align:center;padding:60px 20px"><div style="font-size:64px;margin-bottom:20px">❌</div><div style="font-size:24px;font-weight:900;color:var(--danger);margin-bottom:10px">Іспит не знайдено</div><div style="color:var(--text-gray);font-size:14px">Перевірте посилання та спробуйте ще раз</div></div>';
+return;
+}
+
+publicTestData = { id: snap.id, ...snap.data() };
+renderPublicForm();
+} catch (e) {
+document.getElementById('publicContent').innerHTML = '<div class="public-screen" style="text-align:center;padding:60px 20px"><div style="font-size:64px;margin-bottom:20px">❌</div><div style="font-size:24px;font-weight:900;color:var(--danger);margin-bottom:10px">Помилка</div><div style="color:var(--text-gray);font-size:14px">' + e.message + '</div></div>';
+}
+}
+
+function renderPublicForm() {
+var t = publicTestData;
+var totalTime = 0;
+t.questions.forEach(function(q) { totalTime += (q.timeLimit || 30); });
+var pps = t.maxScore > 0 ? Math.round(t.maxScore / t.questions.length * 10) / 10 : 0;
+
+var photosHtml = '';
+if (t.photos && t.photos.length > 0) {
+photosHtml = '<div class="public-photos-grid">';
+t.photos.forEach(function(p) {
+photosHtml += '<img src="' + p.url + '" onclick="openLightbox(\'' + p.url + '\')">';
+});
+photosHtml += '</div>';
+}
+
+var agreementHtml = '';
+if (t.agreementText && t.agreementText.trim()) {
+agreementHtml = '<div class="agreement-box"><label class="agreement-check"><input type="checkbox" id="publicAgreeCheck" onchange="checkPublicFormReady()"><div class="agreement-text"><strong>📜 Користувацька угода:</strong><br>' + t.agreementText + '</div></label></div>';
+}
+
+document.getElementById('publicContent').innerHTML = '<div class="public-screen"><div class="form-card"><div class="public-header"><span class="emoji-big">' + (t.emoji || '📝') + '</span><h2>' + t.name + '</h2><div class="desc">' + (t.description || '') + '</div></div>' + photosHtml + '<div class="public-info-grid"><div class="public-info-item" style="background:rgba(0,255,68,0.05);border-color:rgba(0,255,68,0.15)"><div class="num" style="color:var(--primary)">' + t.questions.length + '</div><div class="label">Питань</div></div><div class="public-info-item" style="background:rgba(251,191,36,0.05);border-color:rgba(251,191,36,0.15)"><div class="num" style="color:var(--warning)">' + t.passScore + '/' + t.maxScore + '</div><div class="label">Прохідний бал</div></div><div class="public-info-item" style="background:rgba(59,130,246,0.05);border-color:rgba(59,130,246,0.15)"><div class="num" style="color:var(--info)">⏱ ' + totalTime + 'с</div><div class="label">Загальний час</div></div><div class="public-info-item" style="background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.15)"><div class="num" style="color:var(--success)">' + pps + '</div><div class="label">Балів за питання</div></div></div>' + agreementHtml + '<div style="margin-top:20px"><div class="form-row"><label class="form-label">Ім\'я</label><input class="form-input" id="pubFirstName" placeholder="Ваше ім\'я..." oninput="checkPublicFormReady()"></div><div class="form-row"><label class="form-label">Прізвище</label><input class="form-input" id="pubLastName" placeholder="Ваше прізвище..." oninput="checkPublicFormReady()"></div><div class="form-row"><label class="form-label">Підрозділ</label><input class="form-input" id="pubUnit" placeholder="Ваш підрозділ..." oninput="checkPublicFormReady()"></div></div><button class="btn btn-primary" id="pubStartBtn" onclick="startPublicQuiz()" disabled style="margin-top:20px">🚀 РОЗПОЧАТИ ІСПИТ</button></div></div>';
+}
+
+window.checkPublicFormReady = function() {
+var fn = document.getElementById('pubFirstName') ? document.getElementById('pubFirstName').value.trim() : '';
+var ln = document.getElementById('pubLastName') ? document.getElementById('pubLastName').value.trim() : '';
+var unit = document.getElementById('pubUnit') ? document.getElementById('pubUnit').value.trim() : '';
+var agreeEl = document.getElementById('publicAgreeCheck');
+var agreed = agreeEl ? agreeEl.checked : true;
+var ready = fn && ln && unit && agreed;
+var btn = document.getElementById('pubStartBtn');
+if (btn) btn.disabled = !ready;
+};
+
+window.startPublicQuiz = function() {
+var fn = document.getElementById('pubFirstName').value.trim();
+var ln = document.getElementById('pubLastName').value.trim();
+var unit = document.getElementById('pubUnit').value.trim();
+
+if (!fn || !ln || !unit) {
+alert('⚠️ Заповніть всі поля!');
+return;
+}
+
+publicUser = { firstName: fn, lastName: ln, unit: unit };
+publicCurrentQ = 0;
+publicAnswers = {};
+renderPublicQuestion();
+};
+
+function renderPublicQuestion() {
+if (publicCurrentQ >= publicTestData.questions.length) {
+finishPublicQuiz();
+return;
+}
+
+var q = publicTestData.questions[publicCurrentQ];
+var total = publicTestData.questions.length;
+var progress = (publicCurrentQ / total) * 100;
+publicTimeLeft = q.timeLimit || 30;
+
+var answersHtml = '';
+if (q.answerType === 'table' && q.tableData) {
+var cols = q.tableData.columns || [];
+var rows = q.tableData.rows || [];
+var tableHead = '<tr><th></th>';
+cols.forEach(function(c) { tableHead += '<th>' + c + '</th>'; });
+tableHead += '</tr>';
+var tableBody = '';
+rows.forEach(function(row, ri) {
+var checked = (publicAnswers[publicCurrentQ] && publicAnswers[publicCurrentQ].tableRow === ri) ? ' checked' : '';
+tableBody += '<tr onclick="selectPublicTableAnswer(' + ri + ')" style="cursor:pointer"><td><div class="table-radio' + checked + '" id="ptradio-' + ri + '"></div></td>';
+row.forEach(function(cell) { tableBody += '<td>' + cell + '</td>'; });
+tableBody += '</tr>';
+});
+answersHtml = '<div class="answer-table-wrapper"><table class="answer-table"><thead>' + tableHead + '</thead><tbody>' + tableBody + '</tbody></table></div>';
+} else {
+answersHtml = '<div class="quiz-answers">';
+q.options.forEach(function(o, i) {
+var sel = (publicAnswers[publicCurrentQ] && publicAnswers[publicCurrentQ].selected === i) ? ' selected' : '';
+answersHtml += '<div class="answer-btn' + sel + '" onclick="selectPublicAnswer(' + i + ')"><div class="answer-letter">' + (letters[i] || i + 1) + '</div><div>' + o.text + '</div></div>';
+});
+answersHtml += '</div>';
+}
+
+var freeHtml = '';
+if (q.allowFree) {
+var hasFree = publicAnswers[publicCurrentQ] && publicAnswers[publicCurrentQ].freeMode;
+freeHtml = '<div class="free-answer-area"><div class="free-answer-toggle' + (hasFree ? ' active' : '') + '" onclick="togglePublicFree()">✍️ Відповісти текстом</div>';
+if (hasFree) {
+var freeVal = (publicAnswers[publicCurrentQ] && publicAnswers[publicCurrentQ].freeText) || '';
+freeHtml += '<textarea class="free-input" id="pubFreeInput" placeholder="Ваша відповідь..." oninput="updatePublicFree()">' + freeVal + '</textarea>';
+}
+freeHtml += '</div>';
+}
+
+var photoHtml = '';
+if (q.photo) {
+photoHtml = '<div class="quiz-question-photo"><img src="' + q.photo + '" onclick="openLightbox(\'' + q.photo + '\')" style="max-width:100%;max-height:300px;border-radius:12px;border:1px solid rgba(0,255,68,0.2);cursor:pointer"></div>';
+}
+
+var btnText = publicCurrentQ < total - 1 ? 'Далі →' : '✅ Завершити іспит';
+
+document.getElementById('publicContent').innerHTML = '<div class="public-screen"><div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:' + progress + '%"></div></div><div class="quiz-header"><div><span style="font-size:12px;color:var(--text-gray)">ПИТАННЯ</span><span style="font-size:18px;font-weight:900;margin-left:8px">' + (publicCurrentQ + 1) + ' / ' + total + '</span></div><div class="quiz-timer" id="pubTimerDisplay">' + publicTimeLeft + '</div></div><div class="quiz-question"><h3>' + q.text + '</h3>' + photoHtml + '</div>' + answersHtml + freeHtml + '<div class="btn-group"><button class="btn btn-primary" onclick="nextPublicQuestion()">' + btnText + '</button></div></div>';
+
+startPublicTimer();
+}
+
+function startPublicTimer() {
+if (publicTimer) clearInterval(publicTimer);
+publicTimer = setInterval(function() {
+publicTimeLeft--;
+var display = document.getElementById('pubTimerDisplay');
+if (display) {
+display.textContent = publicTimeLeft;
+if (publicTimeLeft <= 10) display.classList.add('danger');
+else display.classList.remove('danger');
+}
+if (publicTimeLeft <= 0) {
+clearInterval(publicTimer);
+nextPublicQuestion();
+}
+}, 1000);
+}
+
+window.selectPublicAnswer = function(i) {
+if (!publicAnswers[publicCurrentQ]) publicAnswers[publicCurrentQ] = {};
+publicAnswers[publicCurrentQ].selected = i;
+publicAnswers[publicCurrentQ].freeMode = false;
+renderPublicQuestion();
+};
+
+window.selectPublicTableAnswer = function(ri) {
+if (!publicAnswers[publicCurrentQ]) publicAnswers[publicCurrentQ] = {};
+publicAnswers[publicCurrentQ].tableRow = ri;
+publicAnswers[publicCurrentQ].freeMode = false;
+var radios = document.querySelectorAll('.table-radio');
+radios.forEach(function(r, idx) {
+if (idx === ri) r.classList.add('checked');
+else r.classList.remove('checked');
+});
+};
+
+window.togglePublicFree = function() {
+if (!publicAnswers[publicCurrentQ]) publicAnswers[publicCurrentQ] = {};
+publicAnswers[publicCurrentQ].freeMode = !publicAnswers[publicCurrentQ].freeMode;
+if (publicAnswers[publicCurrentQ].freeMode) {
+publicAnswers[publicCurrentQ].selected = undefined;
+publicAnswers[publicCurrentQ].tableRow = undefined;
+}
+renderPublicQuestion();
+};
+
+window.updatePublicFree = function() {
+var el = document.getElementById('pubFreeInput');
+if (el && publicAnswers[publicCurrentQ]) {
+publicAnswers[publicCurrentQ].freeText = el.value;
+}
+};
+
+window.nextPublicQuestion = function() {
+if (publicTimer) clearInterval(publicTimer);
+publicCurrentQ++;
+renderPublicQuestion();
+};
+
+function finishPublicQuiz() {
+if (publicTimer) clearInterval(publicTimer);
+
+var t = publicTestData;
+var pps = t.maxScore / t.questions.length;
+var score = 0;
+var details = [];
+var correctCount = 0;
+
+t.questions.forEach(function(q, qi) {
+var a = publicAnswers[qi] || {};
+var userAnswer = '—';
+var correctAnswer = '';
+var status = 'wrong';
+var points = 0;
+
+if (a.freeMode && a.freeText) {
+userAnswer = a.freeText;
+status = 'pending';
+points = 0;
+} else if (q.answerType === 'table' && q.tableData) {
+var correctRow = q.tableData.correctRowIndex || 0;
+var selectedRow = a.tableRow;
+correctAnswer = 'Рядок ' + (correctRow + 1) + ': ' + (q.tableData.rows[correctRow] ? q.tableData.rows[correctRow].join(', ') : '');
+if (selectedRow !== undefined) {
+userAnswer = 'Рядок ' + (selectedRow + 1) + ': ' + (q.tableData.rows[selectedRow] ? q.tableData.rows[selectedRow].join(', ') : '');
+if (selectedRow === correctRow) {
+status = 'correct';
+points = pps;
+correctCount++;
+}
+}
+} else {
+var correct = -1;
+q.options.forEach(function(o, idx) { if (o.correct) correct = idx; });
+correctAnswer = (q.options[correct] ? q.options[correct].text : '?');
+if (a.selected !== undefined) {
+userAnswer = (q.options[a.selected] ? q.options[a.selected].text : '?');
+if (a.selected === correct) {
+status = 'correct';
+points = pps;
+correctCount++;
+}
+}
+}
+
+score += points;
+details.push({
+qText: q.text,
+userAnswer: userAnswer,
+correctAnswer: correctAnswer,
+status: status,
+points: Math.round(points * 100) / 100
+});
+});
+
+score = Math.round(score * 100) / 100;
+var hasPending = false;
+details.forEach(function(d) { if (d.status === 'pending') hasPending = true; });
+var passed = !hasPending && score >= t.passScore;
+
+var resultObj = {
+id: genId(),
+testId: t.id,
+testName: t.name,
+userId: 'public_' + Date.now(),
+userName: publicUser.lastName + ' ' + publicUser.firstName + ' (' + publicUser.unit + ')',
+score: score,
+maxScore: t.maxScore,
+passScore: t.passScore,
+status: hasPending ? 'pending' : 'auto',
+reviewer: null,
+reviewedByHuman: false,
+date: now(),
+details: details
+};
+
+results.push(resultObj);
+save();
+
+sendDiscordNotification('QUIZ_COMPLETED', {
+testName: t.name,
+userName: resultObj.userName,
+userRole: 'Публічний',
+score: score,
+maxScore: t.maxScore,
+passScore: t.passScore,
+correctAnswers: correctCount,
+totalQuestions: t.questions.length,
+status: hasPending ? 'pending' : (passed ? 'passed' : 'failed'),
+passed: passed,
+date: now()
+});
+
+var statusClass = passed ? 'pass' : 'fail';
+var statusText = hasPending ? '⏳ НА ПЕРЕВІРЦІ' : passed ? '✅ СКЛАДЕНО' : '❌ НЕ СКЛАДЕНО';
+
+var detailsHtml = '';
+details.forEach(function(d, i) {
+var markClass = d.status === 'correct' ? 'ok' : d.status === 'pending' ? 'pend' : 'no';
+var markIcon = d.status === 'correct' ? '✓' : d.status === 'pending' ? '?' : '✕';
+var correctHtml = d.status !== 'pending' ? '<div style="font-size:11px;color:var(--primary);margin-top:2px">Правильно: ' + d.correctAnswer + '</div>' : '';
+var pointsColor = d.status === 'correct' ? 'var(--primary)' : d.status === 'pending' ? 'var(--warning)' : 'var(--danger)';
+var pointsText = d.status === 'correct' ? '+' + d.points + ' б.' : d.status === 'pending' ? 'Очікує перевірки' : '0 б.';
+detailsHtml += '<div class="result-detail"><div class="mark ' + markClass + '">' + markIcon + '</div><div><div style="font-size:13px;font-weight:700;margin-bottom:4px">' + (i+1) + '. ' + d.qText + '</div><div style="font-size:12px;color:var(--text-light)">Відповідь: ' + d.userAnswer + '</div>' + correctHtml + '<div style="font-size:11px;font-weight:800;margin-top:2px;color:' + pointsColor + '">' + pointsText + '</div></div></div>';
+});
+
+document.getElementById('publicContent').innerHTML = '<div class="public-screen"><div class="form-card" style="text-align:center"><div class="result-circle ' + statusClass + '"><div class="result-score">' + score + '</div><div class="result-max">із ' + t.maxScore + '</div></div><div class="result-status ' + statusClass + '">' + statusText + '</div><div style="color:var(--text-gray);font-size:13px;margin-bottom:5px">' + publicUser.lastName + ' ' + publicUser.firstName + ' • ' + publicUser.unit + '</div><div style="color:var(--text-gray);font-size:12px;margin-bottom:20px">Правильних: ' + correctCount + ' / ' + t.questions.length + '</div><div style="text-align:left">' + detailsHtml + '</div><div class="public-notice"><div class="title">📋 Результат збережено</div><div class="text">Ваш результат відправлено на перевірку</div></div></div></div>';
+}
 // renderAdminList
 function renderAdminList() {
 document.getElementById('adminListContent').innerHTML = `
