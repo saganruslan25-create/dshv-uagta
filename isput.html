@@ -1916,8 +1916,17 @@ e.preventDefault();
 });
 
 // Discord notifications
+// Discord notifications
 async function sendDiscordNotification(type, data) {
-if (!webhookUrl) return;
+console.log('🔔 sendDiscordNotification викликано:', type);
+console.log('📦 Дані:', data);
+console.log('🔗 Webhook URL:', webhookUrl ? 'Є' : 'ВІДСУТНІЙ');
+
+if (!webhookUrl) {
+console.error('❌ Webhook URL не налаштовано! Перейдіть в Настройки та додайте Discord Webhook');
+return;
+}
+
 let embed = {};
 const timestamp = new Date().toISOString();
 
@@ -1991,6 +2000,7 @@ fields: [
 footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
 timestamp: timestamp
 };
+console.log('✅ Embed створено для QUIZ_COMPLETED:', embed);
 break;
 
 case 'RESULT_APPROVED':
@@ -2070,79 +2080,35 @@ footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
 timestamp: timestamp
 };
 break;
+
+default:
+console.error('❌ Невідомий тип notification:', type);
+return;
 }
 
+const payload = {embeds: [embed]};
+console.log('📤 Відправка в Discord:', JSON.stringify(payload, null, 2));
+
 try {
-await fetch(webhookUrl, {
+const response = await fetch(webhookUrl, {
 method: 'POST',
 headers: {'Content-Type': 'application/json'},
-body: JSON.stringify({embeds: [embed]})
-});
-} catch (e) {
-console.log('Discord webhook error:', e);
-}
-}
-
-// Notifications
-let notifs = JSON.parse(localStorage.getItem('isput_notifs') || '[]');
-function addNotif(text) {
-if (IS_PUBLIC_MODE) return;
-notifs.unshift({text, time: now(), read: false});
-if (notifs.length > 20) notifs.pop();
-localStorage.setItem('isput_notifs', JSON.stringify(notifs));
-}
-
-// Auth
-onAuthStateChanged(auth, async u => {
-if (IS_PUBLIC_MODE) {
-document.getElementById('mainHeader').classList.add('hidden');
-showView('publicForm');
-return;
-}
-
-if (!u) {
-window.location.href = 'index.html';
-return;
-}
-ME.uid = u.uid;
-
-try {
-const snap = await getDoc(doc(db, 'users', u.uid));
-if (snap.exists()) {
-const d = snap.data();
-ME.name = d.name || 'Невідомий';
-ME.role = d.role || 'fighter';
-}
-
-const all = await getDocs(collection(db, 'users'));
-allUsers = [];
-all.forEach(s => {
-const d = s.data();
-allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
+body: JSON.stringify(payload)
 });
 
-loadTestsFromFirebase();
-loadResultsFromFirebase();
-} catch (e) {
-console.log('Firebase err:', e);
-}
+console.log('📡 Відповідь від Discord:', response.status, response.statusText);
 
-document.getElementById('headerName').textContent = ME.name;
-const rb = document.getElementById('headerRole');
-if (ME.role === 'admin') {
-rb.textContent = 'АДМІН';
-rb.className = 'role-badge role-admin';
-} else if (ME.role === 'instructor') {
-rb.textContent = 'ІНСТРУКТОР';
-rb.className = 'role-badge role-instructor';
+if (response.ok) {
+console.log('✅ Discord notification відправлено успішно!');
 } else {
-rb.textContent = 'БІЄЦЬ';
-rb.className = 'role-badge role-fighter';
+const errorText = await response.text();
+console.error('❌ Discord webhook помилка:', response.status, response.statusText);
+console.error('❌ Текст помилки:', errorText);
 }
-
-buildNav();
-showView('home');
-});
+} catch (e) {
+console.error('❌ Exception при відправці в Discord:', e);
+}
+}
 
 // Завантаження тестів з Firebase
 function loadTestsFromFirebase() {
