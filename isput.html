@@ -3687,17 +3687,258 @@ save();
 renderAdminList(); 
 buildNav(); 
 }; 
-// Закриття скрипта і body 
-console.log('
-🚀
- ДШВ ІСПИТ ЦЕНТР v2.1 - Повністю завантажено!'); 
-console.log('
-✅
- Функції:'); 
-console.log('  - ПКМ меню для адмінів'); 
-console.log('  - Кнопки балів у перевірці (+/-)'); 
-console.log('  - Сторінка історії та списків'); 
-console.log('  - Discord інтеграція'); 
-console.log('  - Публічні посилання на іспити'); 
-</script> 
+ // renderQuestion - відображення поточного питання
+function renderQuestion() {
+  const q = currentTest.questions[currentQ];
+  if (!q) {
+    finishQuiz();
+    return;
+  }
+  
+  if (timer) clearInterval(timer);
+  timeLeft = q.timeLimit || 30;
+  updateTimer();
+  
+  timer = setInterval(() => {
+    timeLeft--;
+    updateTimer();
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      nextQuestion();
+    }
+  }, 1000);
+  
+  let photoHtml = '';
+  if (q.photo) {
+    photoHtml = `<div class="quiz-question-photo">
+      <img src="${q.photo}" onclick="openLightbox('${q.photo}')">
+    </div>`;
+  }
+  
+  let answersHtml = '';
+  if (q.answerType === 'table' && q.tableData) {
+    const {columns, rows} = q.tableData;
+    answersHtml = `<div class="answer-table-wrapper">
+      <table class="answer-table">
+        <thead><tr>${columns.map(c => `<th>${c}</th>`).join('')}<th>Вибір</th></tr></thead>
+        <tbody>
+        ${rows.map((row, ri) => `<tr>
+          ${row.map(cell => `<td>${cell}</td>`).join('')}
+          <td><div class="table-radio" onclick="selectTableAnswer(${ri})"></div></td>
+        </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  } else {
+    answersHtml = `<div class="quiz-answers">
+      ${q.options.map((opt, i) => `
+        <button class="answer-btn" onclick="selectAnswer(${i})">
+          <span class="answer-letter">${letters[i]}</span>
+          <span>${opt.text}</span>
+        </button>
+      `).join('')}
+    </div>`;
+  }
+  
+  let freeHtml = '';
+  if (q.allowFree) {
+    freeHtml = `<div class="free-answer-area">
+      <div class="free-answer-toggle" onclick="toggleFreeAnswer()">
+        <div class="toggle-switch"></div>
+        ✍️ Або напишіть свою відповідь
+      </div>
+      <textarea class="free-input" id="freeAnswerInput" placeholder="Ваша відповідь..." style="display:none"></textarea>
+    </div>`;
+  }
+  
+  document.getElementById('quizContainer').innerHTML = `
+    <div class="quiz-progress-bar">
+      <div class="quiz-progress-fill" style="width:${((currentQ + 1) / currentTest.questions.length) * 100}%"></div>
+    </div>
+    <div class="quiz-header">
+      <span style="font-size:14px;font-weight:800;color:var(--primary)">Питання ${currentQ + 1} / ${currentTest.questions.length}</span>
+      <div class="quiz-timer" id="quizTimer">⏱ ${timeLeft}с</div>
+    </div>
+    <div class="quiz-question">
+      <h3>${q.text}</h3>
+      ${photoHtml}
+      ${answersHtml}
+      ${freeHtml}
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="nextQuestion()">Далі →</button>
+      <button class="btn btn-danger" onclick="if(confirm('Завершити іспит?'))showView('home')">Вийти</button>
+    </div>
+  `;
+}
+
+function updateTimer() {
+  const el = document.getElementById('quizTimer');
+  if (el) {
+    el.textContent = `⏱ ${timeLeft}с`;
+    if (timeLeft <= 5) el.classList.add('danger');
+  }
+}
+
+window.selectAnswer = i => {
+  answers[currentQ] = {type: 'option', value: i};
+  document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.answer-btn')[i].classList.add('selected');
+};
+
+window.selectTableAnswer = i => {
+  answers[currentQ] = {type: 'table', value: i};
+  document.querySelectorAll('.table-radio').forEach(b => b.classList.remove('checked'));
+  document.querySelectorAll('.table-radio')[i].classList.add('checked');
+};
+
+window.toggleFreeAnswer = () => {
+  const inp = document.getElementById('freeAnswerInput');
+  const toggle = document.querySelector('.free-answer-toggle .toggle-switch');
+  if (inp.style.display === 'none') {
+    inp.style.display = 'block';
+    toggle.classList.add('on');
+  } else {
+    inp.style.display = 'none';
+    toggle.classList.remove('on');
+  }
+};
+
+window.nextQuestion = () => {
+  if (timer) clearInterval(timer);
+  const freeInp = document.getElementById('freeAnswerInput');
+  if (freeInp && freeInp.value.trim()) {
+    answers[currentQ] = {type: 'free', value: freeInp.value.trim()};
+  }
+  currentQ++;
+  if (currentQ >= currentTest.questions.length) {
+    finishQuiz();
+  } else {
+    renderQuestion();
+  }
+};
+
+async function finishQuiz() {
+  if (timer) clearInterval(timer);
+  
+  const pps = currentTest.maxScore / currentTest.questions.length;
+  let score = 0;
+  let details = [];
+  let hasPending = false;
+  
+  currentTest.questions.forEach((q, i) => {
+    const ans = answers[i];
+    let status = 'wrong';
+    let userAns = 'Немає відповіді';
+    let correctAns = '';
+    let points = 0;
+    
+    if (ans) {
+      if (ans.type === 'free') {
+        status = 'pending';
+        userAns = ans.value;
+        points = pps;
+        hasPending = true;
+      } else if (ans.type === 'table') {
+        userAns = `Рядок ${ans.value + 1}`;
+        if (q.tableData && ans.value === q.tableData.correctRowIndex) {
+          status = 'correct';
+          points = pps;
+        }
+        correctAns = `Рядок ${(q.tableData?.correctRowIndex || 0) + 1}`;
+      } else {
+        const opt = q.options[ans.value];
+        if (opt) {
+          userAns = opt.text;
+          if (opt.correct) {
+            status = 'correct';
+            points = pps;
+          }
+        }
+        const correctOpt = q.options.find(o => o.correct);
+        correctAns = correctOpt ? correctOpt.text : 'Немає';
+      }
+    }
+    
+    if (status === 'correct') score += points;
+    details.push({qText: q.text, userAnswer: userAns, correctAnswer: correctAns, status, points});
+  });
+  
+  const result = {
+    id: genId(),
+    testId: currentTest.id,
+    testName: currentTest.name,
+    userId: ME.uid,
+    userName: ME.name,
+    userRole: ME.role,
+    score: Math.round(score * 100) / 100,
+    maxScore: currentTest.maxScore,
+    passScore: currentTest.passScore,
+    date: now(),
+    details,
+    status: hasPending ? 'pending' : 'auto',
+    reviewer: hasPending ? null : 'SYSTEM',
+    reviewedByHuman: false
+  };
+  
+  results.push(result);
+  save();
+  
+  await sendDiscordNotification('QUIZ_COMPLETED', {
+    testName: currentTest.name,
+    userName: ME.name,
+    userRole: ME.role,
+    score: result.score,
+    maxScore: result.maxScore,
+    passScore: result.passScore,
+    correctAnswers: details.filter(d => d.status === 'correct').length,
+    totalQuestions: currentTest.questions.length,
+    passed: result.score >= currentTest.passScore,
+    status: hasPending ? 'pending' : 'auto',
+    date: now()
+  });
+  
+  showView('result');
+  renderResult(result);
+}
+
+function renderResult(r) {
+  const passed = r.score >= r.passScore;
+  const isPending = r.status === 'pending' || !r.reviewedByHuman;
+  const circleClass = passed ? 'pass' : 'fail';
+  const statusClass = passed ? 'pass' : 'fail';
+  const statusText = isPending ? 'На перевірці ⏳' : passed ? 'СКЛАДЕНО! 🎉' : 'НЕ СКЛАДЕНО 😞';
+  
+  document.getElementById('resultScreen').innerHTML = `
+    <div class="form-card" style="max-width:600px;margin:40px auto;text-align:center">
+      <div class="result-circle ${circleClass}">
+        <div class="result-score">${r.score}</div>
+        <div class="result-max">з ${r.maxScore}</div>
+      </div>
+      <h2 class="result-status ${statusClass}">${statusText}</h2>
+      <p style="color:var(--text-gray);margin-bottom:20px">
+        ${r.details.filter(d => d.status === 'correct').length} / ${r.details.length} правильних відповідей
+      </p>
+      ${r.details.map((d, i) => {
+        const mark = d.status === 'correct' ? 'ok' : d.status === 'pending' ? 'pend' : 'no';
+        const icon = d.status === 'correct' ? '✓' : d.status === 'pending' ? '?' : '✗';
+        return `<div class="result-detail">
+          <span class="mark ${mark}">${icon}</span>
+          <div style="flex:1">
+            <b style="font-size:13px">${i + 1}. ${d.qText}</b><br>
+            <span style="font-size:12px;color:var(--text-light)">Ваша: ${d.userAnswer}</span><br>
+            ${d.status !== 'pending' ? `<span style="font-size:11px;color:var(--primary)">Правильно: ${d.correctAnswer}</span>` : ''}
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="btn-group" style="margin-top:30px">
+        <button class="btn btn-primary" onclick="showView('home')">🏠 На головну</button>
+      </div>
+    </div>
+  `;
+}
+
+console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.1 - Готово!');
+</script>
 </body>
+</html>
