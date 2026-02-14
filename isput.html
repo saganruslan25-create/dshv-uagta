@@ -2732,6 +2732,7 @@ renderQuestion();
 };
 
 // Завершення іспиту
+// Завершення іспиту
 function finishQuiz() {
 clearInterval(timer);
 
@@ -2754,7 +2755,7 @@ status = 'wrong';
 } else if (userAns.type === 'free') {
 userAnswer = userAns.answer;
 status = 'pending';
-points = pointsPerQuestion; // Тимчасово, буде змінено при перевірці
+points = pointsPerQuestion;
 } else if (userAns.type === 'table') {
 const correctIdx = q.tableData.correctRowIndex;
 isCorrect = userAns.answer === correctIdx;
@@ -2794,13 +2795,17 @@ score = Math.round(score * 100) / 100;
 const hasPendingQuestions = details.some(d => d.status === 'pending');
 const resultStatus = hasPendingQuestions ? 'pending' : 'auto';
 
+// ВИПРАВЛЕННЯ: Правильне ім'я користувача для публічного режиму
+const userName = IS_PUBLIC_MODE ? ME.name : ME.name;
+const userRole = IS_PUBLIC_MODE ? 'Публічний користувач' : (ME.role === 'admin' ? 'Адмін' : ME.role === 'instructor' ? 'Інструктор' : 'Бієць');
+
 const result = {
 id: genId(),
 testId: currentTest.id,
 testName: currentTest.name,
 userId: ME.uid,
-userName: ME.name,
-userRole: IS_PUBLIC_MODE ? 'Публічний користувач' : (ME.role === 'admin' ? 'Адмін' : ME.role === 'instructor' ? 'Інструктор' : 'Бієць'),
+userName: userName,
+userRole: userRole,
 score,
 maxScore: currentTest.maxScore,
 passScore: currentTest.passScore,
@@ -2811,14 +2816,15 @@ reviewer: null,
 reviewedByHuman: false
 };
 
+// ВИПРАВЛЕННЯ: Зберігаємо результат ЗАВЖДИ (і для публічних, і для авторизованих)
 results.push(result);
 save();
 
-// Discord notification
+// ВИПРАВЛЕННЯ: Відправляємо Discord notification ЗАВЖДИ
 sendDiscordNotification('QUIZ_COMPLETED', {
 testName: currentTest.name,
-userName: ME.name,
-userRole: result.userRole,
+userName: userName,
+userRole: userRole,
 score,
 maxScore: currentTest.maxScore,
 passScore: currentTest.passScore,
@@ -2827,7 +2833,12 @@ totalQuestions: currentTest.questions.length,
 status: resultStatus,
 passed: score >= currentTest.passScore,
 date: now()
-});
+}).catch(err => console.log('Discord notification error:', err));
+
+// Додаємо нотифікацію (тільки для НЕ публічних)
+if (!IS_PUBLIC_MODE) {
+addNotif(`📝 Ви завершили іспит "${currentTest.name}" з результатом ${score}/${currentTest.maxScore}`);
+}
 
 showResult(result);
 }
