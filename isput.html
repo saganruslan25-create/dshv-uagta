@@ -2298,7 +2298,7 @@ return false;
 
 console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.2 - Готово!');
 
-// renderHome() з ПКМ меню
+// renderHome
 function renderHome() {
 if (IS_PUBLIC_MODE) return;
 
@@ -2343,7 +2343,6 @@ const pps = t.maxScore > 0 ? Math.round(t.maxScore / t.questions.length * 10) / 
 let totalTime = 0;
 t.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
 
-// НОВЕ: Додаємо oncontextmenu для ПКМ
 const contextAttr = isAdmin() ? `oncontextmenu="showContextMenu(event, '${t.id}')"` : '';
 
 return `<div class="test-card" onclick="startIntro('${t.id}')" ${contextAttr}>
@@ -2411,12 +2410,11 @@ document.getElementById('myResults').innerHTML = `
 }
 }
 
-// startIntro - початок іспиту
+// startIntro
 window.startIntro = id => {
 const t = tests.find(x => x.id === id);
 if (!t) return;
 
-// НОВЕ: Для НЕ публічного режиму - перевірка на pending результати
 if (!IS_PUBLIC_MODE) {
 const myResults = results.filter(r => r.testId === id && r.userId === ME.uid);
 const hasPending = myResults.find(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman));
@@ -2500,7 +2498,6 @@ ${!IS_PUBLIC_MODE ? '<button class="btn btn-secondary" onclick="showView(\'home\
 showView('intro');
 };
 
-// Перемикач угоди
 window.toggleAgreement = () => {
 const checkbox = document.getElementById('agreementCheckbox');
 agreementAccepted = checkbox.checked;
@@ -2508,7 +2505,6 @@ const btn = document.getElementById('startQuizBtn');
 btn.disabled = !agreementAccepted;
 };
 
-// Lightbox функції
 window.openLightbox = url => {
 const lb = document.getElementById('lightbox');
 const img = document.getElementById('lightboxImg');
@@ -2523,7 +2519,6 @@ lb.classList.remove('active');
 document.body.style.overflow = 'auto';
 };
 
-// Початок проходження іспиту
 window.beginQuiz = () => {
 if (!agreementAccepted) {
 alert('⚠️ Потрібно прийняти користувацьку угоду!');
@@ -2536,7 +2531,6 @@ showView('quiz');
 renderQuestion();
 };
 
-// renderQuestion - відображення питання
 function renderQuestion() {
 if (!currentTest || currentQ >= currentTest.questions.length) {
 finishQuiz();
@@ -2547,7 +2541,6 @@ const q = currentTest.questions[currentQ];
 const progress = ((currentQ + 1) / currentTest.questions.length) * 100;
 timeLeft = q.timeLimit || 30;
 
-// Фото питання
 let questionPhotoHtml = '';
 if (q.photo) {
 questionPhotoHtml = `
@@ -2557,7 +2550,6 @@ questionPhotoHtml = `
 `;
 }
 
-// Варіанти відповідей
 let answersHtml = '';
 if (q.answerType === 'table' && q.tableData) {
 const {columns, rows} = q.tableData;
@@ -2594,7 +2586,6 @@ ${q.options.map((opt, i) => `
 </div>`;
 }
 
-// Вільна відповідь
 let freeHtml = '';
 if (q.allowFree) {
 freeHtml = `
@@ -2629,11 +2620,9 @@ ${currentQ === currentTest.questions.length - 1 ? '✅ Завершити ісп
 </div>
 `;
 
-// Запуск таймера
 if (timer) clearInterval(timer);
 timer = setInterval(updateTimer, 1000);
 
-// Відновлення попередньої відповіді
 if (answers[currentQ]) {
 const ans = answers[currentQ];
 if (ans.type === 'free') {
@@ -2652,7 +2641,6 @@ if (letter) letter.parentElement.classList.add('selected');
 }
 }
 
-// Таймер
 function updateTimer() {
 timeLeft--;
 const timerEl = document.getElementById('timer');
@@ -2669,7 +2657,6 @@ nextQuestion();
 }
 }
 
-// Вибір відповіді
 window.selectAnswer = i => {
 document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
 const btn = document.querySelectorAll('.answer-btn')[i];
@@ -2677,7 +2664,6 @@ btn.classList.add('selected');
 
 answers[currentQ] = {type: 'normal', answer: i};
 
-// Скидання вільної відповіді
 const freeToggle = document.getElementById('freeToggle');
 const freeInput = document.getElementById('freeInput');
 if (freeToggle) {
@@ -2694,7 +2680,6 @@ radio.classList.add('checked');
 
 answers[currentQ] = {type: 'table', answer: ri};
 
-// Скидання вільної відповіді
 const freeToggle = document.getElementById('freeToggle');
 const freeInput = document.getElementById('freeInput');
 if (freeToggle) {
@@ -2714,23 +2699,19 @@ input.style.display = isActive ? 'block' : 'none';
 
 if (isActive) {
 input.focus();
-// Скидання інших відповідей
 document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
 document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked'));
 }
 };
 
-// Наступне питання
 window.nextQuestion = () => {
 const q = currentTest.questions[currentQ];
 
-// Перевірка вільної відповіді
 const freeInput = document.getElementById('freeInput');
 if (freeInput && freeInput.style.display !== 'none' && freeInput.value.trim()) {
 answers[currentQ] = {type: 'free', answer: freeInput.value.trim()};
 }
 
-// Перевірка чи є відповідь
 if (!answers[currentQ]) {
 if (!confirm('⚠️ Ви не вибрали відповідь! Продовжити без відповіді?')) {
 return;
@@ -2743,9 +2724,7 @@ currentQ++;
 renderQuestion();
 };
 
-// Завершення іспиту
-// Завершення іспиту
-// Завершення іспиту - ВИПРАВЛЕНО З FIREBASE
+// ВИПРАВЛЕНА finishQuiz з Firebase
 async function finishQuiz() {
 clearInterval(timer);
 
@@ -2812,7 +2791,6 @@ const userName = ME.name;
 const userRole = IS_PUBLIC_MODE ? 'Публічний користувач' : (ME.role === 'admin' ? 'Адмін' : ME.role === 'instructor' ? 'Інструктор' : 'Бієць');
 
 const result = {
-id: genId(),
 testId: currentTest.id,
 testName: currentTest.name,
 userId: ME.uid,
@@ -2829,23 +2807,18 @@ reviewedByHuman: false,
 isPublic: IS_PUBLIC_MODE
 };
 
-// НОВЕ: Зберігаємо в Firebase
 try {
-await addDoc(collection(db, 'results'), {
+const docRef = await addDoc(collection(db, 'results'), {
 ...result,
 createdAt: serverTimestamp()
 });
+result.id = docRef.id;
 console.log('✅ Результат збережено в Firebase!');
 } catch (e) {
 console.error('❌ Помилка збереження результату:', e);
 alert('Помилка збереження результату: ' + e.message);
 }
 
-// Також зберігаємо локально для поточного користувача
-results.push(result);
-save();
-
-// Discord notification
 await sendDiscordNotification('QUIZ_COMPLETED', {
 testName: currentTest.name,
 userName: userName,
@@ -2867,7 +2840,6 @@ addNotif(`📝 Ви завершили іспит "${currentTest.name}" з ре�
 showResult(result);
 }
 
-// Показ результату
 function showResult(result) {
 const passed = result.score >= result.passScore;
 const statusClass = passed ? 'pass' : 'fail';
@@ -2921,606 +2893,73 @@ ${IS_PUBLIC_MODE ? `<div class="btn-group"><button class="btn btn-primary" oncli
 showView('result');
 }
 
+console.log('✅ Частина 2 завантажена - Quiz функції');
+
 // renderCreateForm - створення/редагування іспиту
-function renderCreateForm(testData) {
-editingTestId = testData ? testData.id : null;
-document.getElementById('createTitle').innerHTML = editingTestId ? '✏️ Редагувати іспит' : '➕ Створити іспит';
+// renderReview - перевірка з балами
+function renderReview() {
+const pending = results.filter(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman));
 
-const t = testData || {
-name: '',
-description: '',
-emoji: '📝',
-maxScore: 12,
-passScore: 8,
-questions: [],
-photos: [],
-agreementText: 'Я ознайомлений з правилами проходження іспиту та зобов\'язуюсь дотримуватись їх.'
-};
+if (pending.length === 0) {
+document.getElementById('reviewList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає відповідей для перевірки ✓</div>';
+return;
+}
 
-currentTestPhotos = t.photos || [];
+document.getElementById('reviewList').innerHTML = pending.map(r => {
+const t = tests.find(x => x.id === r.testId);
 
-const qs = t.questions.length > 0 ? t.questions : [{
-text: '',
-options: [{text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}],
-allowFree: false,
-timeLimit: 30,
-answerType: 'normal',
-photo: null
-}];
+let questionsHtml = r.details.map((d, i) => {
+let cls = d.status === 'correct' ? 'auto-ok' : d.status === 'pending' ? 'pending' : 'auto-fail';
+let pts = d.status === 'correct' ? `<span class="q-points" style="color:var(--primary)">+${Math.round(d.points * 10) / 10} б.</span>` :
+d.status === 'wrong' ? `<span class="q-points" style="color:var(--danger)">0 б.</span>` :
+`<span class="q-points" style="color:var(--warning)">? б. — потрібна перевірка</span>`;
 
-let photosHtml = '';
-if (currentTestPhotos.length > 0) {
-photosHtml = `<div class="test-photo-grid">
-${currentTestPhotos.map((photo, pi) => `
-<div class="test-photo-item">
-<img src="${photo.url}" alt="Фото ${pi + 1}">
-<button class="photo-delete-mini" onclick="deleteTestPhoto(${pi})">✕</button>
-</div>
-`).join('')}
+let pointsControl = '';
+if (d.status === 'pending') {
+const maxPts = t ? Math.round(t.maxScore / t.questions.length * 10) / 10 : 1;
+pointsControl = `
+<div class="points-control">
+<button class="points-btn minus" onclick="adjustPoints('${r.id}', ${i}, -0.5)">−</button>
+<span class="points-display" id="points-${r.id}-${i}">${d.points.toFixed(1)} б.</span>
+<button class="points-btn plus" onclick="adjustPoints('${r.id}', ${i}, 0.5)">+</button>
+<button class="btn btn-primary" style="padding:6px 12px;font-size:11px;margin-left:8px" onclick="setMaxPoints('${r.id}', ${i}, ${maxPts})">MAX</button>
+<button class="btn btn-secondary" style="padding:6px 12px;font-size:11px" onclick="setMaxPoints('${r.id}', ${i}, 0)">0</button>
 </div>`;
 }
 
-let qBlocks = qs.map((q, qi) => {
-let qPhotoHtml = '';
-if (q.photo) {
-qPhotoHtml = `<div class="question-photo-section">
-<div class="question-photo-preview">
-<img src="${q.photo}" alt="Фото питання">
-<button class="question-photo-delete" onclick="deleteQuestionPhoto(${qi})">✕</button>
-</div>
-</div>`;
-} else {
-qPhotoHtml = `<div class="question-photo-section">
-<input type="file" id="qPhotoInput-${qi}" accept="image/*" style="display:none" onchange="handleQuestionPhoto(this, ${qi})">
-<button class="add-question-photo-btn" onclick="document.getElementById('qPhotoInput-${qi}').click()">📷 Додати фото до питання</button>
-</div>`;
-}
-
-let opts = '';
-if (q.answerType === 'table') {
-const cols = q.tableData?.columns || [];
-const rows = q.tableData?.rows || [];
-const correctRow = q.tableData?.correctRowIndex || 0;
-
-opts = `<div class="table-builder">
-<div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:8px">СТОВПЦІ ТАБЛИЦІ</div>
-<div class="table-builder-head" id="tableCols-${qi}">
-${cols.map((c, ci) => `<input class="table-col-input" placeholder="Стовпець ${ci + 1}" value="${c}" data-qi="${qi}" data-ci="${ci}">`).join('')}
-</div>
-<button class="add-opt-btn" onclick="addTableColumn(${qi})" style="margin-bottom:10px">+ Додати стовпець</button>
-<div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:8px">РЯДКИ ТАБЛИЦІ</div>
-<div class="table-builder-rows" id="tableRows-${qi}">
-${rows.map((row, ri) => `<div class="table-row-builder">
-<div class="opt-radio${ri === correctRow ? ' checked' : ''}" onclick="toggleTableCorrect(${qi},${ri})"></div>
-${cols.map((c, ci) => `<input class="table-cell-input" placeholder="${c}" value="${row[ci] || ''}" data-qi="${qi}" data-ri="${ri}" data-ci="${ci}">`).join('')}
-<button class="opt-del" onclick="delTableRow(${qi},${ri})">✕</button>
-</div>`).join('')}
-</div>
-<button class="add-opt-btn" onclick="addTableRow(${qi})">+ Додати рядок</button>
-</div>`;
-} else {
-opts = q.options.map((o, oi) => `<div class="opt-row">
-<div class="opt-radio${o.correct ? ' checked' : ''}" onclick="toggleCorrect(${qi},${oi})"></div>
-<input class="opt-input" placeholder="Варіант ${letters[oi] || oi + 1}" value="${o.text.replace(/"/g, '&quot;')}" data-qi="${qi}" data-oi="${oi}">
-<button class="opt-del" onclick="delOption(${qi},${oi})">✕</button>
-</div>`).join('');
-opts += `<button class="add-opt-btn" onclick="addOption(${qi})">+ Додати варіант</button>`;
-}
-
-return `<div class="q-block" id="qblock-${qi}">
-<div class="q-block-head">
-<span class="q-num">Питання ${qi + 1}</span>
-<button class="q-del" onclick="delQuestion(${qi})">🗑</button>
-</div>
-<textarea class="form-input" placeholder="Текст питання..." id="qtext-${qi}" style="margin-bottom:12px;min-height:80px;resize:vertical">${q.text.replace(/"/g, '&quot;')}</textarea>
-${qPhotoHtml}
-<div style="margin-bottom:10px">
-<label class="form-label">Час на питання (секунд)</label>
-<input class="form-input" type="number" id="qtime-${qi}" value="${q.timeLimit || 30}" min="5" max="600">
-</div>
-<div class="table-toggle-create" onclick="toggleTableMode(${qi})">
-<div class="toggle-switch${q.answerType === 'table' ? ' on' : ''}" id="tableSwitch-${qi}"></div>
-Режим таблиці
-</div>
-<div id="opts-${qi}" style="margin-top:12px">${opts}</div>
-<div class="free-toggle-create" onclick="toggleFreeCreate(${qi})">
-<div class="toggle-switch${q.allowFree ? ' on' : ''}" id="freeSwitch-${qi}"></div>
-Дозволити вільну відповідь
-</div>
+return `<div class="review-q ${cls}">
+<div class="q-title">${i + 1}. ${d.qText}</div>
+<div class="q-answer">Відповідь: <b>${d.userAnswer}</b></div>
+${d.status !== 'pending' ? `<div class="q-correct">Правильно: ${d.correctAnswer}</div>` : ''}
+<div>${pts}</div>
+${pointsControl}
 </div>`;
 }).join('');
 
-document.getElementById('createForm').innerHTML = `
-<div class="form-card">
-<div class="form-row-inline">
-<div class="form-row">
-<label class="form-label">Назва іспиту</label>
-<input class="form-input" id="testName" value="${t.name.replace(/"/g, '&quot;')}" placeholder="Назва...">
+const hasFreeQ = r.details.some(d => d.status === 'pending');
+const currentTotal = r.details.reduce((sum, d) => sum + d.points, 0).toFixed(1);
+
+return `<div class="review-card">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px">
+<div>
+<h3 style="font-size:16px;font-weight:800">${r.userName}</h3>
+<div style="font-size:12px;color:var(--text-gray)">${r.testName || 'Іспит'} • ${r.date}</div>
 </div>
-<div class="form-row">
-<label class="form-label">Емодзі</label>
-<input class="form-input" id="testEmoji" value="${t.emoji}" placeholder="📝" style="text-align:center;font-size:24px">
+<div style="font-size:18px;font-weight:900;color:var(--primary)" id="totalScore-${r.id}">${currentTotal} / ${r.maxScore} б.</div>
 </div>
+${questionsHtml}
+${hasFreeQ ? `<div style="margin-top:15px;padding:15px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:12px">
+<div style="font-size:12px;font-weight:800;color:var(--warning);margin-bottom:10px">⚠️ Вільні відповіді потребують перевірки</div>
+<div class="btn-group" style="margin-top:10px">
+<button class="btn btn-primary" onclick="approveResult('${r.id}')">✅ Схвалити з поточними балами</button>
+<button class="btn btn-danger" onclick="rejectResult('${r.id}')">❌ Відхилити (0 балів за вільні)</button>
 </div>
-<div class="form-row">
-<label class="form-label">Опис</label>
-<textarea class="form-input" id="testDesc" rows="2" placeholder="Опис іспиту...">${t.description || ''}</textarea>
-</div>
-<div class="form-row-inline">
-<div class="form-row">
-<label class="form-label">Макс. бал</label>
-<input class="form-input" id="testMaxScore" type="number" value="${t.maxScore}" min="1">
-</div>
-<div class="form-row">
-<label class="form-label">Прохідний бал</label>
-<input class="form-input" id="testPassScore" type="number" value="${t.passScore}" min="0">
-</div>
-</div>
-<div class="form-hint" id="scoreHint">💎 За кожне правильне питання: ${qs.length > 0 ? Math.round(t.maxScore / qs.length * 100) / 100 : 0} балів</div>
-</div>
-
-<div class="form-card test-photos-section">
-<h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:12px">📸 Фотогалерея тесту</h4>
-<p style="font-size:11px;color:var(--text-gray);margin-bottom:15px">Додайте зображення, які будуть показані перед початком іспиту</p>
-${photosHtml}
-<input type="file" id="testPhotoInput" accept="image/*" style="display:none" onchange="handleTestPhoto(this)">
-<button class="upload-photo-btn" onclick="document.getElementById('testPhotoInput').click()">📷 Додати фото</button>
-</div>
-
-<div class="form-card">
-<h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:12px">📜 Користувацька угода</h4>
-<p style="font-size:11px;color:var(--text-gray);margin-bottom:10px">Текст, який користувач повинен прийняти перед початком</p>
-<textarea class="form-input" id="agreementText" rows="3" placeholder="Я ознайомлений з правилами...">${t.agreementText || ''}</textarea>
-</div>
-
-<div class="section-title">📋 Питання</div>
-<div id="questionsContainer">${qBlocks}</div>
-<button class="btn btn-secondary" onclick="addQuestion()" style="width:100%;margin-bottom:20px">+ Додати питання</button>
-
-<div class="btn-group">
-<button class="btn btn-primary" onclick="saveTest()">💾 ${editingTestId ? 'Зберегти зміни' : 'Створити іспит'}</button>
-<button class="btn btn-secondary" onclick="showView('home')">Скасувати</button>
-</div>
-`;
-
-document.getElementById('testMaxScore').addEventListener('input', updateScoreHint);
-}
-
-// Оновлення підказки балів
-function updateScoreHint() {
-const ms = parseInt(document.getElementById('testMaxScore').value) || 0;
-const cnt = document.querySelectorAll('.q-block').length;
-document.getElementById('scoreHint').textContent = `💎 За кожне правильне питання: ${cnt > 0 ? Math.round(ms / cnt * 100) / 100 : 0} балів`;
-}
-
-// Photo handlers
-window.handleTestPhoto = input => {
-if (input.files && input.files[0]) {
-processTestImage(input.files[0]);
-}
-};
-
-function processTestImage(file) {
-const reader = new FileReader();
-reader.onload = e => {
-const img = new Image();
-img.onload = () => {
-const canvas = document.createElement('canvas');
-let w = img.width, h = img.height, max = 800;
-if (w > h) {
-if (w > max) { h *= max / w; w = max; }
-} else {
-if (h > max) { w *= max / h; h = max; }
-}
-canvas.width = w;
-canvas.height = h;
-canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-const base64 = canvas.toDataURL('image/jpeg', 0.7);
-
-currentTestPhotos.push({url: base64});
-
-renderCreateForm({
-name: document.getElementById('testName').value,
-description: document.getElementById('testDesc').value,
-emoji: document.getElementById('testEmoji').value,
-maxScore: parseInt(document.getElementById('testMaxScore').value),
-passScore: parseInt(document.getElementById('testPassScore').value),
-photos: currentTestPhotos,
-agreementText: document.getElementById('agreementText').value,
-questions: getFormQuestions()
-});
-};
-img.src = e.target.result;
-};
-reader.readAsDataURL(file);
-}
-
-window.deleteTestPhoto = pi => {
-currentTestPhotos.splice(pi, 1);
-renderCreateForm({
-name: document.getElementById('testName').value,
-description: document.getElementById('testDesc').value,
-emoji: document.getElementById('testEmoji').value,
-maxScore: parseInt(document.getElementById('testMaxScore').value),
-passScore: parseInt(document.getElementById('testPassScore').value),
-photos: currentTestPhotos,
-agreementText: document.getElementById('agreementText').value,
-questions: getFormQuestions()
-});
-};
-
-window.handleQuestionPhoto = (input, qi) => {
-if (input.files && input.files[0]) {
-const reader = new FileReader();
-reader.onload = e => {
-const img = new Image();
-img.onload = () => {
-const canvas = document.createElement('canvas');
-let w = img.width, h = img.height, max = 600;
-if (w > h) {
-if (w > max) { h *= max / w; w = max; }
-} else {
-if (h > max) { w *= max / h; h = max; }
-}
-canvas.width = w;
-canvas.height = h;
-canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-const base64 = canvas.toDataURL('image/jpeg', 0.7);
-
-const qs = getFormQuestions();
-qs[qi].photo = base64;
-
-renderCreateForm({
-name: document.getElementById('testName').value,
-description: document.getElementById('testDesc').value,
-emoji: document.getElementById('testEmoji').value,
-maxScore: parseInt(document.getElementById('testMaxScore').value),
-passScore: parseInt(document.getElementById('testPassScore').value),
-photos: currentTestPhotos,
-agreementText: document.getElementById('agreementText').value,
-questions: qs
-});
-};
-img.src = e.target.result;
-};
-reader.readAsDataURL(input.files[0]);
-}
-};
-
-window.deleteQuestionPhoto = qi => {
-const qs = getFormQuestions();
-qs[qi].photo = null;
-
-renderCreateForm({
-name: document.getElementById('testName').value,
-description: document.getElementById('testDesc').value,
-emoji: document.getElementById('testEmoji').value,
-maxScore: parseInt(document.getElementById('testMaxScore').value),
-passScore: parseInt(document.getElementById('testPassScore').value),
-photos: currentTestPhotos,
-agreementText: document.getElementById('agreementText').value,
-questions: qs
-});
-};
-
-// getFormQuestions - збір даних з форми
-function getFormQuestions() {
-const blocks = document.querySelectorAll('.q-block');
-let qs = [];
-
-blocks.forEach((b, qi) => {
-const text = document.getElementById('qtext-' + qi)?.value || '';
-const timeLimit = parseInt(document.getElementById('qtime-' + qi)?.value) || 30;
-const tableMode = document.getElementById('tableSwitch-' + qi)?.classList.contains('on') || false;
-
-let opts = [];
-let tableData = null;
-
-if (tableMode) {
-const colInputs = document.querySelectorAll(`#tableCols-${qi} .table-col-input`);
-const cols = Array.from(colInputs).map(inp => inp.value);
-
-const rowDivs = document.querySelectorAll(`#tableRows-${qi} .table-row-builder`);
-const rows = [];
-let correctRowIndex = 0;
-
-rowDivs.forEach((div, ri) => {
-const radio = div.querySelector('.opt-radio');
-if (radio.classList.contains('checked')) correctRowIndex = ri;
-const cells = div.querySelectorAll('.table-cell-input');
-rows.push(Array.from(cells).map(c => c.value));
-});
-
-tableData = {columns: cols, rows, correctRowIndex};
-} else {
-const optRows = b.querySelectorAll('.opt-row');
-optRows.forEach((r, oi) => {
-const inp = r.querySelector('.opt-input');
-const radio = r.querySelector('.opt-radio');
-opts.push({text: inp.value, correct: radio.classList.contains('checked')});
-});
-}
-
-const sw = document.getElementById('freeSwitch-' + qi);
-
-let qPhoto = null;
-const existingPhoto = b.querySelector('.question-photo-preview img');
-if (existingPhoto) {
-qPhoto = existingPhoto.src;
-}
-
-qs.push({
-text,
-options: opts,
-allowFree: sw?.classList.contains('on') || false,
-timeLimit,
-answerType: tableMode ? 'table' : 'normal',
-tableData,
-photo: qPhoto
-});
-});
-
-return qs;
-}
-
-// Question manipulation
-window.toggleCorrect = (qi, oi) => {
-const qs = getFormQuestions();
-qs[qi].options.forEach((o, i) => o.correct = i === oi);
-rebuildQuestions(qs);
-};
-
-window.delOption = (qi, oi) => {
-const qs = getFormQuestions();
-qs[qi].options.splice(oi, 1);
-rebuildQuestions(qs);
-};
-
-window.addOption = qi => {
-const qs = getFormQuestions();
-qs[qi].options.push({text: '', correct: false});
-rebuildQuestions(qs);
-};
-
-window.delQuestion = qi => {
-const qs = getFormQuestions();
-qs.splice(qi, 1);
-rebuildQuestions(qs);
-updateScoreHint();
-};
-
-window.addQuestion = () => {
-const qs = getFormQuestions();
-qs.push({
-text: '',
-options: [{text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}],
-allowFree: false,
-timeLimit: 30,
-answerType: 'normal',
-photo: null
-});
-rebuildQuestions(qs);
-updateScoreHint();
-};
-
-window.toggleFreeCreate = qi => {
-const qs = getFormQuestions();
-qs[qi].allowFree = !qs[qi].allowFree;
-rebuildQuestions(qs);
-};
-
-window.toggleTableMode = qi => {
-const qs = getFormQuestions();
-
-if (qs[qi].answerType === 'table') {
-qs[qi].answerType = 'normal';
-qs[qi].tableData = null;
-if (qs[qi].options.length === 0) {
-qs[qi].options = [{text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}, {text: '', correct: false}];
-}
-} else {
-qs[qi].answerType = 'table';
-qs[qi].tableData = {columns: ['Код', 'Опис'], rows: [['', ''], ['', '']], correctRowIndex: 0};
-qs[qi].options = [];
-}
-
-rebuildQuestions(qs);
-};
-
-window.addTableColumn = qi => {
-const qs = getFormQuestions();
-qs[qi].tableData.columns.push('');
-qs[qi].tableData.rows.forEach(r => r.push(''));
-rebuildQuestions(qs);
-};
-
-window.addTableRow = qi => {
-const qs = getFormQuestions();
-const colCount = qs[qi].tableData.columns.length;
-qs[qi].tableData.rows.push(new Array(colCount).fill(''));
-rebuildQuestions(qs);
-};
-
-window.delTableRow = (qi, ri) => {
-const qs = getFormQuestions();
-qs[qi].tableData.rows.splice(ri, 1);
-if (qs[qi].tableData.correctRowIndex >= qs[qi].tableData.rows.length) {
-qs[qi].tableData.correctRowIndex = Math.max(0, qs[qi].tableData.rows.length - 1);
-}
-rebuildQuestions(qs);
-};
-
-window.toggleTableCorrect = (qi, ri) => {
-const qs = getFormQuestions();
-qs[qi].tableData.correctRowIndex = ri;
-rebuildQuestions(qs);
-};
-
-function rebuildQuestions(qs) {
-const currentData = {
-name: document.getElementById('testName').value,
-description: document.getElementById('testDesc').value,
-emoji: document.getElementById('testEmoji').value,
-maxScore: parseInt(document.getElementById('testMaxScore').value),
-passScore: parseInt(document.getElementById('testPassScore').value),
-photos: currentTestPhotos,
-agreementText: document.getElementById('agreementText').value,
-questions: qs
-};
-renderCreateForm(currentData);
-}
-
-// saveTest
-window.saveTest = async () => {
-const name = document.getElementById('testName').value.trim();
-const desc = document.getElementById('testDesc').value.trim();
-const emoji = document.getElementById('testEmoji').value.trim() || '📝';
-const maxScore = parseInt(document.getElementById('testMaxScore').value) || 12;
-const passScore = parseInt(document.getElementById('testPassScore').value) || 8;
-const agreementText = document.getElementById('agreementText').value.trim();
-const qs = getFormQuestions();
-
-if (!name) {
-alert('❌ Введіть назву іспиту!');
-return;
-}
-
-for (let i = 0; i < qs.length; i++) {
-if (!qs[i].text.trim()) {
-const el = document.getElementById('qblock-' + i);
-if (el) {
-el.classList.add('error');
-el.scrollIntoView({behavior: 'smooth', block: 'center'});
-setTimeout(() => el.classList.remove('error'), 2000);
-}
-alert(`❌ Питання ${i + 1} не має тексту!`);
-return;
-}
-
-if (qs[i].answerType === 'table') {
-if (!qs[i].tableData || qs[i].tableData.rows.length === 0) {
-alert(`❌ Питання ${i + 1}: додайте хоча б один рядок у таблицю!`);
-return;
-}
-} else {
-const hasCorrect = qs[i].options.some(o => o.correct);
-if (!hasCorrect && !qs[i].allowFree) {
-alert(`❌ Питання ${i + 1}: оберіть правильну відповідь або увімкніть вільну відповідь!`);
-return;
-}
-}
-}
-
-const testObj = {
-name,
-description: desc,
-emoji,
-maxScore,
-passScore,
-questions: qs,
-photos: currentTestPhotos,
-agreementText,
-createdBy: ME.name
-};
-
-const success = await saveTestToFirebase(testObj);
-if (success) {
-alert('✅ Іспит збережено!');
-editingTestId = null;
-currentTestPhotos = [];
-showView('home');
-}
-};
-
-// ПРОДОВЖЕННЯ У НАСТУПНОМУ ПОВІДОМЛЕННІ (renderReview, renderManage, renderHistory та інші функції)...
-
-console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.2 - Завантажено частина 1/2');
-
-// ============ ЧАСТИНА 2/2 ============
-
-function editTest(id) {
-    const t = tests.find(x => x.id === id);
-    if (!t) return;
-    editingTestId = id;
-    showView('create');
-    renderCreateForm(t);
-}
-
-async function deleteTest(id) {
-    if (!confirm('⚠️ Видалити іспит? Це незворотна дія!')) return;
-    await deleteTestFromFirebase(id);
-    showView('home');
-}
-
-async function clearTestResults(testId) {
-    const t = tests.find(x => x.id === testId);
-    if (!confirm('⚠️ Очистити ВСІ результати цього іспиту?')) return;
-    const count = results.filter(r => r.testId === testId).length;
-    results = results.filter(r => r.testId !== testId);
-    save();
-    await sendDiscordNotification('RESULTS_CLEARED', {
-        testName: t ? t.name : 'Невідомий',
-        clearedBy: ME.name,
-        count,
-        date: now()
-    });
-    alert('✅ Результати очищено!');
-    renderHome();
-}
-
-function renderReview() {
-    const pending = results.filter(r => 
-        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
-    );
-    
-    if (pending.length === 0) {
-        document.getElementById('reviewList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає відповідей для перевірки</div>';
-        return;
-    }
-    
-    document.getElementById('reviewList').innerHTML = pending.map((r, ri) => {
-        const t = tests.find(x => x.id === r.testId);
-        const pointsPerQuestion = t ? t.maxScore / t.questions.length : 0;
-        
-        let questionsHtml = r.details.map((d, di) => {
-            let statusClass = d.status === 'correct' ? 'auto-ok' : d.status === 'pending' ? 'pending' : 'auto-fail';
-            let pointsHtml = '';
-            
-            if (d.status === 'pending') {
-                pointsHtml = `
-                <div class="points-control">
-                    <button class="points-btn minus" onclick="adjustPoints(${ri}, ${di}, -0.5)">−</button>
-                    <div class="points-display" id="points-${ri}-${di}">${d.points} б.</div>
-                    <button class="points-btn plus" onclick="adjustPoints(${ri}, ${di}, 0.5)">+</button>
-                    <span style="font-size:11px;color:var(--text-gray);margin-left:8px">макс: ${Math.round(pointsPerQuestion * 100) / 100}</span>
-                </div>`;
-            } else {
-                pointsHtml = `<div class="q-points" style="color:${d.status === 'correct' ? 'var(--primary)' : 'var(--danger)'}">${d.points} б.</div>`;
-            }
-            
-            return `<div class="review-q ${statusClass}">
-                <div class="q-title">${di + 1}. ${d.qText}</div>
-                <div class="q-answer">Відповідь: <b>${d.userAnswer}</b></div>
-                ${d.correctAnswer ? `<div class="q-correct">Правильно: ${d.correctAnswer}</div>` : ''}
-                ${pointsHtml}
-            </div>`;
-        }).join('');
-        
-        return `<div class="review-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px">
-                <div>
-                    <div style="font-size:16px;font-weight:800">${r.userName}</div>
-                    <div style="font-size:12px;color:var(--text-gray)">${r.testName} • ${r.date}</div>
-                </div>
-                <div style="font-size:20px;font-weight:900;color:var(--warning)">${r.score} / ${r.maxScore}</div>
-            </div>
-            ${questionsHtml}
-            <div class="btn-group" style="margin-top:20px">
-                <button class="btn btn-primary" onclick="approveResult(${ri})">✅ Схвалити</button>
-                <button class="btn btn-danger" onclick="rejectResult(${ri})">❌ Відхилити</button>
-            </div>
-        </div>`;
-    }).join('');
+</div>` : `<div class="btn-group">
+<button class="btn btn-primary" onclick="approveResult('${r.id}')">✅ Схвалити</button>
+<button class="btn btn-danger" onclick="rejectResult('${r.id}')">❌ Відхилити</button>
+</div>`}
+</div>`;
+}).join('');
 }
 
 window.adjustPoints = (resultId, qIndex, delta) => {
@@ -3543,7 +2982,9 @@ const newTotal = r.details.reduce((sum, detail) => sum + detail.points, 0).toFix
 const totalEl = document.getElementById(`totalScore-${resultId}`);
 if (totalEl) totalEl.textContent = newTotal + ' / ' + r.maxScore + ' б.';
 
-save();  // ОСЬ ТУТ ДОДАЙ FIREBASE!
+updateDoc(doc(db, 'results', resultId), {
+details: r.details
+}).catch(e => console.error('Update error:', e));
 };
 
 window.setMaxPoints = (resultId, qIndex, points) => {
@@ -3562,8 +3003,69 @@ const newTotal = r.details.reduce((sum, detail) => sum + detail.points, 0).toFix
 const totalEl = document.getElementById(`totalScore-${resultId}`);
 if (totalEl) totalEl.textContent = newTotal + ' / ' + r.maxScore + ' б.';
 
-save();  // І ТУТ ТЕЖ!
+updateDoc(doc(db, 'results', resultId), {
+details: r.details
+}).catch(e => console.error('Update error:', e));
 };
+
+window.approveResult = async (id) => {
+const r = results.find(x => x.id === id);
+if (!r) return;
+
+const t = tests.find(x => x.id === r.testId);
+
+r.score = 0;
+r.details.forEach(d => {
+if (d.status === 'pending') {
+d.status = 'correct';
+}
+r.score += d.points;
+});
+r.score = Math.round(r.score * 100) / 100;
+
+r.status = 'approved';
+r.reviewer = ME.name;
+r.reviewedByHuman = true;
+
+try {
+const resultDoc = doc(db, 'results', id);
+await updateDoc(resultDoc, {
+score: r.score,
+details: r.details,
+status: 'approved',
+reviewer: ME.name,
+reviewedByHuman: true
+});
+console.log('✅ Результат оновлено в Firebase');
+} catch (e) {
+console.error('❌ Помилка оновлення:', e);
+}
+
+addNotif(`✅ Результат ${r.userName} схвалено перевіряючим ${ME.name}`);
+
+await sendDiscordNotification('RESULT_APPROVED', {
+userName: r.userName,
+testName: r.testName,
+finalScore: r.score,
+maxScore: r.maxScore,
+reviewer: ME.name,
+status: 'approved',
+date: now()
+});
+
+renderReview();
+};
+
+window.rejectResult = async (id) => {
+const r = results.find(x => x.id === id);
+if (!r) return;
+
+r.details.forEach(d => {
+if (d.status === 'pending') {
+d.status = 'wrong';
+d.points = 0;
+}
+});
 
 r.score = r.details.reduce((sum, d) => sum + d.points, 0);
 r.score = Math.round(r.score * 100) / 100;
@@ -3572,7 +3074,6 @@ r.status = 'rejected';
 r.reviewer = ME.name;
 r.reviewedByHuman = true;
 
-// НОВЕ: Оновлюємо в Firebase
 try {
 const resultDoc = doc(db, 'results', id);
 await updateDoc(resultDoc, {
@@ -3587,7 +3088,6 @@ console.log('✅ Результат оновлено в Firebase');
 console.error('❌ Помилка оновлення:', e);
 }
 
-save();
 addNotif(`❌ Результат ${r.userName} відхилено перевіряючим ${ME.name}`);
 
 await sendDiscordNotification('RESULT_REJECTED', {
@@ -3602,271 +3102,432 @@ date: now()
 renderReview();
 };
 
+// renderManage
 function renderManage() {
-    if (tests.length === 0) {
-        document.getElementById('manageList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px">Іспитів немає</div>';
-        return;
-    }
-    document.getElementById('manageList').innerHTML = tests.map(t => {
-        const resCount = results.filter(r => r.testId === t.id).length;
-        const pendingCount = results.filter(r => r.testId === t.id && (r.status === 'pending' || !r.reviewedByHuman)).length;
-        return `<div class="manage-card">
-            <div>
-                <div style="font-size:15px;font-weight:800">${t.emoji || '📝'} ${t.name}</div>
-                <div style="font-size:12px;color:var(--text-gray);margin-top:4px">
-                    ${t.questions.length} питань • ${resCount} результатів • ${pendingCount} на перевірці
-                </div>
-            </div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <button class="btn btn-info" onclick="editTest('${t.id}')" style="padding:8px 16px;font-size:11px">✏️ Редагувати</button>
-                <button class="btn btn-warning" onclick="clearTestResults('${t.id}')" style="padding:8px 16px;font-size:11px">🧹 Очистити</button>
-                <button class="btn btn-secondary" onclick="copyPublicLink('${t.id}')" style="padding:8px 16px;font-size:11px">🔗 Посилання</button>
-                <button class="btn btn-danger" onclick="deleteTest('${t.id}')" style="padding:8px 16px;font-size:11px">🗑 Видалити</button>
-            </div>
-        </div>`;
-    }).join('');
+if (tests.length === 0) {
+document.getElementById('manageList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає іспитів</div>';
+return;
 }
 
-window.copyPublicLink = (testId) => {
-    const url = window.location.origin + window.location.pathname + '?id=' + testId;
-    navigator.clipboard.writeText(url).then(() => {
-        const notif = document.getElementById('linkCopiedNotif');
-        notif.classList.add('show');
-        setTimeout(() => notif.classList.remove('show'), 3000);
-    });
+document.getElementById('manageList').innerHTML = tests.map(t => {
+const res = results.filter(r => r.testId === t.id);
+const passed = res.filter(r => (r.status === 'approved' || r.status === 'auto') && r.score >= t.passScore && r.reviewedByHuman).length;
+
+return `<div class="manage-card">
+<div>
+<b style="font-size:15px">${t.emoji} ${t.name}</b><br>
+<span style="font-size:11px;color:var(--text-gray)">Питань: ${t.questions.length} • Макс: ${t.maxScore}б • Прохід: ${t.passScore}б • Пройшли: ${passed}/${res.length}</span>
+</div>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-info" onclick="editTest('${t.id}')" style="padding:8px 14px;font-size:11px">✏️</button>
+<button class="btn btn-warning" onclick="clearTestResults('${t.id}')" style="padding:8px 14px;font-size:11px">🧹</button>
+<button class="btn btn-danger" onclick="deleteTest('${t.id}')" style="padding:8px 14px;font-size:11px">🗑</button>
+</div>
+</div>`;
+}).join('');
+}
+
+window.editTest = id => {
+const t = tests.find(x => x.id === id);
+if (t) {
+renderCreateForm(t);
+showView('create');
+}
 };
 
+window.clearTestResults = async (id) => {
+if (confirm('Очистити всі результати цього іспиту?')) {
+const t = tests.find(x => x.id === id);
+const testName = t ? t.name : 'Невідомий іспит';
+const toDelete = results.filter(r => r.testId === id);
+
+for (let res of toDelete) {
+try {
+await deleteDoc(doc(db, 'results', res.id));
+} catch (e) {
+console.error('Delete error:', e);
+}
+}
+
+await sendDiscordNotification('RESULTS_CLEARED', {
+testName: testName,
+clearedBy: ME.name,
+count: toDelete.length,
+date: now()
+});
+
+renderManage();
+}
+};
+
+window.deleteTest = async id => {
+if (confirm('Видалити іспит?')) {
+const success = await deleteTestFromFirebase(id);
+if (success) {
+renderManage();
+}
+}
+};
+
+// renderHistory
+function renderHistory() {
+const allResults = [...results];
+
+const uniqueUsers = [...new Set(allResults.map(r => r.userName))];
+const uniqueTests = [...new Set(allResults.map(r => r.testName))];
+
+const totalAttempts = allResults.length;
+const totalPassed = allResults.filter(r => r.score >= r.passScore && r.reviewedByHuman).length;
+const totalFailed = allResults.filter(r => (r.score < r.passScore && r.reviewedByHuman) || r.status === 'rejected').length;
+const totalPending = allResults.filter(r => r.status === 'pending' || !r.reviewedByHuman).length;
+
+let tableRows = '';
+if (allResults.length === 0) {
+tableRows = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-gray)">Немає результатів</td></tr>';
+} else {
+tableRows = allResults.map(r => {
+const isPassed = r.score >= r.passScore && r.reviewedByHuman;
+const isFailed = (r.score < r.passScore && r.reviewedByHuman) || r.status === 'rejected';
+const isPending = r.status === 'pending' || !r.reviewedByHuman;
+
+let statusBadge = '';
+if (isPending) {
+statusBadge = '<span class="status-badge st-pending">На перевірці</span>';
+} else if (isPassed) {
+statusBadge = '<span class="status-badge st-pass">Складено</span>';
+} else if (isFailed) {
+statusBadge = '<span class="status-badge st-fail">Не складено</span>';
+}
+
+const percentage = r.maxScore > 0 ? Math.round((r.score / r.maxScore) * 100) : 0;
+
+return `<tr>
+<td>${r.userName}</td>
+<td>${r.testName}</td>
+<td><b>${r.score}</b> / ${r.maxScore}</td>
+<td>${percentage}%</td>
+<td>${statusBadge}</td>
+<td>${r.reviewer || 'SYSTEM'}</td>
+<td>${r.date}</td>
+</tr>`;
+}).join('');
+}
+
+document.getElementById('historyContent').innerHTML = `
+<div class="form-card">
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px">
+<div style="text-align:center;padding:15px;background:rgba(0,255,68,0.05);border-radius:12px;border:1px solid rgba(0,255,68,0.15)">
+<div style="font-size:24px;font-weight:900;color:var(--primary)">${totalAttempts}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px;text-transform:uppercase">Всього спроб</div>
+</div>
+<div style="text-align:center;padding:15px;background:rgba(16,185,129,0.05);border-radius:12px;border:1px solid rgba(16,185,129,0.15)">
+<div style="font-size:24px;font-weight:900;color:var(--success)">${totalPassed}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px;text-transform:uppercase">Складено</div>
+</div>
+<div style="text-align:center;padding:15px;background:rgba(239,68,68,0.05);border-radius:12px;border:1px solid rgba(239,68,68,0.15)">
+<div style="font-size:24px;font-weight:900;color:var(--danger)">${totalFailed}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px;text-transform:uppercase">Провалено</div>
+</div>
+<div style="text-align:center;padding:15px;background:rgba(251,191,36,0.05);border-radius:12px;border:1px solid rgba(251,191,36,0.15)">
+<div style="font-size:24px;font-weight:900;color:var(--warning)">${totalPending}</div>
+<div style="font-size:10px;color:var(--text-gray);margin-top:4px;text-transform:uppercase">На перевірці</div>
+</div>
+</div>
+
+<div class="history-filters">
+<input class="filter-input" id="filterUserInput" placeholder="🔍 Пошук по користувачу..." onchange="applyHistoryFilters()">
+<select class="filter-select" id="filterTestSelect" onchange="applyHistoryFilters()">
+<option value="">Всі іспити</option>
+${uniqueTests.map(name => `<option value="${name}">${name}</option>`).join('')}
+</select>
+<select class="filter-select" id="filterStatusSelect" onchange="applyHistoryFilters()">
+<option value="all">Всі статуси</option>
+<option value="pass">Складено</option>
+<option value="fail">Не складено</option>
+<option value="pending">На перевірці</option>
+</select>
+<button class="btn btn-secondary" onclick="resetHistoryFilters()" style="padding:10px 20px;font-size:12px">🔄 Скинути</button>
+<button class="btn btn-primary" onclick="exportHistory()" style="padding:10px 20px;font-size:12px">📥 Експорт</button>
+</div>
+
+<div class="history-table-wrapper">
+<table class="history-table">
+<thead>
+<tr>
+<th>Користувач</th>
+<th>Іспит</th>
+<th>Бали</th>
+<th>%</th>
+<th>Статус</th>
+<th>Перевіряючий</th>
+<th>Дата</th>
+</tr>
+</thead>
+<tbody id="historyTableBody">
+${tableRows}
+</tbody>
+</table>
+</div>
+</div>
+`;
+}
+
+window.applyHistoryFilters = () => {
+const userInput = document.getElementById('filterUserInput').value.toLowerCase();
+const testSelect = document.getElementById('filterTestSelect').value;
+const statusSelect = document.getElementById('filterStatusSelect').value;
+
+const allResults = [...results];
+let filtered = allResults.filter(r => {
+if (userInput && !r.userName.toLowerCase().includes(userInput)) return false;
+if (testSelect && r.testName !== testSelect) return false;
+
+if (statusSelect !== 'all') {
+const isPassed = r.score >= r.passScore && r.reviewedByHuman;
+const isFailed = (r.score < r.passScore && r.reviewedByHuman) || r.status === 'rejected';
+const isPending = r.status === 'pending' || !r.reviewedByHuman;
+
+if (statusSelect === 'pass' && !isPassed) return false;
+if (statusSelect === 'fail' && !isFailed) return false;
+if (statusSelect === 'pending' && !isPending) return false;
+}
+return true;
+});
+
+let tableRows = '';
+if (filtered.length === 0) {
+tableRows = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-gray)">Немає результатів за фільтрами</td></tr>';
+} else {
+tableRows = filtered.map(r => {
+const isPassed = r.score >= r.passScore && r.reviewedByHuman;
+const isFailed = (r.score < r.passScore && r.reviewedByHuman) || r.status === 'rejected';
+const isPending = r.status === 'pending' || !r.reviewedByHuman;
+
+let statusBadge = '';
+if (isPending) {
+statusBadge = '<span class="status-badge st-pending">На перевірці</span>';
+} else if (isPassed) {
+statusBadge = '<span class="status-badge st-pass">Складено</span>';
+} else if (isFailed) {
+statusBadge = '<span class="status-badge st-fail">Не складено</span>';
+}
+
+const percentage = r.maxScore > 0 ? Math.round((r.score / r.maxScore) * 100) : 0;
+
+return `<tr>
+<td>${r.userName}</td>
+<td>${r.testName}</td>
+<td><b>${r.score}</b> / ${r.maxScore}</td>
+<td>${percentage}%</td>
+<td>${statusBadge}</td>
+<td>${r.reviewer || 'SYSTEM'}</td>
+<td>${r.date}</td>
+</tr>`;
+}).join('');
+}
+
+document.getElementById('historyTableBody').innerHTML = tableRows;
+};
+
+window.resetHistoryFilters = () => {
+document.getElementById('filterUserInput').value = '';
+document.getElementById('filterTestSelect').value = '';
+document.getElementById('filterStatusSelect').value = 'all';
+applyHistoryFilters();
+};
+
+window.exportHistory = () => {
+const filtered = results;
+let text = 'ІСТОРІЯ ІСПИТІВ ДШВ\n';
+text += '='.repeat(80) + '\n\n';
+
+filtered.forEach(r => {
+const status = r.status === 'pending' || !r.reviewedByHuman ? 'На перевірці' :
+r.score >= r.passScore && r.reviewedByHuman ? 'СКЛАДЕНО' : 'НЕ СКЛАДЕНО';
+
+text += `Користувач: ${r.userName}\n`;
+text += `Іспит: ${r.testName}\n`;
+text += `Бали: ${r.score} / ${r.maxScore}\n`;
+text += `Статус: ${status}\n`;
+text += `Перевіряючий: ${r.reviewer || 'SYSTEM'}\n`;
+text += `Дата: ${r.date}\n`;
+text += '-'.repeat(80) + '\n';
+});
+
+const blob = new Blob([text], {type: 'text/plain'});
+const url = URL.createObjectURL(blob);
+const a = document.createElement('a');
+a.href = url;
+a.download = `history_${Date.now()}.txt`;
+a.click();
+URL.revokeObjectURL(url);
+};
+
+// renderSettings
 function renderSettings() {
-    document.getElementById('settingsContent').innerHTML = `
-    <div class="setting-block">
-        <h4>🔗 Discord Webhook</h4>
-        <div class="form-row">
-            <input class="form-input" id="webhookInput" value="${webhookUrl}" placeholder="https://discord.com/api/webhooks/...">
-        </div>
-        <button class="btn btn-primary" onclick="saveWebhook()" style="margin-top:10px">💾 Зберегти</button>
-    </div>
-    <div class="setting-block">
-        <h4>🔍 Перевіряючі</h4>
-        <div id="reviewersList" style="margin-bottom:15px">
-            ${reviewers.map((r, i) => `
-                <span class="reviewer-chip">${r}<button onclick="removeReviewer(${i})">✕</button></span>
-            `).join('')}
-            ${reviewers.length === 0 ? '<div style="color:var(--text-gray);font-size:13px">Перевіряючих немає</div>' : ''}
-        </div>
-        <div class="people-dropdown">
-            <input class="form-input" id="reviewerSearch" placeholder="Пошук користувача..." 
-                   onfocus="showPeopleList('reviewer')" oninput="filterPeople('reviewer')">
-            <div class="people-list" id="reviewerPeopleList">
-                ${allUsers.map(u => `
-                    <div class="people-item" onclick="addReviewer('${u.name.replace(/'/g, "\\'")}')">
-                        <span>${u.name}</span>
-                        <span style="font-size:10px;color:var(--text-gray)">${u.role}</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    </div>
-    <div class="setting-block">
-        <h4>📊 Дані</h4>
-        <p style="font-size:13px;color:var(--text-gray);margin-bottom:15px">
-            Результатів: ${results.length} | Перевіряючих: ${reviewers.length} | Адмінів: ${adminList.length}
-        </p>
-        <button class="btn btn-danger" onclick="clearAllData()">🗑 Очистити всі локальні дані</button>
-    </div>`;
+document.getElementById('settingsContent').innerHTML = `
+<div class="setting-block">
+<h4>🔗 Discord Webhook</h4>
+<div class="form-row">
+<input class="form-input" id="webhookInput" value="${webhookUrl}" placeholder="https://discord.com/api/webhooks/...">
+</div>
+<div class="btn-group" style="justify-content:flex-start">
+<button class="btn btn-primary" onclick="saveWebhook()" style="padding:10px 20px;font-size:12px">💾 Зберегти</button>
+<button class="btn btn-info" onclick="sendTestWebhook()" style="padding:10px 20px;font-size:12px">🧪 Тестове повідомлення</button>
+</div>
+</div>
+
+<div class="setting-block">
+<h4>🔍 Перевірювачі іспитів</h4>
+<div id="reviewersList" style="margin-bottom:12px">
+${reviewers.map(r => `<span class="reviewer-chip">${r}<button onclick="removeReviewer('${r}')">✕</button></span>`).join('') || '<span style="color:var(--text-gray);font-size:12px">Не додано</span>'}
+</div>
+<div class="people-dropdown">
+<input class="form-input" id="reviewerSearch" placeholder="Пошук людини..." oninput="filterPeople('reviewer')" onfocus="filterPeople('reviewer')">
+<div class="people-list" id="reviewerDropdown"></div>
+</div>
+</div>
+`;
 }
 
 window.saveWebhook = () => {
-    webhookUrl = document.getElementById('webhookInput').value.trim();
-    save();
-    alert('✅ Webhook збережено!');
+webhookUrl = document.getElementById('webhookInput').value.trim();
+save();
+alert('✅ Webhook збережено!');
 };
 
-window.removeReviewer = (i) => {
-    reviewers.splice(i, 1);
-    save();
-    renderSettings();
-};
-
-window.addReviewer = async (name) => {
-    if (!reviewers.includes(name)) {
-        reviewers.push(name);
-        save();
-        await sendDiscordNotification('REVIEWER_ADDED', {
-            reviewerName: name,
-            addedBy: ME.name,
-            date: now()
-        });
-        addNotif(`🔍 Додано перевіряючого: ${name}`);
-    }
-    document.getElementById('reviewerSearch').value = '';
-    document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
-    renderSettings();
-};
-
-window.showPeopleList = (type) => {
-    document.getElementById(type + 'PeopleList').classList.add('show');
-};
-
-window.filterPeople = (type) => {
-    const search = document.getElementById(type + 'Search').value.toLowerCase();
-    const list = document.getElementById(type + 'PeopleList');
-    list.querySelectorAll('.people-item').forEach(item => {
-        const name = item.querySelector('span').textContent.toLowerCase();
-        item.style.display = name.includes(search) ? 'flex' : 'none';
-    });
-};
-
-window.clearAllData = () => {
-    if (!confirm('⚠️ Видалити ВСІ локальні дані?')) return;
-    results = [];
-    reviewers = [];
-    adminList = [];
-    notifs = [];
-    webhookUrl = '';
-    save();
-    localStorage.removeItem('isput_notifs');
-    alert('✅ Дані очищено!');
-    renderSettings();
-};
-
-function renderHistory() {
-    const allResults = [...results].sort((a, b) => b.date > a.date ? 1 : -1);
-    
-    let filtersHtml = `
-    <div class="history-filters">
-        <input class="filter-input" id="historySearch" placeholder="🔍 Пошук по імені..." oninput="filterHistory()">
-        <select class="filter-select" id="historyTestFilter" onchange="filterHistory()">
-            <option value="">Всі іспити</option>
-            ${tests.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
-        </select>
-        <select class="filter-select" id="historyStatusFilter" onchange="filterHistory()">
-            <option value="">Всі статуси</option>
-            <option value="approved">Схвалено</option>
-            <option value="rejected">Відхилено</option>
-            <option value="pending">На перевірці</option>
-            <option value="auto">Автоматично</option>
-        </select>
-    </div>`;
-    
-    if (allResults.length === 0) {
-        document.getElementById('historyContent').innerHTML = filtersHtml + 
-            '<div style="color:var(--text-gray);text-align:center;padding:40px">Результатів немає</div>';
-        return;
-    }
-    
-    let rowsHtml = allResults.map(r => {
-        const t = tests.find(x => x.id === r.testId);
-        let st, stc;
-        if (r.status === 'pending') { st = 'На перевірці'; stc = 'st-pending'; }
-        else if (r.status === 'approved') { st = 'Схвалено'; stc = 'st-approved'; }
-        else if (r.status === 'rejected') { st = 'Відхилено'; stc = 'st-rejected'; }
-        else {
-            const p = t && r.score >= t.passScore;
-            st = r.reviewedByHuman ? (p ? 'Складено' : 'Не складено') : 'Очікує';
-            stc = r.reviewedByHuman ? (p ? 'st-pass' : 'st-fail') : 'st-pending';
-        }
-        const percent = r.maxScore > 0 ? Math.round(r.score / r.maxScore * 100) : 0;
-        return `<tr data-name="${(r.userName || '').toLowerCase()}" data-test="${r.testId}" data-status="${r.status}">
-            <td><b>${r.userName || 'Невідомий'}</b></td>
-            <td>${r.userRole || '-'}</td>
-            <td>${t ? t.name : 'Видалений'}</td>
-            <td><b>${r.score}</b> / ${r.maxScore} (${percent}%)</td>
-            <td><span class="status-badge ${stc}">${st}</span></td>
-            <td>${r.reviewer || 'SYSTEM'}</td>
-            <td>${r.date}</td>
-        </tr>`;
-    }).join('');
-    
-    document.getElementById('historyContent').innerHTML = `
-    ${filtersHtml}
-    <div class="history-table-wrapper">
-        <table class="history-table">
-            <thead><tr>
-                <th>Ім'я</th><th>Роль</th><th>Іспит</th><th>Бали</th><th>Статус</th><th>Перевіряючий</th><th>Дата</th>
-            </tr></thead>
-            <tbody id="historyTableBody">${rowsHtml}</tbody>
-        </table>
-    </div>`;
+window.sendTestWebhook = async () => {
+const url = document.getElementById('webhookInput').value.trim();
+if (!url) {
+alert('❌ Введіть Webhook URL спочатку!');
+return;
 }
 
-window.filterHistory = () => {
-    const search = (document.getElementById('historySearch')?.value || '').toLowerCase();
-    const testFilter = document.getElementById('historyTestFilter')?.value || '';
-    const statusFilter = document.getElementById('historyStatusFilter')?.value || '';
-    document.querySelectorAll('#historyTableBody tr').forEach(row => {
-        let show = true;
-        if (search && !(row.dataset.name || '').includes(search)) show = false;
-        if (testFilter && row.dataset.test !== testFilter) show = false;
-        if (statusFilter && row.dataset.status !== statusFilter) show = false;
-        row.style.display = show ? '' : 'none';
-    });
+try {
+const response = await fetch(url, {
+method: 'POST',
+headers: {'Content-Type': 'application/json'},
+body: JSON.stringify({
+embeds: [{
+title: '🧪 Тестове повідомлення',
+description: 'Webhook працює правильно! ✅',
+color: 0x00ff44,
+fields: [
+{name: 'Відправник', value: ME.name, inline: true},
+{name: 'Роль', value: ME.role, inline: true},
+{name: 'Час', value: now(), inline: false}
+],
+footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
+timestamp: new Date().toISOString()
+}]
+})
+});
+
+if (response.ok) {
+alert('✅ Тестове повідомлення відправлено в Discord!');
+} else {
+alert('❌ Помилка відправки: ' + response.status);
+}
+} catch (e) {
+alert('❌ Помилка: ' + e.message);
+}
 };
 
+window.removeReviewer = async (n) => {
+reviewers = reviewers.filter(r => r !== n);
+save();
+renderSettings();
+};
+
+window.filterPeople = type => {
+const input = document.getElementById(type + 'Search');
+const drop = document.getElementById(type + 'Dropdown');
+const val = input.value.toLowerCase();
+
+const list = type === 'reviewer' ?
+allUsers.filter(u => !reviewers.includes(u.name)) :
+allUsers.filter(u => !adminList.includes(u.name));
+
+const filtered = val ? list.filter(u => u.name.toLowerCase().includes(val)) : list;
+
+if (filtered.length === 0) {
+drop.innerHTML = '<div style="padding:15px;text-align:center;color:var(--text-gray);font-size:12px">Нікого не знайдено</div>';
+drop.classList.add('show');
+return;
+}
+
+drop.innerHTML = filtered.map(u => {
+const roleLabel = u.role === 'admin' ? 'Адмін' : u.role === 'instructor' ? 'Інструктор' : 'Бієць';
+const roleColor = u.role === 'admin' ? 'var(--primary)' : u.role === 'instructor' ? 'var(--warning)' : 'var(--text-gray)';
+
+return `<div class="people-item" onclick="selectPerson('${type}','${u.name}')">
+<span>${u.name}</span>
+<span style="font-size:10px;color:${roleColor};font-weight:700">${roleLabel}</span>
+</div>`;
+}).join('');
+
+drop.classList.add('show');
+};
+
+window.selectPerson = async (type, name) => {
+if (type === 'reviewer' && !reviewers.includes(name)) {
+reviewers.push(name);
+save();
+await sendDiscordNotification('REVIEWER_ADDED', {
+reviewerName: name,
+addedBy: ME.name,
+date: now()
+});
+renderSettings();
+}
+
+if (type === 'admin' && !adminList.includes(name)) {
+adminList.push(name);
+save();
+await sendDiscordNotification('ADMIN_ADDED', {
+adminName: name,
+addedBy: ME.name,
+date: now()
+});
+renderAdminList();
+buildNav();
+}
+
+document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
+};
+
+// renderAdminList
 function renderAdminList() {
-    document.getElementById('adminListContent').innerHTML = `
-    <div class="admin-list-panel">
-        <h4 style="font-size:14px;font-weight:800;color:var(--primary-bright);margin-bottom:15px">👑 Адміністратори</h4>
-        <div id="adminChips" style="margin-bottom:20px">
-            ${adminList.map((a, i) => `
-                <span class="reviewer-chip">👑 ${a}<button onclick="removeAdmin(${i})">✕</button></span>
-            `).join('')}
-            ${adminList.length === 0 ? '<div style="color:var(--text-gray);font-size:13px">Додаткових адмінів немає</div>' : ''}
-        </div>
-        <div class="people-dropdown">
-            <input class="form-input" id="adminSearch" placeholder="Пошук користувача..." 
-                   onfocus="showPeopleList('admin')" oninput="filterPeople('admin')">
-            <div class="people-list" id="adminPeopleList">
-                ${allUsers.map(u => `
-                    <div class="people-item" onclick="addAdmin('${u.name.replace(/'/g, "\\'")}')">
-                        <span>${u.name}</span>
-                        <span style="font-size:10px;color:var(--text-gray)">${u.role}</span>
-                    </div>
-                `).join('')}
-            </div>
-        </div>
-    </div>
-    <div class="admin-list-panel">
-        <h4 style="font-size:14px;font-weight:800;color:var(--primary-bright);margin-bottom:15px">📋 Всі користувачі</h4>
-        <div class="results-table"><table>
-            <thead><tr><th>Ім'я</th><th>Роль</th><th>Статус</th></tr></thead>
-            <tbody>
-                ${allUsers.map(u => {
-                    const isA = u.role === 'admin' || adminList.includes(u.name);
-                    const isR = reviewers.includes(u.name);
-                    let status = '';
-                    if (isA) status += '<span class="status-badge st-approved">Адмін</span> ';
-                    if (isR) status += '<span class="status-badge st-pending">Перевіряючий</span> ';
-                    if (!isA && !isR) status = '<span class="status-badge" style="background:rgba(255,255,255,0.05);color:var(--text-gray);border:1px solid rgba(255,255,255,0.1)">Користувач</span>';
-                    return `<tr><td>${u.name}</td><td>${u.role}</td><td>${status}</td></tr>`;
-                }).join('')}
-            </tbody>
-        </table></div>
-    </div>`;
+document.getElementById('adminListContent').innerHTML = `
+<div class="admin-list-panel">
+<h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:15px">👑 Люди з адмін правами в іспитах</h4>
+<p style="font-size:11px;color:var(--text-gray);margin-bottom:15px">Ці люди мають повний доступ до створення, редагування та перевірки іспитів</p>
+<div id="adminChips" style="margin-bottom:15px">
+${adminList.map(n => `<span class="reviewer-chip" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:var(--warning)">${n}<button onclick="removeAdmin('${n}')">✕</button></span>`).join('') || '<span style="color:var(--text-gray);font-size:12px">Не додано</span>'}
+</div>
+<div class="people-dropdown">
+<input class="form-input" id="adminSearch" placeholder="Пошук людини..." oninput="filterPeople('admin')" onfocus="filterPeople('admin')">
+<div class="people-list" id="adminDropdown"></div>
+</div>
+</div>
+`;
 }
 
-window.addAdmin = async (name) => {
-    if (!adminList.includes(name)) {
-        adminList.push(name);
-        save();
-        await sendDiscordNotification('ADMIN_ADDED', {
-            adminName: name,
-            addedBy: ME.name,
-            date: now()
-        });
-        addNotif(`👑 Додано адміністратора: ${name}`);
-    }
-    document.getElementById('adminSearch').value = '';
-    document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
-    buildNav();
-    renderAdminList();
+window.removeAdmin = n => {
+adminList = adminList.filter(a => a !== n);
+save();
+renderAdminList();
+buildNav();
 };
 
-window.removeAdmin = (i) => {
-    adminList.splice(i, 1);
-    save();
-    buildNav();
-    renderAdminList();
-};
+console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.2 - ПОВНІСТЮ ЗАВАНТАЖЕНО!');
+console.log('✅ Всі функції активовані:');
+console.log(' ✓ Публічний режим');
+console.log(' ✓ Firebase зберігання результатів');
+console.log(' ✓ Discord інтеграція');
+console.log(' ✓ Перевірка з балами');
+console.log(' ✓ Історія та списки');
+console.log(' ✓ Всі адмін функції');
 
 console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.2 - Частина 2/2 завантажена!');
 </script>
