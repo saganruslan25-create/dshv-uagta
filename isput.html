@@ -2725,6 +2725,7 @@ renderQuestion();
 };
 
 // ВИПРАВЛЕНА finishQuiz з Firebase
+// ВИПРАВЛЕНА finishQuiz з Firebase
 async function finishQuiz() {
 clearInterval(timer);
 
@@ -2808,17 +2809,15 @@ isPublic: IS_PUBLIC_MODE
 };
 
 try {
+// 1️⃣ СПОЧАТКУ зберігаємо результат
 const docRef = await addDoc(collection(db, 'results'), {
 ...result,
 createdAt: serverTimestamp()
 });
 result.id = docRef.id;
-console.log('✅ Результат збережено в Firebase!');
-} catch (e) {
-console.error('❌ Помилка збереження результату:', e);
-alert('Помилка збереження результату: ' + e.message);
-}
+console.log('✅ Результат збережено в Firebase з ID:', docRef.id);
 
+// 2️⃣ ПОТІМ відправляємо Discord notification
 await sendDiscordNotification('QUIZ_COMPLETED', {
 testName: currentTest.name,
 userName: userName,
@@ -2832,11 +2831,20 @@ status: resultStatus,
 passed: score >= currentTest.passScore,
 date: now()
 });
+console.log('✅ Discord notification відправлено');
 
+// 3️⃣ ПОТІМ додаємо notification
 if (!IS_PUBLIC_MODE) {
 addNotif(`📝 Ви завершили іспит "${currentTest.name}" з результатом ${score}/${currentTest.maxScore}`);
 }
 
+} catch (e) {
+console.error('❌ Помилка збереження результату:', e);
+alert('❌ Помилка збереження результату: ' + e.message);
+return; // Виходимо, якщо помилка
+}
+
+// 4️⃣ ТІЛЬКИ ПІСЛЯ УСПІШНОГО ЗБЕРЕЖЕННЯ показуємо результат
 showResult(result);
 }
 
