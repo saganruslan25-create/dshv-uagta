@@ -2150,48 +2150,47 @@ if (activeView.id === 'viewHistory') renderHistory();
 } 
 }); 
 } 
-async function saveTestToFirebase(testObj) { 
-try { 
-let totalTime = 0; 
-testObj.questions.forEach(q => {totalTime += (q.timeLimit || 30)}); 
-if (editingTestId) { 
-await updateDoc(doc(db, 'tests', editingTestId), testObj); 
-addNotif('Іспит "' + testObj.name + '" оновлено!');
-await sendDiscordNotification('TEST_UPDATED', { 
-testName: testObj.name, 
-editedBy: ME.name, 
-questionCount: testObj.questions.length, 
-maxScore: testObj.maxScore, 
-passScore: testObj.passScore, 
-date: now() 
-}); 
-} else { 
-await addDoc(collection(db, 'tests'), { 
-...testObj, 
-createdAt: serverTimestamp() 
-}); 
-addNotif(`
-📝
- Іспит "${testObj.name}" створено!`); 
-await sendDiscordNotification('NEW_TEST', { 
-testName: testObj.name, 
-createdBy: testObj.createdBy, 
-questionCount: testObj.questions.length, 
-maxScore: testObj.maxScore, 
-passScore: testObj.passScore, 
-totalTime: totalTime, 
-date: now() 
-}); 
-} 
-return true; 
-} catch (e) { 
-console.error('Save error:', e); 
-alert('
-❌
- Помилка збереження: ' + e.message); 
-return false; 
-} 
-} 
+async function saveTestToFirebase(testObj) {
+  try {
+    let totalTime = 0;
+    testObj.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
+    
+    if (editingTestId) {
+      await updateDoc(doc(db, 'tests', editingTestId), testObj);
+      addNotif('Іспит "' + testObj.name + '" оновлено!');
+      
+      await sendDiscordNotification('TEST_UPDATED', {
+        testName: testObj.name,
+        editedBy: ME.name,
+        questionCount: testObj.questions.length,
+        maxScore: testObj.maxScore,
+        passScore: testObj.passScore,
+        date: now()
+      });
+    } else {
+      await addDoc(collection(db, 'tests'), {
+        ...testObj,
+        createdAt: serverTimestamp()
+      });
+      addNotif('Іспит "' + testObj.name + '" створено!');
+      
+      await sendDiscordNotification('NEW_TEST', {
+        testName: testObj.name,
+        createdBy: testObj.createdBy,
+        questionCount: testObj.questions.length,
+        maxScore: testObj.maxScore,
+        passScore: testObj.passScore,
+        totalTime: totalTime,
+        date: now()
+      });
+    }
+    return true;
+  } catch (e) {
+    console.error('Save error:', e);
+    alert('Помилка збереження: ' + e.message);
+    return false;
+  }
+}
 async function deleteTestFromFirebase(id) { 
 try { 
 const t = tests.find(x => x.id === id); 
