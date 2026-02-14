@@ -1755,7 +1755,7 @@ appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// НОВЕ: Глобальні змінні для публічного режиму
+// Глобальні змінні для публічного режиму
 let IS_PUBLIC_MODE = false;
 let PUBLIC_TEST_ID = null;
 let PUBLIC_USER_DATA = null;
@@ -1764,7 +1764,7 @@ let PUBLIC_USER_DATA = null;
 let ME = {name: 'Невідомий', role: 'fighter', uid: ''};
 let allUsers = [];
 let tests = [];
-let results = JSON.parse(localStorage.getItem('isput_results') || '[]');
+let results = [];
 let reviewers = JSON.parse(localStorage.getItem('isput_reviewers') || '[]');
 let adminList = JSON.parse(localStorage.getItem('isput_admins') || '[]');
 let webhookUrl = localStorage.getItem('isput_webhook') || '';
@@ -1776,11 +1776,9 @@ let timeLeft = 30;
 let editingTestId = null;
 let agreementAccepted = false;
 let currentTestPhotos = [];
-
-// НОВЕ: Змінні для контекстного меню
 let contextMenuTestId = null;
 
-// НОВЕ: Перевірка URL для публічного режиму
+// Перевірка URL для публічного режиму
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('id')) {
 IS_PUBLIC_MODE = true;
@@ -1790,7 +1788,6 @@ console.log('🔓 Публічний режим активовано для те
 
 // Функція збереження в localStorage
 const save = () => {
-localStorage.setItem('isput_results', JSON.stringify(results));
 localStorage.setItem('isput_reviewers', JSON.stringify(reviewers));
 localStorage.setItem('isput_admins', JSON.stringify(adminList));
 localStorage.setItem('isput_webhook', webhookUrl);
@@ -1812,7 +1809,7 @@ const d = new Date();
 return d.toLocaleDateString('uk') + ' ' + d.toLocaleTimeString('uk', {hour: '2-digit', minute: '2-digit'});
 };
 
-// НОВЕ: Функція submitPublicForm
+// Функція submitPublicForm
 window.submitPublicForm = () => {
 const name = document.getElementById('publicName').value.trim();
 const classLevel = document.getElementById('publicClass').value.trim();
@@ -1832,11 +1829,10 @@ unit
 ME.name = name + ' (' + classLevel + ', ' + unit + ')';
 ME.uid = 'public_' + genId();
 
-// Завантаження тесту
 loadPublicTest();
 };
 
-// НОВЕ: Завантаження публічного тесту
+// Завантаження публічного тесту
 async function loadPublicTest() {
 try {
 const testDoc = await getDoc(doc(db, 'tests', PUBLIC_TEST_ID));
@@ -1848,7 +1844,6 @@ return;
 const testData = {id: testDoc.id, ...testDoc.data()};
 tests = [testData];
 
-// Відразу переходимо до intro
 startIntro(PUBLIC_TEST_ID);
 } catch (e) {
 console.error('Помилка завантаження тесту:', e);
@@ -1856,7 +1851,7 @@ alert('❌ Помилка завантаження тесту');
 }
 }
 
-// НОВЕ: Функції контекстного меню
+// Функції контекстного меню
 window.showContextMenu = (event, testId) => {
 if (!isAdmin()) return;
 event.preventDefault();
@@ -1905,7 +1900,6 @@ function hideContextMenu() {
 document.getElementById('contextMenu').classList.remove('active');
 }
 
-// Закриття меню при кліку поза ним
 document.addEventListener('click', (e) => {
 if (!e.target.closest('.context-menu')) {
 hideContextMenu();
@@ -1915,7 +1909,6 @@ document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'
 }
 });
 
-// Блокування стандартного контекстного меню на test-card
 document.addEventListener('contextmenu', (e) => {
 if (e.target.closest('.test-card') && isAdmin()) {
 e.preventDefault();
@@ -2099,8 +2092,8 @@ if (notifs.length > 20) notifs.pop();
 localStorage.setItem('isput_notifs', JSON.stringify(notifs));
 }
 
+// Auth
 onAuthStateChanged(auth, async u => {
-// НОВЕ: Якщо публічний режим, пропускаємо авторизацію
 if (IS_PUBLIC_MODE) {
 document.getElementById('mainHeader').classList.add('hidden');
 showView('publicForm');
@@ -2129,7 +2122,7 @@ allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
 });
 
 loadTestsFromFirebase();
-loadResultsFromFirebase(); // НОВЕ: Завантажуємо результати
+loadResultsFromFirebase();
 } catch (e) {
 console.log('Firebase err:', e);
 }
@@ -2152,11 +2145,27 @@ showView('home');
 });
 
 // Завантаження тестів з Firebase
+function loadTestsFromFirebase() {
+const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
+onSnapshot(q, snapshot => {
+tests = [];
+snapshot.forEach(docSnap => {
+tests.push({id: docSnap.id, ...docSnap.data()});
+});
+
+const activeView = document.querySelector('.view.active');
+if (activeView) {
+if (activeView.id === 'viewHome') renderHome();
+if (activeView.id === 'viewManage') renderManage();
+if (activeView.id === 'viewHistory') renderHistory();
+}
+});
+}
+
 // НОВЕ: Завантаження результатів з Firebase
 function loadResultsFromFirebase() {
 const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
-// Очищаємо локальний масив
 results = [];
 
 snapshot.forEach(docSnap => {
@@ -2165,10 +2174,6 @@ results.push({id: docSnap.id, ...docSnap.data()});
 
 console.log('✅ Завантажено результатів з Firebase:', results.length);
 
-// Також зберігаємо локально
-save();
-
-// Оновлюємо view якщо потрібно
 const activeView = document.querySelector('.view.active');
 if (activeView) {
 if (activeView.id === 'viewHome') renderHome();
@@ -2227,8 +2232,6 @@ const testName = t ? t.name : 'Невідомий іспит';
 
 await deleteDoc(doc(db, 'tests', id));
 
-results = results.filter(r => r.testId !== id);
-save();
 addNotif('🗑 Іспит видалено');
 
 await sendDiscordNotification('TEST_DELETED', {
