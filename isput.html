@@ -2099,7 +2099,6 @@ if (notifs.length > 20) notifs.pop();
 localStorage.setItem('isput_notifs', JSON.stringify(notifs));
 }
 
-// Auth - перевірка авторизації
 onAuthStateChanged(auth, async u => {
 // НОВЕ: Якщо публічний режим, пропускаємо авторизацію
 if (IS_PUBLIC_MODE) {
@@ -2130,6 +2129,7 @@ allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
 });
 
 loadTestsFromFirebase();
+loadResultsFromFirebase(); // НОВЕ: Завантажуємо результати
 } catch (e) {
 console.log('Firebase err:', e);
 }
@@ -2152,18 +2152,27 @@ showView('home');
 });
 
 // Завантаження тестів з Firebase
-function loadTestsFromFirebase() {
-const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
+// НОВЕ: Завантаження результатів з Firebase
+function loadResultsFromFirebase() {
+const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
-tests = [];
+// Очищаємо локальний масив
+results = [];
+
 snapshot.forEach(docSnap => {
-tests.push({id: docSnap.id, ...docSnap.data()});
+results.push({id: docSnap.id, ...docSnap.data()});
 });
 
+console.log('✅ Завантажено результатів з Firebase:', results.length);
+
+// Також зберігаємо локально
+save();
+
+// Оновлюємо view якщо потрібно
 const activeView = document.querySelector('.view.active');
 if (activeView) {
 if (activeView.id === 'viewHome') renderHome();
-if (activeView.id === 'viewManage') renderManage();
+if (activeView.id === 'viewReview') renderReview();
 if (activeView.id === 'viewHistory') renderHistory();
 }
 });
@@ -2733,7 +2742,8 @@ renderQuestion();
 
 // Завершення іспиту
 // Завершення іспиту
-function finishQuiz() {
+// Завершення іспиту - ВИПРАВЛЕНО З FIREBASE
+async function finishQuiz() {
 clearInterval(timer);
 
 let score = 0;
@@ -2795,8 +2805,7 @@ score = Math.round(score * 100) / 100;
 const hasPendingQuestions = details.some(d => d.status === 'pending');
 const resultStatus = hasPendingQuestions ? 'pending' : 'auto';
 
-// ВИПРАВЛЕННЯ: Правильне ім'я користувача для публічного режиму
-const userName = IS_PUBLIC_MODE ? ME.name : ME.name;
+const userName = ME.name;
 const userRole = IS_PUBLIC_MODE ? 'Публічний користувач' : (ME.role === 'admin' ? 'Адмін' : ME.role === 'instructor' ? 'Інструктор' : 'Бієць');
 
 const result = {
@@ -2813,15 +2822,28 @@ details,
 status: resultStatus,
 date: now(),
 reviewer: null,
-reviewedByHuman: false
+reviewedByHuman: false,
+isPublic: IS_PUBLIC_MODE
 };
 
-// ВИПРАВЛЕННЯ: Зберігаємо результат ЗАВЖДИ (і для публічних, і для авторизованих)
+// НОВЕ: Зберігаємо в Firebase
+try {
+await addDoc(collection(db, 'results'), {
+...result,
+createdAt: serverTimestamp()
+});
+console.log('✅ Результат збережено в Firebase!');
+} catch (e) {
+console.error('❌ Помилка збереження результату:', e);
+alert('Помилка збереження результату: ' + e.message);
+}
+
+// Також зберігаємо локально для поточного користувача
 results.push(result);
 save();
 
-// ВИПРАВЛЕННЯ: Відправляємо Discord notification ЗАВЖДИ
-sendDiscordNotification('QUIZ_COMPLETED', {
+// Discord notification
+await sendDiscordNotification('QUIZ_COMPLETED', {
 testName: currentTest.name,
 userName: userName,
 userRole: userRole,
@@ -2833,9 +2855,8 @@ totalQuestions: currentTest.questions.length,
 status: resultStatus,
 passed: score >= currentTest.passScore,
 date: now()
-}).catch(err => console.log('Discord notification error:', err));
+});
 
-// Додаємо нотифікацію (тільки для НЕ публічних)
 if (!IS_PUBLIC_MODE) {
 addNotif(`📝 Ви завершили іспит "${currentTest.name}" з результатом ${score}/${currentTest.maxScore}`);
 }
@@ -3499,72 +3520,83 @@ function renderReview() {
     }).join('');
 }
 
-window.adjustPoints = (ri, di, delta) => {
-    const pending = results.filter(r => 
-        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
-    );
-    const r = pending[ri];
-    if (!r) return;
-    const t = tests.find(x => x.id === r.testId);
-    const maxPPQ = t ? t.maxScore / t.questions.length : 100;
-    let current = r.details[di].points || 0;
-    current = Math.max(0, Math.min(maxPPQ, current + delta));
-    current = Math.round(current * 100) / 100;
-    r.details[di].points = current;
-    const el = document.getElementById(`points-${ri}-${di}`);
-    if (el) el.textContent = current + ' б.';
+window.adjustPoints = (resultId, qIndex, delta) => {
+const r = results.find(x => x.id === resultId);
+if (!r) return;
+
+const d = r.details[qIndex];
+if (d.status !== 'pending') return;
+
+const t = tests.find(x => x.id === r.testId);
+const maxPts = t ? Math.round(t.maxScore / t.questions.length * 10) / 10 : 10;
+
+d.points = Math.max(0, Math.min(maxPts, d.points + delta));
+d.points = Math.round(d.points * 10) / 10;
+
+const pointsEl = document.getElementById(`points-${resultId}-${qIndex}`);
+if (pointsEl) pointsEl.textContent = d.points.toFixed(1) + ' б.';
+
+const newTotal = r.details.reduce((sum, detail) => sum + detail.points, 0).toFixed(1);
+const totalEl = document.getElementById(`totalScore-${resultId}`);
+if (totalEl) totalEl.textContent = newTotal + ' / ' + r.maxScore + ' б.';
+
+save();  // ОСЬ ТУТ ДОДАЙ FIREBASE!
 };
 
-window.approveResult = async (ri) => {
-    const pending = results.filter(r => 
-        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
-    );
-    const r = pending[ri];
-    if (!r) return;
-    let totalScore = 0;
-    r.details.forEach(d => { totalScore += (d.points || 0); });
-    totalScore = Math.round(totalScore * 100) / 100;
-    r.score = totalScore;
-    r.status = 'approved';
-    r.reviewer = ME.name;
-    r.reviewedByHuman = true;
-    r.reviewDate = now();
-    save();
-    await sendDiscordNotification('RESULT_APPROVED', {
-        userName: r.userName,
-        testName: r.testName,
-        finalScore: totalScore,
-        maxScore: r.maxScore,
-        reviewer: ME.name,
-        date: now()
-    });
-    addNotif(`✅ Результат ${r.userName} схвалено (${totalScore}/${r.maxScore})`);
-    alert('✅ Результат схвалено!');
-    renderReview();
+window.setMaxPoints = (resultId, qIndex, points) => {
+const r = results.find(x => x.id === resultId);
+if (!r) return;
+
+const d = r.details[qIndex];
+if (d.status !== 'pending') return;
+
+d.points = points;
+
+const pointsEl = document.getElementById(`points-${resultId}-${qIndex}`);
+if (pointsEl) pointsEl.textContent = d.points.toFixed(1) + ' б.';
+
+const newTotal = r.details.reduce((sum, detail) => sum + detail.points, 0).toFixed(1);
+const totalEl = document.getElementById(`totalScore-${resultId}`);
+if (totalEl) totalEl.textContent = newTotal + ' / ' + r.maxScore + ' б.';
+
+save();  // І ТУТ ТЕЖ!
 };
 
-window.rejectResult = async (ri) => {
-    const pending = results.filter(r => 
-        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
-    );
-    const r = pending[ri];
-    if (!r) return;
-    r.status = 'rejected';
-    r.reviewer = ME.name;
-    r.reviewedByHuman = true;
-    r.reviewDate = now();
-    save();
-    await sendDiscordNotification('RESULT_REJECTED', {
-        userName: r.userName,
-        testName: r.testName,
-        score: r.score,
-        maxScore: r.maxScore,
-        reviewer: ME.name,
-        date: now()
-    });
-    addNotif(`❌ Результат ${r.userName} відхилено`);
-    alert('❌ Результат відхилено!');
-    renderReview();
+r.score = r.details.reduce((sum, d) => sum + d.points, 0);
+r.score = Math.round(r.score * 100) / 100;
+
+r.status = 'rejected';
+r.reviewer = ME.name;
+r.reviewedByHuman = true;
+
+// НОВЕ: Оновлюємо в Firebase
+try {
+const resultDoc = doc(db, 'results', id);
+await updateDoc(resultDoc, {
+score: r.score,
+details: r.details,
+status: 'rejected',
+reviewer: ME.name,
+reviewedByHuman: true
+});
+console.log('✅ Результат оновлено в Firebase');
+} catch (e) {
+console.error('❌ Помилка оновлення:', e);
+}
+
+save();
+addNotif(`❌ Результат ${r.userName} відхилено перевіряючим ${ME.name}`);
+
+await sendDiscordNotification('RESULT_REJECTED', {
+userName: r.userName,
+testName: r.testName,
+score: r.score,
+maxScore: r.maxScore,
+reviewer: ME.name,
+date: now()
+});
+
+renderReview();
 };
 
 function renderManage() {
