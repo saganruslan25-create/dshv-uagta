@@ -1,3 +1,6 @@
+<details>
+<summary>👉 Натисніть, щоб розгорнути повний код</summary>
+```html
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -1618,7 +1621,6 @@ gap: 10px;
 <span class="role-badge" id="headerRole">...</span>
 </div>
 </header>
-
 <div class="main-wrap">
 <!-- НОВЕ: Публічна форма для анонімів -->
 <div class="view" id="viewPublicForm">
@@ -1642,7 +1644,6 @@ gap: 10px;
 </div>
 </div>
 </div>
-
 <!-- Головна -->
 <div class="view active" id="viewHome">
 <div class="stats-row" id="statsRow"></div>
@@ -1651,65 +1652,54 @@ gap: 10px;
 <div class="section-title">📊 Мої результати</div>
 <div id="myResults"></div>
 </div>
-
 <!-- Вступ до іспиту -->
 <div class="view" id="viewIntro">
 <div class="intro-card" id="introCard"></div>
 </div>
-
 <!-- Проходження іспиту -->
 <div class="view" id="viewQuiz">
 <div class="quiz-container" id="quizContainer"></div>
 </div>
-
 <!-- Результат -->
 <div class="view" id="viewResult">
 <div class="result-screen" id="resultScreen"></div>
 </div>
-
 <!-- Створення іспиту -->
 <div class="view" id="viewCreate">
 <div class="section-title" id="createTitle">➕ Створити іспит</div>
 <div id="createForm"></div>
 </div>
-
 <!-- Перевірка -->
 <div class="view" id="viewReview">
 <div class="section-title">🔍 Перевірка відповідей</div>
 <div id="reviewList"></div>
 </div>
-
 <!-- Керування іспитами -->
 <div class="view" id="viewManage">
 <div class="section-title">⚙️ Керування іспитами</div>
 <div id="manageList"></div>
 </div>
-
 <!-- Настройки -->
 <div class="view" id="viewSettings">
 <div class="section-title">🔧 Настройки</div>
 <div id="settingsContent"></div>
 </div>
-
 <!-- НОВЕ: Списки (історія) -->
 <div class="view" id="viewHistory">
 <div class="section-title">📊 Списки та історія</div>
 <div id="historyContent"></div>
 </div>
-
 <!-- Адмін список -->
 <div class="view" id="viewAdminList">
 <div class="section-title">👑 Адмін права в іспитах</div>
 <div id="adminListContent"></div>
 </div>
 </div>
-
 <!-- Lightbox для фото -->
 <div id="lightbox" class="lightbox" onclick="closeLightbox()">
 <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
 <img id="lightboxImg" class="lightbox-img" src="">
 </div>
-
 <!-- НОВЕ: Контекстне меню ПКМ -->
 <div id="contextMenu" class="context-menu">
 <div class="context-menu-item" onclick="contextEdit()">
@@ -1730,12 +1720,10 @@ gap: 10px;
 <span>Видалити іспит</span>
 </div>
 </div>
-
 <!-- НОВЕ: Повідомлення про копіювання -->
 <div id="linkCopiedNotif" class="public-link-copied">
 🔗 Посилання скопійовано!
 </div>
-
 <script type="module">
 // Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -1916,11 +1904,10 @@ e.preventDefault();
 });
 
 // Discord notifications
-// Discord notifications
 async function sendDiscordNotification(type, data) {
 console.log('🔔 sendDiscordNotification викликано:', type);
 console.log('📦 Дані:', data);
-console.log('🔗 Webhook URL:', webhookUrl ? 'Є' : 'ВІДСУТНІЙ');
+console.log('🔗 Webhook URL:', webhookUrl ? 'Є (' + webhookUrl.substring(0, 50) + '...)' : 'ВІДСУТНІЙ');
 
 if (!webhookUrl) {
 console.error('❌ Webhook URL не налаштовано! Перейдіть в Настройки та додайте Discord Webhook');
@@ -2110,6 +2097,67 @@ console.error('❌ Exception при відправці в Discord:', e);
 }
 }
 
+// Notifications
+let notifs = JSON.parse(localStorage.getItem('isput_notifs') || '[]');
+function addNotif(text) {
+if (IS_PUBLIC_MODE) return;
+notifs.unshift({text, time: now(), read: false});
+if (notifs.length > 20) notifs.pop();
+localStorage.setItem('isput_notifs', JSON.stringify(notifs));
+}
+
+// Auth
+onAuthStateChanged(auth, async u => {
+if (IS_PUBLIC_MODE) {
+document.getElementById('mainHeader').classList.add('hidden');
+showView('publicForm');
+return;
+}
+
+if (!u) {
+window.location.href = 'index.html';
+return;
+}
+ME.uid = u.uid;
+
+try {
+const snap = await getDoc(doc(db, 'users', u.uid));
+if (snap.exists()) {
+const d = snap.data();
+ME.name = d.name || 'Невідомий';
+ME.role = d.role || 'fighter';
+}
+
+const all = await getDocs(collection(db, 'users'));
+allUsers = [];
+all.forEach(s => {
+const d = s.data();
+allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
+});
+
+loadTestsFromFirebase();
+loadResultsFromFirebase();
+} catch (e) {
+console.log('Firebase err:', e);
+}
+
+document.getElementById('headerName').textContent = ME.name;
+const rb = document.getElementById('headerRole');
+if (ME.role === 'admin') {
+rb.textContent = 'АДМІН';
+rb.className = 'role-badge role-admin';
+} else if (ME.role === 'instructor') {
+rb.textContent = 'ІНСТРУКТОР';
+rb.className = 'role-badge role-instructor';
+} else {
+rb.textContent = 'БІЄЦЬ';
+rb.className = 'role-badge role-fighter';
+}
+
+buildNav();
+showView('home');
+});
+
 // Завантаження тестів з Firebase
 function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
@@ -2167,10 +2215,11 @@ passScore: testObj.passScore,
 date: now()
 });
 } else {
-await addDoc(collection(db, 'tests'), {
+const docRef = await addDoc(collection(db, 'tests'), {
 ...testObj,
 createdAt: serverTimestamp()
 });
+console.log('✅ Новий тест створено з ID:', docRef.id);
 addNotif(`📝 Іспит "${testObj.name}" створено!`);
 await sendDiscordNotification('NEW_TEST', {
 testName: testObj.name,
@@ -2564,7 +2613,6 @@ freeHtml = `
 </div>
 `;
 }
-
 document.getElementById('quizContainer').innerHTML = `
 <div class="quiz-progress-bar">
 <div class="quiz-progress-fill" style="width:${progress}%"></div>
@@ -2585,10 +2633,8 @@ ${currentQ === currentTest.questions.length - 1 ? '✅ Завершити ісп
 </button>
 </div>
 `;
-
 if (timer) clearInterval(timer);
 timer = setInterval(updateTimer, 1000);
-
 if (answers[currentQ]) {
 const ans = answers[currentQ];
 if (ans.type === 'free') {
@@ -2606,7 +2652,6 @@ if (letter) letter.parentElement.classList.add('selected');
 }
 }
 }
-
 function updateTimer() {
 timeLeft--;
 const timerEl = document.getElementById('timer');
@@ -2616,20 +2661,16 @@ if (timeLeft <= 10) {
 timerEl.classList.add('danger');
 }
 }
-
 if (timeLeft <= 0) {
 clearInterval(timer);
 nextQuestion();
 }
 }
-
 window.selectAnswer = i => {
 document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
 const btn = document.querySelectorAll('.answer-btn')[i];
 btn.classList.add('selected');
-
 answers[currentQ] = {type: 'normal', answer: i};
-
 const freeToggle = document.getElementById('freeToggle');
 const freeInput = document.getElementById('freeInput');
 if (freeToggle) {
@@ -2638,14 +2679,11 @@ freeInput.style.display = 'none';
 freeInput.value = '';
 }
 };
-
 window.selectTableAnswer = ri => {
 document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked'));
 const radio = document.getElementById('table-radio-' + ri);
 radio.classList.add('checked');
-
 answers[currentQ] = {type: 'table', answer: ri};
-
 const freeToggle = document.getElementById('freeToggle');
 const freeInput = document.getElementById('freeInput');
 if (freeToggle) {
@@ -2654,52 +2692,41 @@ freeInput.style.display = 'none';
 freeInput.value = '';
 }
 };
-
 window.toggleFreeAnswer = () => {
 const toggle = document.getElementById('freeToggle');
 const input = document.getElementById('freeInput');
-
 toggle.classList.toggle('active');
 const isActive = toggle.classList.contains('active');
 input.style.display = isActive ? 'block' : 'none';
-
 if (isActive) {
 input.focus();
 document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
 document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked'));
 }
 };
-
 window.nextQuestion = () => {
 const q = currentTest.questions[currentQ];
-
 const freeInput = document.getElementById('freeInput');
 if (freeInput && freeInput.style.display !== 'none' && freeInput.value.trim()) {
 answers[currentQ] = {type: 'free', answer: freeInput.value.trim()};
 }
-
 if (!answers[currentQ]) {
 if (!confirm('⚠️ Ви не вибрали відповідь! Продовжити без відповіді?')) {
 return;
 }
 answers[currentQ] = {type: 'none', answer: null};
 }
-
 clearInterval(timer);
 currentQ++;
 renderQuestion();
 };
-
-// ВИПРАВЛЕНА finishQuiz з Firebase
 // ВИПРАВЛЕНА finishQuiz з Firebase
 async function finishQuiz() {
 clearInterval(timer);
-
 let score = 0;
 let correctCount = 0;
 let details = [];
 const pointsPerQuestion = currentTest.maxScore / currentTest.questions.length;
-
 currentTest.questions.forEach((q, i) => {
 const userAns = answers[i];
 let isCorrect = false;
@@ -2707,7 +2734,6 @@ let status = 'wrong';
 let userAnswer = 'Без відповіді';
 let correctAnswer = '';
 let points = 0;
-
 if (!userAns || userAns.type === 'none') {
 userAnswer = 'Без відповіді';
 status = 'wrong';
@@ -2719,8 +2745,8 @@ points = pointsPerQuestion;
 const correctIdx = q.tableData.correctRowIndex;
 isCorrect = userAns.answer === correctIdx;
 status = isCorrect ? 'correct' : 'wrong';
-userAnswer = `Рядок ${userAns.answer + 1}`;
-correctAnswer = `Рядок ${correctIdx + 1}`;
+userAnswer = Рядок ${userAns.answer + 1};
+correctAnswer = Рядок ${correctIdx + 1};
 if (isCorrect) {
 score += pointsPerQuestion;
 correctCount++;
@@ -2739,7 +2765,6 @@ correctCount++;
 points = pointsPerQuestion;
 }
 }
-
 details.push({
 qText: q.text,
 userAnswer,
@@ -2748,15 +2773,11 @@ status,
 points: Math.round(points * 100) / 100
 });
 });
-
 score = Math.round(score * 100) / 100;
-
 const hasPendingQuestions = details.some(d => d.status === 'pending');
 const resultStatus = hasPendingQuestions ? 'pending' : 'auto';
-
 const userName = ME.name;
 const userRole = IS_PUBLIC_MODE ? 'Публічний користувач' : (ME.role === 'admin' ? 'Адмін' : ME.role === 'instructor' ? 'Інструктор' : 'Бієць');
-
 const result = {
 testId: currentTest.id,
 testName: currentTest.name,
@@ -2773,7 +2794,6 @@ reviewer: null,
 reviewedByHuman: false,
 isPublic: IS_PUBLIC_MODE
 };
-
 try {
 // 1️⃣ СПОЧАТКУ зберігаємо результат
 const docRef = await addDoc(collection(db, 'results'), {
@@ -2782,7 +2802,6 @@ createdAt: serverTimestamp()
 });
 result.id = docRef.id;
 console.log('✅ Результат збережено в Firebase з ID:', docRef.id);
-
 // 2️⃣ ПОТІМ відправляємо Discord notification
 await sendDiscordNotification('QUIZ_COMPLETED', {
 testName: currentTest.name,
@@ -2798,27 +2817,22 @@ passed: score >= currentTest.passScore,
 date: now()
 });
 console.log('✅ Discord notification відправлено');
-
 // 3️⃣ ПОТІМ додаємо notification
 if (!IS_PUBLIC_MODE) {
-addNotif(`📝 Ви завершили іспит "${currentTest.name}" з результатом ${score}/${currentTest.maxScore}`);
+addNotif(📝 Ви завершили іспит "${currentTest.name}" з результатом ${score}/${currentTest.maxScore});
 }
-
 } catch (e) {
 console.error('❌ Помилка збереження результату:', e);
 alert('❌ Помилка збереження результату: ' + e.message);
 return; // Виходимо, якщо помилка
 }
-
 // 4️⃣ ТІЛЬКИ ПІСЛЯ УСПІШНОГО ЗБЕРЕЖЕННЯ показуємо результат
 showResult(result);
 }
-
 function showResult(result) {
 const passed = result.score >= result.passScore;
 const statusClass = passed ? 'pass' : 'fail';
 const statusText = passed ? '✅ СКЛАДЕНО' : '❌ НЕ СКЛАДЕНО';
-
 if (result.status === 'pending') {
 document.getElementById('resultScreen').innerHTML = `
 <div class="intro-card">
@@ -2837,7 +2851,6 @@ ${IS_PUBLIC_MODE ? `<div class="btn-group"><button class="btn btn-primary" oncli
 let detailsHtml = result.details.map((d, i) => {
 const mark = d.status === 'correct' ? 'ok' : d.status === 'pending' ? 'pend' : 'no';
 const icon = d.status === 'correct' ? '✓' : d.status === 'pending' ? '?' : '✕';
-
 return `<div class="result-detail">
 <div class="mark ${mark}">${icon}</div>
 <div style="flex:1">
@@ -2847,7 +2860,6 @@ ${d.status !== 'pending' ? `<div style="font-size:11px;color:var(--primary);marg
 </div>
 </div>`;
 }).join('');
-
 document.getElementById('resultScreen').innerHTML = `
 <div class="intro-card">
 <div class="result-circle ${statusClass}">
@@ -2863,12 +2875,14 @@ ${IS_PUBLIC_MODE ? `<div class="btn-group"><button class="btn btn-primary" oncli
 </div>
 `;
 }
-
 showView('result');
 }
+console.log('✅ Частина 1 завантажена');
+// Продовження коду у наступному коментарі...
+</script>
+// ЧАСТИНА 2 - Створення, перевірка та інші функції
 
-console.log('✅ Частина 2 завантажена - Quiz функції');
-  // renderCreateForm - створення/редагування іспиту
+// renderCreateForm - створення/редагування іспиту
 function renderCreateForm(testData) {
 editingTestId = testData ? testData.id : null;
 document.getElementById('createTitle').innerHTML = editingTestId ? '✏️ Редагувати іспит' : '➕ Створити іспит';
@@ -3374,9 +3388,6 @@ showView('home');
 }
 };
 
-console.log('✅ Частина 3 завантажена - Create функції');
-
-// renderCreateForm - створення/редагування іспиту
 // renderReview - перевірка з балами
 function renderReview() {
 const pending = results.filter(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman));
@@ -4010,7 +4021,6 @@ console.log(' ✓ Перевірка з балами');
 console.log(' ✓ Історія та списки');
 console.log(' ✓ Всі адмін функції');
 
-console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.2 - Частина 2/2 завантажена!');
 </script>
 </body>
 </html>
