@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ІСПИТ | ДШВ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Стилі такі ж як у головному файлі, можна мінімально залишити */
+        :root { --primary: #00ff44; --bg: #030507; --card-bg: rgba(10,12,16,0.95); --glass-border: rgba(0,255,68,0.3); --text-gray: #94a3b8; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .public-container { max-width: 600px; width: 100%; }
+        .card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px; padding: 30px; margin-bottom: 20px; backdrop-filter: blur(10px); }
+        .card h2 { font-size: 22px; font-weight: 900; margin-bottom: 20px; text-align: center; color: var(--primary); }
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; font-size: 12px; color: var(--primary); margin-bottom: 6px; text-transform: uppercase; font-weight: 700; }
+        .form-input { width: 100%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; font-size: 14px; outline: none; }
+        .form-input:focus { border-color: var(--primary); }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; background: var(--primary); color: black; transition: 0.3s; }
+        .btn:hover { box-shadow: 0 0 20px rgba(0,255,68,0.4); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .error { color: #ef4444; text-align: center; margin-top: 10px; font-size: 14px; }
+        
+        /* Стилі для тесту */
+        .quiz-question { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        .question-text { font-size: 16px; font-weight: 700; margin-bottom: 15px; }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .option-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 10px; cursor: pointer; text-align: left; transition: 0.2s; font-size: 14px; }
+        .option-btn:hover { border-color: var(--primary); }
+        .option-btn.selected { background: rgba(0,255,68,0.15); border-color: var(--primary); }
+        .progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 20px; }
+        .progress-bar { height: 100%; background: var(--primary); transition: width 0.3s; }
+        .result-box { text-align: center; }
+        .score { font-size: 48px; font-weight: 900; color: var(--primary); margin: 20px 0; }
+    </style>
+</head>
+<body>
+
+<div class="public-container" id="app">
+    <!-- Контент генерується JS -->
+</div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const app = initializeApp({
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    });
+    const db = getFirestore(app);
+
+    const appDiv = document.getElementById('app');
+    const urlParams = new URLSearchParams(window.location.search);
+    const testId = urlParams.get('id');
+
+    let currentTest = null;
+    let currentQ = 0;
+    let answers = {};
+    let guestInfo = {};
+
+    // Старт
+    async function init() {
+        if (!testId) {
+            showError("Іспит не знайдено. Перевірте посилання.");
+            return;
+        }
+        showLoading();
+        try {
+            const docRef = doc(db, 'tests', testId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                currentTest = { id: docSnap.id, ...docSnap.data() };
+                renderRegistration();
+            } else {
+                showError("Іспит не знайдено в базі даних.");
+            }
+        } catch (e) {
+            console.error(e);
+            showError("Помилка завантаження даних.");
+        }
+    }
+
+    function showLoading() {
+        appDiv.innerHTML = '<div class="card"><h2>Завантаження...</h2></div>';
+    }
+
+    function showError(msg) {
+        appDiv.innerHTML = `<div class="card"><div class="error">${msg}</div></div>`;
+    }
+
+    // 1. Реєстрація гостя
+    function renderRegistration() {
+        appDiv.innerHTML = `
+            <div class="card">
+                <h2>${currentTest.emoji || '📝'} ${currentTest.name}</h2>
+                <p style="color:var(--text-gray); font-size:13px; text-align:center; margin-bottom:20px">
+                    Для проходження іспиту заповніть дані
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Ім'я та Прізвище</label>
+                    <input type="text" class="form-input" id="inputName" placeholder="Іван Петренко">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Підрозділ</label>
+                    <input type="text" class="form-input" id="inputUnit" placeholder="1-й батальйон">
+                </div>
+                <button class="btn" onclick="startGuestQuiz()">Почати іспит</button>
+                <div id="regError" class="error"></div>
+            </div>
+        `;
+    }
+
+    window.startGuestQuiz = () => {
+        const name = document.getElementById('inputName').value.trim();
+        const unit = document.getElementById('inputUnit').value.trim();
+        if (!name || !unit) {
+            document.getElementById('regError').textContent = "Заповніть всі поля!";
+            return;
+        }
+        guestInfo = { name, unit };
+        currentQ = 0;
+        answers = {};
+        renderQuestion();
+    };
+
+    // 2. Проходження тесту
+    function renderQuestion() {
+        const q = currentTest.questions[currentQ];
+        const progress = ((currentQ) / currentTest.questions.length) * 100;
+
+        let optsHtml = '';
+        if (q.answerType === 'table' && q.tableData) {
+            // Проста реалізація таблиці для гостя (вибір правильного рядка)
+            // Тут можна розширити логіку, якщо потрібно
+            optsHtml = q.tableData.rows.map((row, ri) => `
+                <button class="option-btn" onclick="selectAnswer(${ri})">
+                    ${row.join(' | ')}
+                </button>
+            `).join('');
+        } else {
+            optsHtml = q.options.map((o, oi) => `
+                <button class="option-btn" onclick="selectAnswer(${oi})">
+                    ${o.text}
+                </button>
+            `).join('');
+        }
+
+        appDiv.innerHTML = `
+            <div class="card">
+                <div class="progress"><div class="progress-bar" style="width:${progress}%"></div></div>
+                <div class="quiz-question">
+                    <div class="question-text">${currentQ + 1}. ${q.text}</div>
+                    ${q.photo ? `<img src="${q.photo}" style="max-width:100%; border-radius:10px; margin-bottom:15px">` : ''}
+                    <div class="options">
+                        ${optsHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    window.selectAnswer = (index) => {
+        answers[currentQ] = index;
+        currentQ++;
+        if (currentQ >= currentTest.questions.length) {
+            finishQuiz();
+        } else {
+            renderQuestion();
+        }
+    };
+
+    // 3. Завершення та збереження
+    async function finishQuiz() {
+        appDiv.innerHTML = '<div class="card"><h2>Обробка результатів...</h2></div>';
+        
+        // Розрахунок балів
+        let score = 0;
+        let details = currentTest.questions.map((q, i) => {
+            let correct = false;
+            let userAnswerText = "Немає відповіді";
+            
+            if (answers[i] !== undefined) {
+                if (q.answerType === 'table') {
+                    userAnswerText = q.tableData.rows[answers[i]].join(', ');
+                    correct = answers[i] === q.tableData.correctRowIndex;
+                } else {
+                    userAnswerText = q.options[answers[i]].text;
+                    correct = q.options[answers[i]].correct;
+                }
+            }
+            
+            if (correct) score++;
+            return {
+                qText: q.text,
+                userAnswer: userAnswerText,
+                correctAnswer: q.answerType === 'table' ? q.tableData.rows[q.tableData.correctRowIndex].join(', ') : q.options.find(o => o.correct)?.text,
+                status: correct ? 'correct' : 'wrong',
+                points: correct ? (currentTest.maxScore / currentTest.questions.length) : 0
+            };
+        });
+
+        const resultData = {
+            testId: currentTest.id,
+            testName: currentTest.name,
+            userName: guestInfo.name,
+            userUnit: guestInfo.unit, // Нове поле
+            userId: 'guest_' + Date.now(), // Ідентифікатор гостя
+            score: score,
+            maxScore: currentTest.maxScore,
+            passScore: currentTest.passScore,
+            details: details,
+            status: 'pending', // Гості завжди на перевірці або auto
+            date: new Date().toLocaleDateString('uk') + ' ' + new Date().toLocaleTimeString('uk', {hour: '2-digit', minute: '2-digit'}),
+            reviewedByHuman: false
+        };
+
+        try {
+            await addDoc(collection(db, 'results'), resultData);
+            renderResult(true);
+        } catch (e) {
+            console.error(e);
+            renderResult(false);
+        }
+    }
+
+    function renderResult(success) {
+        if(success) {
+            appDiv.innerHTML = `
+                <div class="card result-box">
+                    <h2>✅ Іспит завершено!</h2>
+                    <div class="score">${guestInfo.name}</div>
+                    <p style="color:var(--text-gray); margin-bottom:20px">
+                        Ваші результати відправлені на перевірку інструктору.
+                    </p>
+                </div>
+            `;
+        } else {
+            appDiv.innerHTML = `
+                <div class="card result-box">
+                    <h2>❌ Помилка</h2>
+                    <p style="color:var(--text-gray)">
+                        Не вдалося зберегти результати. Зв'яжіться з інструктором.
+                    </p>
+                </div>
+            `;
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
