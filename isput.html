@@ -3400,6 +3400,429 @@ showView('home');
 // ПРОДОВЖЕННЯ У НАСТУПНОМУ ПОВІДОМЛЕННІ (renderReview, renderManage, renderHistory та інші функції)...
 
 console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.2 - Завантажено частина 1/2');
+
+// ============ ЧАСТИНА 2/2 ============
+
+function editTest(id) {
+    const t = tests.find(x => x.id === id);
+    if (!t) return;
+    editingTestId = id;
+    showView('create');
+    renderCreateForm(t);
+}
+
+async function deleteTest(id) {
+    if (!confirm('⚠️ Видалити іспит? Це незворотна дія!')) return;
+    await deleteTestFromFirebase(id);
+    showView('home');
+}
+
+async function clearTestResults(testId) {
+    const t = tests.find(x => x.id === testId);
+    if (!confirm('⚠️ Очистити ВСІ результати цього іспиту?')) return;
+    const count = results.filter(r => r.testId === testId).length;
+    results = results.filter(r => r.testId !== testId);
+    save();
+    await sendDiscordNotification('RESULTS_CLEARED', {
+        testName: t ? t.name : 'Невідомий',
+        clearedBy: ME.name,
+        count,
+        date: now()
+    });
+    alert('✅ Результати очищено!');
+    renderHome();
+}
+
+function renderReview() {
+    const pending = results.filter(r => 
+        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
+    );
+    
+    if (pending.length === 0) {
+        document.getElementById('reviewList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає відповідей для перевірки</div>';
+        return;
+    }
+    
+    document.getElementById('reviewList').innerHTML = pending.map((r, ri) => {
+        const t = tests.find(x => x.id === r.testId);
+        const pointsPerQuestion = t ? t.maxScore / t.questions.length : 0;
+        
+        let questionsHtml = r.details.map((d, di) => {
+            let statusClass = d.status === 'correct' ? 'auto-ok' : d.status === 'pending' ? 'pending' : 'auto-fail';
+            let pointsHtml = '';
+            
+            if (d.status === 'pending') {
+                pointsHtml = `
+                <div class="points-control">
+                    <button class="points-btn minus" onclick="adjustPoints(${ri}, ${di}, -0.5)">−</button>
+                    <div class="points-display" id="points-${ri}-${di}">${d.points} б.</div>
+                    <button class="points-btn plus" onclick="adjustPoints(${ri}, ${di}, 0.5)">+</button>
+                    <span style="font-size:11px;color:var(--text-gray);margin-left:8px">макс: ${Math.round(pointsPerQuestion * 100) / 100}</span>
+                </div>`;
+            } else {
+                pointsHtml = `<div class="q-points" style="color:${d.status === 'correct' ? 'var(--primary)' : 'var(--danger)'}">${d.points} б.</div>`;
+            }
+            
+            return `<div class="review-q ${statusClass}">
+                <div class="q-title">${di + 1}. ${d.qText}</div>
+                <div class="q-answer">Відповідь: <b>${d.userAnswer}</b></div>
+                ${d.correctAnswer ? `<div class="q-correct">Правильно: ${d.correctAnswer}</div>` : ''}
+                ${pointsHtml}
+            </div>`;
+        }).join('');
+        
+        return `<div class="review-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px">
+                <div>
+                    <div style="font-size:16px;font-weight:800">${r.userName}</div>
+                    <div style="font-size:12px;color:var(--text-gray)">${r.testName} • ${r.date}</div>
+                </div>
+                <div style="font-size:20px;font-weight:900;color:var(--warning)">${r.score} / ${r.maxScore}</div>
+            </div>
+            ${questionsHtml}
+            <div class="btn-group" style="margin-top:20px">
+                <button class="btn btn-primary" onclick="approveResult(${ri})">✅ Схвалити</button>
+                <button class="btn btn-danger" onclick="rejectResult(${ri})">❌ Відхилити</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.adjustPoints = (ri, di, delta) => {
+    const pending = results.filter(r => 
+        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
+    );
+    const r = pending[ri];
+    if (!r) return;
+    const t = tests.find(x => x.id === r.testId);
+    const maxPPQ = t ? t.maxScore / t.questions.length : 100;
+    let current = r.details[di].points || 0;
+    current = Math.max(0, Math.min(maxPPQ, current + delta));
+    current = Math.round(current * 100) / 100;
+    r.details[di].points = current;
+    const el = document.getElementById(`points-${ri}-${di}`);
+    if (el) el.textContent = current + ' б.';
+};
+
+window.approveResult = async (ri) => {
+    const pending = results.filter(r => 
+        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
+    );
+    const r = pending[ri];
+    if (!r) return;
+    let totalScore = 0;
+    r.details.forEach(d => { totalScore += (d.points || 0); });
+    totalScore = Math.round(totalScore * 100) / 100;
+    r.score = totalScore;
+    r.status = 'approved';
+    r.reviewer = ME.name;
+    r.reviewedByHuman = true;
+    r.reviewDate = now();
+    save();
+    await sendDiscordNotification('RESULT_APPROVED', {
+        userName: r.userName,
+        testName: r.testName,
+        finalScore: totalScore,
+        maxScore: r.maxScore,
+        reviewer: ME.name,
+        date: now()
+    });
+    addNotif(`✅ Результат ${r.userName} схвалено (${totalScore}/${r.maxScore})`);
+    alert('✅ Результат схвалено!');
+    renderReview();
+};
+
+window.rejectResult = async (ri) => {
+    const pending = results.filter(r => 
+        r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)
+    );
+    const r = pending[ri];
+    if (!r) return;
+    r.status = 'rejected';
+    r.reviewer = ME.name;
+    r.reviewedByHuman = true;
+    r.reviewDate = now();
+    save();
+    await sendDiscordNotification('RESULT_REJECTED', {
+        userName: r.userName,
+        testName: r.testName,
+        score: r.score,
+        maxScore: r.maxScore,
+        reviewer: ME.name,
+        date: now()
+    });
+    addNotif(`❌ Результат ${r.userName} відхилено`);
+    alert('❌ Результат відхилено!');
+    renderReview();
+};
+
+function renderManage() {
+    if (tests.length === 0) {
+        document.getElementById('manageList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px">Іспитів немає</div>';
+        return;
+    }
+    document.getElementById('manageList').innerHTML = tests.map(t => {
+        const resCount = results.filter(r => r.testId === t.id).length;
+        const pendingCount = results.filter(r => r.testId === t.id && (r.status === 'pending' || !r.reviewedByHuman)).length;
+        return `<div class="manage-card">
+            <div>
+                <div style="font-size:15px;font-weight:800">${t.emoji || '📝'} ${t.name}</div>
+                <div style="font-size:12px;color:var(--text-gray);margin-top:4px">
+                    ${t.questions.length} питань • ${resCount} результатів • ${pendingCount} на перевірці
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-info" onclick="editTest('${t.id}')" style="padding:8px 16px;font-size:11px">✏️ Редагувати</button>
+                <button class="btn btn-warning" onclick="clearTestResults('${t.id}')" style="padding:8px 16px;font-size:11px">🧹 Очистити</button>
+                <button class="btn btn-secondary" onclick="copyPublicLink('${t.id}')" style="padding:8px 16px;font-size:11px">🔗 Посилання</button>
+                <button class="btn btn-danger" onclick="deleteTest('${t.id}')" style="padding:8px 16px;font-size:11px">🗑 Видалити</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+window.copyPublicLink = (testId) => {
+    const url = window.location.origin + window.location.pathname + '?id=' + testId;
+    navigator.clipboard.writeText(url).then(() => {
+        const notif = document.getElementById('linkCopiedNotif');
+        notif.classList.add('show');
+        setTimeout(() => notif.classList.remove('show'), 3000);
+    });
+};
+
+function renderSettings() {
+    document.getElementById('settingsContent').innerHTML = `
+    <div class="setting-block">
+        <h4>🔗 Discord Webhook</h4>
+        <div class="form-row">
+            <input class="form-input" id="webhookInput" value="${webhookUrl}" placeholder="https://discord.com/api/webhooks/...">
+        </div>
+        <button class="btn btn-primary" onclick="saveWebhook()" style="margin-top:10px">💾 Зберегти</button>
+    </div>
+    <div class="setting-block">
+        <h4>🔍 Перевіряючі</h4>
+        <div id="reviewersList" style="margin-bottom:15px">
+            ${reviewers.map((r, i) => `
+                <span class="reviewer-chip">${r}<button onclick="removeReviewer(${i})">✕</button></span>
+            `).join('')}
+            ${reviewers.length === 0 ? '<div style="color:var(--text-gray);font-size:13px">Перевіряючих немає</div>' : ''}
+        </div>
+        <div class="people-dropdown">
+            <input class="form-input" id="reviewerSearch" placeholder="Пошук користувача..." 
+                   onfocus="showPeopleList('reviewer')" oninput="filterPeople('reviewer')">
+            <div class="people-list" id="reviewerPeopleList">
+                ${allUsers.map(u => `
+                    <div class="people-item" onclick="addReviewer('${u.name.replace(/'/g, "\\'")}')">
+                        <span>${u.name}</span>
+                        <span style="font-size:10px;color:var(--text-gray)">${u.role}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    </div>
+    <div class="setting-block">
+        <h4>📊 Дані</h4>
+        <p style="font-size:13px;color:var(--text-gray);margin-bottom:15px">
+            Результатів: ${results.length} | Перевіряючих: ${reviewers.length} | Адмінів: ${adminList.length}
+        </p>
+        <button class="btn btn-danger" onclick="clearAllData()">🗑 Очистити всі локальні дані</button>
+    </div>`;
+}
+
+window.saveWebhook = () => {
+    webhookUrl = document.getElementById('webhookInput').value.trim();
+    save();
+    alert('✅ Webhook збережено!');
+};
+
+window.removeReviewer = (i) => {
+    reviewers.splice(i, 1);
+    save();
+    renderSettings();
+};
+
+window.addReviewer = async (name) => {
+    if (!reviewers.includes(name)) {
+        reviewers.push(name);
+        save();
+        await sendDiscordNotification('REVIEWER_ADDED', {
+            reviewerName: name,
+            addedBy: ME.name,
+            date: now()
+        });
+        addNotif(`🔍 Додано перевіряючого: ${name}`);
+    }
+    document.getElementById('reviewerSearch').value = '';
+    document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
+    renderSettings();
+};
+
+window.showPeopleList = (type) => {
+    document.getElementById(type + 'PeopleList').classList.add('show');
+};
+
+window.filterPeople = (type) => {
+    const search = document.getElementById(type + 'Search').value.toLowerCase();
+    const list = document.getElementById(type + 'PeopleList');
+    list.querySelectorAll('.people-item').forEach(item => {
+        const name = item.querySelector('span').textContent.toLowerCase();
+        item.style.display = name.includes(search) ? 'flex' : 'none';
+    });
+};
+
+window.clearAllData = () => {
+    if (!confirm('⚠️ Видалити ВСІ локальні дані?')) return;
+    results = [];
+    reviewers = [];
+    adminList = [];
+    notifs = [];
+    webhookUrl = '';
+    save();
+    localStorage.removeItem('isput_notifs');
+    alert('✅ Дані очищено!');
+    renderSettings();
+};
+
+function renderHistory() {
+    const allResults = [...results].sort((a, b) => b.date > a.date ? 1 : -1);
+    
+    let filtersHtml = `
+    <div class="history-filters">
+        <input class="filter-input" id="historySearch" placeholder="🔍 Пошук по імені..." oninput="filterHistory()">
+        <select class="filter-select" id="historyTestFilter" onchange="filterHistory()">
+            <option value="">Всі іспити</option>
+            ${tests.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}
+        </select>
+        <select class="filter-select" id="historyStatusFilter" onchange="filterHistory()">
+            <option value="">Всі статуси</option>
+            <option value="approved">Схвалено</option>
+            <option value="rejected">Відхилено</option>
+            <option value="pending">На перевірці</option>
+            <option value="auto">Автоматично</option>
+        </select>
+    </div>`;
+    
+    if (allResults.length === 0) {
+        document.getElementById('historyContent').innerHTML = filtersHtml + 
+            '<div style="color:var(--text-gray);text-align:center;padding:40px">Результатів немає</div>';
+        return;
+    }
+    
+    let rowsHtml = allResults.map(r => {
+        const t = tests.find(x => x.id === r.testId);
+        let st, stc;
+        if (r.status === 'pending') { st = 'На перевірці'; stc = 'st-pending'; }
+        else if (r.status === 'approved') { st = 'Схвалено'; stc = 'st-approved'; }
+        else if (r.status === 'rejected') { st = 'Відхилено'; stc = 'st-rejected'; }
+        else {
+            const p = t && r.score >= t.passScore;
+            st = r.reviewedByHuman ? (p ? 'Складено' : 'Не складено') : 'Очікує';
+            stc = r.reviewedByHuman ? (p ? 'st-pass' : 'st-fail') : 'st-pending';
+        }
+        const percent = r.maxScore > 0 ? Math.round(r.score / r.maxScore * 100) : 0;
+        return `<tr data-name="${(r.userName || '').toLowerCase()}" data-test="${r.testId}" data-status="${r.status}">
+            <td><b>${r.userName || 'Невідомий'}</b></td>
+            <td>${r.userRole || '-'}</td>
+            <td>${t ? t.name : 'Видалений'}</td>
+            <td><b>${r.score}</b> / ${r.maxScore} (${percent}%)</td>
+            <td><span class="status-badge ${stc}">${st}</span></td>
+            <td>${r.reviewer || 'SYSTEM'}</td>
+            <td>${r.date}</td>
+        </tr>`;
+    }).join('');
+    
+    document.getElementById('historyContent').innerHTML = `
+    ${filtersHtml}
+    <div class="history-table-wrapper">
+        <table class="history-table">
+            <thead><tr>
+                <th>Ім'я</th><th>Роль</th><th>Іспит</th><th>Бали</th><th>Статус</th><th>Перевіряючий</th><th>Дата</th>
+            </tr></thead>
+            <tbody id="historyTableBody">${rowsHtml}</tbody>
+        </table>
+    </div>`;
+}
+
+window.filterHistory = () => {
+    const search = (document.getElementById('historySearch')?.value || '').toLowerCase();
+    const testFilter = document.getElementById('historyTestFilter')?.value || '';
+    const statusFilter = document.getElementById('historyStatusFilter')?.value || '';
+    document.querySelectorAll('#historyTableBody tr').forEach(row => {
+        let show = true;
+        if (search && !(row.dataset.name || '').includes(search)) show = false;
+        if (testFilter && row.dataset.test !== testFilter) show = false;
+        if (statusFilter && row.dataset.status !== statusFilter) show = false;
+        row.style.display = show ? '' : 'none';
+    });
+};
+
+function renderAdminList() {
+    document.getElementById('adminListContent').innerHTML = `
+    <div class="admin-list-panel">
+        <h4 style="font-size:14px;font-weight:800;color:var(--primary-bright);margin-bottom:15px">👑 Адміністратори</h4>
+        <div id="adminChips" style="margin-bottom:20px">
+            ${adminList.map((a, i) => `
+                <span class="reviewer-chip">👑 ${a}<button onclick="removeAdmin(${i})">✕</button></span>
+            `).join('')}
+            ${adminList.length === 0 ? '<div style="color:var(--text-gray);font-size:13px">Додаткових адмінів немає</div>' : ''}
+        </div>
+        <div class="people-dropdown">
+            <input class="form-input" id="adminSearch" placeholder="Пошук користувача..." 
+                   onfocus="showPeopleList('admin')" oninput="filterPeople('admin')">
+            <div class="people-list" id="adminPeopleList">
+                ${allUsers.map(u => `
+                    <div class="people-item" onclick="addAdmin('${u.name.replace(/'/g, "\\'")}')">
+                        <span>${u.name}</span>
+                        <span style="font-size:10px;color:var(--text-gray)">${u.role}</span>
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    </div>
+    <div class="admin-list-panel">
+        <h4 style="font-size:14px;font-weight:800;color:var(--primary-bright);margin-bottom:15px">📋 Всі користувачі</h4>
+        <div class="results-table"><table>
+            <thead><tr><th>Ім'я</th><th>Роль</th><th>Статус</th></tr></thead>
+            <tbody>
+                ${allUsers.map(u => {
+                    const isA = u.role === 'admin' || adminList.includes(u.name);
+                    const isR = reviewers.includes(u.name);
+                    let status = '';
+                    if (isA) status += '<span class="status-badge st-approved">Адмін</span> ';
+                    if (isR) status += '<span class="status-badge st-pending">Перевіряючий</span> ';
+                    if (!isA && !isR) status = '<span class="status-badge" style="background:rgba(255,255,255,0.05);color:var(--text-gray);border:1px solid rgba(255,255,255,0.1)">Користувач</span>';
+                    return `<tr><td>${u.name}</td><td>${u.role}</td><td>${status}</td></tr>`;
+                }).join('')}
+            </tbody>
+        </table></div>
+    </div>`;
+}
+
+window.addAdmin = async (name) => {
+    if (!adminList.includes(name)) {
+        adminList.push(name);
+        save();
+        await sendDiscordNotification('ADMIN_ADDED', {
+            adminName: name,
+            addedBy: ME.name,
+            date: now()
+        });
+        addNotif(`👑 Додано адміністратора: ${name}`);
+    }
+    document.getElementById('adminSearch').value = '';
+    document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
+    buildNav();
+    renderAdminList();
+};
+
+window.removeAdmin = (i) => {
+    adminList.splice(i, 1);
+    save();
+    buildNav();
+    renderAdminList();
+};
+
+console.log('🚀 ДШВ ІСПИТ ЦЕНТР v2.2 - Частина 2/2 завантажена!');
 </script>
 </body>
 </html>
