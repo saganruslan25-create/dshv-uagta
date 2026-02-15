@@ -2342,6 +2342,8 @@ document.getElementById('myResults').innerHTML = '<div class="results-table"><ta
 }
 
 function renderCreateForm(testData = null) {
+    console.log('renderCreateForm викликано з даними:', testData);
+    
     editingTestId = testData ? testData.id : null;
     currentTestPhotos = testData && testData.photos ? testData.photos : [];
     
@@ -2371,7 +2373,7 @@ function renderCreateForm(testData = null) {
     document.getElementById('createForm').innerHTML = 
         '<div class="form-card">' +
         '<div class="form-row"><label class="form-label">Назва іспиту</label>' +
-        '<input class="form-input" id="testName" value="' + (testData?.name || '') + '" placeholder="Наприклад: Тактична підготовка"></div>' +
+      '<input class="form-input" id="testName" value="' + (testData && testData.name ? testData.name : '') + '" placeholder="Наприклад: Тактична підготовка"></div>' +
         '<div class="form-row"><label class="form-label">Опис (необов\'язково)</label>' +
         '<input class="form-input" id="testDesc" value="' + (testData?.description || '') + '" placeholder="Короткий опис іспиту"></div>' +
         '<div class="form-row"><label class="form-label">Емодзі</label>' +
@@ -3236,11 +3238,32 @@ document.getElementById('manageList').innerHTML = html;
 }
 
 window.editTest = id => {
-const t = tests.find(x => x.id === id);
-if (t) {
-renderCreateForm(t);
-showView('create');
-}
+    const t = tests.find(x => x.id === id);
+    if (!t) {
+        alert('❌ Тест не знайдено!');
+        return;
+    }
+    
+    console.log('Редагування тесту:', t);
+    
+    // Встановлюємо ID для редагування
+    editingTestId = t.id;
+    currentTestPhotos = t.photos || [];
+    
+    // Передаємо повні дані тесту
+    renderCreateForm({
+        id: t.id,
+        name: t.name || '',
+        description: t.description || '',
+        emoji: t.emoji || '📝',
+        passScore: t.passScore || 80,
+        maxScore: t.maxScore || 100,
+        agreementText: t.agreementText || '',
+        photos: t.photos || [],
+        questions: t.questions || []
+    });
+    
+    showView('create');
 };
 
 window.clearTestResults = async (id) => {
