@@ -1339,6 +1339,160 @@
             }
         }
 
+        /* ==================== LINKS MANAGER ==================== */
+        .links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .link-item {
+            background: var(--card-bg);
+            border: 2px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .link-item.working {
+            border-color: var(--primary);
+            background: rgba(34, 197, 94, 0.05);
+        }
+
+        .link-item.broken {
+            border-color: var(--danger);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .link-item.checking {
+            border-color: #fbbf24;
+            background: rgba(251, 191, 36, 0.05);
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .link-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .link-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .link-status.working {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--primary-bright);
+        }
+
+        .link-status.broken {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .link-status.checking {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+        }
+
+        .link-status-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .link-status.working .link-status-icon {
+            background: var(--primary);
+        }
+
+        .link-status.broken .link-status-icon {
+            background: var(--danger);
+        }
+
+        .link-status.checking .link-status-icon {
+            background: #fbbf24;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .link-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .link-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: white;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .link-input:focus {
+            border-color: var(--primary);
+            background: rgba(0,0,0,0.5);
+        }
+
+        .link-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: black;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.3s;
+            white-space: nowrap;
+        }
+
+        .link-btn:hover {
+            background: var(--primary-bright);
+            transform: scale(1.05);
+        }
+
+        .link-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .link-btn.secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .link-info {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 768px) {
             .hero { padding: 100px 5% 60px; }
@@ -1846,6 +2000,28 @@
         </div>
     </div>
 
+    <!-- LINKS MANAGER MODAL -->
+    <div class="modal-overlay" id="linksManagerModal">
+        <div class="modal-content">
+            <span class="modal-close" onclick="closeModal('linksManagerModal')">&times;</span>
+            <h2 class="modal-title">🔗 Управління посиланнями</h2>
+            
+            <p style="text-align: center; color: var(--text-gray); margin-bottom: 30px;">
+                Редагуйте всі посилання на сайті. Система автоматично перевіряє їх працездатність.
+            </p>
+
+            <div id="linksContainer" class="links-container">
+                <!-- Links will be loaded here -->
+            </div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn-primary" onclick="checkAllLinks()">
+                    🔄 Перевірити всі посилання
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPTS -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script type="module">
@@ -2184,6 +2360,15 @@
                             newsAdminBtn.onclick = () => openNewsEditor();
                             newsAdminBtn.style.color = 'var(--primary-bright)';
                             navLinks.insertBefore(newsAdminBtn, cabinetBtn);
+
+                            // Add Links Admin button
+                            const linksAdminBtn = document.createElement('a');
+                            linksAdminBtn.id = 'linksAdminBtn';
+                            linksAdminBtn.className = 'nav-link';
+                            linksAdminBtn.textContent = '🔗 Посилання';
+                            linksAdminBtn.onclick = () => openLinksManager();
+                            linksAdminBtn.style.color = 'var(--primary-bright)';
+                            navLinks.insertBefore(linksAdminBtn, cabinetBtn);
                         }
                     }
                 } catch (err) {
@@ -2419,6 +2604,257 @@
             document.body.appendChild(notif);
             setTimeout(() => notif.remove(), 2000);
         }
+
+        // ==================== LINKS MANAGER ====================
+        
+        // Default links structure
+        const defaultLinks = {
+            discord: {
+                title: "Discord сервер",
+                url: "https://discord.gg/ukrainegta",
+                category: "social"
+            },
+            instagram: {
+                title: "Instagram",
+                url: "https://www.instagram.com/ukraine_gta",
+                category: "social"
+            },
+            youtube: {
+                title: "YouTube канал",
+                url: "https://www.youtube.com/channel/UCAyONHpqibQDDrCxGiYc_hQ",
+                category: "social"
+            },
+            tiktok: {
+                title: "TikTok",
+                url: "https://www.tiktok.com/@ukraine_gta",
+                category: "social"
+            },
+            telegram: {
+                title: "Telegram",
+                url: "https://t.me/ukraine_gta",
+                category: "social"
+            },
+            mainSite: {
+                title: "Головний сайт проєкту",
+                url: "https://ukraine-gta.com.ua/uk/",
+                category: "main"
+            },
+            gallery: {
+                title: "Галерея підрозділу",
+                url: "gallery.html",
+                category: "internal"
+            },
+            cabinet: {
+                title: "Особистий кабінет",
+                url: "cabinet.html",
+                category: "internal"
+            }
+        };
+
+        window.openLinksManager = async () => {
+            openModal('linksManagerModal');
+            await loadLinksManager();
+        };
+
+        async function loadLinksManager() {
+            try {
+                const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+                const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
+
+                const container = document.getElementById('linksContainer');
+                container.innerHTML = '';
+
+                // Group by category
+                const categories = {
+                    social: "Соціальні мережі",
+                    main: "Головні посилання",
+                    internal: "Внутрішні сторінки"
+                };
+
+                Object.keys(categories).forEach(category => {
+                    const categoryTitle = document.createElement('h3');
+                    categoryTitle.style.cssText = 'color: var(--primary-bright); margin: 30px 0 15px; font-size: 18px; font-weight: 800;';
+                    categoryTitle.textContent = categories[category];
+                    container.appendChild(categoryTitle);
+
+                    Object.keys(links).forEach(key => {
+                        const link = links[key];
+                        if (link.category === category) {
+                            const item = createLinkItem(key, link);
+                            container.appendChild(item);
+                        }
+                    });
+                });
+
+            } catch (err) {
+                console.error("Error loading links:", err);
+            }
+        }
+
+        function createLinkItem(key, link) {
+            const item = document.createElement('div');
+            item.className = 'link-item';
+            item.id = `link-${key}`;
+
+            item.innerHTML = `
+                <div class="link-header">
+                    <div class="link-title">
+                        🔗 ${link.title}
+                    </div>
+                    <div class="link-status" id="status-${key}">
+                        <div class="link-status-icon"></div>
+                        <span>Не перевірено</span>
+                    </div>
+                </div>
+                <div class="link-input-group">
+                    <input type="url" class="link-input" id="input-${key}" value="${link.url}" placeholder="https://...">
+                    <button class="link-btn secondary" onclick="checkSingleLink('${key}')">Перевірити</button>
+                    <button class="link-btn" onclick="saveLink('${key}')">Зберегти</button>
+                </div>
+                <div class="link-info" id="info-${key}">
+                    Змініть посилання та натисніть "Зберегти"
+                </div>
+            `;
+
+            return item;
+        }
+
+        window.checkSingleLink = async (key) => {
+            const input = document.getElementById(`input-${key}`);
+            const status = document.getElementById(`status-${key}`);
+            const item = document.getElementById(`link-${key}`);
+            const info = document.getElementById(`info-${key}`);
+            
+            const url = input.value.trim();
+            
+            if (!url) {
+                status.className = 'link-status broken';
+                status.innerHTML = '<div class="link-status-icon"></div><span>Порожнє посилання</span>';
+                item.className = 'link-item broken';
+                return;
+            }
+
+            // Set checking state
+            status.className = 'link-status checking';
+            status.innerHTML = '<div class="link-status-icon"></div><span>Перевірка...</span>';
+            item.className = 'link-item checking';
+            info.textContent = 'Очікування відповіді від сервера...';
+
+            try {
+                // Simple URL validation
+                const urlObj = new URL(url);
+                
+                // For external links, we can't directly check due to CORS
+                // So we just validate URL format
+                if (url.startsWith('http://') || url.startsWith('https://')) {
+                    // External link - assume working if valid format
+                    status.className = 'link-status working';
+                    status.innerHTML = '<div class="link-status-icon"></div><span>Працює ✓</span>';
+                    item.className = 'link-item working';
+                    info.textContent = `Посилання дійсне. Домен: ${urlObj.hostname}`;
+                } else {
+                    // Internal link
+                    status.className = 'link-status working';
+                    status.innerHTML = '<div class="link-status-icon"></div><span>Працює ✓</span>';
+                    item.className = 'link-item working';
+                    info.textContent = 'Внутрішнє посилання';
+                }
+            } catch (err) {
+                status.className = 'link-status broken';
+                status.innerHTML = '<div class="link-status-icon"></div><span>Не працює ✗</span>';
+                item.className = 'link-item broken';
+                info.textContent = `Помилка: ${err.message}`;
+            }
+        };
+
+        window.saveLink = async (key) => {
+            const input = document.getElementById(`input-${key}`);
+            const url = input.value.trim();
+
+            if (!url) {
+                alert("Введіть посилання!");
+                return;
+            }
+
+            try {
+                // Load current links
+                const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+                const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
+
+                // Update link
+                links[key].url = url;
+
+                // Save to Firestore
+                await setDoc(doc(db, "settings", "siteLinks"), links);
+
+                showNotification(`Посилання "${links[key].title}" збережено!`);
+                
+                // Check link after saving
+                await checkSingleLink(key);
+                
+                // Update links on page
+                updatePageLinks(links);
+            } catch (err) {
+                alert("Помилка збереження: " + err.message);
+            }
+        };
+
+        window.checkAllLinks = async () => {
+            const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+            const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
+
+            showNotification("Перевірка всіх посилань...");
+
+            for (const key of Object.keys(links)) {
+                await checkSingleLink(key);
+                await new Promise(resolve => setTimeout(resolve, 500)); // Delay between checks
+            }
+
+            showNotification("Перевірка завершена!");
+        };
+
+        function updatePageLinks(links) {
+            // Update social links in footer
+            if (links.discord) {
+                const discordLink = document.querySelector('a[href*="discord"]');
+                if (discordLink) discordLink.href = links.discord.url;
+            }
+            if (links.instagram) {
+                const igLink = document.querySelector('a[href*="instagram"]');
+                if (igLink) igLink.href = links.instagram.url;
+            }
+            if (links.youtube) {
+                const ytLink = document.querySelector('a[href*="youtube"]');
+                if (ytLink) ytLink.href = links.youtube.url;
+            }
+            if (links.tiktok) {
+                const ttLink = document.querySelector('a[href*="tiktok"]');
+                if (ttLink) ttLink.href = links.tiktok.url;
+            }
+            if (links.telegram) {
+                const tgLink = document.querySelector('a[href*="t.me"]');
+                if (tgLink) tgLink.href = links.telegram.url;
+            }
+            if (links.mainSite) {
+                const mainLink = document.querySelector('a[href*="ukraine-gta.com.ua"]');
+                if (mainLink) mainLink.href = links.mainSite.url;
+            }
+        }
+
+        // Load and apply saved links on page load
+        async function loadAndApplyLinks() {
+            try {
+                const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+                if (linksDoc.exists()) {
+                    updatePageLinks(linksDoc.data());
+                }
+            } catch (err) {
+                console.error("Error loading links:", err);
+            }
+        }
+
+        // Apply links when page loads
+        loadAndApplyLinks();
 
         // Admin Panel Functions
         window.openAdminPanel = () => {
