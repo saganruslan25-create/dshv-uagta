@@ -2958,6 +2958,8 @@ document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('check
 
 let nextQuestionLocked = false;
 
+let nextQuestionLocked = false;
+
 window.nextQuestion = () => {
     // Перевірка блокування
     if (nextQuestionLocked) {
@@ -2979,8 +2981,6 @@ window.nextQuestion = () => {
     
     clearInterval(timer);
     currentQ++;
-clearInterval(timer);
-    currentQ++;
     
     // Зберігаємо прогрес
     sessionStorage.setItem('quizInProgress', JSON.stringify({
@@ -2992,10 +2992,42 @@ clearInterval(timer);
     
     renderQuestion();
     
-    // Розблокуємо через 2 секунди
-    setTimeout(() => {
-        nextQuestionLocked = false;
-    }, 2000);
+    // Візуально блокуємо кнопку
+    const nextBtn = document.querySelector('.quiz-container .btn-primary');
+    if (nextBtn) {
+        nextBtn.disabled = true;
+        nextBtn.style.opacity = '0.5';
+        nextBtn.style.cursor = 'not-allowed';
+        const originalText = nextBtn.textContent;
+        
+        let countdown = 2;
+        nextBtn.textContent = '⏳ Зачекайте ' + countdown + 'с...';
+        
+        const countdownInterval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                nextBtn.textContent = '⏳ Зачекайте ' + countdown + 'с...';
+            }
+        }, 1000);
+        
+        // Розблокуємо через 2 секунди
+        setTimeout(() => {
+            nextQuestionLocked = false;
+            clearInterval(countdownInterval);
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                nextBtn.style.opacity = '1';
+                nextBtn.style.cursor = 'pointer';
+                const isLastQuestion = currentQ === currentTest.questions.length - 1;
+                nextBtn.textContent = isLastQuestion ? '✅ Завершити іспит' : 'Далі ➡';
+            }
+        }, 2000);
+    } else {
+        // Якщо кнопка не знайдена, просто розблокуємо через 2 секунди
+        setTimeout(() => {
+            nextQuestionLocked = false;
+        }, 2000);
+    }
 };
 
 async function finishQuiz() {
