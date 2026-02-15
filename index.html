@@ -1253,6 +1253,7 @@
             <a class="nav-link" onclick="openModal('reqModal'); toggleMenu()">Вимоги</a>
             <a href="gallery.html" class="nav-link">Галерея</a>
             <a href="https://ukraine-gta.com.ua/uk/" target="_blank" class="nav-link">Проєкт</a>
+            <!-- Admin buttons will be inserted here dynamically -->
             <a class="btn-primary btn-outline" id="cabinetBtn" onclick="handleCabinetClick()">Кабінет</a>
             <a href="#join" class="btn-primary" onclick="toggleMenu()">Вступити</a>
         </div>
@@ -1974,27 +1975,32 @@
                 try {
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     if (userDoc.exists() && userDoc.data().role === 'admin') {
-                        // Add admin button to nav
-                        const adminBtn = document.createElement('a');
-                        adminBtn.className = 'nav-link';
-                        adminBtn.textContent = '⚙️ Admin';
-                        adminBtn.onclick = () => openAdminPanel();
-                        adminBtn.style.color = 'var(--primary-bright)';
+                        // Store admin status
+                        window.isAdmin = true;
                         
                         const navLinks = document.getElementById('navLinks');
                         const cabinetBtn = document.getElementById('cabinetBtn');
-                        navLinks.insertBefore(adminBtn, cabinetBtn);
+                        
+                        // Check if admin buttons already exist
+                        if (!document.getElementById('adminPanelBtn')) {
+                            // Add admin panel button
+                            const adminBtn = document.createElement('a');
+                            adminBtn.id = 'adminPanelBtn';
+                            adminBtn.className = 'nav-link';
+                            adminBtn.textContent = '⚙️ Admin';
+                            adminBtn.onclick = () => openAdminPanel();
+                            adminBtn.style.color = 'var(--primary-bright)';
+                            navLinks.insertBefore(adminBtn, cabinetBtn);
 
-                        // Add News Admin button
-                        const newsAdminBtn = document.createElement('a');
-                        newsAdminBtn.className = 'nav-link';
-                        newsAdminBtn.textContent = '📰 Новини';
-                        newsAdminBtn.onclick = () => openNewsEditor();
-                        newsAdminBtn.style.color = 'var(--primary-bright)';
-                        navLinks.insertBefore(newsAdminBtn, cabinetBtn);
-
-                        // Store admin status
-                        window.isAdmin = true;
+                            // Add News Admin button
+                            const newsAdminBtn = document.createElement('a');
+                            newsAdminBtn.id = 'newsAdminBtn';
+                            newsAdminBtn.className = 'nav-link';
+                            newsAdminBtn.textContent = '📰 Новини';
+                            newsAdminBtn.onclick = () => openNewsEditor();
+                            newsAdminBtn.style.color = 'var(--primary-bright)';
+                            navLinks.insertBefore(newsAdminBtn, cabinetBtn);
+                        }
                     }
                 } catch (err) {
                     console.error("Error checking admin status:", err);
