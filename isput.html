@@ -2447,27 +2447,58 @@ window.deleteQuestion = idx => {
 
 window.addOption = idx => {
     const block = document.querySelectorAll('.q-block')[idx];
+    if (!block) return;
+    
     const opts = block.querySelectorAll('.opt-row');
     if (opts.length >= 10) {
         alert('❌ Максимум 10 варіантів!');
         return;
     }
+    
     const i = opts.length;
     const html = '<div class="opt-row">' +
         '<div class="opt-radio" onclick="toggleCorrect(' + idx + ',' + i + ')"></div>' +
         '<input class="opt-input" data-q="' + idx + '" data-opt="' + i + '" placeholder="Варіант ' + letters[i] + '">' +
         '<button class="opt-del" onclick="deleteOption(' + idx + ',' + i + ')">✕</button></div>';
-    opts[opts.length - 1].insertAdjacentHTML('afterend', html);
+    
+    const container = block.querySelector('.opt-row:last-of-type');
+    if (container) {
+        container.insertAdjacentHTML('afterend', html);
+    }
 };
 
 window.deleteOption = (qIdx, optIdx) => {
     const block = document.querySelectorAll('.q-block')[qIdx];
+    if (!block) return;
+    
     const opts = block.querySelectorAll('.opt-row');
     if (opts.length <= 2) {
         alert('❌ Має бути мінімум 2 варіанти!');
         return;
     }
+    
+    if (!opts[optIdx]) return;
     opts[optIdx].remove();
+    
+    // Перебудовуємо всі опції з новими індексами
+    const newOpts = block.querySelectorAll('.opt-row');
+    newOpts.forEach((row, i) => {
+        const radio = row.querySelector('.opt-radio');
+        const input = row.querySelector('.opt-input');
+        const delBtn = row.querySelector('.opt-del');
+        
+        // Оновлюємо onclick для radio
+        radio.setAttribute('onclick', 'toggleCorrect(' + qIdx + ',' + i + ')');
+        
+        // Оновлюємо data атрибути для input
+        input.setAttribute('data-opt', i);
+        input.setAttribute('placeholder', 'Варіант ' + letters[i]);
+        
+        // Оновлюємо onclick для кнопки видалення
+        if (delBtn) {
+            delBtn.setAttribute('onclick', 'deleteOption(' + qIdx + ',' + i + ')');
+        }
+    });
 };
 
 window.toggleCorrect = (qIdx, optIdx) => {
