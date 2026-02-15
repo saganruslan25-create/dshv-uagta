@@ -1683,7 +1683,7 @@ gap: 10px;
   // Firebase imports
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, getDocs, collection, updateDoc, addDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, getDocs, collection, updateDoc, addDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const app = initializeApp({
 apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -2110,6 +2110,44 @@ if (activeView.id === 'viewReview') renderReview();
 if (activeView.id === 'viewHistory') renderHistory();
 }
 });
+}
+  // НОВЕ: Завантаження налаштувань з Firebase
+async function loadSettingsFromFirebase() {
+try {
+const settingsDoc = await getDoc(doc(db, 'settings', 'config'));
+if (settingsDoc.exists()) {
+const data = settingsDoc.data();
+reviewers = data.reviewers || [];
+adminList = data.adminList || [];
+webhookUrl = data.webhookUrl || '';
+console.log('✅ Налаштування завантажено з Firebase:', {reviewers, adminList, webhookUrl: webhookUrl ? 'Є' : 'Немає'});
+} else {
+console.log('⚠️ Документ налаштувань не знайдено, створюємо новий');
+const settingsRef = doc(db, 'settings', 'config');
+await setDoc(settingsRef, {
+reviewers: [],
+adminList: [],
+webhookUrl: ''
+});
+}
+} catch (e) {
+console.error('❌ Помилка завантаження налаштувань:', e);
+}
+}
+
+// НОВЕ: Збереження налаштувань в Firebase
+async function saveSettingsToFirebase() {
+try {
+const settingsRef = doc(db, 'settings', 'config');
+await setDoc(settingsRef, {
+reviewers: reviewers,
+adminList: adminList,
+webhookUrl: webhookUrl
+}, { merge: true });
+console.log('✅ Налаштування збережено в Firebase');
+} catch (e) {
+console.error('❌ Помилка збереження налаштувань:', e);
+}
 }
 
 async function saveTestToFirebase(testObj) {
