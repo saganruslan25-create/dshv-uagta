@@ -2097,16 +2097,33 @@ const savedQuiz = sessionStorage.getItem('quizInProgress');
 if (savedQuiz) {
     try {
         const quizData = JSON.parse(savedQuiz);
+        
+        // Перевіряємо чи тест ще існує
+        const testExists = tests.find(t => t.id === quizData.testId);
+        if (!testExists) {
+            console.log('⚠️ Тест більше не існує');
+            sessionStorage.removeItem('quizInProgress');
+            return;
+        }
+        
         currentTest = quizData.testData;
         currentQ = quizData.currentQ;
         answers = quizData.answers;
         
-        if (confirm('🔄 Знайдено незавершений іспит "' + currentTest.name + '". Продовжити?')) {
-            showView('quiz');
-            renderQuestion();
-        } else {
-            sessionStorage.removeItem('quizInProgress');
-        }
+        // Показуємо повідомлення про відновлення
+        setTimeout(() => {
+            if (confirm('🔄 Знайдено незавершений іспит "' + currentTest.name + '" (Питання ' + (currentQ + 1) + ' з ' + currentTest.questions.length + ').\n\nПродовжити проходження?')) {
+                showView('quiz');
+                renderQuestion();
+            } else {
+                if (confirm('❌ Скасувати іспит? Весь прогрес буде втрачено!')) {
+                    sessionStorage.removeItem('quizInProgress');
+                    currentTest = null;
+                    currentQ = 0;
+                    answers = {};
+                }
+            }
+        }, 500);
     } catch (e) {
         console.error('Помилка відновлення прогресу:', e);
         sessionStorage.removeItem('quizInProgress');
