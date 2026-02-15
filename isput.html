@@ -2082,6 +2082,30 @@ rb.className = 'role-badge role-fighter';
 buildNav();
 showView('home');
 });
+  
+buildNav();
+showView('home');
+
+// Перевіряємо чи є збережений прогрес тесту
+const savedQuiz = sessionStorage.getItem('quizInProgress');
+if (savedQuiz) {
+    try {
+        const quizData = JSON.parse(savedQuiz);
+        currentTest = quizData.testData;
+        currentQ = quizData.currentQ;
+        answers = quizData.answers;
+        
+        if (confirm('🔄 Знайдено незавершений іспит "' + currentTest.name + '". Продовжити?')) {
+            showView('quiz');
+            renderQuestion();
+        } else {
+            sessionStorage.removeItem('quizInProgress');
+        }
+    } catch (e) {
+        console.error('Помилка відновлення прогресу:', e);
+        sessionStorage.removeItem('quizInProgress');
+    }
+}
 
 function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
@@ -2779,14 +2803,23 @@ document.body.style.overflow = 'auto';
 };
 
 window.beginQuiz = () => {
-if (!agreementAccepted) {
-alert('⚠️ Потрібно прийняти користувацьку угоду!');
-return;
-}
-currentQ = 0;
-answers = {};
-showView('quiz');
-renderQuestion();
+    if (!agreementAccepted) {
+        alert('⚠️ Потрібно прийняти користувацьку угоду!');
+        return;
+    }
+    currentQ = 0;
+    answers = {};
+    
+    // Зберігаємо тест в sessionStorage
+    sessionStorage.setItem('quizInProgress', JSON.stringify({
+        testId: currentTest.id,
+        testData: currentTest,
+        currentQ: 0,
+        answers: {}
+    }));
+    
+    showView('quiz');
+    renderQuestion();
 };
 
 function renderQuestion() {
@@ -2914,20 +2947,46 @@ document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('check
 }
 };
 
+let nextQuestionLocked = false;
+
 window.nextQuestion = () => {
-const freeInput = document.getElementById('freeInput');
-if (freeInput && freeInput.style.display !== 'none' && freeInput.value.trim()) {
-answers[currentQ] = {type: 'free', answer: freeInput.value.trim()};
-}
+    // Перевірка блокування
+    if (nextQuestionLocked) {
+        return;
+    }
+    
+    const freeInput = document.getElementById('freeInput');
+    if (freeInput && freeInput.style.display !== 'none' && freeInput.value.trim()) {
+        answers[currentQ] = {type: 'free', answer: freeInput.value.trim()};
+    }
 
-if (!answers[currentQ]) {
-if (!confirm('⚠️ Ви не вибрали відповідь! Продовжити без відповіді?')) return;
-answers[currentQ] = {type: 'none', answer: null};
-}
+    if (!answers[currentQ]) {
+        if (!confirm('⚠️ Ви не вибрали відповідь! Продовжити без відповіді?')) return;
+        answers[currentQ] = {type: 'none', answer: null};
+    }
 
+    // Блокуємо кнопку на 2 секунди
+    nextQuestionLocked = true;
+    
+    clearInterval(timer);
+    currentQ++;
 clearInterval(timer);
-currentQ++;
-renderQuestion();
+    currentQ++;
+    
+    // Зберігаємо прогрес
+    sessionStorage.setItem('quizInProgress', JSON.stringify({
+        testId: currentTest.id,
+        testData: currentTest,
+        currentQ: currentQ,
+        answers: answers
+    }));
+    
+    renderQuestion();
+    
+    // Розблокуємо через 2 секунди
+    setTimeout(() => {
+        nextQuestionLocked = false;
+    }, 2000);
 };
 
 async function finishQuiz() {
