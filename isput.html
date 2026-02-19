@@ -113,6 +113,7 @@ text-transform: uppercase;
 box-shadow: 0 0 20px var(--primary-glow);
 transition: 0.3s;
 letter-spacing: 1px;
+flex-shrink: 0;
 }
 .logo-box:hover {
 box-shadow: 0 0 30px var(--primary-glow);
@@ -1530,6 +1531,8 @@ cursor: pointer;
 .filter-select:focus {
 border-color: var(--primary);
 }
+
+/* ===== MOBILE RESPONSIVE - FIXED ===== */
 @media(max-width: 768px) {
 .stats-row {
 grid-template-columns: 1fr 1fr;
@@ -1555,13 +1558,57 @@ font-size: 11px;
 padding: 10px 8px;
 }
 }
+
 @media(max-width: 480px) {
 .stats-row {
-grid-template-columns: 1fr;
+grid-template-columns: 1fr 1fr;
 }
+/* ✅ ФІКС: Компактна плашка на мобільних */
 header {
-flex-direction: column;
-gap: 10px;
+flex-direction: row;
+flex-wrap: wrap;
+gap: 6px;
+padding: 8px 4%;
+justify-content: space-between;
+align-items: center;
+}
+.logo-box {
+font-size: 12px;
+padding: 6px 12px;
+border-radius: 8px;
+}
+.header-right {
+display: flex;
+align-items: center;
+gap: 6px;
+flex-wrap: wrap;
+justify-content: flex-end;
+flex: 1;
+}
+.nav-tabs {
+order: 10;
+width: 100%;
+justify-content: center;
+gap: 4px;
+flex-wrap: wrap;
+}
+.nav-btn {
+padding: 6px 10px;
+font-size: 10px;
+border-radius: 8px;
+letter-spacing: 0;
+}
+.user-name-header {
+font-size: 11px;
+max-width: 120px;
+overflow: hidden;
+text-overflow: ellipsis;
+white-space: nowrap;
+}
+.role-badge {
+font-size: 9px;
+padding: 4px 8px;
+letter-spacing: 0;
 }
 }
 </style>
@@ -1570,9 +1617,9 @@ gap: 10px;
 <header id="mainHeader">
 <a href="cabinet.html" class="logo-box">⚔ ДШВ</a>
 <div class="header-right">
-<div class="nav-tabs" id="navTabs"></div>
 <span class="user-name-header" id="headerName">...</span>
 <span class="role-badge" id="headerRole">...</span>
+<div class="nav-tabs" id="navTabs"></div>
 </div>
 </header>
 
@@ -1716,7 +1763,6 @@ let agreementAccepted = false;
 let currentTestPhotos = [];
 let contextMenuTestId = null;
 
-// Попередження перед закриттям під час тесту
 window.addEventListener('beforeunload', (e) => {
     const quizInProgress = sessionStorage.getItem('quizInProgress');
     if (quizInProgress) {
@@ -1730,15 +1776,12 @@ const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.has('id')) {
 IS_PUBLIC_MODE = true;
 PUBLIC_TEST_ID = urlParams.get('id');
-console.log('🔓 Публічний режим:', PUBLIC_TEST_ID);
 }
 
-// ВИПРАВЛЕНА ФУНКЦІЯ save - тепер async
 const save = async () => {
 localStorage.setItem('isput_reviewers', JSON.stringify(reviewers));
 localStorage.setItem('isput_admins', JSON.stringify(adminList));
 localStorage.setItem('isput_webhook', webhookUrl);
-console.log('💾 Збереження в Firebase, webhook:', webhookUrl ? 'Є' : 'НЕМАЄ');
 await saveSettingsToFirebase();
 };
 
@@ -1755,12 +1798,7 @@ window.submitPublicForm = () => {
 const name = document.getElementById('publicName').value.trim();
 const classLevel = document.getElementById('publicClass').value.trim();
 const unit = document.getElementById('publicUnit').value.trim();
-
-if (!name || !classLevel || !unit) {
-alert('❌ Заповніть всі поля!');
-return;
-}
-
+if (!name || !classLevel || !unit) { alert('❌ Заповніть всі поля!'); return; }
 PUBLIC_USER_DATA = {name, classLevel, unit};
 ME.name = name + ' (' + classLevel + ', ' + unit + ')';
 ME.uid = 'public_' + genId();
@@ -1770,10 +1808,7 @@ loadPublicTest();
 async function loadPublicTest() {
 try {
 const testDoc = await getDoc(doc(db, 'tests', PUBLIC_TEST_ID));
-if (!testDoc.exists()) {
-alert('❌ Тест не знайдено!');
-return;
-}
+if (!testDoc.exists()) { alert('❌ Тест не знайдено!'); return; }
 const testData = {id: testDoc.id, ...testDoc.data()};
 tests = [testData];
 startIntro(PUBLIC_TEST_ID);
@@ -1783,7 +1818,6 @@ alert('❌ Помилка завантаження тесту');
 }
 }
 
-// Context Menu
 window.showContextMenu = (event, testId) => {
 if (!isAdmin()) return;
 event.preventDefault();
@@ -1795,21 +1829,9 @@ menu.style.top = event.pageY + 'px';
 menu.classList.add('active');
 };
 
-window.contextEdit = () => {
-hideContextMenu();
-if (contextMenuTestId) editTest(contextMenuTestId);
-};
-
-window.contextClear = async () => {
-hideContextMenu();
-if (contextMenuTestId) await clearTestResults(contextMenuTestId);
-};
-
-window.contextDelete = async () => {
-hideContextMenu();
-if (contextMenuTestId) await deleteTest(contextMenuTestId);
-};
-
+window.contextEdit = () => { hideContextMenu(); if (contextMenuTestId) editTest(contextMenuTestId); };
+window.contextClear = async () => { hideContextMenu(); if (contextMenuTestId) await clearTestResults(contextMenuTestId); };
+window.contextDelete = async () => { hideContextMenu(); if (contextMenuTestId) await deleteTest(contextMenuTestId); };
 window.contextCopyLink = () => {
 hideContextMenu();
 if (contextMenuTestId) {
@@ -1837,26 +1859,13 @@ document.addEventListener('contextmenu', (e) => {
 if (e.target.closest('.test-card') && isAdmin()) e.preventDefault();
 });
 
-// Discord Notifications
 async function sendDiscordNotification(type, data) {
-console.log('🔔 sendDiscordNotification викликано:', type);
-console.log('📦 Дані:', data);
-console.log('🔗 Webhook URL:', webhookUrl ? 'Є (' + webhookUrl.substring(0, 50) + '...)' : 'ВІДСУТНІЙ');
-
-if (!webhookUrl) {
-console.error('❌ Webhook URL не налаштовано!');
-return;
-}
-
+if (!webhookUrl) { console.error('❌ Webhook URL не налаштовано!'); return; }
 let embed = {};
 const timestamp = new Date().toISOString();
-
 switch(type) {
 case 'NEW_TEST':
-embed = {
-title: '📝 Новий іспит створено!',
-color: 0x00ff44,
-fields: [
+embed = { title: '📝 Новий іспит створено!', color: 0x00ff44, fields: [
 {name: '📋 Назва', value: data.testName, inline: false},
 {name: '👤 Створив', value: data.createdBy, inline: true},
 {name: '❓ Питань', value: data.questionCount.toString(), inline: true},
@@ -1864,51 +1873,27 @@ fields: [
 {name: '✅ Прохідний', value: data.passScore.toString(), inline: true},
 {name: '⏱ Загальний час', value: data.totalTime + 'с', inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'TEST_UPDATED':
-embed = {
-title: '✏️ Іспит оновлено!',
-color: 0xfbbf24,
-fields: [
+embed = { title: '✏️ Іспит оновлено!', color: 0xfbbf24, fields: [
 {name: '📋 Назва', value: data.testName, inline: false},
 {name: '👤 Редагував', value: data.editedBy, inline: true},
 {name: '❓ Питань', value: data.questionCount.toString(), inline: true},
 {name: '🎯 Бали', value: data.passScore + '/' + data.maxScore, inline: true},
 {name: '📅 Дата оновлення', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'TEST_DELETED':
-embed = {
-title: '🗑 Іспит видалено!',
-color: 0xef4444,
-fields: [
+embed = { title: '🗑 Іспит видалено!', color: 0xef4444, fields: [
 {name: '📋 Назва', value: data.testName, inline: true},
 {name: '👤 Видалив', value: data.deletedBy, inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'QUIZ_COMPLETED':
 const statusEmoji = data.status === 'pending' ? '⏳' : data.passed ? '✅' : '❌';
 const statusText = data.status === 'pending' ? 'На перевірці' : data.passed ? 'СКЛАДЕНО' : 'НЕ СКЛАДЕНО';
 const statusColor = data.status === 'pending' ? 0xfbbf24 : data.passed ? 0x10b981 : 0xef4444;
-embed = {
-title: statusEmoji + ' Іспит завершено: ' + data.testName,
-color: statusColor,
-description: '**' + data.userName + '** завершив проходження іспиту',
-fields: [
+embed = { title: statusEmoji + ' Іспит завершено: ' + data.testName, color: statusColor,
+description: '**' + data.userName + '** завершив проходження іспиту', fields: [
 {name: '👤 Користувач', value: data.userName, inline: true},
 {name: '🎖 Звання', value: data.userRole, inline: true},
 {name: '📊 Результат', value: '**' + data.score + '** / ' + data.maxScore + ' балів', inline: true},
@@ -1917,117 +1902,51 @@ fields: [
 {name: '✅ Правильних', value: data.correctAnswers + ' / ' + data.totalQuestions, inline: true},
 {name: '📅 Дата', value: data.date, inline: false},
 {name: '🔍 Статус', value: statusText, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'RESULT_APPROVED':
-embed = {
-title: '✅ Результат схвалено!',
-color: 0x00ff44,
-description: 'Перевіряючий **' + data.reviewer + '** схвалив результат',
-fields: [
+embed = { title: '✅ Результат схвалено!', color: 0x00ff44,
+description: 'Перевіряючий **' + data.reviewer + '** схвалив результат', fields: [
 {name: '👤 Користувач', value: data.userName, inline: true},
 {name: '📋 Іспит', value: data.testName, inline: true},
 {name: '📊 Фінальний бал', value: '**' + data.finalScore + '** / ' + data.maxScore, inline: true},
 {name: '🔍 Перевірив', value: data.reviewer, inline: true},
 {name: '📅 Дата перевірки', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'RESULT_REJECTED':
-embed = {
-title: '❌ Результат відхилено!',
-color: 0xef4444,
-description: 'Перевіряючий **' + data.reviewer + '** відхилив результат',
-fields: [
+embed = { title: '❌ Результат відхилено!', color: 0xef4444,
+description: 'Перевіряючий **' + data.reviewer + '** відхилив результат', fields: [
 {name: '👤 Користувач', value: data.userName, inline: true},
 {name: '📋 Іспит', value: data.testName, inline: true},
 {name: '📊 Бал', value: data.score + ' / ' + data.maxScore, inline: true},
 {name: '🔍 Перевірив', value: data.reviewer, inline: true},
 {name: '📅 Дата перевірки', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'RESULTS_CLEARED':
-embed = {
-title: '🧹 Результати очищено!',
-color: 0xfbbf24,
-fields: [
+embed = { title: '🧹 Результати очищено!', color: 0xfbbf24, fields: [
 {name: '📋 Іспит', value: data.testName, inline: true},
 {name: '👤 Очистив', value: data.clearedBy, inline: true},
 {name: '🗑 Видалено результатів', value: data.count.toString(), inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'REVIEWER_ADDED':
-embed = {
-title: '🔍 Додано нового перевіряючого!',
-color: 0x3b82f6,
-fields: [
+embed = { title: '🔍 Додано нового перевіряючого!', color: 0x3b82f6, fields: [
 {name: '👤 Користувач', value: data.reviewerName, inline: true},
 {name: '➕ Додав', value: data.addedBy, inline: true},
 {name: '📅 Дата', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
 case 'ADMIN_ADDED':
-embed = {
-title: '👑 Додано нового адміністратора!',
-color: 0x00ff44,
-fields: [
+embed = { title: '👑 Додано нового адміністратора!', color: 0x00ff44, fields: [
 {name: '👤 Користувач', value: data.adminName, inline: true},
 {name: '➕ Додав', value: data.addedBy, inline: true},
 {name: '🔑 Права', value: 'Повний доступ до системи', inline: false},
 {name: '📅 Дата', value: data.date, inline: true}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: timestamp
-};
-break;
-
-default:
-console.error('❌ Невідомий тип notification:', type);
-return;
+], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp }; break;
+default: console.error('❌ Невідомий тип notification:', type); return;
 }
-
-const payload = {embeds: [embed]};
-console.log('📤 Відправка в Discord...');
-
 try {
-const response = await fetch(webhookUrl, {
-method: 'POST',
-headers: {'Content-Type': 'application/json'},
-body: JSON.stringify(payload)
-});
-
-console.log('📡 Відповідь від Discord:', response.status);
-
-if (response.ok) {
-console.log('✅ Discord notification відправлено успішно!');
-} else {
-const errorText = await response.text();
-console.error('❌ Discord webhook помилка:', response.status);
-console.error('❌ Текст помилки:', errorText);
-}
-} catch (e) {
-console.error('❌ Exception при відправці в Discord:', e);
-}
+const response = await fetch(webhookUrl, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({embeds: [embed]}) });
+if (!response.ok) console.error('❌ Discord webhook помилка:', response.status);
+} catch (e) { console.error('❌ Exception при відправці в Discord:', e); }
 }
 
 let notifs = [];
@@ -2038,96 +1957,53 @@ if (notifs.length > 20) notifs.pop();
 localStorage.setItem('isput_notifs', JSON.stringify(notifs));
 }
 
-// Auth State
 onAuthStateChanged(auth, async u => {
 if (IS_PUBLIC_MODE) {
 document.getElementById('mainHeader').classList.add('hidden');
 showView('publicForm');
 return;
 }
-
-if (!u) {
-window.location.href = 'index.html';
-return;
-}
+if (!u) { window.location.href = 'index.html'; return; }
 ME.uid = u.uid;
-
 try {
 const snap = await getDoc(doc(db, 'users', u.uid));
-if (snap.exists()) {
-const d = snap.data();
-ME.name = d.name || 'Невідомий';
-ME.role = d.role || 'fighter';
-}
-
+if (snap.exists()) { const d = snap.data(); ME.name = d.name || 'Невідомий'; ME.role = d.role || 'fighter'; }
 const all = await getDocs(collection(db, 'users'));
 allUsers = [];
-all.forEach(s => {
-const d = s.data();
-allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'});
-});
-
-// ✅ КРИТИЧНО: ЗАВАНТАЖУЄМО НАЛАШТУВАННЯ ПЕРЕД ВСІМ ІНШИМ
+all.forEach(s => { const d = s.data(); allUsers.push({uid: s.id, name: d.name || '---', role: d.role || 'fighter'}); });
 await loadSettingsFromFirebase();
-
 loadTestsFromFirebase();
 loadResultsFromFirebase();
-} catch (e) {
-console.log('Firebase err:', e);
-}
+} catch (e) { console.log('Firebase err:', e); }
 
 document.getElementById('headerName').textContent = ME.name;
 const rb = document.getElementById('headerRole');
-if (ME.role === 'admin') {
-    rb.textContent = 'АДМІН';
-    rb.className = 'role-badge role-admin';
-} else if (ME.role === 'instructor') {
-    rb.textContent = 'ІНСТРУКТОР';
-    rb.className = 'role-badge role-instructor';
-} else {
-    rb.textContent = 'БІЄЦЬ';
-    rb.className = 'role-badge role-fighter';
-}
+if (ME.role === 'admin') { rb.textContent = 'АДМІН'; rb.className = 'role-badge role-admin'; }
+else if (ME.role === 'instructor') { rb.textContent = 'ІНСТРУКТОР'; rb.className = 'role-badge role-instructor'; }
+else { rb.textContent = 'БІЄЦЬ'; rb.className = 'role-badge role-fighter'; }
 
 buildNav();
 showView('home');
 
-// Перевіряємо чи є збережений прогрес тесту
 const savedQuiz = sessionStorage.getItem('quizInProgress');
 if (savedQuiz) {
-    try {
-        const quizData = JSON.parse(savedQuiz);
-        
-        // Перевіряємо чи тест ще існує
-        const testExists = tests.find(t => t.id === quizData.testId);
-        if (!testExists) {
-            console.log('⚠️ Тест більше не існує');
-            sessionStorage.removeItem('quizInProgress');
-            return;
-        }
-        
-        currentTest = quizData.testData;
-        currentQ = quizData.currentQ;
-        answers = quizData.answers;
-        
-        // Показуємо повідомлення про відновлення
-        setTimeout(() => {
-            if (confirm('🔄 Знайдено незавершений іспит "' + currentTest.name + '" (Питання ' + (currentQ + 1) + ' з ' + currentTest.questions.length + ').\n\nПродовжити проходження?')) {
-                showView('quiz');
-                renderQuestion();
-            } else {
-                if (confirm('❌ Скасувати іспит? Весь прогрес буде втрачено!')) {
-                    sessionStorage.removeItem('quizInProgress');
-                    currentTest = null;
-                    currentQ = 0;
-                    answers = {};
-                }
-            }
-        }, 500);
-    } catch (e) {
-        console.error('Помилка відновлення прогресу:', e);
-        sessionStorage.removeItem('quizInProgress');
-    }
+try {
+const quizData = JSON.parse(savedQuiz);
+const testExists = tests.find(t => t.id === quizData.testId);
+if (!testExists) { sessionStorage.removeItem('quizInProgress'); return; }
+currentTest = quizData.testData;
+currentQ = quizData.currentQ;
+answers = quizData.answers;
+setTimeout(() => {
+if (confirm('🔄 Знайдено незавершений іспит "' + currentTest.name + '" (Питання ' + (currentQ + 1) + ' з ' + currentTest.questions.length + ').\n\nПродовжити проходження?')) {
+showView('quiz'); renderQuestion();
+} else {
+if (confirm('❌ Скасувати іспит? Весь прогрес буде втрачено!')) {
+sessionStorage.removeItem('quizInProgress'); currentTest = null; currentQ = 0; answers = {};
+}
+}
+}, 500);
+} catch (e) { console.error('Помилка відновлення прогресу:', e); sessionStorage.removeItem('quizInProgress'); }
 }
 });
 
@@ -2135,10 +2011,7 @@ function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
 tests = [];
-snapshot.forEach(docSnap => {
-tests.push({id: docSnap.id, ...docSnap.data()});
-});
-
+snapshot.forEach(docSnap => { tests.push({id: docSnap.id, ...docSnap.data()}); });
 const activeView = document.querySelector('.view.active');
 if (activeView) {
 if (activeView.id === 'viewHome') renderHome();
@@ -2152,12 +2025,7 @@ function loadResultsFromFirebase() {
 const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
 onSnapshot(q, snapshot => {
 results = [];
-snapshot.forEach(docSnap => {
-results.push({id: docSnap.id, ...docSnap.data()});
-});
-
-console.log('✅ Завантажено результатів з Firebase:', results.length);
-
+snapshot.forEach(docSnap => { results.push({id: docSnap.id, ...docSnap.data()}); });
 const activeView = document.querySelector('.view.active');
 if (activeView) {
 if (activeView.id === 'viewHome') renderHome();
@@ -2167,120 +2035,58 @@ if (activeView.id === 'viewHistory') renderHistory();
 });
 }
 
-// ✅ НОВА ФУНКЦІЯ: Завантаження налаштувань з Firebase
 async function loadSettingsFromFirebase() {
 try {
-console.log('🔄 Завантаження налаштувань з Firebase...');
 const settingsDoc = await getDoc(doc(db, 'settings', 'config'));
 if (settingsDoc.exists()) {
 const data = settingsDoc.data();
 reviewers = data.reviewers || [];
 adminList = data.adminList || [];
 webhookUrl = data.webhookUrl || '';
-console.log('✅ Налаштування завантажено:', {
-reviewers: reviewers.length + ' осіб',
-adminList: adminList.length + ' осіб',
-webhookUrl: webhookUrl ? webhookUrl.substring(0, 50) + '...' : 'ВІДСУТНІЙ'
-});
 } else {
-console.log('⚠️ Документ налаштувань не існує, створюємо новий');
-const settingsRef = doc(db, 'settings', 'config');
-await setDoc(settingsRef, {
-reviewers: [],
-adminList: [],
-webhookUrl: ''
-});
+await setDoc(doc(db, 'settings', 'config'), { reviewers: [], adminList: [], webhookUrl: '' });
 }
-} catch (e) {
-console.error('❌ Помилка завантаження налаштувань:', e);
-}
+} catch (e) { console.error('❌ Помилка завантаження налаштувань:', e); }
 }
 
-// ✅ НОВА ФУНКЦІЯ: Збереження налаштувань в Firebase
 async function saveSettingsToFirebase() {
 try {
-const settingsRef = doc(db, 'settings', 'config');
-await setDoc(settingsRef, {
-reviewers: reviewers,
-adminList: adminList,
-webhookUrl: webhookUrl
-}, { merge: true });
-console.log('✅ Налаштування збережено в Firebase:', {
-webhookUrl: webhookUrl ? 'Є (' + webhookUrl.substring(0, 30) + '...)' : 'НЕМАЄ'
-});
-} catch (e) {
-console.error('❌ Помилка збереження налаштувань:', e);
+await setDoc(doc(db, 'settings', 'config'), { reviewers, adminList, webhookUrl }, { merge: true });
+} catch (e) { console.error('❌ Помилка збереження налаштувань:', e); }
 }
-}
-  // Продовження коду з попередньої частини...
 
 async function saveTestToFirebase(testObj) {
 try {
 let totalTime = 0;
-testObj.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
-
+testObj.questions.forEach(q => { totalTime += (q.timeLimit || 30); });
 if (editingTestId) {
 await updateDoc(doc(db, 'tests', editingTestId), testObj);
 addNotif('📝 Іспит "' + testObj.name + '" оновлено!');
-await sendDiscordNotification('TEST_UPDATED', {
-testName: testObj.name,
-editedBy: ME.name,
-questionCount: testObj.questions.length,
-maxScore: testObj.maxScore,
-passScore: testObj.passScore,
-date: now()
-});
+await sendDiscordNotification('TEST_UPDATED', { testName: testObj.name, editedBy: ME.name, questionCount: testObj.questions.length, maxScore: testObj.maxScore, passScore: testObj.passScore, date: now() });
 } else {
-const docRef = await addDoc(collection(db, 'tests'), {
-...testObj,
-createdAt: serverTimestamp()
-});
-console.log('✅ Новий тест створено з ID:', docRef.id);
+const docRef = await addDoc(collection(db, 'tests'), { ...testObj, createdAt: serverTimestamp() });
 addNotif('📝 Іспит "' + testObj.name + '" створено!');
-await sendDiscordNotification('NEW_TEST', {
-testName: testObj.name,
-createdBy: testObj.createdBy,
-questionCount: testObj.questions.length,
-maxScore: testObj.maxScore,
-passScore: testObj.passScore,
-totalTime: totalTime,
-date: now()
-});
+await sendDiscordNotification('NEW_TEST', { testName: testObj.name, createdBy: testObj.createdBy, questionCount: testObj.questions.length, maxScore: testObj.maxScore, passScore: testObj.passScore, totalTime, date: now() });
 }
 return true;
-} catch (e) {
-console.error('Save error:', e);
-alert('❌ Помилка збереження: ' + e.message);
-return false;
-}
+} catch (e) { console.error('Save error:', e); alert('❌ Помилка збереження: ' + e.message); return false; }
 }
 
 async function deleteTestFromFirebase(id) {
 try {
 const t = tests.find(x => x.id === id);
 const testName = t ? t.name : 'Невідомий іспит';
-
 await deleteDoc(doc(db, 'tests', id));
 addNotif('🗑 Іспит видалено');
-
-await sendDiscordNotification('TEST_DELETED', {
-testName: testName,
-deletedBy: ME.name,
-date: now()
-});
+await sendDiscordNotification('TEST_DELETED', { testName, deletedBy: ME.name, date: now() });
 return true;
-} catch (e) {
-alert('Помилка видалення: ' + e.message);
-return false;
-}
+} catch (e) { alert('Помилка видалення: ' + e.message); return false; }
 }
 
 function buildNav() {
 if (IS_PUBLIC_MODE) return;
-
 const tabs = document.getElementById('navTabs');
 let html = '<button class="nav-btn active" onclick="showView(\'home\')">🏠 Головна</button>';
-
 if (isAdmin()) {
 html += '<button class="nav-btn" onclick="showView(\'create\')">➕ Створити</button>';
 html += '<button class="nav-btn" onclick="showView(\'manage\')">⚙️ Керувати</button>';
@@ -2288,25 +2094,19 @@ html += '<button class="nav-btn" onclick="showView(\'history\')">📊 Списк
 html += '<button class="nav-btn" onclick="showView(\'settings\')">🔧 Настройки</button>';
 html += '<button class="nav-btn" onclick="showView(\'adminList\')">👑 Адміни</button>';
 }
-
-if (isReviewer()) {
-html += '<button class="nav-btn" onclick="showView(\'review\')">🔍 Перевірка</button>';
-}
-
+if (isReviewer()) html += '<button class="nav-btn" onclick="showView(\'review\')">🔍 Перевірка</button>';
 tabs.innerHTML = html;
 }
 
 window.showView = v => {
 document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
 document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
-
 if (!IS_PUBLIC_MODE) {
 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 const btns = document.querySelectorAll('.nav-btn');
 const map = {home: 0, create: 1, manage: 2, history: 3, settings: 4, adminList: 5, review: isAdmin() ? 6 : 1};
 if (btns[map[v]]) btns[map[v]].classList.add('active');
 }
-
 if (v === 'home') renderHome();
 if (v === 'create' && !editingTestId) renderCreateForm();
 if (v === 'review') renderReview();
@@ -2318,21 +2118,12 @@ if (v === 'history') renderHistory();
 
 function renderHome() {
 if (IS_PUBLIC_MODE) return;
-
 const myRes = results.filter(r => r.userId === ME.uid);
-const passed = myRes.filter(r => {
-const t = tests.find(x => x.id === r.testId);
-return r.status === 'approved' || (r.status === 'auto' && t && r.score >= t.passScore && r.reviewedByHuman);
-}).length;
-
-const failed = myRes.filter(r => {
-const t = tests.find(x => x.id === r.testId);
-return r.status === 'rejected' || (r.status === 'auto' && t && r.score < t.passScore && r.reviewedByHuman);
-}).length;
-
+const passed = myRes.filter(r => { const t = tests.find(x => x.id === r.testId); return r.status === 'approved' || (r.status === 'auto' && t && r.score >= t.passScore && r.reviewedByHuman); }).length;
+const failed = myRes.filter(r => { const t = tests.find(x => x.id === r.testId); return r.status === 'rejected' || (r.status === 'auto' && t && r.score < t.passScore && r.reviewedByHuman); }).length;
 const pending = myRes.filter(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman)).length;
 
-document.getElementById('statsRow').innerHTML = 
+document.getElementById('statsRow').innerHTML =
 '<div class="stat-card"><div class="stat-num">' + tests.length + '</div><div class="stat-label">Іспитів</div></div>' +
 '<div class="stat-card"><div class="stat-num" style="color:var(--success)">' + passed + '</div><div class="stat-label">Складено</div></div>' +
 '<div class="stat-card"><div class="stat-num" style="color:var(--danger)">' + failed + '</div><div class="stat-label">Провалено</div></div>' +
@@ -2343,7 +2134,7 @@ document.getElementById('testsGrid').innerHTML = '<div style="color:var(--text-g
 } else {
 document.getElementById('testsGrid').innerHTML = tests.map(t => {
 let totalTime = 0;
-t.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
+t.questions.forEach(q => { totalTime += (q.timeLimit || 30); });
 const contextAttr = isAdmin() ? 'oncontextmenu="showContextMenu(event, \'' + t.id + '\')"' : '';
 return '<div class="test-card" onclick="startIntro(\'' + t.id + '\')" ' + contextAttr + '>' +
 '<span class="emoji">' + (t.emoji || '📝') + '</span>' +
@@ -2365,24 +2156,14 @@ const t = tests.find(x => x.id === r.testId);
 const tname = t ? t.name : 'Видалений';
 const passS = t ? t.passScore : 0;
 let st, stc;
-
-if (r.status === 'pending') {
-st = 'На перевірці'; stc = 'st-pending';
-} else if (r.status === 'approved') {
-st = 'Схвалено'; stc = 'st-approved';
-} else if (r.status === 'rejected') {
-st = 'Відхилено'; stc = 'st-rejected';
-} else {
-const p = r.score >= passS && r.reviewedByHuman;
-st = p ? 'Складено' : r.reviewedByHuman ? 'Не складено' : 'Очікує перевірки';
-stc = p ? 'st-pass' : r.reviewedByHuman ? 'st-fail' : 'st-pending';
-}
-
+if (r.status === 'pending') { st = 'На перевірці'; stc = 'st-pending'; }
+else if (r.status === 'approved') { st = 'Схвалено'; stc = 'st-approved'; }
+else if (r.status === 'rejected') { st = 'Відхилено'; stc = 'st-rejected'; }
+else { const p = r.score >= passS && r.reviewedByHuman; st = p ? 'Складено' : r.reviewedByHuman ? 'Не складено' : 'Очікує перевірки'; stc = p ? 'st-pass' : r.reviewedByHuman ? 'st-fail' : 'st-pending'; }
 return '<tr><td>' + tname + '</td><td><b>' + r.score + '</b> / ' + (t ? t.maxScore : '?') + '</td>' +
 '<td><span class="status-badge ' + stc + '">' + st + '</span></td>' +
 '<td>' + (r.reviewer || 'SYSTEM') + '</td><td>' + r.date + '</td></tr>';
 }).join('');
-
 document.getElementById('myResults').innerHTML = '<div class="results-table"><table><thead><tr>' +
 '<th>Іспит</th><th>Бали</th><th>Статус</th><th>Перевіряючий</th><th>Дата</th>' +
 '</tr></thead><tbody>' + rows + '</tbody></table></div>';
@@ -2390,379 +2171,240 @@ document.getElementById('myResults').innerHTML = '<div class="results-table"><ta
 }
 
 function renderCreateForm(testData = null) {
-    console.log('renderCreateForm викликано з даними:', testData);
-    
-    editingTestId = testData ? testData.id : null;
-    currentTestPhotos = testData && testData.photos ? testData.photos : [];
-    
-    const isEdit = !!testData;
-    document.getElementById('createTitle').textContent = isEdit ? '✏️ Редагувати іспит' : '➕ Створити іспит';
-    
-    let questionsHtml = '';
-    if (testData && testData.questions) {
-        testData.questions.forEach((q, idx) => {
-            questionsHtml += buildQuestionBlock(idx, q);
-        });
-    } else {
-        questionsHtml = buildQuestionBlock(0);
-    }
-    
-    let photosHtml = '';
-    if (currentTestPhotos.length > 0) {
-        photosHtml = '<div class="test-photo-grid">';
-        currentTestPhotos.forEach((p, i) => {
-            photosHtml += '<div class="test-photo-item">' +
-                '<img src="' + p.url + '" onclick="openLightbox(\'' + p.url + '\')">' +
-                '<button class="photo-delete-mini" onclick="deleteTestPhoto(' + i + ')">✕</button></div>';
-        });
-        photosHtml += '</div>';
-    }
-    
-    const testName = testData && testData.name ? testData.name : '';
-    const testDesc = testData && testData.description ? testData.description : '';
-    const testEmoji = testData && testData.emoji ? testData.emoji : '📝';
-    const testPassScore = testData && testData.passScore ? testData.passScore : 80;
-    const testMaxScore = testData && testData.maxScore ? testData.maxScore : 100;
-    const testAgreement = testData && testData.agreementText ? testData.agreementText : '';
-    
-    document.getElementById('createForm').innerHTML = 
-        '<div class="form-card">' +
-        '<div class="form-row"><label class="form-label">Назва іспиту</label>' +
-        '<input class="form-input" id="testName" value="' + testName + '" placeholder="Наприклад: Тактична підготовка"></div>' +
-        '<div class="form-row"><label class="form-label">Опис (необов\'язково)</label>' +
-        '<input class="form-input" id="testDesc" value="' + testDesc + '" placeholder="Короткий опис іспиту"></div>' +
-        '<div class="form-row"><label class="form-label">Емодзі</label>' +
-        '<input class="form-input" id="testEmoji" value="' + testEmoji + '" placeholder="📝"></div>' +
-        '<div class="form-row-inline">' +
-        '<div><label class="form-label">Прохідний бал</label><input class="form-input" id="testPassScore" type="number" value="' + testPassScore + '"></div>' +
-        '<div><label class="form-label">Макс. бал</label><input class="form-input" id="testMaxScore" type="number" value="' + testMaxScore + '"></div></div>' +
-        '<div class="form-row"><label class="form-label">Користувацька угода (необов\'язково)</label>' +
-        '<textarea class="form-input" id="testAgreement" rows="3" placeholder="Текст угоди...">' + testAgreement + '</textarea></div>' +
-        '<div class="form-row"><label class="form-label">📸 Фото до іспиту</label>' + photosHtml +
-        '<input type="file" id="testPhotoInput" accept="image/*" style="display:none" onchange="uploadTestPhoto()">' +
-        '<button class="upload-photo-btn" onclick="document.getElementById(\'testPhotoInput\').click()">📸 Додати фото</button></div></div>' +
-        '<div class="section-title" style="margin-top:30px">❓ Питання</div>' +
-        '<div id="questionsContainer">' + questionsHtml + '</div>' +
-        '<div class="btn-group" style="margin-top:20px">' +
-        '<button class="btn btn-secondary" onclick="addQuestion()">➕ Додати питання</button>' +
-        '<button class="btn btn-primary" onclick="saveTest()">💾 ' + (isEdit ? 'Зберегти зміни' : 'Створити іспит') + '</button>' +
-        '<button class="btn btn-secondary" onclick="cancelCreate()">← Скасувати</button></div>';
+editingTestId = testData ? testData.id : null;
+currentTestPhotos = testData && testData.photos ? testData.photos : [];
+const isEdit = !!testData;
+document.getElementById('createTitle').textContent = isEdit ? '✏️ Редагувати іспит' : '➕ Створити іспит';
+let questionsHtml = '';
+if (testData && testData.questions) { testData.questions.forEach((q, idx) => { questionsHtml += buildQuestionBlock(idx, q); }); }
+else { questionsHtml = buildQuestionBlock(0); }
+let photosHtml = '';
+if (currentTestPhotos.length > 0) {
+photosHtml = '<div class="test-photo-grid">';
+currentTestPhotos.forEach((p, i) => {
+photosHtml += '<div class="test-photo-item"><img src="' + p.url + '" onclick="openLightbox(\'' + p.url + '\')">' +
+'<button class="photo-delete-mini" onclick="deleteTestPhoto(' + i + ')">✕</button></div>';
+});
+photosHtml += '</div>';
+}
+const testName = testData && testData.name ? testData.name : '';
+const testDesc = testData && testData.description ? testData.description : '';
+const testEmoji = testData && testData.emoji ? testData.emoji : '📝';
+const testPassScore = testData && testData.passScore ? testData.passScore : 80;
+const testMaxScore = testData && testData.maxScore ? testData.maxScore : 100;
+const testAgreement = testData && testData.agreementText ? testData.agreementText : '';
+document.getElementById('createForm').innerHTML =
+'<div class="form-card">' +
+'<div class="form-row"><label class="form-label">Назва іспиту</label>' +
+'<input class="form-input" id="testName" value="' + testName + '" placeholder="Наприклад: Тактична підготовка"></div>' +
+'<div class="form-row"><label class="form-label">Опис (необов\'язково)</label>' +
+'<input class="form-input" id="testDesc" value="' + testDesc + '" placeholder="Короткий опис іспиту"></div>' +
+'<div class="form-row"><label class="form-label">Емодзі</label>' +
+'<input class="form-input" id="testEmoji" value="' + testEmoji + '" placeholder="📝"></div>' +
+'<div class="form-row-inline">' +
+'<div><label class="form-label">Прохідний бал</label><input class="form-input" id="testPassScore" type="number" value="' + testPassScore + '"></div>' +
+'<div><label class="form-label">Макс. бал</label><input class="form-input" id="testMaxScore" type="number" value="' + testMaxScore + '"></div></div>' +
+'<div class="form-row"><label class="form-label">Користувацька угода (необов\'язково)</label>' +
+'<textarea class="form-input" id="testAgreement" rows="3" placeholder="Текст угоди...">' + testAgreement + '</textarea></div>' +
+'<div class="form-row"><label class="form-label">📸 Фото до іспиту</label>' + photosHtml +
+'<input type="file" id="testPhotoInput" accept="image/*" style="display:none" onchange="uploadTestPhoto()">' +
+'<button class="upload-photo-btn" onclick="document.getElementById(\'testPhotoInput\').click()">📸 Додати фото</button></div></div>' +
+'<div class="section-title" style="margin-top:30px">❓ Питання</div>' +
+'<div id="questionsContainer">' + questionsHtml + '</div>' +
+'<div class="btn-group" style="margin-top:20px">' +
+'<button class="btn btn-secondary" onclick="addQuestion()">➕ Додати питання</button>' +
+'<button class="btn btn-primary" onclick="saveTest()">💾 ' + (isEdit ? 'Зберегти зміни' : 'Створити іспит') + '</button>' +
+'<button class="btn btn-secondary" onclick="cancelCreate()">← Скасувати</button></div>';
 }
 
 function buildQuestionBlock(idx, qData = null) {
-    const q = qData || {text: '', options: [{text: '', correct: false}, {text: '', correct: false}], timeLimit: 30, allowFree: false, answerType: 'normal', tableData: null, photo: null};
-    
-    let optionsHtml = '';
-    q.options.forEach((opt, i) => {
-        optionsHtml += '<div class="opt-row">' +
-            '<div class="opt-radio ' + (opt.correct ? 'checked' : '') + '" onclick="toggleCorrect(' + idx + ',' + i + ')"></div>' +
-            '<input class="opt-input" data-q="' + idx + '" data-opt="' + i + '" value="' + opt.text + '" placeholder="Варіант ' + letters[i] + '">' +
-            (q.options.length > 2 ? '<button class="opt-del" onclick="deleteOption(' + idx + ',' + i + ')">✕</button>' : '') +
-            '</div>';
-    });
-    
-    let photoHtml = '';
-    if (q.photo) {
-        photoHtml = '<div class="question-photo-section"><div class="question-photo-preview">' +
-            '<img src="' + q.photo + '" onclick="openLightbox(\'' + q.photo + '\')">' +
-            '<button class="question-photo-delete" onclick="deleteQuestionPhoto(' + idx + ')">✕</button></div></div>';
-    }
-    
-    return '<div class="q-block" data-q="' + idx + '">' +
-        '<div class="q-block-head"><span class="q-num">Питання ' + (idx + 1) + '</span>' +
-        '<button class="q-del" onclick="deleteQuestion(' + idx + ')">🗑</button></div>' +
-        '<div class="form-row"><textarea class="form-input" data-q="' + idx + '" data-field="text" rows="2" placeholder="Текст питання">' + q.text + '</textarea></div>' +
-        photoHtml +
-        '<input type="file" id="qPhoto' + idx + '" accept="image/*" style="display:none" onchange="uploadQuestionPhoto(' + idx + ')">' +
-        '<button class="add-question-photo-btn" onclick="document.getElementById(\'qPhoto' + idx + '\').click()">📸 Додати фото до питання</button>' +
-        '<div class="form-row"><label class="form-label">Варіанти відповідей</label>' + optionsHtml +
-        '<button class="add-opt-btn" onclick="addOption(' + idx + ')">+ Додати варіант</button></div>' +
-        '<div class="form-row"><label class="form-label">Час на питання (сек)</label>' +
-        '<input class="form-input" type="number" data-q="' + idx + '" data-field="timeLimit" value="' + q.timeLimit + '"></div>' +
-        '<div class="free-toggle-create" onclick="toggleFreeCreate(' + idx + ')">' +
-        '<div class="toggle-switch ' + (q.allowFree ? 'on' : '') + '"></div><span>Дозволити вільну відповідь</span></div></div>';
+const q = qData || {text: '', options: [{text: '', correct: false}, {text: '', correct: false}], timeLimit: 30, allowFree: false, answerType: 'normal', tableData: null, photo: null};
+let optionsHtml = '';
+q.options.forEach((opt, i) => {
+optionsHtml += '<div class="opt-row">' +
+'<div class="opt-radio ' + (opt.correct ? 'checked' : '') + '" onclick="toggleCorrect(' + idx + ',' + i + ')"></div>' +
+'<input class="opt-input" data-q="' + idx + '" data-opt="' + i + '" value="' + opt.text + '" placeholder="Варіант ' + letters[i] + '">' +
+(q.options.length > 2 ? '<button class="opt-del" onclick="deleteOption(' + idx + ',' + i + ')">✕</button>' : '') + '</div>';
+});
+let photoHtml = '';
+if (q.photo) {
+photoHtml = '<div class="question-photo-section"><div class="question-photo-preview">' +
+'<img src="' + q.photo + '" onclick="openLightbox(\'' + q.photo + '\')">' +
+'<button class="question-photo-delete" onclick="deleteQuestionPhoto(' + idx + ')">✕</button></div></div>';
+}
+return '<div class="q-block" data-q="' + idx + '">' +
+'<div class="q-block-head"><span class="q-num">Питання ' + (idx + 1) + '</span>' +
+'<button class="q-del" onclick="deleteQuestion(' + idx + ')">🗑</button></div>' +
+'<div class="form-row"><textarea class="form-input" data-q="' + idx + '" data-field="text" rows="2" placeholder="Текст питання">' + q.text + '</textarea></div>' +
+photoHtml +
+'<input type="file" id="qPhoto' + idx + '" accept="image/*" style="display:none" onchange="uploadQuestionPhoto(' + idx + ')">' +
+'<button class="add-question-photo-btn" onclick="document.getElementById(\'qPhoto' + idx + '\').click()">📸 Додати фото до питання</button>' +
+'<div class="form-row"><label class="form-label">Варіанти відповідей</label>' + optionsHtml +
+'<button class="add-opt-btn" onclick="addOption(' + idx + ')">+ Додати варіант</button></div>' +
+'<div class="form-row"><label class="form-label">Час на питання (сек)</label>' +
+'<input class="form-input" type="number" data-q="' + idx + '" data-field="timeLimit" value="' + q.timeLimit + '"></div>' +
+'<div class="free-toggle-create" onclick="toggleFreeCreate(' + idx + ')">' +
+'<div class="toggle-switch ' + (q.allowFree ? 'on' : '') + '"></div><span>Дозволити вільну відповідь</span></div></div>';
 }
 
 window.addQuestion = () => {
-    const container = document.getElementById('questionsContainer');
-    const count = document.querySelectorAll('.q-block').length;
-    container.insertAdjacentHTML('beforeend', buildQuestionBlock(count));
+const container = document.getElementById('questionsContainer');
+const count = document.querySelectorAll('.q-block').length;
+container.insertAdjacentHTML('beforeend', buildQuestionBlock(count));
 };
 
 window.deleteQuestion = idx => {
-    const blocks = document.querySelectorAll('.q-block');
-    if (blocks.length <= 1) {
-        alert('❌ Має бути хоча б одне питання!');
-        return;
-    }
-    blocks[idx].remove();
-    document.querySelectorAll('.q-block').forEach((block, i) => {
-        block.querySelector('.q-num').textContent = 'Питання ' + (i + 1);
-        block.setAttribute('data-q', i);
-    });
+const blocks = document.querySelectorAll('.q-block');
+if (blocks.length <= 1) { alert('❌ Має бути хоча б одне питання!'); return; }
+blocks[idx].remove();
+document.querySelectorAll('.q-block').forEach((block, i) => {
+block.querySelector('.q-num').textContent = 'Питання ' + (i + 1);
+block.setAttribute('data-q', i);
+});
 };
 
 window.addOption = idx => {
-    const block = document.querySelectorAll('.q-block')[idx];
-    if (!block) return;
-    
-    const opts = block.querySelectorAll('.opt-row');
-    if (opts.length >= 10) {
-        alert('❌ Максимум 10 варіантів!');
-        return;
-    }
-    
-    const i = opts.length;
-    const html = '<div class="opt-row">' +
-        '<div class="opt-radio" onclick="toggleCorrect(' + idx + ',' + i + ')"></div>' +
-        '<input class="opt-input" data-q="' + idx + '" data-opt="' + i + '" placeholder="Варіант ' + letters[i] + '">' +
-        '<button class="opt-del" onclick="deleteOption(' + idx + ',' + i + ')">✕</button></div>';
-    
-    const container = block.querySelector('.opt-row:last-of-type');
-    if (container) {
-        container.insertAdjacentHTML('afterend', html);
-    }
+const block = document.querySelectorAll('.q-block')[idx];
+if (!block) return;
+const opts = block.querySelectorAll('.opt-row');
+if (opts.length >= 10) { alert('❌ Максимум 10 варіантів!'); return; }
+const i = opts.length;
+const html = '<div class="opt-row">' +
+'<div class="opt-radio" onclick="toggleCorrect(' + idx + ',' + i + ')"></div>' +
+'<input class="opt-input" data-q="' + idx + '" data-opt="' + i + '" placeholder="Варіант ' + letters[i] + '">' +
+'<button class="opt-del" onclick="deleteOption(' + idx + ',' + i + ')">✕</button></div>';
+const container = block.querySelector('.opt-row:last-of-type');
+if (container) container.insertAdjacentHTML('afterend', html);
 };
 
 window.deleteOption = (qIdx, optIdx) => {
-    const block = document.querySelectorAll('.q-block')[qIdx];
-    if (!block) return;
-    
-    const opts = block.querySelectorAll('.opt-row');
-    if (opts.length <= 2) {
-        alert('❌ Має бути мінімум 2 варіанти!');
-        return;
-    }
-    
-    if (!opts[optIdx]) return;
-    opts[optIdx].remove();
-    
-    // Перебудовуємо всі опції з новими індексами
-    const newOpts = block.querySelectorAll('.opt-row');
-    newOpts.forEach((row, i) => {
-        const radio = row.querySelector('.opt-radio');
-        const input = row.querySelector('.opt-input');
-        const delBtn = row.querySelector('.opt-del');
-        
-        // Оновлюємо onclick для radio
-        radio.setAttribute('onclick', 'toggleCorrect(' + qIdx + ',' + i + ')');
-        
-        // Оновлюємо data атрибути для input
-        input.setAttribute('data-opt', i);
-        input.setAttribute('placeholder', 'Варіант ' + letters[i]);
-        
-        // Оновлюємо onclick для кнопки видалення
-        if (delBtn) {
-            delBtn.setAttribute('onclick', 'deleteOption(' + qIdx + ',' + i + ')');
-        }
-    });
+const block = document.querySelectorAll('.q-block')[qIdx];
+if (!block) return;
+const opts = block.querySelectorAll('.opt-row');
+if (opts.length <= 2) { alert('❌ Має бути мінімум 2 варіанти!'); return; }
+if (!opts[optIdx]) return;
+opts[optIdx].remove();
+const newOpts = block.querySelectorAll('.opt-row');
+newOpts.forEach((row, i) => {
+const radio = row.querySelector('.opt-radio');
+const input = row.querySelector('.opt-input');
+const delBtn = row.querySelector('.opt-del');
+radio.setAttribute('onclick', 'toggleCorrect(' + qIdx + ',' + i + ')');
+input.setAttribute('data-opt', i);
+input.setAttribute('placeholder', 'Варіант ' + letters[i]);
+if (delBtn) delBtn.setAttribute('onclick', 'deleteOption(' + qIdx + ',' + i + ')');
+});
 };
 
 window.toggleCorrect = (qIdx, optIdx) => {
-    const block = document.querySelectorAll('.q-block')[qIdx];
-    block.querySelectorAll('.opt-radio').forEach(r => r.classList.remove('checked'));
-    block.querySelectorAll('.opt-radio')[optIdx].classList.add('checked');
+const block = document.querySelectorAll('.q-block')[qIdx];
+block.querySelectorAll('.opt-radio').forEach(r => r.classList.remove('checked'));
+block.querySelectorAll('.opt-radio')[optIdx].classList.add('checked');
 };
 
 window.toggleFreeCreate = idx => {
-    const block = document.querySelectorAll('.q-block')[idx];
-    const toggle = block.querySelector('.toggle-switch');
-    toggle.classList.toggle('on');
+const block = document.querySelectorAll('.q-block')[idx];
+const toggle = block.querySelector('.toggle-switch');
+toggle.classList.toggle('on');
 };
 
 window.uploadTestPhoto = async () => {
-    const input = document.getElementById('testPhotoInput');
-    const file = input.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = e => {
-        currentTestPhotos.push({url: e.target.result});
-        renderCreateForm({
-            id: editingTestId,
-            name: document.getElementById('testName').value,
-            description: document.getElementById('testDesc').value,
-            emoji: document.getElementById('testEmoji').value,
-            passScore: parseInt(document.getElementById('testPassScore').value) || 80,
-            maxScore: parseInt(document.getElementById('testMaxScore').value) || 100,
-            agreementText: document.getElementById('testAgreement').value,
-            photos: currentTestPhotos,
-            questions: collectQuestions()
-        });
-    };
-    reader.readAsDataURL(file);
+const input = document.getElementById('testPhotoInput');
+const file = input.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = e => {
+currentTestPhotos.push({url: e.target.result});
+renderCreateForm({ id: editingTestId, name: document.getElementById('testName').value, description: document.getElementById('testDesc').value, emoji: document.getElementById('testEmoji').value, passScore: parseInt(document.getElementById('testPassScore').value) || 80, maxScore: parseInt(document.getElementById('testMaxScore').value) || 100, agreementText: document.getElementById('testAgreement').value, photos: currentTestPhotos, questions: collectQuestions() });
+};
+reader.readAsDataURL(file);
 };
 
 window.deleteTestPhoto = idx => {
-    currentTestPhotos.splice(idx, 1);
-    renderCreateForm({
-        id: editingTestId,
-        name: document.getElementById('testName').value,
-        description: document.getElementById('testDesc').value,
-        emoji: document.getElementById('testEmoji').value,
-        passScore: parseInt(document.getElementById('testPassScore').value) || 80,
-        maxScore: parseInt(document.getElementById('testMaxScore').value) || 100,
-        agreementText: document.getElementById('testAgreement').value,
-        photos: currentTestPhotos,
-        questions: collectQuestions()
-    });
+currentTestPhotos.splice(idx, 1);
+renderCreateForm({ id: editingTestId, name: document.getElementById('testName').value, description: document.getElementById('testDesc').value, emoji: document.getElementById('testEmoji').value, passScore: parseInt(document.getElementById('testPassScore').value) || 80, maxScore: parseInt(document.getElementById('testMaxScore').value) || 100, agreementText: document.getElementById('testAgreement').value, photos: currentTestPhotos, questions: collectQuestions() });
 };
 
 window.uploadQuestionPhoto = idx => {
-    const input = document.getElementById('qPhoto' + idx);
-    const file = input.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = e => {
-        const questions = collectQuestions();
-        questions[idx].photo = e.target.result;
-        renderCreateForm({
-            id: editingTestId,
-            name: document.getElementById('testName').value,
-            description: document.getElementById('testDesc').value,
-            emoji: document.getElementById('testEmoji').value,
-            passScore: parseInt(document.getElementById('testPassScore').value) || 80,
-            maxScore: parseInt(document.getElementById('testMaxScore').value) || 100,
-            agreementText: document.getElementById('testAgreement').value,
-            photos: currentTestPhotos,
-            questions: questions
-        });
-    };
-    reader.readAsDataURL(file);
+const input = document.getElementById('qPhoto' + idx);
+const file = input.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = e => {
+const questions = collectQuestions();
+questions[idx].photo = e.target.result;
+renderCreateForm({ id: editingTestId, name: document.getElementById('testName').value, description: document.getElementById('testDesc').value, emoji: document.getElementById('testEmoji').value, passScore: parseInt(document.getElementById('testPassScore').value) || 80, maxScore: parseInt(document.getElementById('testMaxScore').value) || 100, agreementText: document.getElementById('testAgreement').value, photos: currentTestPhotos, questions });
+};
+reader.readAsDataURL(file);
 };
 
 window.deleteQuestionPhoto = idx => {
-    const questions = collectQuestions();
-    questions[idx].photo = null;
-    renderCreateForm({
-        id: editingTestId,
-        name: document.getElementById('testName').value,
-        description: document.getElementById('testDesc').value,
-        emoji: document.getElementById('testEmoji').value,
-        passScore: parseInt(document.getElementById('testPassScore').value) || 80,
-        maxScore: parseInt(document.getElementById('testMaxScore').value) || 100,
-        agreementText: document.getElementById('testAgreement').value,
-        photos: currentTestPhotos,
-        questions: questions
-    });
+const questions = collectQuestions();
+questions[idx].photo = null;
+renderCreateForm({ id: editingTestId, name: document.getElementById('testName').value, description: document.getElementById('testDesc').value, emoji: document.getElementById('testEmoji').value, passScore: parseInt(document.getElementById('testPassScore').value) || 80, maxScore: parseInt(document.getElementById('testMaxScore').value) || 100, agreementText: document.getElementById('testAgreement').value, photos: currentTestPhotos, questions });
 };
 
 function collectQuestions() {
-    const questions = [];
-    document.querySelectorAll('.q-block').forEach((block, idx) => {
-        const text = block.querySelector('[data-field="text"]').value.trim();
-        const timeLimit = parseInt(block.querySelector('[data-field="timeLimit"]').value) || 30;
-        const allowFree = block.querySelector('.toggle-switch').classList.contains('on');
-        
-        const options = [];
-        block.querySelectorAll('.opt-row').forEach((row, i) => {
-            const input = row.querySelector('.opt-input');
-            const radio = row.querySelector('.opt-radio');
-            options.push({
-                text: input.value.trim(),
-                correct: radio.classList.contains('checked')
-            });
-        });
-        
-        const photoInput = document.getElementById('qPhoto' + idx);
-        const existingPhoto = block.querySelector('.question-photo-preview img');
-        
-        questions.push({
-            text,
-            options,
-            timeLimit,
-            allowFree,
-            answerType: 'normal',
-            tableData: null,
-            photo: existingPhoto ? existingPhoto.src : null
-        });
-    });
-    return questions;
+const questions = [];
+document.querySelectorAll('.q-block').forEach((block, idx) => {
+const text = block.querySelector('[data-field="text"]').value.trim();
+const timeLimit = parseInt(block.querySelector('[data-field="timeLimit"]').value) || 30;
+const allowFree = block.querySelector('.toggle-switch').classList.contains('on');
+const options = [];
+block.querySelectorAll('.opt-row').forEach((row, i) => {
+const input = row.querySelector('.opt-input');
+const radio = row.querySelector('.opt-radio');
+options.push({ text: input.value.trim(), correct: radio.classList.contains('checked') });
+});
+const existingPhoto = block.querySelector('.question-photo-preview img');
+questions.push({ text, options, timeLimit, allowFree, answerType: 'normal', tableData: null, photo: existingPhoto ? existingPhoto.src : null });
+});
+return questions;
 }
 
 window.saveTest = async () => {
-    const name = document.getElementById('testName').value.trim();
-    const description = document.getElementById('testDesc').value.trim();
-    const emoji = document.getElementById('testEmoji').value.trim() || '📝';
-    const passScore = parseInt(document.getElementById('testPassScore').value) || 80;
-    const maxScore = parseInt(document.getElementById('testMaxScore').value) || 100;
-    const agreementText = document.getElementById('testAgreement').value.trim();
-    
-    if (!name) {
-        alert('❌ Введіть назву іспиту!');
-        return;
-    }
-    
-    const questions = collectQuestions();
-    
-    if (questions.length === 0) {
-        alert('❌ Додайте хоча б одне питання!');
-        return;
-    }
-    
-    let hasErrors = false;
-    questions.forEach((q, i) => {
-        if (!q.text) {
-            alert('❌ Питання ' + (i + 1) + ' не має тексту!');
-            hasErrors = true;
-            return;
-        }
-        if (!q.options.some(o => o.correct) && !q.allowFree) {
-            alert('❌ Питання ' + (i + 1) + ' не має правильної відповіді!');
-            document.querySelectorAll('.q-block')[i].classList.add('error');
-            hasErrors = true;
-            return;
-        }
-    });
-    
-    if (hasErrors) return;
-    
-    const testObj = {
-        name,
-        description,
-        emoji,
-        passScore,
-        maxScore,
-        questions,
-        agreementText,
-        photos: currentTestPhotos,
-        createdBy: ME.name,
-        createdByUid: ME.uid
-    };
-    
-    const success = await saveTestToFirebase(testObj);
-    if (success) {
-        editingTestId = null;
-        currentTestPhotos = [];
-        showView('manage');
-    }
+const name = document.getElementById('testName').value.trim();
+const description = document.getElementById('testDesc').value.trim();
+const emoji = document.getElementById('testEmoji').value.trim() || '📝';
+const passScore = parseInt(document.getElementById('testPassScore').value) || 80;
+const maxScore = parseInt(document.getElementById('testMaxScore').value) || 100;
+const agreementText = document.getElementById('testAgreement').value.trim();
+if (!name) { alert('❌ Введіть назву іспиту!'); return; }
+const questions = collectQuestions();
+if (questions.length === 0) { alert('❌ Додайте хоча б одне питання!'); return; }
+let hasErrors = false;
+questions.forEach((q, i) => {
+if (!q.text) { alert('❌ Питання ' + (i + 1) + ' не має тексту!'); hasErrors = true; return; }
+if (!q.options.some(o => o.correct) && !q.allowFree) { alert('❌ Питання ' + (i + 1) + ' не має правильної відповіді!'); document.querySelectorAll('.q-block')[i].classList.add('error'); hasErrors = true; return; }
+});
+if (hasErrors) return;
+const testObj = { name, description, emoji, passScore, maxScore, questions, agreementText, photos: currentTestPhotos, createdBy: ME.name, createdByUid: ME.uid };
+const success = await saveTestToFirebase(testObj);
+if (success) { editingTestId = null; currentTestPhotos = []; showView('manage'); }
 };
 
-window.cancelCreate = () => {
-    editingTestId = null;
-    currentTestPhotos = [];
-    showView('home');
-};
+window.cancelCreate = () => { editingTestId = null; currentTestPhotos = []; showView('home'); };
 
+// ✅ ГОЛОВНИЙ ФІКС: agreementAccepted скидається на початку функції
 window.startIntro = id => {
 const t = tests.find(x => x.id === id);
 if (!t) return;
 
+// ✅ ФІКС БАГА: завжди скидаємо стан угоди ПЕРЕД будь-якими перевірками
+// Це усуває баг коли після тесту з угодою, тест без угоди
+// залишав agreementAccepted = false і кнопка була заблокована
+agreementAccepted = false;
+
 if (!IS_PUBLIC_MODE) {
 const myResults = results.filter(r => r.testId === id && r.userId === ME.uid);
 const hasPending = myResults.find(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman));
-if (hasPending) {
-alert('⚠️ Попередній іспит ще не перевірено людиною! Дочекайтесь результату.');
-return;
-}
+if (hasPending) { alert('⚠️ Попередній іспит ще не перевірено людиною! Дочекайтесь результату.'); return; }
 }
 
 currentTest = t;
-agreementAccepted = false;
 
 let totalTime = 0;
-t.questions.forEach(q => {totalTime += (q.timeLimit || 30)});
+t.questions.forEach(q => { totalTime += (q.timeLimit || 30); });
 const pps = t.maxScore > 0 ? Math.round(t.maxScore / t.questions.length * 10) / 10 : 0;
 
 let photosHtml = '';
@@ -2776,15 +2418,18 @@ photosHtml += '</div></div>';
 }
 
 let agreementHtml = '';
+// ✅ ФІКС: Якщо угоди немає — одразу встановлюємо true
 if (t.agreementText && t.agreementText.trim()) {
+// Угода є — залишаємо false, чекаємо чекбокс
 agreementHtml = '<div class="agreement-box"><label class="agreement-check">' +
 '<input type="checkbox" id="agreementCheckbox" onchange="toggleAgreement()">' +
 '<div class="agreement-text"><strong>📜 Користувацька угода:</strong><br>' + t.agreementText + '</div></label></div>';
 } else {
+// Угоди немає — відразу дозволяємо
 agreementAccepted = true;
 }
 
-document.getElementById('introCard').innerHTML = 
+document.getElementById('introCard').innerHTML =
 '<span class="emoji">' + (t.emoji || '📝') + '</span><h2>' + t.name + '</h2><p>' + (t.description || '') + '</p>' + photosHtml +
 '<div style="margin:25px 0;display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center">' +
 '<div style="background:rgba(0,255,68,0.05);border:1px solid rgba(0,255,68,0.15);border-radius:12px;padding:15px">' +
@@ -2815,9 +2460,8 @@ document.getElementById('startQuizBtn').disabled = !agreementAccepted;
 };
 
 window.openLightbox = url => {
-const lb = document.getElementById('lightbox');
 document.getElementById('lightboxImg').src = url;
-lb.classList.add('active');
+document.getElementById('lightbox').classList.add('active');
 document.body.style.overflow = 'hidden';
 };
 
@@ -2827,39 +2471,22 @@ document.body.style.overflow = 'auto';
 };
 
 window.beginQuiz = () => {
-    if (!agreementAccepted) {
-        alert('⚠️ Потрібно прийняти користувацьку угоду!');
-        return;
-    }
-    currentQ = 0;
-    answers = {};
-    
-    // Зберігаємо тест в sessionStorage
-    sessionStorage.setItem('quizInProgress', JSON.stringify({
-        testId: currentTest.id,
-        testData: currentTest,
-        currentQ: 0,
-        answers: {}
-    }));
-    
-    showView('quiz');
-    renderQuestion();
+if (!agreementAccepted) { alert('⚠️ Потрібно прийняти користувацьку угоду!'); return; }
+currentQ = 0;
+answers = {};
+sessionStorage.setItem('quizInProgress', JSON.stringify({ testId: currentTest.id, testData: currentTest, currentQ: 0, answers: {} }));
+showView('quiz');
+renderQuestion();
 };
 
 function renderQuestion() {
-if (!currentTest || currentQ >= currentTest.questions.length) {
-finishQuiz();
-return;
-}
-
+if (!currentTest || currentQ >= currentTest.questions.length) { finishQuiz(); return; }
 const q = currentTest.questions[currentQ];
 const progress = ((currentQ + 1) / currentTest.questions.length) * 100;
 timeLeft = q.timeLimit || 30;
 
 let questionPhotoHtml = '';
-if (q.photo) {
-questionPhotoHtml = '<div class="quiz-question-photo"><img src="' + q.photo + '" onclick="openLightbox(\'' + q.photo + '\')"></div>';
-}
+if (q.photo) questionPhotoHtml = '<div class="quiz-question-photo"><img src="' + q.photo + '" onclick="openLightbox(\'' + q.photo + '\')"></div>';
 
 let answersHtml = '';
 if (q.answerType === 'table' && q.tableData) {
@@ -2890,7 +2517,7 @@ freeHtml = '<div class="free-answer-area">' +
 '<textarea class="free-input" id="freeInput" placeholder="Введіть вашу відповідь..." style="display:none"></textarea></div>';
 }
 
-document.getElementById('quizContainer').innerHTML = 
+document.getElementById('quizContainer').innerHTML =
 '<div class="quiz-progress-bar"><div class="quiz-progress-fill" style="width:' + progress + '%"></div></div>' +
 '<div class="quiz-header">' +
 '<div style="font-size:14px;font-weight:800;color:var(--primary)">Питання ' + (currentQ + 1) + ' з ' + currentTest.questions.length + '</div>' +
@@ -2922,52 +2549,28 @@ if (btn) btn.classList.add('selected');
 function updateTimer() {
 timeLeft--;
 const timerEl = document.getElementById('timer');
-if (timerEl) {
-timerEl.textContent = timeLeft + 'с';
-if (timeLeft <= 10) timerEl.classList.add('danger');
-}
-if (timeLeft <= 0) {
-clearInterval(timer);
-nextQuestion();
-}
+if (timerEl) { timerEl.textContent = timeLeft + 'с'; if (timeLeft <= 10) timerEl.classList.add('danger'); }
+if (timeLeft <= 0) { clearInterval(timer); nextQuestion(); }
 }
 
 window.selectAnswer = i => {
-    document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
-    document.querySelectorAll('.answer-btn')[i].classList.add('selected');
-    answers[currentQ] = {type: 'normal', answer: i};
-    const freeToggle = document.getElementById('freeToggle');
-    const freeInput = document.getElementById('freeInput');
-    if (freeToggle) {
-        freeToggle.classList.remove('active');
-        freeInput.style.display = 'none';
-        freeInput.value = '';
-    }
-    sessionStorage.setItem('quizInProgress', JSON.stringify({
-        testId: currentTest.id,
-        testData: currentTest,
-        currentQ: currentQ,
-        answers: answers
-    }));
+document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+document.querySelectorAll('.answer-btn')[i].classList.add('selected');
+answers[currentQ] = {type: 'normal', answer: i};
+const freeToggle = document.getElementById('freeToggle');
+const freeInput = document.getElementById('freeInput');
+if (freeToggle) { freeToggle.classList.remove('active'); freeInput.style.display = 'none'; freeInput.value = ''; }
+sessionStorage.setItem('quizInProgress', JSON.stringify({ testId: currentTest.id, testData: currentTest, currentQ, answers }));
 };
 
 window.selectTableAnswer = ri => {
-    document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked'));
-    document.getElementById('table-radio-' + ri).classList.add('checked');
-    answers[currentQ] = {type: 'table', answer: ri};
-    const freeToggle = document.getElementById('freeToggle');
-    const freeInput = document.getElementById('freeInput');
-    if (freeToggle) {
-        freeToggle.classList.remove('active');
-        freeInput.style.display = 'none';
-        freeInput.value = '';
-    }
-    sessionStorage.setItem('quizInProgress', JSON.stringify({
-        testId: currentTest.id,
-        testData: currentTest,
-        currentQ: currentQ,
-        answers: answers
-    }));
+document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked'));
+document.getElementById('table-radio-' + ri).classList.add('checked');
+answers[currentQ] = {type: 'table', answer: ri};
+const freeToggle = document.getElementById('freeToggle');
+const freeInput = document.getElementById('freeInput');
+if (freeToggle) { freeToggle.classList.remove('active'); freeInput.style.display = 'none'; freeInput.value = ''; }
+sessionStorage.setItem('quizInProgress', JSON.stringify({ testId: currentTest.id, testData: currentTest, currentQ, answers }));
 };
 
 window.toggleFreeAnswer = () => {
@@ -2976,88 +2579,50 @@ const input = document.getElementById('freeInput');
 toggle.classList.toggle('active');
 const isActive = toggle.classList.contains('active');
 input.style.display = isActive ? 'block' : 'none';
-if (isActive) {
-input.focus();
-document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
-document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked'));
-}
+if (isActive) { input.focus(); document.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected')); document.querySelectorAll('.table-radio').forEach(r => r.classList.remove('checked')); }
 };
 
 let nextQuestionLocked = false;
 
 window.nextQuestion = () => {
-    // Перевірка блокування
-    if (nextQuestionLocked) {
-        return;
-    }
-    
-    const freeInput = document.getElementById('freeInput');
-    if (freeInput && freeInput.style.display !== 'none' && freeInput.value.trim()) {
-        answers[currentQ] = {type: 'free', answer: freeInput.value.trim()};
-    }
-
-    if (!answers[currentQ]) {
-        if (!confirm('⚠️ Ви не вибрали відповідь! Продовжити без відповіді?')) return;
-        answers[currentQ] = {type: 'none', answer: null};
-    }
-
-    // Блокуємо кнопку на 2 секунди
-    nextQuestionLocked = true;
-    
-    clearInterval(timer);
-    currentQ++;
-    
-    // Зберігаємо прогрес
-    sessionStorage.setItem('quizInProgress', JSON.stringify({
-        testId: currentTest.id,
-        testData: currentTest,
-        currentQ: currentQ,
-        answers: answers
-    }));
-    
-    renderQuestion();
-    
-    // Візуально блокуємо кнопку
-    const nextBtn = document.querySelector('.quiz-container .btn-primary');
-    if (nextBtn) {
-        nextBtn.disabled = true;
-        nextBtn.style.opacity = '0.5';
-        nextBtn.style.cursor = 'not-allowed';
-        const originalText = nextBtn.textContent;
-        
-        let countdown = 2;
-        nextBtn.textContent = '⏳ Зачекайте ' + countdown + 'с...';
-        
-        const countdownInterval = setInterval(() => {
-            countdown--;
-            if (countdown > 0) {
-                nextBtn.textContent = '⏳ Зачекайте ' + countdown + 'с...';
-            }
-        }, 1000);
-        
-        // Розблокуємо через 2 секунди
-        setTimeout(() => {
-            nextQuestionLocked = false;
-            clearInterval(countdownInterval);
-            if (nextBtn) {
-                nextBtn.disabled = false;
-                nextBtn.style.opacity = '1';
-                nextBtn.style.cursor = 'pointer';
-                const isLastQuestion = currentQ === currentTest.questions.length - 1;
-                nextBtn.textContent = isLastQuestion ? '✅ Завершити іспит' : 'Далі ➡';
-            }
-        }, 2000);
-    } else {
-        // Якщо кнопка не знайдена, просто розблокуємо через 2 секунди
-        setTimeout(() => {
-            nextQuestionLocked = false;
-        }, 2000);
-    }
+if (nextQuestionLocked) return;
+const freeInput = document.getElementById('freeInput');
+if (freeInput && freeInput.style.display !== 'none' && freeInput.value.trim()) {
+answers[currentQ] = {type: 'free', answer: freeInput.value.trim()};
+}
+if (!answers[currentQ]) {
+if (!confirm('⚠️ Ви не вибрали відповідь! Продовжити без відповіді?')) return;
+answers[currentQ] = {type: 'none', answer: null};
+}
+nextQuestionLocked = true;
+clearInterval(timer);
+currentQ++;
+sessionStorage.setItem('quizInProgress', JSON.stringify({ testId: currentTest.id, testData: currentTest, currentQ, answers }));
+renderQuestion();
+const nextBtn = document.querySelector('.quiz-container .btn-primary');
+if (nextBtn) {
+nextBtn.disabled = true;
+nextBtn.style.opacity = '0.5';
+nextBtn.style.cursor = 'not-allowed';
+let countdown = 2;
+nextBtn.textContent = '⏳ Зачекайте ' + countdown + 'с...';
+const countdownInterval = setInterval(() => { countdown--; if (countdown > 0) nextBtn.textContent = '⏳ Зачекайте ' + countdown + 'с...'; }, 1000);
+setTimeout(() => {
+nextQuestionLocked = false;
+clearInterval(countdownInterval);
+if (nextBtn) {
+nextBtn.disabled = false;
+nextBtn.style.opacity = '1';
+nextBtn.style.cursor = 'pointer';
+const isLastQuestion = currentQ === currentTest.questions.length - 1;
+nextBtn.textContent = isLastQuestion ? '✅ Завершити іспит' : 'Далі ➡';
+}
+}, 2000);
+} else { setTimeout(() => { nextQuestionLocked = false; }, 2000); }
 };
 
 async function finishQuiz() {
 clearInterval(timer);
-
 let score = 0;
 let correctCount = 0;
 let details = [];
@@ -3070,25 +2635,15 @@ let status = 'wrong';
 let userAnswer = 'Без відповіді';
 let correctAnswer = '';
 let points = 0;
-
-if (!userAns || userAns.type === 'none') {
-userAnswer = 'Без відповіді';
-status = 'wrong';
-} else if (userAns.type === 'free') {
-userAnswer = userAns.answer;
-status = 'pending';
-points = pointsPerQuestion;
-} else if (userAns.type === 'table') {
+if (!userAns || userAns.type === 'none') { userAnswer = 'Без відповіді'; status = 'wrong'; }
+else if (userAns.type === 'free') { userAnswer = userAns.answer; status = 'pending'; points = pointsPerQuestion; }
+else if (userAns.type === 'table') {
 const correctIdx = q.tableData.correctRowIndex;
 isCorrect = userAns.answer === correctIdx;
 status = isCorrect ? 'correct' : 'wrong';
 userAnswer = 'Рядок ' + (userAns.answer + 1);
 correctAnswer = 'Рядок ' + (correctIdx + 1);
-if (isCorrect) {
-score += pointsPerQuestion;
-correctCount++;
-points = pointsPerQuestion;
-}
+if (isCorrect) { score += pointsPerQuestion; correctCount++; points = pointsPerQuestion; }
 } else {
 const selectedOpt = q.options[userAns.answer];
 isCorrect = selectedOpt && selectedOpt.correct;
@@ -3096,20 +2651,9 @@ status = isCorrect ? 'correct' : 'wrong';
 userAnswer = selectedOpt ? selectedOpt.text : 'Невідомо';
 const correctOpt = q.options.find(o => o.correct);
 correctAnswer = correctOpt ? correctOpt.text : 'Не вказано';
-if (isCorrect) {
-score += pointsPerQuestion;
-correctCount++;
-points = pointsPerQuestion;
+if (isCorrect) { score += pointsPerQuestion; correctCount++; points = pointsPerQuestion; }
 }
-}
-
-details.push({
-qText: q.text,
-userAnswer,
-correctAnswer,
-status,
-points: Math.round(points * 100) / 100
-});
+details.push({ qText: q.text, userAnswer, correctAnswer, status, points: Math.round(points * 100) / 100 });
 });
 
 score = Math.round(score * 100) / 100;
@@ -3118,57 +2662,16 @@ const resultStatus = hasPendingQuestions ? 'pending' : 'auto';
 const userName = ME.name;
 const userRole = IS_PUBLIC_MODE ? 'Публічний користувач' : (ME.role === 'admin' ? 'Адмін' : ME.role === 'instructor' ? 'Інструктор' : 'Бієць');
 
-const result = {
-testId: currentTest.id,
-testName: currentTest.name,
-userId: ME.uid,
-userName: userName,
-userRole: userRole,
-score,
-maxScore: currentTest.maxScore,
-passScore: currentTest.passScore,
-details,
-status: resultStatus,
-date: now(),
-reviewer: null,
-reviewedByHuman: false,
-isPublic: IS_PUBLIC_MODE
-};
+const result = { testId: currentTest.id, testName: currentTest.name, userId: ME.uid, userName, userRole, score, maxScore: currentTest.maxScore, passScore: currentTest.passScore, details, status: resultStatus, date: now(), reviewer: null, reviewedByHuman: false, isPublic: IS_PUBLIC_MODE };
 
 try {
-const docRef = await addDoc(collection(db, 'results'), {
-...result,
-createdAt: serverTimestamp()
-});
+const docRef = await addDoc(collection(db, 'results'), { ...result, createdAt: serverTimestamp() });
 result.id = docRef.id;
-console.log('✅ Результат збережено в Firebase з ID:', docRef.id);
-
-await sendDiscordNotification('QUIZ_COMPLETED', {
-testName: currentTest.name,
-userName: userName,
-userRole: userRole,
-score,
-maxScore: currentTest.maxScore,
-passScore: currentTest.passScore,
-correctAnswers: correctCount,
-totalQuestions: currentTest.questions.length,
-status: resultStatus,
-passed: score >= currentTest.passScore,
-date: now()
-});
-console.log('✅ Discord notification відправлено');
-
-if (!IS_PUBLIC_MODE) {
-addNotif('📝 Ви завершили іспит "' + currentTest.name + '" з результатом ' + score + '/' + currentTest.maxScore);
-}
-} catch (e) {
-console.error('❌ Помилка збереження результату:', e);
-alert('❌ Помилка збереження результату: ' + e.message);
-return;
-}
+await sendDiscordNotification('QUIZ_COMPLETED', { testName: currentTest.name, userName, userRole, score, maxScore: currentTest.maxScore, passScore: currentTest.passScore, correctAnswers: correctCount, totalQuestions: currentTest.questions.length, status: resultStatus, passed: score >= currentTest.passScore, date: now() });
+if (!IS_PUBLIC_MODE) addNotif('📝 Ви завершили іспит "' + currentTest.name + '" з результатом ' + score + '/' + currentTest.maxScore);
+} catch (e) { console.error('❌ Помилка збереження результату:', e); alert('❌ Помилка збереження результату: ' + e.message); return; }
 
 showResult(result);
-  // Очищаємо збережений прогрес
 sessionStorage.removeItem('quizInProgress');
 }
 
@@ -3176,15 +2679,14 @@ function showResult(result) {
 const passed = result.score >= result.passScore;
 const statusClass = passed ? 'pass' : 'fail';
 const statusText = passed ? '✅ СКЛАДЕНО' : '❌ НЕ СКЛАДЕНО';
-
 if (result.status === 'pending') {
-document.getElementById('resultScreen').innerHTML = 
+document.getElementById('resultScreen').innerHTML =
 '<div class="intro-card"><span class="emoji">⏳</span><h2>Іспит відправлено на перевірку</h2>' +
 '<p style="margin:20px 0;font-size:14px">Ваші відповіді містять вільні питання, які потребують ручної перевірки перевіряючим.</p>' +
 '<div style="margin:25px 0;text-align:center"><div style="font-size:32px;font-weight:900;color:var(--warning)">' + result.score + ' / ' + result.maxScore + '</div>' +
 '<div style="font-size:12px;color:var(--text-gray);margin-top:8px">ПОПЕРЕДНІЙ БАЛ</div></div>' +
 '<p style="font-size:13px;color:var(--text-gray)">Очікуйте на повідомлення про результати перевірки.</p>' +
-(IS_PUBLIC_MODE ? '<div class="btn-group"><button class="btn btn-primary" onclick="location.reload()">🏠 Завершити</button></div>' : 
+(IS_PUBLIC_MODE ? '<div class="btn-group"><button class="btn btn-primary" onclick="location.reload()">🏠 Завершити</button></div>' :
 '<div class="btn-group"><button class="btn btn-primary" onclick="showView(\'home\')">🏠 На головну</button></div>') + '</div>';
 } else {
 let detailsHtml = '';
@@ -3197,31 +2699,22 @@ detailsHtml += '<div class="result-detail"><div class="mark ' + mark + '">' + ic
 (d.status !== 'pending' ? '<div style="font-size:11px;color:var(--primary);margin-top:2px">Правильно: ' + d.correctAnswer + '</div>' : '') +
 '</div></div>';
 });
-
-document.getElementById('resultScreen').innerHTML = 
+document.getElementById('resultScreen').innerHTML =
 '<div class="intro-card"><div class="result-circle ' + statusClass + '">' +
 '<div class="result-score">' + result.score + '</div><div class="result-max">з ' + result.maxScore + '</div></div>' +
 '<div class="result-status ' + statusClass + '">' + statusText + '</div>' +
-'<p style="margin-bottom:20px;color:var(--text-gray);font-size:13px">Правильних відповідей: <b>' + 
+'<p style="margin-bottom:20px;color:var(--text-gray);font-size:13px">Правильних відповідей: <b>' +
 result.details.filter(d => d.status === 'correct').length + '</b> з ' + result.details.length + '</p>' +
 detailsHtml +
-(IS_PUBLIC_MODE ? '<div class="btn-group"><button class="btn btn-primary" onclick="location.reload()">🏠 Завершити</button></div>' : 
+(IS_PUBLIC_MODE ? '<div class="btn-group"><button class="btn btn-primary" onclick="location.reload()">🏠 Завершити</button></div>' :
 '<div class="btn-group"><button class="btn btn-primary" onclick="showView(\'home\')">🏠 На головну</button></div>') + '</div>';
 }
-
 showView('result');
 }
 
-console.log('✅ Частина 2 завантажена - Quiz та Results');
-  // ЧАСТИНА 4, 5, 6 - Перевірка, управління, налаштування, історія
-
 function renderReview() {
 const pending = results.filter(r => r.status === 'pending' || (r.status === 'auto' && !r.reviewedByHuman));
-if (pending.length === 0) {
-document.getElementById('reviewList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає відповідей для перевірки ✓</div>';
-return;
-}
-
+if (pending.length === 0) { document.getElementById('reviewList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає відповідей для перевірки ✓</div>'; return; }
 let html = '';
 pending.forEach(r => {
 const t = tests.find(x => x.id === r.testId);
@@ -3231,7 +2724,6 @@ let cls = d.status === 'correct' ? 'auto-ok' : d.status === 'pending' ? 'pending
 let pts = d.status === 'correct' ? '<span class="q-points" style="color:var(--primary)">+' + Math.round(d.points * 10) / 10 + ' б.</span>' :
 d.status === 'wrong' ? '<span class="q-points" style="color:var(--danger)">0 б.</span>' :
 '<span class="q-points" style="color:var(--warning)">? б. — потрібна перевірка</span>';
-
 let pointsControl = '';
 if (d.status === 'pending') {
 const maxPts = t ? Math.round(t.maxScore / t.questions.length * 10) / 10 : 1;
@@ -3242,16 +2734,13 @@ pointsControl = '<div class="points-control">' +
 '<button class="btn btn-primary" style="padding:6px 12px;font-size:11px;margin-left:8px" onclick="setMaxPoints(\'' + r.id + '\', ' + i + ', ' + maxPts + ')">MAX</button>' +
 '<button class="btn btn-secondary" style="padding:6px 12px;font-size:11px" onclick="setMaxPoints(\'' + r.id + '\', ' + i + ', 0)">0</button></div>';
 }
-
 questionsHtml += '<div class="review-q ' + cls + '"><div class="q-title">' + (i + 1) + '. ' + d.qText + '</div>' +
 '<div class="q-answer">Відповідь: <b>' + d.userAnswer + '</b></div>' +
 (d.status !== 'pending' ? '<div class="q-correct">Правильно: ' + d.correctAnswer + '</div>' : '') +
 '<div>' + pts + '</div>' + pointsControl + '</div>';
 });
-
 const hasFreeQ = r.details.some(d => d.status === 'pending');
 const currentTotal = r.details.reduce((sum, d) => sum + d.points, 0).toFixed(1);
-
 html += '<div class="review-card">' +
 '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;flex-wrap:wrap;gap:10px">' +
 '<div><h3 style="font-size:16px;font-weight:800">' + r.userName + '</h3>' +
@@ -3262,7 +2751,7 @@ questionsHtml +
 '<div style="font-size:12px;font-weight:800;color:var(--warning);margin-bottom:10px">⚠️ Вільні відповіді потребують перевірки</div>' +
 '<div class="btn-group" style="margin-top:10px">' +
 '<button class="btn btn-primary" onclick="approveResult(\'' + r.id + '\')">✅ Схвалити з поточними балами</button>' +
-'<button class="btn btn-danger" onclick="rejectResult(\'' + r.id + '\')">❌ Відхилити (0 балів за вільні)</button></div></div>' : 
+'<button class="btn btn-danger" onclick="rejectResult(\'' + r.id + '\')">❌ Відхилити (0 балів за вільні)</button></div></div>' :
 '<div class="btn-group">' +
 '<button class="btn btn-primary" onclick="approveResult(\'' + r.id + '\')">✅ Схвалити</button>' +
 '<button class="btn btn-danger" onclick="rejectResult(\'' + r.id + '\')">❌ Відхилити</button></div>') +
@@ -3306,21 +2795,11 @@ window.approveResult = async (id) => {
 const r = results.find(x => x.id === id);
 if (!r) return;
 r.score = 0;
-r.details.forEach(d => {
-if (d.status === 'pending') d.status = 'correct';
-r.score += d.points;
-});
+r.details.forEach(d => { if (d.status === 'pending') d.status = 'correct'; r.score += d.points; });
 r.score = Math.round(r.score * 100) / 100;
-r.status = 'approved';
-r.reviewer = ME.name;
-r.reviewedByHuman = true;
-try {
-await updateDoc(doc(db, 'results', id), {score: r.score, details: r.details, status: 'approved', reviewer: ME.name, reviewedByHuman: true});
-console.log('✅ Результат оновлено в Firebase');
-} catch (e) {
-console.error('❌ Помилка оновлення:', e);
-}
-addNotif('✅ Результат ' + r.userName + ' схвалено перевіряючим ' + ME.name);
+r.status = 'approved'; r.reviewer = ME.name; r.reviewedByHuman = true;
+try { await updateDoc(doc(db, 'results', id), {score: r.score, details: r.details, status: 'approved', reviewer: ME.name, reviewedByHuman: true}); } catch (e) { console.error('❌ Помилка оновлення:', e); }
+addNotif('✅ Результат ' + r.userName + ' схвалено');
 await sendDiscordNotification('RESULT_APPROVED', {userName: r.userName, testName: r.testName, finalScore: r.score, maxScore: r.maxScore, reviewer: ME.name, status: 'approved', date: now()});
 renderReview();
 };
@@ -3328,33 +2807,18 @@ renderReview();
 window.rejectResult = async (id) => {
 const r = results.find(x => x.id === id);
 if (!r) return;
-r.details.forEach(d => {
-if (d.status === 'pending') {
-d.status = 'wrong';
-d.points = 0;
-}
-});
+r.details.forEach(d => { if (d.status === 'pending') { d.status = 'wrong'; d.points = 0; } });
 r.score = r.details.reduce((sum, d) => sum + d.points, 0);
 r.score = Math.round(r.score * 100) / 100;
-r.status = 'rejected';
-r.reviewer = ME.name;
-r.reviewedByHuman = true;
-try {
-await updateDoc(doc(db, 'results', id), {score: r.score, details: r.details, status: 'rejected', reviewer: ME.name, reviewedByHuman: true});
-console.log('✅ Результат оновлено в Firebase');
-} catch (e) {
-console.error('❌ Помилка оновлення:', e);
-}
-addNotif('❌ Результат ' + r.userName + ' відхилено перевіряючим ' + ME.name);
+r.status = 'rejected'; r.reviewer = ME.name; r.reviewedByHuman = true;
+try { await updateDoc(doc(db, 'results', id), {score: r.score, details: r.details, status: 'rejected', reviewer: ME.name, reviewedByHuman: true}); } catch (e) { console.error('❌ Помилка оновлення:', e); }
+addNotif('❌ Результат ' + r.userName + ' відхилено');
 await sendDiscordNotification('RESULT_REJECTED', {userName: r.userName, testName: r.testName, score: r.score, maxScore: r.maxScore, reviewer: ME.name, date: now()});
 renderReview();
 };
 
 function renderManage() {
-if (tests.length === 0) {
-document.getElementById('manageList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає іспитів</div>';
-return;
-}
+if (tests.length === 0) { document.getElementById('manageList').innerHTML = '<div style="color:var(--text-gray);text-align:center;padding:40px;font-size:14px">Немає іспитів</div>'; return; }
 let html = '';
 tests.forEach(t => {
 const res = results.filter(r => r.testId === t.id);
@@ -3372,32 +2836,12 @@ document.getElementById('manageList').innerHTML = html;
 }
 
 window.editTest = id => {
-    const t = tests.find(x => x.id === id);
-    if (!t) {
-        alert('❌ Тест не знайдено!');
-        return;
-    }
-    
-    console.log('Редагування тесту:', t);
-    
-    // Встановлюємо ID для редагування
-    editingTestId = t.id;
-    currentTestPhotos = t.photos || [];
-    
-    // Передаємо повні дані тесту
-    renderCreateForm({
-        id: t.id,
-        name: t.name || '',
-        description: t.description || '',
-        emoji: t.emoji || '📝',
-        passScore: t.passScore || 80,
-        maxScore: t.maxScore || 100,
-        agreementText: t.agreementText || '',
-        photos: t.photos || [],
-        questions: t.questions || []
-    });
-    
-    showView('create');
+const t = tests.find(x => x.id === id);
+if (!t) { alert('❌ Тест не знайдено!'); return; }
+editingTestId = t.id;
+currentTestPhotos = t.photos || [];
+renderCreateForm({ id: t.id, name: t.name || '', description: t.description || '', emoji: t.emoji || '📝', passScore: t.passScore || 80, maxScore: t.maxScore || 100, agreementText: t.agreementText || '', photos: t.photos || [], questions: t.questions || [] });
+showView('create');
 };
 
 window.clearTestResults = async (id) => {
@@ -3405,23 +2849,14 @@ if (confirm('Очистити всі результати цього іспит�
 const t = tests.find(x => x.id === id);
 const testName = t ? t.name : 'Невідомий іспит';
 const toDelete = results.filter(r => r.testId === id);
-for (let res of toDelete) {
-try {
-await deleteDoc(doc(db, 'results', res.id));
-} catch (e) {
-console.error('Delete error:', e);
-}
-}
-await sendDiscordNotification('RESULTS_CLEARED', {testName: testName, clearedBy: ME.name, count: toDelete.length, date: now()});
+for (let res of toDelete) { try { await deleteDoc(doc(db, 'results', res.id)); } catch (e) { console.error('Delete error:', e); } }
+await sendDiscordNotification('RESULTS_CLEARED', {testName, clearedBy: ME.name, count: toDelete.length, date: now()});
 renderManage();
 }
 };
 
 window.deleteTest = async id => {
-if (confirm('Видалити іспит?')) {
-const success = await deleteTestFromFirebase(id);
-if (success) renderManage();
-}
+if (confirm('Видалити іспит?')) { const success = await deleteTestFromFirebase(id); if (success) renderManage(); }
 };
 
 function renderHistory() {
@@ -3454,7 +2889,7 @@ tableRows += '<tr><td>' + r.userName + '</td><td>' + r.testName + '</td>' +
 let testOptions = '';
 uniqueTests.forEach(name => { testOptions += '<option value="' + name + '">' + name + '</option>'; });
 
-document.getElementById('historyContent').innerHTML = 
+document.getElementById('historyContent').innerHTML =
 '<div class="form-card">' +
 '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px">' +
 '<div style="text-align:center;padding:15px;background:rgba(0,255,68,0.05);border-radius:12px;border:1px solid rgba(0,255,68,0.15)">' +
@@ -3485,8 +2920,7 @@ window.applyHistoryFilters = () => {
 const userInput = document.getElementById('filterUserInput').value.toLowerCase();
 const testSelect = document.getElementById('filterTestSelect').value;
 const statusSelect = document.getElementById('filterStatusSelect').value;
-const allResults = [...results];
-let filtered = allResults.filter(r => {
+let filtered = results.filter(r => {
 if (userInput && !r.userName.toLowerCase().includes(userInput)) return false;
 if (testSelect && r.testName !== testSelect) return false;
 if (statusSelect !== 'all') {
@@ -3499,7 +2933,6 @@ if (statusSelect === 'pending' && !isPending) return false;
 }
 return true;
 });
-
 let tableRows = '';
 if (filtered.length === 0) {
 tableRows = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-gray)">Немає результатів за фільтрами</td></tr>';
@@ -3529,9 +2962,8 @@ applyHistoryFilters();
 };
 
 window.exportHistory = () => {
-const filtered = results;
 let text = 'ІСТОРІЯ ІСПИТІВ ДШВ\n' + '='.repeat(80) + '\n\n';
-filtered.forEach(r => {
+results.forEach(r => {
 const status = r.status === 'pending' || !r.reviewedByHuman ? 'На перевірці' : r.score >= r.passScore && r.reviewedByHuman ? 'СКЛАДЕНО' : 'НЕ СКЛАДЕНО';
 text += 'Користувач: ' + r.userName + '\nІспит: ' + r.testName + '\nБали: ' + r.score + ' / ' + r.maxScore + '\n' +
 'Статус: ' + status + '\nПеревіряючий: ' + (r.reviewer || 'SYSTEM') + '\nДата: ' + r.date + '\n' + '-'.repeat(80) + '\n';
@@ -3539,23 +2971,15 @@ text += 'Користувач: ' + r.userName + '\nІспит: ' + r.testName + 
 const blob = new Blob([text], {type: 'text/plain'});
 const url = URL.createObjectURL(blob);
 const a = document.createElement('a');
-a.href = url;
-a.download = 'history_' + Date.now() + '.txt';
-a.click();
+a.href = url; a.download = 'history_' + Date.now() + '.txt'; a.click();
 URL.revokeObjectURL(url);
 };
 
 function renderSettings() {
 let reviewersHtml = '';
-if (reviewers.length > 0) {
-reviewers.forEach(r => {
-reviewersHtml += '<span class="reviewer-chip">' + r + '<button onclick="removeReviewer(\'' + r + '\')">✕</button></span>';
-});
-} else {
-reviewersHtml = '<span style="color:var(--text-gray);font-size:12px">Не додано</span>';
-}
-
-document.getElementById('settingsContent').innerHTML = 
+if (reviewers.length > 0) { reviewers.forEach(r => { reviewersHtml += '<span class="reviewer-chip">' + r + '<button onclick="removeReviewer(\'' + r + '\')">✕</button></span>'; }); }
+else { reviewersHtml = '<span style="color:var(--text-gray);font-size:12px">Не додано</span>'; }
+document.getElementById('settingsContent').innerHTML =
 '<div class="setting-block"><h4>🔗 Discord Webhook</h4><div class="form-row">' +
 '<input class="form-input" id="webhookInput" value="' + webhookUrl + '" placeholder="https://discord.com/api/webhooks/..."></div>' +
 '<div class="btn-group" style="justify-content:flex-start">' +
@@ -3568,52 +2992,19 @@ document.getElementById('settingsContent').innerHTML =
 '<div class="people-list" id="reviewerDropdown"></div></div></div>';
 }
 
-window.saveWebhook = async () => {
-webhookUrl = document.getElementById('webhookInput').value.trim();
-await save();
-alert('✅ Webhook збережено!');
-};
+window.saveWebhook = async () => { webhookUrl = document.getElementById('webhookInput').value.trim(); await save(); alert('✅ Webhook збережено!'); };
 
 window.sendTestWebhook = async () => {
 const url = document.getElementById('webhookInput').value.trim();
-if (!url) {
-alert('❌ Введіть Webhook URL спочатку!');
-return;
-}
+if (!url) { alert('❌ Введіть Webhook URL спочатку!'); return; }
 try {
-const response = await fetch(url, {
-method: 'POST',
-headers: {'Content-Type': 'application/json'},
-body: JSON.stringify({
-embeds: [{
-title: '🧪 Тестове повідомлення',
-description: 'Webhook працює правильно! ✅',
-color: 0x00ff44,
-fields: [
-{name: 'Відправник', value: ME.name, inline: true},
-{name: 'Роль', value: ME.role, inline: true},
-{name: 'Час', value: now(), inline: false}
-],
-footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'},
-timestamp: new Date().toISOString()
-}]
-})
-});
-if (response.ok) {
-alert('✅ Тестове повідомлення відправлено в Discord!');
-} else {
-alert('❌ Помилка відправки: ' + response.status);
-}
-} catch (e) {
-alert('❌ Помилка: ' + e.message);
-}
+const response = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ embeds: [{ title: '🧪 Тестове повідомлення', description: 'Webhook працює правильно! ✅', color: 0x00ff44, fields: [{name: 'Відправник', value: ME.name, inline: true}, {name: 'Роль', value: ME.role, inline: true}, {name: 'Час', value: now(), inline: false}], footer: {text: 'ДШВ ІСПИТ ЦЕНТР v2'}, timestamp: new Date().toISOString() }] }) });
+if (response.ok) alert('✅ Тестове повідомлення відправлено в Discord!');
+else alert('❌ Помилка відправки: ' + response.status);
+} catch (e) { alert('❌ Помилка: ' + e.message); }
 };
 
-window.removeReviewer = async (n) => {
-reviewers = reviewers.filter(r => r !== n);
-await save();
-renderSettings();
-};
+window.removeReviewer = async (n) => { reviewers = reviewers.filter(r => r !== n); await save(); renderSettings(); };
 
 window.filterPeople = type => {
 const input = document.getElementById(type + 'Search');
@@ -3621,13 +3012,7 @@ const drop = document.getElementById(type + 'Dropdown');
 const val = input.value.toLowerCase();
 const list = type === 'reviewer' ? allUsers.filter(u => !reviewers.includes(u.name)) : allUsers.filter(u => !adminList.includes(u.name));
 const filtered = val ? list.filter(u => u.name.toLowerCase().includes(val)) : list;
-
-if (filtered.length === 0) {
-drop.innerHTML = '<div style="padding:15px;text-align:center;color:var(--text-gray);font-size:12px">Нікого не знайдено</div>';
-drop.classList.add('show');
-return;
-}
-
+if (filtered.length === 0) { drop.innerHTML = '<div style="padding:15px;text-align:center;color:var(--text-gray);font-size:12px">Нікого не знайдено</div>'; drop.classList.add('show'); return; }
 let html = '';
 filtered.forEach(u => {
 const roleLabel = u.role === 'admin' ? 'Адмін' : u.role === 'instructor' ? 'Інструктор' : 'Бієць';
@@ -3641,33 +3026,23 @@ drop.classList.add('show');
 
 window.selectPerson = async (type, name) => {
 if (type === 'reviewer' && !reviewers.includes(name)) {
-reviewers.push(name);
-await save();
+reviewers.push(name); await save();
 await sendDiscordNotification('REVIEWER_ADDED', {reviewerName: name, addedBy: ME.name, date: now()});
 renderSettings();
 }
 if (type === 'admin' && !adminList.includes(name)) {
-adminList.push(name);
-await save();
+adminList.push(name); await save();
 await sendDiscordNotification('ADMIN_ADDED', {adminName: name, addedBy: ME.name, date: now()});
-renderAdminList();
-buildNav();
+renderAdminList(); buildNav();
 }
 document.querySelectorAll('.people-list').forEach(d => d.classList.remove('show'));
 };
 
 function renderAdminList() {
 let adminChipsHtml = '';
-if (adminList.length > 0) {
-adminList.forEach(n => {
-adminChipsHtml += '<span class="reviewer-chip" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:var(--warning)">' + 
-n + '<button onclick="removeAdmin(\'' + n + '\')">✕</button></span>';
-});
-} else {
-adminChipsHtml = '<span style="color:var(--text-gray);font-size:12px">Не додано</span>';
-}
-
-document.getElementById('adminListContent').innerHTML = 
+if (adminList.length > 0) { adminList.forEach(n => { adminChipsHtml += '<span class="reviewer-chip" style="background:rgba(251,191,36,0.1);border-color:rgba(251,191,36,0.3);color:var(--warning)">' + n + '<button onclick="removeAdmin(\'' + n + '\')">✕</button></span>'; }); }
+else { adminChipsHtml = '<span style="color:var(--text-gray);font-size:12px">Не додано</span>'; }
+document.getElementById('adminListContent').innerHTML =
 '<div class="admin-list-panel">' +
 '<h4 style="font-size:13px;font-weight:800;color:var(--primary-bright);margin-bottom:15px">👑 Люди з адмін правами в іспитах</h4>' +
 '<p style="font-size:11px;color:var(--text-gray);margin-bottom:15px">Ці люди мають повний доступ до створення, редагування та перевірки іспитів</p>' +
@@ -3677,27 +3052,15 @@ document.getElementById('adminListContent').innerHTML =
 '<div class="people-list" id="adminDropdown"></div></div></div>';
 }
 
-window.removeAdmin = async n => {
-adminList = adminList.filter(a => a !== n);
-await save();
-renderAdminList();
-buildNav();
-};
+window.removeAdmin = async n => { adminList = adminList.filter(a => a !== n); await save(); renderAdminList(); buildNav(); };
 
 document.onkeydown = e => {
-if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) {
-return false;
-}
+if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) return false;
 };
 
-console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.2 - ПОВНІСТЮ ЗАВАНТАЖЕНО!');
-console.log('✅ Всі функції активовані:');
-console.log(' ✓ Публічний режим');
-console.log(' ✓ Firebase синхронізація');
-console.log(' ✓ Discord notifications (виправлено!)');
-console.log(' ✓ Перевірка з балами');
-console.log(' ✓ Історія та списки');
-console.log(' ✓ Всі адмін функції');
+console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.3 — ФІКСИ ЗАСТОСОВАНО');
+console.log('✅ Фікс 1: agreementAccepted скидається на початку startIntro');
+console.log('✅ Фікс 2: Мобільна плашка — компактна верстка');
 </script>
 </body>
 </html>
