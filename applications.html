@@ -131,13 +131,46 @@
             transition: 0.3s;
             font-family: inherit;
             line-height: 1;
+            position: relative;
+        }
+
+        .btn-settings .settings-icon {
+            display: inline-block;
+            transition: transform 0.3s;
+        }
+
+        .btn-settings:hover .settings-icon {
+            transform: rotate(45deg);
         }
 
         .btn-settings:hover {
             background: rgba(34,197,94,0.1);
             border-color: var(--primary);
             color: var(--primary-bright);
-            transform: rotate(45deg);
+        }
+
+        .webhook-indicator {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-dim);
+            opacity: 0;
+            transition: 0.3s;
+        }
+
+        .webhook-indicator.active {
+            opacity: 1;
+            background: var(--primary);
+            box-shadow: 0 0 8px var(--primary);
+            animation: pulse 2s infinite;
+        }
+
+        .webhook-indicator.inactive {
+            opacity: 1;
+            background: var(--danger);
         }
 
         /* ===== FILTERS ===== */
@@ -601,8 +634,9 @@
 
     <div class="page-header">
         <h1 class="page-title">📋 Рапорти на вступ</h1>
-        <button class="btn-settings" onclick="openWebhookSettings()" title="Налаштування Discord">
-            ⚙️
+        <button class="btn-settings" id="settingsBtn" onclick="openWebhookSettings()" title="Налаштування Discord">
+            <span class="settings-icon">⚙️</span>
+            <span class="webhook-indicator" id="webhookIndicator"></span>
         </button>
     </div>
 
@@ -699,11 +733,23 @@
     async function loadWebhookUrl() {
         try {
             const webhookDoc = await getDoc(doc(db, "settings", "discord"));
+            const indicator = document.getElementById('webhookIndicator');
+            
             if (webhookDoc.exists() && webhookDoc.data().webhookUrl) {
                 webhookUrl = webhookDoc.data().webhookUrl;
+                indicator.className = 'webhook-indicator active';
+                indicator.title = 'Webhook активний';
+                console.log('✅ Webhook loaded and active');
+            } else {
+                indicator.className = 'webhook-indicator inactive';
+                indicator.title = 'Webhook не налаштований';
+                console.log('⚠️ Webhook not configured');
             }
         } catch (err) {
             console.error("Error loading webhook:", err);
+            const indicator = document.getElementById('webhookIndicator');
+            indicator.className = 'webhook-indicator inactive';
+            indicator.title = 'Помилка завантаження';
         }
     }
 
@@ -979,8 +1025,14 @@
         try {
             await setDoc(doc(db, "settings", "discord"), { webhookUrl: url });
             webhookUrl = url;
+            
+            // Update indicator
+            const indicator = document.getElementById('webhookIndicator');
+            indicator.className = 'webhook-indicator active';
+            indicator.title = 'Webhook активний';
+            
             status.className = 'webhook-status success';
-            status.textContent = '✅ Webhook збережено!';
+            status.textContent = '✅ Webhook збережено та активовано!';
             setTimeout(() => closeWebhookModal(), 1500);
         } catch (err) {
             status.className = 'webhook-status error';
