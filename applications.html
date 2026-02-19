@@ -120,6 +120,26 @@
             font-weight: 900;
         }
 
+        .btn-settings {
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-gray);
+            font-size: 18px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: inherit;
+            line-height: 1;
+        }
+
+        .btn-settings:hover {
+            background: rgba(34,197,94,0.1);
+            border-color: var(--primary);
+            color: var(--primary-bright);
+            transform: rotate(45deg);
+        }
+
         /* ===== FILTERS ===== */
         .filter-bar {
             display: flex;
@@ -495,6 +515,65 @@
             .page-header { margin-bottom: 22px; }
             .page-title { font-size: 22px; }
         }
+
+        /* ===== WEBHOOK MODAL ===== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92); backdrop-filter: blur(10px);
+            display: none; align-items: center; justify-content: center;
+            z-index: 9999; padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--card-bg); border: 2px solid var(--primary);
+            border-radius: 24px; padding: 35px 40px; max-width: 550px; width: 100%;
+            position: relative; animation: modalSlide 0.3s ease;
+        }
+        @keyframes modalSlide { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-close {
+            position: absolute; top: 20px; right: 25px; background: none; border: none;
+            color: var(--text-gray); font-size: 32px; cursor: pointer; transition: 0.3s;
+            line-height: 1; font-family: inherit;
+        }
+        .modal-close:hover { color: var(--danger); transform: rotate(90deg); }
+        .modal-title { font-size: 26px; font-weight: 900; margin-bottom: 12px; color: var(--primary-bright); }
+        .modal-desc { color: var(--text-gray); font-size: 14px; line-height: 1.6; margin-bottom: 30px; }
+        .webhook-form { display: flex; flex-direction: column; gap: 18px; }
+        .form-label { font-size: 13px; font-weight: 700; color: white; margin-bottom: -10px; }
+        .webhook-input {
+            width: 100%; padding: 14px 18px; background: rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.1); border-radius: 12px;
+            color: white; font-size: 14px; font-family: 'Courier New', monospace;
+            outline: none; transition: 0.3s;
+        }
+        .webhook-input:focus { border-color: var(--primary); background: rgba(0,0,0,0.6); }
+        .form-hint { font-size: 12px; color: var(--text-dim); line-height: 1.5; margin-top: -10px; }
+        .webhook-actions { display: flex; gap: 12px; }
+        .btn-save, .btn-test {
+            flex: 1; padding: 14px 20px; border: none; border-radius: 12px;
+            font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.3s; font-family: inherit;
+        }
+        .btn-save { background: var(--primary); color: black; }
+        .btn-save:hover { background: var(--primary-bright); transform: translateY(-2px); }
+        .btn-test { background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--glass-border); }
+        .btn-test:hover { background: rgba(255,255,255,0.15); }
+        .webhook-status {
+            padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 600;
+            text-align: center; display: none;
+        }
+        .webhook-status.success {
+            background: rgba(34,197,94,0.15); color: var(--primary-bright);
+            border: 1px solid rgba(34,197,94,0.3); display: block;
+        }
+        .webhook-status.error {
+            background: rgba(239,68,68,0.15); color: var(--danger);
+            border: 1px solid rgba(239,68,68,0.3); display: block;
+        }
+        @media (max-width: 600px) {
+            .modal-content { padding: 28px 22px; border-radius: 20px; }
+            .modal-title { font-size: 22px; }
+            .webhook-actions { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
@@ -522,6 +601,9 @@
 
     <div class="page-header">
         <h1 class="page-title">📋 Рапорти на вступ</h1>
+        <button class="btn-settings" onclick="openWebhookSettings()" title="Налаштування Discord">
+            ⚙️
+        </button>
     </div>
 
     <!-- Stats -->
@@ -560,10 +642,41 @@
     <div id="appsContainer"></div>
 </div>
 
+<!-- WEBHOOK SETTINGS MODAL -->
+<div class="modal-overlay" id="webhookModal">
+    <div class="modal-content">
+        <button class="modal-close" onclick="closeWebhookModal()">×</button>
+        <h2 class="modal-title">⚙️ Налаштування Discord</h2>
+        <p class="modal-desc">
+            Discord Webhook дозволяє отримувати сповіщення про нові заявки та зміни їх статусу прямо у ваш Discord-сервер.
+        </p>
+
+        <div class="webhook-form">
+            <label class="form-label">🔗 URL Webhook</label>
+            <input
+                type="url"
+                id="webhookInput"
+                class="webhook-input"
+                placeholder="https://discord.com/api/webhooks/..."
+            >
+            <p class="form-hint">
+                📖 Як отримати webhook: Налаштування каналу → Інтеграції → Вебхуки → Новий вебхук
+            </p>
+
+            <div class="webhook-actions">
+                <button class="btn-save" onclick="saveWebhook()">💾 Зберегти</button>
+                <button class="btn-test" onclick="testWebhook()">🧪 Тест</button>
+            </div>
+
+            <div class="webhook-status" id="webhookStatus"></div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, doc, deleteDoc, getDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -580,6 +693,85 @@
 
     let allApps = [];
     let currentFilter = 'all';
+    let webhookUrl = '';
+
+    // Load webhook URL from Firestore
+    async function loadWebhookUrl() {
+        try {
+            const webhookDoc = await getDoc(doc(db, "settings", "discord"));
+            if (webhookDoc.exists() && webhookDoc.data().webhookUrl) {
+                webhookUrl = webhookDoc.data().webhookUrl;
+            }
+        } catch (err) {
+            console.error("Error loading webhook:", err);
+        }
+    }
+
+    // Send Discord notification
+    async function sendDiscordNotification(type, appData, statusText = '') {
+        if (!webhookUrl) return;
+
+        try {
+            const embeds = [];
+            
+            if (type === 'new_application') {
+                embeds.push({
+                    title: "📝 Новий рапорт на вступ до ДШВ!",
+                    description: `Кандидат **${appData.name}** подав рапорт на вступ.`,
+                    color: 0xf59e0b, // Orange
+                    fields: [
+                        { name: "👤 Нікнейм", value: appData.name || "Не вказано", inline: true },
+                        { name: "⭐ Звання", value: appData.rank || "Не вказано", inline: true },
+                        { name: "🎂 Вік", value: String(appData.age || "Не вказано"), inline: true },
+                        { name: "💬 Discord", value: appData.discord || "Не вказано", inline: false },
+                        { name: "📋 Мотивація", value: appData.motivation?.substring(0, 300) || "Не вказано", inline: false }
+                    ],
+                    footer: { text: "ДШВ | UKRAINE GTA" },
+                    timestamp: new Date().toISOString()
+                });
+            } else if (type === 'status_update') {
+                let color, title, emoji;
+                if (statusText === 'approved') {
+                    color = 0x22c55e; // Green
+                    title = "✅ Рапорт прийнято!";
+                    emoji = "✅";
+                } else if (statusText === 'rejected') {
+                    color = 0xef4444; // Red
+                    title = "❌ Рапорт відхилено";
+                    emoji = "❌";
+                } else {
+                    color = 0x64748b; // Gray
+                    title = "↩ Статус скасовано";
+                    emoji = "↩";
+                }
+
+                embeds.push({
+                    title: title,
+                    description: `Рапорт кандидата **${appData.name}** оброблено.`,
+                    color: color,
+                    fields: [
+                        { name: "👤 Кандидат", value: appData.name || "Невідомо", inline: true },
+                        { name: "💬 Discord", value: appData.discord || "Не вказано", inline: true },
+                        { name: "📊 Статус", value: `${emoji} ${statusText === 'approved' ? 'Прийнято' : statusText === 'rejected' ? 'Відхилено' : 'Очікує'}`, inline: true }
+                    ],
+                    footer: { text: "ДШВ | UKRAINE GTA" },
+                    timestamp: new Date().toISOString()
+                });
+            }
+
+            await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: "ДШВ Bot",
+                    avatar_url: "https://i.imgur.com/AfFp7pu.png",
+                    embeds: embeds
+                })
+            });
+        } catch (err) {
+            console.error("Webhook error:", err);
+        }
+    }
 
     // Auth check
     onAuthStateChanged(auth, async (user) => {
@@ -590,6 +782,7 @@
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists() && snap.data().role === 'admin') {
             document.getElementById('mainContent').style.display = 'block';
+            await loadWebhookUrl();
             loadApplications();
         } else {
             document.getElementById('accessDenied').style.display = 'flex';
@@ -718,6 +911,13 @@
     window.updateStatus = async (id, status) => {
         try {
             await updateDoc(doc(db, "applications", id), { status });
+            
+            // Find app data for webhook
+            const appData = allApps.find(a => a.id === id);
+            if (appData) {
+                await sendDiscordNotification('status_update', appData, status);
+            }
+            
             showToast(status === 'approved' ? '✅ Прийнято!' : status === 'rejected' ? '❌ Відхилено' : '↩ Скасовано');
         } catch (e) {
             alert("Помилка: " + e.message);
@@ -748,6 +948,89 @@
         document.body.appendChild(t);
         setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; setTimeout(() => t.remove(), 300); }, 2000);
     }
+
+    // Webhook settings functions
+    window.openWebhookSettings = () => {
+        document.getElementById('webhookInput').value = webhookUrl;
+        document.getElementById('webhookModal').classList.add('active');
+        document.getElementById('webhookStatus').className = 'webhook-status';
+    };
+
+    window.closeWebhookModal = () => {
+        document.getElementById('webhookModal').classList.remove('active');
+    };
+
+    window.saveWebhook = async () => {
+        const url = document.getElementById('webhookInput').value.trim();
+        const status = document.getElementById('webhookStatus');
+        
+        if (!url) {
+            status.className = 'webhook-status error';
+            status.textContent = '❌ Введіть URL webhook';
+            return;
+        }
+
+        if (!url.startsWith('https://discord.com/api/webhooks/') && !url.startsWith('https://discordapp.com/api/webhooks/')) {
+            status.className = 'webhook-status error';
+            status.textContent = '❌ Невалідний Discord webhook URL';
+            return;
+        }
+
+        try {
+            await setDoc(doc(db, "settings", "discord"), { webhookUrl: url });
+            webhookUrl = url;
+            status.className = 'webhook-status success';
+            status.textContent = '✅ Webhook збережено!';
+            setTimeout(() => closeWebhookModal(), 1500);
+        } catch (err) {
+            status.className = 'webhook-status error';
+            status.textContent = '❌ Помилка: ' + err.message;
+        }
+    };
+
+    window.testWebhook = async () => {
+        const url = document.getElementById('webhookInput').value.trim();
+        const status = document.getElementById('webhookStatus');
+
+        if (!url) {
+            status.className = 'webhook-status error';
+            status.textContent = '❌ Введіть URL webhook';
+            return;
+        }
+
+        status.className = 'webhook-status';
+        status.textContent = '⏳ Відправка тестового повідомлення...';
+        status.style.display = 'block';
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: "ДШВ Bot",
+                    avatar_url: "https://i.imgur.com/AfFp7pu.png",
+                    embeds: [{
+                        title: "🧪 Тестове повідомлення",
+                        description: "Webhook працює коректно! Сповіщення про заявки будуть надходити сюди.",
+                        color: 0x22c55e,
+                        footer: { text: "ДШВ | UKRAINE GTA" },
+                        timestamp: new Date().toISOString()
+                    }]
+                })
+            });
+
+            if (response.ok) {
+                status.className = 'webhook-status success';
+                status.textContent = '✅ Тестове повідомлення надіслано!';
+            } else {
+                status.className = 'webhook-status error';
+                status.textContent = `❌ Помилка ${response.status}: ${response.statusText}`;
+            }
+        } catch (err) {
+            status.className = 'webhook-status error';
+            status.textContent = '❌ Не вдалося надіслати: ' + err.message;
+        }
+    };
 </script>
 
 <style>
