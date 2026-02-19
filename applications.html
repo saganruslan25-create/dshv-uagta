@@ -838,12 +838,34 @@
     // Load apps
     function loadApplications() {
         const q = query(collection(db, "applications"), orderBy("timestamp", "desc"));
+        let isFirstLoad = true;
+        
         onSnapshot(q, (snapshot) => {
             document.getElementById('loader').style.display = 'none';
+            
+            // Check for new applications
+            if (!isFirstLoad) {
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added') {
+                        const newApp = { id: change.doc.id, ...change.doc.data() };
+                        // Only send webhook for truly new apps (created in last 10 seconds)
+                        if (newApp.timestamp) {
+                            const appAge = Date.now() - newApp.timestamp.toDate().getTime();
+                            if (appAge < 10000) { // Less than 10 seconds old
+                                console.log('🆕 New application detected, sending webhook...');
+                                sendDiscordNotification('new_application', newApp);
+                            }
+                        }
+                    }
+                });
+            }
+            
             allApps = [];
             snapshot.forEach(d => allApps.push({ id: d.id, ...d.data() }));
             updateCounts();
             renderApps();
+            
+            isFirstLoad = false;
         });
     }
 
