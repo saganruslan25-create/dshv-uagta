@@ -1726,6 +1726,27 @@
         }
 
 function updateMainPhoto() {
+    if (!allGalleryPhotos.length) return;
+    const p = allGalleryPhotos[currentMainPhotoIndex];
+    const mi = document.getElementById('galleryMainImage');
+
+    mi.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
+    mi.style.opacity = '0';
+    mi.style.transform = 'scale(0.97)';
+
+    setTimeout(() => {
+        mi.innerHTML = `<img src="${p.imageUrl}" alt="${p.caption||''}" style="opacity:0;transition:opacity 0.4s ease;" onload="this.style.opacity='1'">`;
+        document.getElementById('galleryMainCaption').textContent = p.caption || 'Без назви';
+        document.getElementById('galleryMainAuthor').textContent = `📸 ${p.author || 'Анонім'}`;
+        document.getElementById('galleryMainCounter').textContent = `${currentMainPhotoIndex+1} / ${allGalleryPhotos.length}`;
+
+        requestAnimationFrame(() => {
+            mi.style.transition = 'opacity 0.35s ease, transform 0.35s ease';
+            mi.style.opacity = '1';
+            mi.style.transform = 'scale(1)';
+        });
+    }, 200);
+}
 
         function loadThumbnails() {
             const tc = document.getElementById('galleryThumbnails');
@@ -2313,29 +2334,6 @@ async function loadMenuContent() {
         showNotification('✅ Збережено!');
     } catch(e) { alert('Помилка: ' + e.message); }
 };
-        
-        window.saveMenuContent = async (type) => {
-            try {
-                const menuDoc = await getDoc(doc(db, "settings", "menuContent"));
-                const current = menuDoc.exists() ? menuDoc.data() : {};
-
-                if (type === 'about') {
-                    const content = document.getElementById('aboutEditorContent').value;
-                    current.about = content;
-                    document.getElementById('aboutModalContent').innerHTML = content;
-                } else {
-                    const content = document.getElementById('reqEditorContent').value;
-                    current.requirements = content;
-                    document.getElementById('reqModalContent').innerHTML = content;
-                }
-
-                await setDoc(doc(db, "settings", "menuContent"), current);
-                showNotification(`✅ Меню "${type === 'about' ? 'Про нас' : 'Вимоги'}" збережено!`);
-            } catch (e) {
-                alert("Помилка збереження: " + e.message);
-            }
-        };
-
         // Load menu content on page load
         // ==================== WEBHOOK SETTINGS ====================
 window.openWebhookSettings = async () => {
@@ -2540,4 +2538,5 @@ window.saveWebhookSettings = async () => {
     </script>
 </body>
 </html>
+
 
