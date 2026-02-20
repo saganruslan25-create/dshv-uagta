@@ -24,23 +24,11 @@
             --modal-overlay: rgba(0, 0, 0, 0.95);
         }
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-        }
-        
-        html { 
-            scroll-behavior: smooth;
-            overflow-x: hidden;
-        }
-        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 10px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
-        ::-webkit-scrollbar-thumb { 
-            background: linear-gradient(180deg, var(--primary-bright), var(--primary)); 
-            border-radius: 10px; 
-        }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, var(--primary-bright), var(--primary)); border-radius: 10px; }
 
         body {
             background-color: var(--bg);
@@ -134,14 +122,10 @@
             transition: width 0.3s;
         }
 
-        .nav-link:hover {
-            opacity: 1;
-            color: var(--primary-bright);
-        }
-
+        .nav-link:hover { opacity: 1; color: var(--primary-bright); }
         .nav-link:hover::before { width: 60%; }
 
-        /* Admin Dropdown */
+        /* ===== ADMIN DROPDOWN — FIXED ===== */
         .admin-dropdown {
             position: relative;
             display: inline-block;
@@ -161,6 +145,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            user-select: none;
         }
 
         .admin-dropdown-btn:hover {
@@ -169,35 +154,52 @@
             border-color: var(--primary);
         }
 
+        .admin-dropdown-btn .dropdown-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .admin-dropdown.open .admin-dropdown-btn .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
         .admin-dropdown-content {
-            display: none;
+            display: block;
             position: absolute;
-            top: calc(100% + 10px);
+            top: 100%;
             right: 0;
             background: rgba(15, 18, 25, 0.98);
             backdrop-filter: blur(20px);
-            min-width: 220px;
+            min-width: 240px;
             border-radius: 16px;
             border: 1px solid var(--glass-border);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             z-index: 1001;
             overflow: hidden;
-            animation: dropdownSlide 0.3s ease;
+            padding-top: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
         }
 
-        @keyframes dropdownSlide {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* Invisible bridge so cursor doesn't lose focus */
+        .admin-dropdown-content::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 0;
+            right: 0;
+            height: 15px;
+            background: transparent;
         }
 
-        .admin-dropdown:hover .admin-dropdown-content {
-            display: block;
+        .admin-dropdown:hover .admin-dropdown-content,
+        .admin-dropdown.open .admin-dropdown-content {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
         .admin-dropdown-item {
@@ -214,9 +216,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .admin-dropdown-item:last-child {
-            border-bottom: none;
-        }
+        .admin-dropdown-item:last-child { border-bottom: none; }
 
         .admin-dropdown-item:hover {
             background: rgba(34, 197, 94, 0.1);
@@ -281,7 +281,6 @@
 
         @media (max-width: 950px) {
             .burger { display: flex; }
-            
             .nav-links {
                 position: fixed;
                 top: 0;
@@ -296,21 +295,24 @@
                 z-index: 2000;
                 gap: 30px;
             }
-            
             .nav-links.active { right: 0; }
             .nav-link { font-size: 22px; }
-            
             .admin-dropdown-content {
                 position: static;
-                display: none;
+                min-width: 100%;
                 background: rgba(0, 0, 0, 0.3);
                 border: none;
                 box-shadow: none;
                 margin-top: 10px;
+                border-radius: 12px;
+                padding-top: 0;
             }
-            
-            .admin-dropdown.active .admin-dropdown-content {
-                display: block;
+            .admin-dropdown-content::before { display: none; }
+            .admin-dropdown.open .admin-dropdown-content {
+                opacity: 1;
+                visibility: visible;
+                transform: translateY(0);
+                pointer-events: auto;
             }
         }
 
@@ -326,13 +328,11 @@
 
         .hero-bg {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             opacity: 0.15;
             z-index: 0;
-            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:%2322c55e;stop-opacity:0.1"/><stop offset="100%" style="stop-color:%2322c55e;stop-opacity:0"/></linearGradient></defs><rect fill="url(%23g)" width="1200" height="800"/></svg>') center/cover;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="g" x1="0%25" y1="0%25" x2="100%25" y2="100%25"><stop offset="0%25" style="stop-color:%2322c55e;stop-opacity:0.1"/><stop offset="100%25" style="stop-color:%2322c55e;stop-opacity:0"/></linearGradient></defs><rect fill="url(%23g)" width="1200" height="800"/></svg>') center/cover;
         }
 
         .hero-content {
@@ -425,16 +425,10 @@
             margin-bottom: 12px;
         }
 
-        .stat-value {
-            font-size: 40px;
-            font-weight: 900;
-            color: white;
-            line-height: 1;
-        }
+        .stat-value { font-size: 40px; font-weight: 900; color: white; line-height: 1; }
 
         .stat-value.loading {
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border: 3px solid rgba(255,255,255,0.1);
             border-left-color: var(--primary);
             border-radius: 50%;
@@ -442,15 +436,9 @@
             margin: 0 auto;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .stat-highlight {
-            color: var(--primary-bright);
-            font-size: 28px;
-            font-weight: 800;
-        }
+        .stat-highlight { color: var(--primary-bright); font-size: 28px; font-weight: 800; }
 
         /* ==================== WHY SECTION ==================== */
         .why-section {
@@ -486,17 +474,13 @@
         .why-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(34, 197, 94, 0.05), transparent);
             transition: 0.6s;
         }
 
-        .why-card:hover::before {
-            left: 100%;
-        }
+        .why-card:hover::before { left: 100%; }
 
         .why-card:hover {
             transform: translateY(-5px);
@@ -504,23 +488,11 @@
             box-shadow: 0 20px 60px rgba(34, 197, 94, 0.15);
         }
 
-        .why-card-reverse {
-            grid-template-columns: 1fr 1fr;
-        }
+        .why-card-reverse { grid-template-columns: 1fr 1fr; }
+        .why-card-reverse .why-content { order: 2; }
+        .why-card-reverse .why-image { order: 1; }
 
-        .why-card-reverse .why-content {
-            order: 2;
-        }
-
-        .why-card-reverse .why-image {
-            order: 1;
-        }
-
-        .why-content {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+        .why-content { display: flex; flex-direction: column; gap: 20px; }
 
         .why-badge {
             display: inline-block;
@@ -536,18 +508,8 @@
             box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
         }
 
-        .why-title {
-            font-size: 32px;
-            font-weight: 900;
-            line-height: 1.2;
-            color: white;
-        }
-
-        .why-text {
-            font-size: 16px;
-            line-height: 1.8;
-            color: var(--text-gray);
-        }
+        .why-title { font-size: 32px; font-weight: 900; line-height: 1.2; color: white; }
+        .why-text { font-size: 16px; line-height: 1.8; color: var(--text-gray); }
 
         .why-image {
             width: 100%;
@@ -559,33 +521,19 @@
             border: 1px solid var(--glass-border);
         }
 
-        .why-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.5s;
-        }
-
-        .why-card:hover .why-image img {
-            transform: scale(1.1);
-        }
+        .why-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+        .why-card:hover .why-image img { transform: scale(1.1); }
 
         .why-image-placeholder {
             position: absolute;
-            top: 50%;
-            left: 50%;
+            top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             color: var(--text-dim);
             font-size: 14px;
             text-align: center;
         }
 
-        .aircraft-tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 10px;
-        }
+        .aircraft-tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
 
         .aircraft-tag {
             background: rgba(34, 197, 94, 0.1);
@@ -597,27 +545,6 @@
             color: var(--primary-bright);
         }
 
-        @media (max-width: 968px) {
-            .why-card,
-            .why-card-reverse {
-                grid-template-columns: 1fr;
-                padding: 30px;
-            }
-
-            .why-card-reverse .why-content,
-            .why-card-reverse .why-image {
-                order: unset;
-            }
-
-            .why-image {
-                height: 300px;
-            }
-
-            .why-title {
-                font-size: 24px;
-            }
-        }
-
         /* ==================== FEATURES SECTION ==================== */
         .section {
             padding: 100px 6%;
@@ -625,10 +552,7 @@
             overflow: hidden;
         }
 
-        .section-header {
-            text-align: center;
-            margin-bottom: 70px;
-        }
+        .section-header { text-align: center; margin-bottom: 70px; }
 
         .section-title {
             font-size: clamp(32px, 6vw, 55px);
@@ -666,10 +590,8 @@
         .feature-card::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
             transition: 0.5s;
         }
@@ -682,22 +604,9 @@
             box-shadow: 0 20px 60px rgba(34, 197, 94, 0.2);
         }
 
-        .feature-icon {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-
-        .feature-title {
-            font-size: 20px;
-            font-weight: 800;
-            margin-bottom: 12px;
-        }
-
-        .feature-text {
-            color: var(--text-gray);
-            font-size: 15px;
-            line-height: 1.7;
-        }
+        .feature-icon { font-size: 36px; margin-bottom: 20px; }
+        .feature-title { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+        .feature-text { color: var(--text-gray); font-size: 15px; line-height: 1.7; }
 
         /* ==================== GALLERY SECTION ==================== */
         .gallery-section {
@@ -719,8 +628,7 @@
         }
 
         .gallery-main-image {
-            width: 100%;
-            height: 600px;
+            width: 100%; height: 600px;
             position: relative;
             background: rgba(0,0,0,0.5);
             display: flex;
@@ -729,8 +637,7 @@
         }
 
         .gallery-main-image img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: contain;
             transition: opacity 0.3s;
         }
@@ -743,8 +650,7 @@
             backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
             color: white;
-            width: 60px;
-            height: 60px;
+            width: 60px; height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -770,12 +676,7 @@
             backdrop-filter: blur(10px);
         }
 
-        .gallery-main-caption {
-            font-size: 20px;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 10px;
-        }
+        .gallery-main-caption { font-size: 20px; font-weight: 700; color: white; margin-bottom: 10px; }
 
         .gallery-main-meta {
             display: flex;
@@ -804,30 +705,17 @@
         }
 
         .gallery-thumb img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: cover;
             transition: transform 0.3s;
         }
 
-        .gallery-thumb:hover img {
-            transform: scale(1.1);
-        }
-
-        .gallery-thumb.active {
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
-        }
-
-        .gallery-thumb:hover {
-            border-color: var(--primary-bright);
-        }
+        .gallery-thumb:hover img { transform: scale(1.1); }
+        .gallery-thumb.active { border-color: var(--primary); box-shadow: 0 0 20px rgba(34, 197, 94, 0.5); }
+        .gallery-thumb:hover { border-color: var(--primary-bright); }
 
         /* ==================== NEWS SECTION ==================== */
-        .news-section {
-            background: var(--bg);
-            overflow: hidden;
-        }
+        .news-section { background: var(--bg); overflow: hidden; }
 
         .news-grid {
             display: grid;
@@ -856,8 +744,7 @@
             background: rgba(0, 0, 0, 0.8);
             border: 1px solid var(--glass-border);
             color: white;
-            width: 40px;
-            height: 40px;
+            width: 40px; height: 40px;
             border-radius: 50%;
             cursor: pointer;
             font-size: 18px;
@@ -868,24 +755,10 @@
             backdrop-filter: blur(10px);
         }
 
-        .news-edit-btn {
-            right: 65px;
-        }
-
-        .news-edit-btn:hover {
-            background: var(--primary);
-            color: black;
-            transform: scale(1.1);
-        }
-
-        .news-delete-btn {
-            right: 15px;
-        }
-
-        .news-delete-btn:hover {
-            background: var(--danger);
-            transform: scale(1.1);
-        }
+        .news-edit-btn { right: 65px; }
+        .news-edit-btn:hover { background: var(--primary); color: black; transform: scale(1.1); }
+        .news-delete-btn { right: 15px; }
+        .news-delete-btn:hover { background: var(--danger); transform: scale(1.1); }
 
         .news-card:hover {
             transform: translateY(-10px);
@@ -894,34 +767,25 @@
         }
 
         .news-image {
-            width: 100%;
-            height: 220px;
+            width: 100%; height: 220px;
             overflow: hidden;
             position: relative;
             background: rgba(0,0,0,0.5);
         }
 
         .news-image img {
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             object-fit: cover;
             transition: transform 0.5s;
         }
 
-        .news-card:hover .news-image img {
-            transform: scale(1.1);
-        }
+        .news-card:hover .news-image img { transform: scale(1.1); }
 
-        .news-content {
-            padding: 25px;
-        }
+        .news-content { padding: 25px; }
 
         .news-title {
-            font-size: 20px;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 12px;
-            line-height: 1.3;
+            font-size: 20px; font-weight: 800; color: white;
+            margin-bottom: 12px; line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -929,10 +793,7 @@
         }
 
         .news-description {
-            font-size: 14px;
-            color: var(--text-gray);
-            line-height: 1.7;
-            margin-bottom: 15px;
+            font-size: 14px; color: var(--text-gray); line-height: 1.7; margin-bottom: 15px;
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
@@ -947,23 +808,14 @@
             border-top: 1px solid rgba(255,255,255,0.05);
         }
 
-        .news-date {
-            font-size: 12px;
-            color: var(--text-dim);
-            font-weight: 600;
-        }
+        .news-date { font-size: 12px; color: var(--text-dim); font-weight: 600; }
 
         .news-link {
-            color: var(--primary);
-            font-size: 13px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: 0.3s;
+            color: var(--primary); font-size: 13px; font-weight: 700;
+            text-decoration: none; transition: 0.3s;
         }
 
-        .news-link:hover {
-            color: var(--primary-bright);
-        }
+        .news-link:hover { color: var(--primary-bright); }
 
         .news-empty {
             grid-column: 1/-1;
@@ -971,6 +823,172 @@
             color: var(--text-gray);
             padding: 80px 20px;
             font-size: 16px;
+        }
+
+        /* ==================== NEWS VIEW MODAL (NEW!) ==================== */
+        .news-view-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(15px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .news-view-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .news-view-container {
+            background: linear-gradient(135deg, rgba(15, 18, 25, 0.98) 0%, rgba(10, 12, 16, 0.98) 100%);
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 30px;
+            border: 2px solid var(--glass-border);
+            box-shadow: 0 0 80px rgba(34, 197, 94, 0.15), 0 30px 60px rgba(0, 0, 0, 0.5);
+            animation: newsViewSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @keyframes newsViewSlideIn {
+            from { opacity: 0; transform: translateY(60px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .news-view-close {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 50px; height: 50px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+            color: white;
+            font-size: 24px;
+        }
+
+        .news-view-close:hover {
+            background: rgba(239, 68, 68, 0.3);
+            border-color: var(--danger);
+            transform: rotate(90deg) scale(1.1);
+        }
+
+        .news-view-image {
+            width: 100%; height: 400px;
+            overflow: hidden;
+            position: relative;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .news-view-image img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+        }
+
+        .news-view-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 100px;
+            background: linear-gradient(to top, rgba(15, 18, 25, 0.98), transparent);
+        }
+
+        .news-view-body {
+            padding: 40px;
+            position: relative;
+        }
+
+        .news-view-date {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid var(--glass-border);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary-bright);
+            margin-bottom: 20px;
+        }
+
+        .news-view-title {
+            font-size: 32px; font-weight: 900; color: white;
+            line-height: 1.3; margin-bottom: 25px;
+        }
+
+        .news-view-text {
+            font-size: 16px; color: var(--text-gray);
+            line-height: 2;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .news-view-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 25px;
+            border-top: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+        }
+
+        .news-view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary);
+            color: black;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .news-view-link:hover {
+            background: var(--primary-bright);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(34, 197, 94, 0.4);
+        }
+
+        .news-view-close-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .news-view-close-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
         /* ==================== APPLICATION FORM ==================== */
@@ -1014,14 +1032,9 @@
         }
 
         .form-input::placeholder,
-        .form-textarea::placeholder {
-            color: var(--text-dim);
-        }
+        .form-textarea::placeholder { color: var(--text-dim); }
 
-        .form-textarea {
-            resize: vertical;
-            min-height: 120px;
-        }
+        .form-textarea { resize: vertical; min-height: 120px; }
 
         .btn-submit {
             width: 100%;
@@ -1045,19 +1058,15 @@
         }
 
         .btn-submit:disabled {
-            background: #444;
-            color: #888;
-            cursor: not-allowed;
-            transform: none;
+            background: #444; color: #888;
+            cursor: not-allowed; transform: none;
         }
 
-        /* ==================== MODALS (IMPROVED) ==================== */
+        /* ==================== MODALS ==================== */
         .modal-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(10px);
             display: none;
@@ -1070,10 +1079,7 @@
             padding: 20px;
         }
 
-        .modal-overlay.active {
-            display: flex;
-            opacity: 1;
-        }
+        .modal-overlay.active { display: flex; opacity: 1; }
 
         .modal-content {
             background: linear-gradient(135deg, rgba(15, 18, 25, 0.95) 0%, rgba(10, 12, 16, 0.95) 100%);
@@ -1090,27 +1096,19 @@
         }
 
         @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-50px) scale(0.9);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
+            from { opacity: 0; transform: translateY(-50px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         .modal-close {
             position: absolute;
-            top: 25px;
-            right: 30px;
+            top: 25px; right: 30px;
             font-size: 36px;
             color: var(--text-gray);
             cursor: pointer;
             transition: 0.3s;
             line-height: 1;
-            width: 45px;
-            height: 45px;
+            width: 45px; height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1125,10 +1123,8 @@
         }
 
         .modal-title {
-            font-size: 32px;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 30px;
+            font-size: 32px; font-weight: 900;
+            text-align: center; margin-bottom: 30px;
             background: linear-gradient(135deg, var(--primary-bright), var(--primary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -1152,92 +1148,63 @@
 
         .inner-block h3 {
             color: var(--primary-bright);
-            font-size: 18px;
-            font-weight: 800;
+            font-size: 18px; font-weight: 800;
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        .list {
-            list-style: none;
-            padding: 0;
-        }
+        .list { list-style: none; padding: 0; }
 
         .list li {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 12px;
-            font-size: 15px;
-            color: #cbd5e1;
-            line-height: 1.6;
+            display: flex; gap: 15px;
+            margin-bottom: 12px; font-size: 15px;
+            color: #cbd5e1; line-height: 1.6;
         }
 
         .list li b {
             color: var(--primary-bright);
-            min-width: 25px;
-            font-weight: 800;
+            min-width: 25px; font-weight: 800;
         }
 
         /* AUTH MODAL */
-        .auth-modal {
-            max-width: 500px;
-        }
+        .auth-modal { max-width: 500px; }
 
         .auth-toggle {
-            display: flex;
-            gap: 10px;
+            display: flex; gap: 10px;
             margin-bottom: 30px;
             background: rgba(0,0,0,0.3);
-            padding: 6px;
-            border-radius: 12px;
+            padding: 6px; border-radius: 12px;
         }
 
         .auth-tab {
-            flex: 1;
-            padding: 12px;
+            flex: 1; padding: 12px;
             background: transparent;
             border: none;
             color: var(--text-gray);
-            font-weight: 700;
-            font-size: 14px;
+            font-weight: 700; font-size: 14px;
             border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
+            cursor: pointer; transition: 0.3s;
         }
 
-        .auth-tab.active {
-            background: var(--primary);
-            color: black;
-        }
+        .auth-tab.active { background: var(--primary); color: black; }
 
-        .auth-fields {
-            display: none;
-        }
-
-        .auth-fields.active {
-            display: block;
-        }
+        .auth-fields { display: none; }
+        .auth-fields.active { display: block; }
 
         .error-msg {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
-            padding: 12px;
-            border-radius: 10px;
-            color: var(--danger);
-            font-size: 13px;
-            margin-top: 15px;
-            display: none;
+            padding: 12px; border-radius: 10px;
+            color: var(--danger); font-size: 13px;
+            margin-top: 15px; display: none;
         }
 
-        .error-msg.active {
-            display: block;
-        }
+        .error-msg.active { display: block; }
 
         /* ==================== NEWS PREVIEW ==================== */
         .news-preview-section {
-            margin-top: 30px;
-            padding-top: 30px;
+            margin-top: 30px; padding-top: 30px;
             border-top: 2px solid var(--glass-border);
         }
 
@@ -1251,39 +1218,24 @@
         }
 
         .news-preview-image {
-            width: 100%;
-            height: 250px;
+            width: 100%; height: 250px;
             overflow: hidden;
             background: rgba(0,0,0,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
             color: var(--text-dim);
         }
 
-        .news-preview-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .news-preview-content {
-            padding: 25px;
-        }
+        .news-preview-image img { width: 100%; height: 100%; object-fit: cover; }
+        .news-preview-content { padding: 25px; }
 
         .news-preview-title {
-            font-size: 22px;
-            font-weight: 800;
-            color: white;
-            margin-bottom: 15px;
-            line-height: 1.3;
+            font-size: 22px; font-weight: 800; color: white;
+            margin-bottom: 15px; line-height: 1.3;
         }
 
         .news-preview-description {
-            font-size: 15px;
-            color: var(--text-gray);
-            line-height: 1.8;
-            margin-bottom: 15px;
+            font-size: 15px; color: var(--text-gray);
+            line-height: 1.8; margin-bottom: 15px;
         }
 
         .news-preview-footer {
@@ -1294,232 +1246,119 @@
             border-top: 1px solid rgba(255,255,255,0.1);
         }
 
-        .news-preview-date {
-            font-size: 13px;
-            color: var(--text-dim);
-            font-weight: 600;
-        }
-
-        .news-preview-link {
-            color: var(--primary-bright);
-            font-size: 14px;
-            font-weight: 700;
-        }
+        .news-preview-date { font-size: 13px; color: var(--text-dim); font-weight: 600; }
+        .news-preview-link { color: var(--primary-bright); font-size: 14px; font-weight: 700; }
 
         /* ==================== ADMIN PANELS ==================== */
-        .admin-sections {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
+        .admin-sections { display: flex; flex-direction: column; gap: 25px; }
 
         .admin-photo-selector {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
-            max-height: 300px;
-            overflow-y: auto;
-            padding: 10px;
-            background: rgba(0,0,0,0.2);
+            gap: 12px; margin-top: 15px;
+            max-height: 300px; overflow-y: auto;
+            padding: 10px; background: rgba(0,0,0,0.2);
             border-radius: 12px;
         }
 
         .admin-photo-item {
-            aspect-ratio: 1;
-            border-radius: 10px;
-            overflow: hidden;
-            cursor: pointer;
+            aspect-ratio: 1; border-radius: 10px;
+            overflow: hidden; cursor: pointer;
             border: 2px solid transparent;
-            transition: all 0.3s;
-            position: relative;
+            transition: all 0.3s; position: relative;
         }
 
-        .admin-photo-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .admin-photo-item:hover {
-            border-color: var(--primary-bright);
-            transform: scale(1.05);
-        }
-
-        .admin-photo-item.selected {
-            border-color: var(--primary);
-            box-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
-        }
+        .admin-photo-item img { width: 100%; height: 100%; object-fit: cover; }
+        .admin-photo-item:hover { border-color: var(--primary-bright); transform: scale(1.05); }
+        .admin-photo-item.selected { border-color: var(--primary); box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
 
         .admin-photo-item.selected::after {
             content: '✓';
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: var(--primary);
-            color: black;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: 16px;
+            position: absolute; top: 5px; right: 5px;
+            background: var(--primary); color: black;
+            width: 25px; height: 25px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 16px;
         }
 
         /* ==================== LINKS MANAGER ==================== */
-        .links-container {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+        .links-container { display: flex; flex-direction: column; gap: 20px; }
 
         .link-item {
             background: var(--card-bg);
             border: 2px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 25px;
+            border-radius: 20px; padding: 25px;
             transition: all 0.3s;
         }
 
-        .link-item.working {
-            border-color: var(--primary);
-            background: rgba(34, 197, 94, 0.05);
-        }
-
-        .link-item.broken {
-            border-color: var(--danger);
-            background: rgba(239, 68, 68, 0.05);
-        }
-
-        .link-item.checking {
-            border-color: #fbbf24;
-            background: rgba(251, 191, 36, 0.05);
-        }
+        .link-item.working { border-color: var(--primary); background: rgba(34, 197, 94, 0.05); }
+        .link-item.broken { border-color: var(--danger); background: rgba(239, 68, 68, 0.05); }
+        .link-item.checking { border-color: #fbbf24; background: rgba(251, 191, 36, 0.05); }
 
         .link-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 15px;
         }
 
         .link-title {
-            font-size: 16px;
-            font-weight: 800;
-            color: white;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            font-size: 16px; font-weight: 800; color: white;
+            display: flex; align-items: center; gap: 10px;
         }
 
         .link-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 700;
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 14px; border-radius: 20px;
+            font-size: 12px; font-weight: 700;
         }
 
-        .link-status.working {
-            background: rgba(34, 197, 94, 0.2);
-            color: var(--primary-bright);
-        }
-
-        .link-status.broken {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-        }
-
-        .link-status.checking {
-            background: rgba(251, 191, 36, 0.2);
-            color: #fbbf24;
-        }
+        .link-status.working { background: rgba(34, 197, 94, 0.2); color: var(--primary-bright); }
+        .link-status.broken { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+        .link-status.checking { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
 
         .link-status-icon {
-            width: 8px;
-            height: 8px;
+            width: 8px; height: 8px;
             border-radius: 50%;
             animation: pulse 2s infinite;
         }
 
-        .link-status.working .link-status-icon {
-            background: var(--primary);
-        }
-
-        .link-status.broken .link-status-icon {
-            background: var(--danger);
-        }
-
-        .link-status.checking .link-status-icon {
-            background: #fbbf24;
-        }
+        .link-status.working .link-status-icon { background: var(--primary); }
+        .link-status.broken .link-status-icon { background: var(--danger); }
+        .link-status.checking .link-status-icon { background: #fbbf24; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
 
-        .link-input-group {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
+        .link-input-group { display: flex; gap: 10px; align-items: center; }
 
         .link-input {
-            flex: 1;
-            padding: 12px 16px;
+            flex: 1; padding: 12px 16px;
             background: rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.1);
-            color: white;
-            border-radius: 10px;
-            font-size: 14px;
-            outline: none;
+            color: white; border-radius: 10px;
+            font-size: 14px; outline: none;
             transition: 0.3s;
             font-family: 'Courier New', monospace;
         }
 
-        .link-input:focus {
-            border-color: var(--primary);
-            background: rgba(0,0,0,0.5);
-        }
+        .link-input:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); }
 
         .link-btn {
-            padding: 10px 20px;
-            background: var(--primary);
-            color: black;
-            border: none;
-            border-radius: 10px;
-            font-weight: 700;
-            font-size: 13px;
-            cursor: pointer;
-            transition: 0.3s;
-            white-space: nowrap;
+            padding: 10px 20px; background: var(--primary);
+            color: black; border: none; border-radius: 10px;
+            font-weight: 700; font-size: 13px;
+            cursor: pointer; transition: 0.3s; white-space: nowrap;
         }
 
-        .link-btn:hover {
-            background: var(--primary-bright);
-            transform: scale(1.05);
-        }
-
-        .link-btn.secondary {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .link-btn.secondary:hover {
-            background: rgba(255,255,255,0.2);
-        }
+        .link-btn:hover { background: var(--primary-bright); transform: scale(1.05); }
+        .link-btn.secondary { background: rgba(255,255,255,0.1); color: white; }
+        .link-btn.secondary:hover { background: rgba(255,255,255,0.2); }
 
         .link-info {
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 10px; padding-top: 10px;
             border-top: 1px solid rgba(255,255,255,0.05);
-            font-size: 12px;
-            color: var(--text-dim);
+            font-size: 12px; color: var(--text-dim);
         }
 
         /* ==================== FOOTER ==================== */
@@ -1531,34 +1370,25 @@
         }
 
         .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 40px;
+            max-width: 1200px; margin: 0 auto;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 40px;
         }
 
         .footer-socials {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
+            display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 20px;
         }
 
         .social-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 12px;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 12px;
             padding: 20px;
             background: var(--card-bg);
             border: 1px solid var(--glass-border);
             border-radius: 20px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s;
-            min-width: 120px;
+            color: white; text-decoration: none;
+            transition: all 0.3s; min-width: 120px;
         }
 
         .social-link:hover {
@@ -1568,43 +1398,22 @@
             background: rgba(34, 197, 94, 0.05);
         }
 
-        .social-link svg {
-            width: 40px;
-            height: 40px;
-            transition: 0.3s;
-        }
-
-        .social-link:hover svg {
-            color: var(--primary-bright);
-        }
-
-        .social-link span {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-gray);
-            transition: 0.3s;
-        }
-
-        .social-link:hover span {
-            color: var(--primary-bright);
-        }
+        .social-link svg { width: 40px; height: 40px; transition: 0.3s; }
+        .social-link:hover svg { color: var(--primary-bright); }
+        .social-link span { font-size: 14px; font-weight: 600; color: var(--text-gray); transition: 0.3s; }
+        .social-link:hover span { color: var(--primary-bright); }
 
         .footer-tags {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
+            display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 15px;
         }
 
         .footer-tag {
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid var(--glass-border);
-            padding: 10px 20px;
-            border-radius: 25px;
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--primary-bright);
-            transition: 0.3s;
+            padding: 10px 20px; border-radius: 25px;
+            font-size: 14px; font-weight: 700;
+            color: var(--primary-bright); transition: 0.3s;
         }
 
         .footer-tag:hover {
@@ -1614,29 +1423,42 @@
         }
 
         .footer-copyright {
-            text-align: center;
-            padding-top: 30px;
+            text-align: center; padding-top: 30px;
             border-top: 1px solid rgba(255, 255, 255, 0.05);
             width: 100%;
         }
 
-        .footer-copyright p {
-            font-size: 14px;
-            color: var(--text-dim);
-            font-weight: 500;
+        .footer-copyright p { font-size: 14px; color: var(--text-dim); font-weight: 500; }
+
+        /* ==================== NOTIFICATION TOAST ==================== */
+        .notification-toast {
+            position: fixed;
+            top: 30px; right: 30px;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95));
+            color: black;
+            padding: 16px 28px;
+            border-radius: 14px;
+            font-weight: 800; font-size: 14px;
+            z-index: 9999;
+            box-shadow: 0 10px 40px rgba(34, 197, 94, 0.4);
+            animation: toastSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1), toastSlideOut 0.3s ease 1.7s forwards;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(100px) scale(0.8); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        @keyframes toastSlideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
         }
 
         /* ==================== RESPONSIVE ==================== */
         @media (max-width: 1024px) {
-            .why-card, .why-card-reverse { 
-                grid-template-columns: 1fr; 
-                padding: 35px; 
-                gap: 25px; 
-            }
-            .why-card-reverse .why-content, 
-            .why-card-reverse .why-image { 
-                order: unset; 
-            }
+            .why-card, .why-card-reverse { grid-template-columns: 1fr; padding: 35px; gap: 25px; }
+            .why-card-reverse .why-content, .why-card-reverse .why-image { order: unset; }
             .why-image { height: 280px; }
             .why-title { font-size: 26px; }
             .gallery-main-image { height: 450px; }
@@ -1661,20 +1483,13 @@
             .news-section { padding: 60px 5%; }
             .section-title { font-size: clamp(26px, 7vw, 40px); }
             .section-subtitle { font-size: 15px; }
-            .why-card, .why-card-reverse { 
-                grid-template-columns: 1fr; 
-                padding: 25px 20px; 
-                gap: 20px; 
-            }
+            .why-card, .why-card-reverse { grid-template-columns: 1fr; padding: 25px 20px; gap: 20px; }
             .why-image { height: 220px; }
             .why-title { font-size: 20px; }
             .why-text { font-size: 14px; }
             .aircraft-tags { gap: 8px; }
             .aircraft-tag { font-size: 12px; padding: 6px 12px; }
-            .features-grid { 
-                grid-template-columns: 1fr 1fr; 
-                gap: 15px; 
-            }
+            .features-grid { grid-template-columns: 1fr 1fr; gap: 15px; }
             .feature-card { padding: 25px 18px; }
             .feature-title { font-size: 16px; }
             .feature-text { font-size: 13px; }
@@ -1685,140 +1500,71 @@
             .gallery-next { right: 8px; }
             .gallery-main-info { padding: 18px; }
             .gallery-main-caption { font-size: 15px; }
-            .gallery-thumbnails { 
-                grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); 
-                gap: 8px; 
-            }
+            .gallery-thumbnails { grid-template-columns: repeat(auto-fill, minmax(75px, 1fr)); gap: 8px; }
             .gallery-main-viewer { border-radius: 18px; }
             .news-grid { grid-template-columns: 1fr; }
             .news-image { height: 180px; }
             .news-title { font-size: 17px; }
-            .form-container { 
-                padding: 25px 20px; 
-                border-radius: 20px; 
-            }
-            .form-input, .form-textarea { 
-                padding: 15px; 
-                font-size: 14px; 
-            }
-            .modal-content { 
-                padding: 25px 20px; 
-                border-radius: 20px; 
-                max-height: 85vh; 
-            }
-            .modal-title { 
-                font-size: 20px; 
-                letter-spacing: 1px; 
-            }
-            .modal-close { 
-                font-size: 28px; 
-                top: 18px; 
-                right: 20px; 
-            }
+            .form-container { padding: 25px 20px; border-radius: 20px; }
+            .form-input, .form-textarea { padding: 15px; font-size: 14px; }
+            .modal-content { padding: 25px 20px; border-radius: 20px; max-height: 85vh; }
+            .modal-title { font-size: 20px; letter-spacing: 1px; }
+            .modal-close { font-size: 28px; top: 18px; right: 20px; }
             .inner-block { padding: 20px; }
             .auth-modal { max-width: 100%; }
             .footer { padding: 40px 5% 20px; }
             .footer-socials { gap: 12px; }
-            .social-link { 
-                min-width: 80px; 
-                padding: 14px 10px; 
-                gap: 8px; 
-            }
-            .social-link svg { 
-                width: 28px; 
-                height: 28px; 
-            }
+            .social-link { min-width: 80px; padding: 14px 10px; gap: 8px; }
+            .social-link svg { width: 28px; height: 28px; }
             .social-link span { font-size: 11px; }
-            .footer-tag { 
-                font-size: 12px; 
-                padding: 8px 14px; 
-            }
+            .footer-tag { font-size: 12px; padding: 8px 14px; }
             .link-input-group { flex-wrap: wrap; }
-            .admin-photo-selector { 
-                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); 
-            }
+            .admin-photo-selector { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
+            .news-view-container { border-radius: 20px; }
+            .news-view-image { height: 250px; }
+            .news-view-body { padding: 25px; }
+            .news-view-title { font-size: 22px; }
+            .news-view-text { font-size: 14px; }
+            .news-view-close { width: 40px; height: 40px; font-size: 20px; top: 12px; right: 12px; }
+            .news-view-actions { flex-direction: column; }
+            .news-view-link, .news-view-close-btn { text-align: center; justify-content: center; }
+            .notification-toast { right: 15px; left: 15px; top: 15px; }
         }
 
         @media (max-width: 480px) {
-            .hero-stats { 
-                grid-template-columns: 1fr; 
-                gap: 10px; 
-            }
-            .stat-card { 
-                display: flex; 
-                align-items: center; 
-                justify-content: space-between; 
-                padding: 16px 20px; 
-            }
-            .stat-label { 
-                margin-bottom: 0; 
-                font-size: 12px; 
-            }
+            .hero-stats { grid-template-columns: 1fr; gap: 10px; }
+            .stat-card { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
+            .stat-label { margin-bottom: 0; font-size: 12px; }
             .stat-value { font-size: 24px; }
             .features-grid { grid-template-columns: 1fr; }
             .gallery-main-image { height: 200px; }
             .why-section .section-title { font-size: 22px; }
-            .why-badge { 
-                font-size: 10px; 
-                padding: 6px 14px; 
-            }
+            .why-badge { font-size: 10px; padding: 6px 14px; }
             .why-title { font-size: 18px; }
             .why-image { height: 180px; }
-            .footer-socials { 
-                display: grid; 
-                grid-template-columns: repeat(3, 1fr); 
-                gap: 10px; 
-            }
+            .footer-socials { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
             .social-link { min-width: unset; }
-            .gallery-nav-btn { 
-                width: 34px; 
-                height: 34px; 
-            }
+            .gallery-nav-btn { width: 34px; height: 34px; }
             .modal-content { padding: 20px 15px; }
             .inner-block { padding: 15px; }
+            .news-view-image { height: 180px; }
+            .news-view-title { font-size: 18px; }
+            .news-view-body { padding: 20px; }
         }
 
         /* ==================== ANIMATIONS ==================== */
-        [data-aos] {
-            opacity: 0;
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-
-        [data-aos].aos-animate {
-            opacity: 1;
-        }
-
         @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(100px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
         }
 
-        /* Fix for overflow issues */
-        * {
-            max-width: 100%;
-        }
-
-        img, video, iframe {
-            max-width: 100%;
-            height: auto;
-        }
+        * { max-width: 100%; }
+        img, video, iframe { max-width: 100%; height: auto; }
     </style>
 </head>
 <body>
@@ -1842,11 +1588,11 @@
             <a href="gallery.html" class="nav-link">Галерея</a>
             <a href="https://ukraine-gta.com.ua/uk/" target="_blank" class="nav-link">Проєкт</a>
             
-            <!-- Admin Dropdown (only visible to admins) -->
-            <div class="admin-dropdown" id="adminDropdown" style="display: none;">
+            <!-- Admin Dropdown — FIXED -->
+            <div class="admin-dropdown" id="adminDropdown" style="display: none;" onclick="toggleAdminDropdown(event)">
                 <div class="admin-dropdown-btn">
                     ⚙️ Адмін панель
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg class="dropdown-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                     </svg>
                 </div>
@@ -1888,19 +1634,16 @@
                 Ми - елітний підрозділ ЗСУ в світі Ukraine GTA. Наша місія - виконувати найскладніші бойові завдання, захищати мирних громадян та підтримувати правопорядок в повітрі та на землі.
             </p>
 
-            <!-- STATS -->
             <div class="hero-stats" data-aos="fade-up" data-aos-delay="300">
                 <div class="stat-card">
                     <div class="stat-label">Кількість бійців</div>
                     <div class="stat-value loading" id="loadingCircle"></div>
                     <div class="stat-value" id="fightersCount" style="display:none;">0</div>
                 </div>
-                
                 <div class="stat-card">
                     <div class="stat-label">Роки досвіду</div>
                     <div class="stat-value">3</div>
                 </div>
-                
                 <div class="stat-card">
                     <div class="stat-label">Робота</div>
                     <div class="stat-value stat-highlight">ЕЛІТНА</div>
@@ -1918,7 +1661,6 @@
         </div>
 
         <div class="why-grid">
-            <!-- Fact 1 -->
             <div class="why-card why-card-large" data-aos="fade-right">
                 <div class="why-content">
                     <div class="why-badge">Перший факт</div>
@@ -1929,12 +1671,9 @@
                         особового складу.
                     </p>
                 </div>
-                <div class="why-image" id="whyImage1">
-                    <!-- Dynamic image loaded from gallery -->
-                </div>
+                <div class="why-image" id="whyImage1"></div>
             </div>
 
-            <!-- Fact 2 -->
             <div class="why-card why-card-large why-card-reverse" data-aos="fade-left">
                 <div class="why-content">
                     <div class="why-badge">Другий факт</div>
@@ -1950,12 +1689,9 @@
                         <span class="aircraft-tag">🚁 Мі-8</span>
                     </div>
                 </div>
-                <div class="why-image" id="whyImage2">
-                    <!-- Dynamic image loaded from gallery -->
-                </div>
+                <div class="why-image" id="whyImage2"></div>
             </div>
 
-            <!-- Fact 3 -->
             <div class="why-card why-card-large" data-aos="fade-right">
                 <div class="why-content">
                     <div class="why-badge">Третій факт</div>
@@ -1966,9 +1702,7 @@
                         підвищення рівня підготовки бійців.
                     </p>
                 </div>
-                <div class="why-image" id="whyImage3">
-                    <!-- Dynamic image loaded from gallery -->
-                </div>
+                <div class="why-image" id="whyImage3"></div>
             </div>
         </div>
     </section>
@@ -1986,31 +1720,26 @@
                 <h3 class="feature-title">Професійна підготовка</h3>
                 <p class="feature-text">Курс військової та тактичної підготовки від досвідчених інструкторів.</p>
             </div>
-
             <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
                 <div class="feature-icon">🛡️</div>
                 <h3 class="feature-title">Сучасне спорядження</h3>
                 <p class="feature-text">Доступ до найкращої зброї та винищувачів F-16.</p>
             </div>
-
             <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
                 <div class="feature-icon">👥</div>
                 <h3 class="feature-title">Бойове братство</h3>
                 <p class="feature-text">Станьте частиною команди професіоналів.</p>
             </div>
-
             <div class="feature-card" data-aos="fade-up">
                 <div class="feature-icon">📈</div>
                 <h3 class="feature-title">Кар'єрний ріст</h3>
                 <p class="feature-text">Реальна можливість швидкого просування по службі.</p>
             </div>
-
             <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
                 <div class="feature-icon">🎯</div>
                 <h3 class="feature-title">Реальні операції</h3>
                 <p class="feature-text">Участь у наймасштабніших спецзавданнях.</p>
             </div>
-
             <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
                 <div class="feature-icon">💰</div>
                 <h3 class="feature-title">Гідна винагорода</h3>
@@ -2026,24 +1755,14 @@
             <p class="section-subtitle">Переглянь фотографії наших операцій та тренувань</p>
         </div>
 
-        <!-- Main Gallery Viewer -->
         <div class="gallery-main-viewer" id="galleryMainViewer" data-aos="fade-up">
             <button class="gallery-nav-btn gallery-prev" onclick="changeMainPhoto(-1)">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-            
-            <div class="gallery-main-image" id="galleryMainImage">
-                <!-- Main photo will be loaded here -->
-            </div>
-            
+            <div class="gallery-main-image" id="galleryMainImage"></div>
             <button class="gallery-nav-btn gallery-next" onclick="changeMainPhoto(1)">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
-
             <div class="gallery-main-info">
                 <div class="gallery-main-caption" id="galleryMainCaption">Завантаження...</div>
                 <div class="gallery-main-meta">
@@ -2053,17 +1772,13 @@
             </div>
         </div>
 
-        <!-- Thumbnails -->
-        <div class="gallery-thumbnails" id="galleryThumbnails" data-aos="fade-up">
-            <!-- Thumbnails will be loaded here -->
-        </div>
+        <div class="gallery-thumbnails" id="galleryThumbnails" data-aos="fade-up"></div>
 
         <div style="text-align: center; margin-top: 50px;" data-aos="fade-up">
             <a href="gallery.html" class="btn-primary">Переглянути всю галерею</a>
         </div>
     </section>
-
-    <!-- NEWS SECTION -->
+        <!-- NEWS SECTION -->
     <section class="section news-section">
         <div class="section-header" data-aos="fade-up">
             <h2 class="section-title">НОВИНИ <span style="color: var(--primary);">ПІДРОЗДІЛУ</span></h2>
@@ -2097,7 +1812,6 @@
     <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-container">
-            <!-- Social Links -->
             <div class="footer-socials" data-aos="fade-up">
                 <a href="https://discord.gg/ukrainegta" target="_blank" class="social-link" rel="nofollow">
                     <svg width="40" height="40" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -2137,7 +1851,6 @@
                 </a>
             </div>
 
-            <!-- Tags -->
             <div class="footer-tags" data-aos="fade-up" data-aos-delay="100">
                 <span class="footer-tag">ДШВ</span>
                 <span class="footer-tag">UKRAINE GTA</span>
@@ -2145,12 +1858,13 @@
                 <span class="footer-tag">ЗСУ</span>
             </div>
 
-            <!-- Copyright -->
             <div class="footer-copyright" data-aos="fade-up" data-aos-delay="200">
                 <p>Усі права захищені © 2022 - 2026 UKRAINE GTA</p>
             </div>
         </div>
     </footer>
+
+    <!-- ==================== ALL MODALS ==================== -->
 
     <!-- ABOUT MODAL -->
     <div class="modal-overlay" id="aboutModal">
@@ -2219,7 +1933,6 @@
                 <button class="auth-tab" onclick="switchAuthTab('register')">Реєстрація</button>
             </div>
 
-            <!-- LOGIN FORM -->
             <div class="auth-fields active" id="loginFields">
                 <h2 class="modal-title" style="font-size: 24px;">Вхід в кабінет</h2>
                 <form id="loginForm">
@@ -2230,7 +1943,6 @@
                 </form>
             </div>
 
-            <!-- REGISTER FORM -->
             <div class="auth-fields" id="registerFields">
                 <h2 class="modal-title" style="font-size: 24px;">Створення акаунту</h2>
                 <form id="registerForm">
@@ -2258,34 +1970,23 @@
             </p>
 
             <div class="admin-sections">
-                <!-- Fact 1 -->
                 <div class="inner-block">
                     <h3>📌 Факт 1 - Унікальний вебсайт</h3>
-                    <div class="admin-photo-selector" id="adminSelector1">
-                        <!-- Photos will be loaded here -->
-                    </div>
+                    <div class="admin-photo-selector" id="adminSelector1"></div>
                 </div>
-
-                <!-- Fact 2 -->
                 <div class="inner-block">
                     <h3>📌 Факт 2 - Авіаційний парк</h3>
-                    <div class="admin-photo-selector" id="adminSelector2">
-                        <!-- Photos will be loaded here -->
-                    </div>
+                    <div class="admin-photo-selector" id="adminSelector2"></div>
                 </div>
-
-                <!-- Fact 3 -->
                 <div class="inner-block">
                     <h3>📌 Факт 3 - Досвідчені інструктори</h3>
-                    <div class="admin-photo-selector" id="adminSelector3">
-                        <!-- Photos will be loaded here -->
-                    </div>
+                    <div class="admin-photo-selector" id="adminSelector3"></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- NEWS EDITOR MODAL (WITH PREVIEW) -->
+    <!-- NEWS EDITOR MODAL -->
     <div class="modal-overlay" id="newsEditorModal">
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal('newsEditorModal')">&times;</span>
@@ -2306,9 +2007,7 @@
                     <p style="color: var(--text-gray); font-size: 13px; margin-bottom: 15px;">
                         Оберіть фото з галереї або завантажте нове
                     </p>
-                    <div class="admin-photo-selector" id="newsImageSelector">
-                        <!-- Photos will be loaded here -->
-                    </div>
+                    <div class="admin-photo-selector" id="newsImageSelector"></div>
                     
                     <div style="margin-top: 15px; text-align: center;">
                         <label class="btn-primary" style="cursor: pointer; display: inline-block;">
@@ -2323,7 +2022,6 @@
                     </div>
                 </div>
 
-                <!-- LIVE PREVIEW SECTION -->
                 <div class="news-preview-section">
                     <h3 style="color: var(--primary-bright); margin-bottom: 20px; text-align: center; font-size: 20px; font-weight: 800;">
                         👁️ Попередній перегляд
@@ -2358,9 +2056,7 @@
                 Редагуйте всі посилання на сайті. Система автоматично перевіряє їх працездатність.
             </p>
 
-            <div id="linksContainer" class="links-container">
-                <!-- Links will be loaded here -->
-            </div>
+            <div id="linksContainer" class="links-container"></div>
 
             <div style="text-align: center; margin-top: 30px;">
                 <button class="btn-primary" onclick="checkAllLinks()">
@@ -2370,7 +2066,35 @@
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- ==================== NEWS VIEW MODAL (NEW!) ==================== -->
+    <div class="news-view-overlay" id="newsViewModal">
+        <div class="news-view-container">
+            <div class="news-view-close" onclick="closeNewsView()">✕</div>
+            
+            <div class="news-view-image" id="newsViewImage">
+                <img src="" alt="" id="newsViewImg">
+            </div>
+            
+            <div class="news-view-body">
+                <div class="news-view-date" id="newsViewDate">
+                    📅 Дата
+                </div>
+                
+                <h2 class="news-view-title" id="newsViewTitle">
+                    Заголовок новини
+                </h2>
+                
+                <div class="news-view-text" id="newsViewText">
+                    Текст новини...
+                </div>
+                
+                <div class="news-view-actions" id="newsViewActions">
+                    <!-- Buttons will be added dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+        <!-- SCRIPTS -->
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -2390,10 +2114,15 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Initialize AOS
-        AOS.init({ duration: 1000, once: true });
+        // ==================== AOS INIT — ALWAYS ANIMATE ====================
+        AOS.init({ 
+            duration: 1000, 
+            once: false,        // ← CHANGED: animations repeat every time
+            mirror: true,       // ← NEW: animate when scrolling back up
+            offset: 80
+        });
 
-        // Sticky Nav
+        // ==================== STICKY NAV ====================
         window.addEventListener('scroll', () => {
             const nav = document.getElementById('mainNav');
             if (window.scrollY > 50) {
@@ -2403,13 +2132,53 @@
             }
         });
 
-        // Burger Menu
+        // ==================== BURGER MENU ====================
         window.toggleMenu = () => {
             document.getElementById('burgerBtn').classList.toggle('active');
             document.getElementById('navLinks').classList.toggle('active');
         };
 
-        // Modal Functions
+        // ==================== ADMIN DROPDOWN — FIXED ====================
+        let dropdownTimeout = null;
+
+        window.toggleAdminDropdown = (event) => {
+            // Only toggle on click for mobile
+            if (window.innerWidth <= 950) {
+                event.stopPropagation();
+                const dropdown = document.getElementById('adminDropdown');
+                dropdown.classList.toggle('open');
+            }
+        };
+
+        // Desktop: keep dropdown open with delay
+        const adminDropdown = document.getElementById('adminDropdown');
+        
+        if (adminDropdown) {
+            adminDropdown.addEventListener('mouseenter', () => {
+                if (window.innerWidth > 950) {
+                    clearTimeout(dropdownTimeout);
+                    adminDropdown.classList.add('open');
+                }
+            });
+
+            adminDropdown.addEventListener('mouseleave', () => {
+                if (window.innerWidth > 950) {
+                    dropdownTimeout = setTimeout(() => {
+                        adminDropdown.classList.remove('open');
+                    }, 300); // 300ms delay before closing
+                }
+            });
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('adminDropdown');
+            if (dropdown && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // ==================== MODAL FUNCTIONS ====================
         window.openModal = (id) => {
             const modal = document.getElementById(id);
             modal.classList.add('active');
@@ -2422,7 +2191,114 @@
             document.body.style.overflow = 'auto';
         };
 
-        // Auth Tab Switching
+        // Close modals on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    document.body.style.overflow = 'auto';
+                }
+            });
+        });
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                    modal.classList.remove('active');
+                });
+                // Also close news view
+                closeNewsView();
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // ==================== NEWS VIEW MODAL (NEW!) ====================
+        let allNewsData = []; // Store all news for viewing
+
+        window.openNewsView = (newsId) => {
+            const newsItem = allNewsData.find(n => n.id === newsId);
+            if (!newsItem) return;
+
+            const modal = document.getElementById('newsViewModal');
+            const img = document.getElementById('newsViewImg');
+            const title = document.getElementById('newsViewTitle');
+            const text = document.getElementById('newsViewText');
+            const date = document.getElementById('newsViewDate');
+            const actions = document.getElementById('newsViewActions');
+            const imageContainer = document.getElementById('newsViewImage');
+
+            // Set image
+            if (newsItem.imageUrl) {
+                img.src = newsItem.imageUrl;
+                img.alt = newsItem.title;
+                imageContainer.style.display = 'block';
+            } else {
+                imageContainer.style.display = 'none';
+            }
+
+            // Set title
+            title.textContent = newsItem.title;
+
+            // Set full text
+            text.textContent = newsItem.description;
+
+            // Set date
+            let dateStr = 'Без дати';
+            if (newsItem.date) {
+                try {
+                    dateStr = new Date(newsItem.date.toDate()).toLocaleDateString('uk-UA', {
+                        day: '2-digit',
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                } catch(e) {
+                    dateStr = 'Нещодавно';
+                }
+            }
+            date.innerHTML = `📅 ${dateStr}`;
+
+            // Set action buttons
+            let actionsHTML = '';
+            if (newsItem.link) {
+                actionsHTML += `
+                    <a href="${newsItem.link}" target="_blank" class="news-view-link" rel="nofollow">
+                        🔗 Детальніше
+                    </a>
+                `;
+            }
+            actionsHTML += `
+                <button class="news-view-close-btn" onclick="closeNewsView()">
+                    ← Закрити
+                </button>
+            `;
+            actions.innerHTML = actionsHTML;
+
+            // Show modal
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Animate in
+            requestAnimationFrame(() => {
+                modal.style.opacity = '1';
+            });
+        };
+
+        window.closeNewsView = () => {
+            const modal = document.getElementById('newsViewModal');
+            modal.classList.remove('active');
+            modal.style.opacity = '0';
+            document.body.style.overflow = 'auto';
+        };
+
+        // Close news view on overlay click
+        document.getElementById('newsViewModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeNewsView();
+            }
+        });
+
+        // ==================== AUTH TAB SWITCHING ====================
         window.switchAuthTab = (tab) => {
             document.querySelectorAll('.auth-tab').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.auth-fields').forEach(field => field.classList.remove('active'));
@@ -2436,7 +2312,7 @@
             }
         };
 
-        // Cabinet Button Handler
+        // ==================== CABINET BUTTON ====================
         window.handleCabinetClick = () => {
             if (auth.currentUser) {
                 window.location.href = "cabinet.html";
@@ -2445,7 +2321,7 @@
             }
         };
 
-        // Login Form
+        // ==================== LOGIN FORM ====================
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
@@ -2463,7 +2339,7 @@
             }
         });
 
-        // Register Form
+        // ==================== REGISTER FORM ====================
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('regEmail').value;
@@ -2501,7 +2377,7 @@
             }
         });
 
-        // Application Form
+        // ==================== APPLICATION FORM ====================
         document.getElementById('applicationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
@@ -2521,7 +2397,6 @@
                 
                 await addDoc(collection(db, "applications"), appData);
                 
-                // Send Discord notification
                 try {
                     await sendNewApplicationWebhook(appData);
                 } catch (webhookErr) {
@@ -2538,7 +2413,7 @@
             }
         });
 
-        // Discord webhook
+        // ==================== DISCORD WEBHOOK ====================
         async function sendNewApplicationWebhook(appData) {
             try {
                 const webhookDoc = await getDoc(doc(db, "settings", "discord"));
@@ -2578,7 +2453,7 @@
             }
         }
 
-        // Fighter Count
+        // ==================== FIGHTER COUNT ====================
         onSnapshot(collection(db, "users"), (snap) => {
             const loading = document.getElementById('loadingCircle');
             const count = document.getElementById('fightersCount');
@@ -2587,11 +2462,10 @@
             count.textContent = snap.size;
         });
 
-        // Gallery and Why Section
+        // ==================== GALLERY & WHY SECTION ====================
         let allGalleryPhotos = [];
         let currentMainPhotoIndex = 0;
 
-        // Load Gallery
         const galleryQuery = query(collection(db, "gallery"), orderBy("timestamp", "desc"), limit(10));
         onSnapshot(galleryQuery, (snapshot) => {
             allGalleryPhotos = [];
@@ -2642,7 +2516,6 @@
 
         function loadMainGalleryViewer() {
             if (allGalleryPhotos.length === 0) return;
-            
             currentMainPhotoIndex = 0;
             updateMainPhoto();
             loadThumbnails();
@@ -2688,11 +2561,7 @@
 
         function updateActiveThumbnail() {
             document.querySelectorAll('.gallery-thumb').forEach((thumb, index) => {
-                if (index === currentMainPhotoIndex) {
-                    thumb.classList.add('active');
-                } else {
-                    thumb.classList.remove('active');
-                }
+                thumb.classList.toggle('active', index === currentMainPhotoIndex);
             });
         }
 
@@ -2711,13 +2580,18 @@
             updateActiveThumbnail();
         };
 
-        // Keyboard navigation
+        // Keyboard navigation for gallery
         document.addEventListener('keydown', (e) => {
+            // Only if no modal is open (except gallery related)
+            const anyModalOpen = document.querySelector('.modal-overlay.active') || 
+                                 document.querySelector('.news-view-overlay.active');
+            if (anyModalOpen) return;
+            
             if (e.key === 'ArrowLeft') changeMainPhoto(-1);
             if (e.key === 'ArrowRight') changeMainPhoto(1);
         });
 
-        // Update Cabinet Button
+        // ==================== AUTH STATE & ADMIN CHECK ====================
         onAuthStateChanged(auth, async user => {
             const btn = document.getElementById('cabinetBtn');
             if (user) {
@@ -2728,10 +2602,7 @@
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     if (userDoc.exists() && userDoc.data().role === 'admin') {
                         window.isAdmin = true;
-                        
-                        // Show admin dropdown
-                        const dropdown = document.getElementById('adminDropdown');
-                        dropdown.style.display = 'inline-block';
+                        document.getElementById('adminDropdown').style.display = 'inline-block';
                     }
                 } catch (err) {
                     console.error("Error checking admin status:", err);
@@ -2740,12 +2611,12 @@
         });
 
         // ==================== NEWS SYSTEM ====================
-        
-        // Load News
         const newsQuery = query(collection(db, "news"), orderBy("date", "desc"), limit(4));
+        
         onSnapshot(newsQuery, (snapshot) => {
             const container = document.getElementById('newsGrid');
             container.innerHTML = '';
+            allNewsData = []; // Reset news data
             
             if (snapshot.empty) {
                 container.innerHTML = '<div class="news-empty">Новини скоро з\'являться...</div>';
@@ -2754,17 +2625,24 @@
             
             snapshot.forEach(docSnap => {
                 const data = docSnap.data();
+                const newsItem = { id: docSnap.id, ...data };
+                allNewsData.push(newsItem); // Store for viewing
+                
                 const card = document.createElement('div');
                 card.className = 'news-card';
                 card.setAttribute('data-aos', 'fade-up');
                 
                 let dateStr = 'Без дати';
                 if (data.date) {
-                    dateStr = new Date(data.date.toDate()).toLocaleDateString('uk-UA', { 
-                        day: '2-digit', 
-                        month: '2-digit', 
-                        year: 'numeric' 
-                    });
+                    try {
+                        dateStr = new Date(data.date.toDate()).toLocaleDateString('uk-UA', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric' 
+                        });
+                    } catch(e) {
+                        dateStr = 'Нещодавно';
+                    }
                 }
 
                 const adminBtns = window.isAdmin ? `
@@ -2779,28 +2657,30 @@
                 card.innerHTML = `
                     ${adminBtns}
                     <div class="news-image">
-                        <img src="${data.imageUrl || '/images/placeholder.jpg'}" alt="${data.title}">
+                        <img src="${data.imageUrl || ''}" alt="${data.title}" onerror="this.style.display='none'">
                     </div>
                     <div class="news-content">
                         <h3 class="news-title">${data.title}</h3>
                         <p class="news-description">${data.description}</p>
                         <div class="news-footer">
                             <span class="news-date">${dateStr}</span>
-                            ${data.link ? `<a href="${data.link}" target="_blank" class="news-link" onclick="event.stopPropagation()">Детальніше →</a>` : ''}
+                            <span class="news-link">Читати далі →</span>
                         </div>
                     </div>
                 `;
 
-                if (data.link) {
-                    card.onclick = () => window.open(data.link, '_blank');
-                    card.style.cursor = 'pointer';
-                }
+                // Click opens news view modal instead of external link
+                card.onclick = () => openNewsView(docSnap.id);
+                card.style.cursor = 'pointer';
 
                 container.appendChild(card);
             });
+
+            // Re-init AOS for new elements
+            setTimeout(() => AOS.refresh(), 100);
         });
 
-        // News Editor
+        // ==================== NEWS EDITOR ====================
         let selectedNewsImage = null;
         let customNewsImageBase64 = null;
 
@@ -2878,433 +2758,381 @@
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
                         let w = img.width, h = img.height, max = 1200;
-                        if (w > h) { if (w > max) { h *= max/w; w = max; } } else { if (h > max) { w *= max/h; h = max; } }
+                        if (w > h) { if (w > max) { h *= max/w; w = max; } } 
+                        else { if (h > max) { w *= max/h; h = max; } }
                         canvas.width = w;
                         canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                         customNewsImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
-                    selectedNewsImage = null;
-                    
-                    document.getElementById('newsImagePreview').style.display = 'block';
-                    document.getElementById('newsImagePreviewImg').src = customNewsImageBase64;
-                    
-                    document.querySelectorAll('#newsImageSelector .admin-photo-item').forEach(item => {
-                        item.classList.remove('selected');
-                    });
-                    
-                    updateNewsPreview();
+                        selectedNewsImage = null;
+                        
+                        document.getElementById('newsImagePreview').style.display = 'block';
+                        document.getElementById('newsImagePreviewImg').src = customNewsImageBase64;
+                        
+                        document.querySelectorAll('#newsImageSelector .admin-photo-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        
+                        updateNewsPreview();
+                    };
+                    img.src = e.target.result;
                 };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-    };
+                reader.readAsDataURL(input.files[0]);
+            }
+        };
 
-    // Live Preview Functions
-    window.updateNewsPreview = () => {
-        const title = document.getElementById('newsTitle').value || 'Заголовок новини';
-        const description = document.getElementById('newsDescription').value || 'Опис новини з\'явиться тут...';
-        const link = document.getElementById('newsLink').value;
-        
-        document.getElementById('previewTitle').textContent = title;
-        document.getElementById('previewDescription').textContent = description;
-        
-        const previewLinkEl = document.getElementById('previewLink');
-        if (link) {
-            previewLinkEl.style.display = 'inline';
-        } else {
-            previewLinkEl.style.display = 'none';
-        }
-        
-        const imageUrl = customNewsImageBase64 || selectedNewsImage;
-        const previewImageEl = document.getElementById('previewImage');
-        
-        if (imageUrl) {
-            previewImageEl.innerHTML = `<img src="${imageUrl}" style="width: 100%; height: 100%; object-fit: cover;">`;
-        } else {
-            previewImageEl.innerHTML = '<span style="color: var(--text-dim);">Оберіть зображення</span>';
-        }
-        
-        // Update date
-        const today = new Date().toLocaleDateString('uk-UA', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-        document.getElementById('previewDate').textContent = today;
-    };
-
-    function resetPreview() {
-        document.getElementById('previewTitle').textContent = 'Заголовок новини';
-        document.getElementById('previewDescription').textContent = 'Опис новини з\'явиться тут...';
-        document.getElementById('previewLink').style.display = 'none';
-        document.getElementById('previewImage').innerHTML = '<span style="color: var(--text-dim);">Оберіть зображення</span>';
-    }
-
-    // News Form Submit
-    document.getElementById('newsEditorForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const btn = document.getElementById('newsSubmitBtn');
-        btn.disabled = true;
-        btn.textContent = "Збереження...";
-
-        const title = document.getElementById('newsTitle').value;
-        const description = document.getElementById('newsDescription').value;
-        const link = document.getElementById('newsLink').value;
-        const editId = document.getElementById('newsEditId').value;
-
-        if (!selectedNewsImage && !customNewsImageBase64) {
-            alert("Оберіть зображення для новини!");
-            btn.disabled = false;
-            btn.textContent = editId ? "Оновити новину" : "Опублікувати новину";
-            return;
-        }
-
-        const imageUrl = customNewsImageBase64 || selectedNewsImage;
-
-        try {
-            const newsData = {
-                title: title,
-                description: description,
-                link: link,
-                imageUrl: imageUrl,
-                date: serverTimestamp()
-            };
-
-            if (editId) {
-                await updateDoc(doc(db, "news", editId), newsData);
-                showNotification("Новину оновлено!");
+        // ==================== NEWS PREVIEW ====================
+        window.updateNewsPreview = () => {
+            const title = document.getElementById('newsTitle').value || 'Заголовок новини';
+            const description = document.getElementById('newsDescription').value || 'Опис новини з\'явиться тут...';
+            const link = document.getElementById('newsLink').value;
+            
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewDescription').textContent = description;
+            
+            const previewLinkEl = document.getElementById('previewLink');
+            previewLinkEl.style.display = link ? 'inline' : 'none';
+            
+            const imageUrl = customNewsImageBase64 || selectedNewsImage;
+            const previewImageEl = document.getElementById('previewImage');
+            
+            if (imageUrl) {
+                previewImageEl.innerHTML = `<img src="${imageUrl}" style="width: 100%; height: 100%; object-fit: cover;">`;
             } else {
-                await addDoc(collection(db, "news"), newsData);
-                showNotification("Новину опубліковано!");
+                previewImageEl.innerHTML = '<span style="color: var(--text-dim);">Оберіть зображення</span>';
+            }
+            
+            const today = new Date().toLocaleDateString('uk-UA', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+            document.getElementById('previewDate').textContent = today;
+        };
+
+        function resetPreview() {
+            document.getElementById('previewTitle').textContent = 'Заголовок новини';
+            document.getElementById('previewDescription').textContent = 'Опис новини з\'явиться тут...';
+            document.getElementById('previewLink').style.display = 'none';
+            document.getElementById('previewImage').innerHTML = '<span style="color: var(--text-dim);">Оберіть зображення</span>';
+        }
+
+        // ==================== NEWS FORM SUBMIT ====================
+        document.getElementById('newsEditorForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('newsSubmitBtn');
+            btn.disabled = true;
+            btn.textContent = "Збереження...";
+
+            const title = document.getElementById('newsTitle').value;
+            const description = document.getElementById('newsDescription').value;
+            const link = document.getElementById('newsLink').value;
+            const editId = document.getElementById('newsEditId').value;
+
+            if (!selectedNewsImage && !customNewsImageBase64) {
+                alert("Оберіть зображення для новини!");
+                btn.disabled = false;
+                btn.textContent = editId ? "Оновити новину" : "Опублікувати новину";
+                return;
             }
 
-            closeModal('newsEditorModal');
-            document.getElementById('newsEditorForm').reset();
-            resetPreview();
-        } catch (err) {
-            alert("Помилка: " + err.message);
-        } finally {
-            btn.disabled = false;
-            btn.textContent = editId ? "Оновити новину" : "Опублікувати новину";
+            const imageUrl = customNewsImageBase64 || selectedNewsImage;
+
+            try {
+                const newsData = {
+                    title: title,
+                    description: description,
+                    link: link,
+                    imageUrl: imageUrl,
+                    date: serverTimestamp()
+                };
+
+                if (editId) {
+                    await updateDoc(doc(db, "news", editId), newsData);
+                    showNotification("✅ Новину оновлено!");
+                } else {
+                    await addDoc(collection(db, "news"), newsData);
+                    showNotification("✅ Новину опубліковано!");
+                }
+
+                closeModal('newsEditorModal');
+                document.getElementById('newsEditorForm').reset();
+                resetPreview();
+            } catch (err) {
+                alert("Помилка: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = editId ? "Оновити новину" : "Опублікувати новину";
+            }
+        });
+
+        window.deleteNews = async (newsId) => {
+            if (!confirm("Видалити цю новину?")) return;
+            
+            try {
+                await deleteDoc(doc(db, "news", newsId));
+                showNotification("🗑️ Новину видалено!");
+            } catch (err) {
+                alert("Помилка видалення: " + err.message);
+            }
+        };
+
+        // ==================== ADMIN PHOTO PANEL ====================
+        window.openAdminPanel = () => {
+            openModal('adminPanel');
+            loadAdminPhotoSelectors();
+        };
+
+        async function loadAdminPhotoSelectors() {
+            try {
+                const featuredDoc = await getDoc(doc(db, "settings", "featuredPhotos"));
+                const featured = featuredDoc.exists() ? featuredDoc.data() : { fact1: 0, fact2: 1, fact3: 2 };
+
+                [1, 2, 3].forEach(num => {
+                    const container = document.getElementById(`adminSelector${num}`);
+                    container.innerHTML = '';
+
+                    allGalleryPhotos.forEach((photo, index) => {
+                        const item = document.createElement('div');
+                        item.className = `admin-photo-item ${featured[`fact${num}`] === index ? 'selected' : ''}`;
+                        item.onclick = () => selectFeaturedPhoto(num, index);
+                        item.innerHTML = `<img src="${photo.imageUrl}" alt="">`;
+                        container.appendChild(item);
+                    });
+                });
+            } catch (err) {
+                console.error("Error loading admin selectors:", err);
+            }
         }
-    });
 
-    window.deleteNews = async (newsId) => {
-        if (!confirm("Видалити цю новину?")) return;
-        
-        try {
-            await deleteDoc(doc(db, "news", newsId));
-            showNotification("Новину видалено!");
-        } catch (err) {
-            alert("Помилка видалення: " + err.message);
+        async function selectFeaturedPhoto(factNum, photoIndex) {
+            try {
+                const featuredDoc = await getDoc(doc(db, "settings", "featuredPhotos"));
+                const current = featuredDoc.exists() ? featuredDoc.data() : {};
+                current[`fact${factNum}`] = photoIndex;
+                await setDoc(doc(db, "settings", "featuredPhotos"), current);
+                loadAdminPhotoSelectors();
+                loadWhySectionImagesFromDB();
+                showNotification(`✅ Факт ${factNum} оновлено!`);
+            } catch (err) {
+                alert("Помилка збереження: " + err.message);
+            }
         }
-    };
 
-    // ==================== ADMIN FUNCTIONS ====================
-    
-    window.openAdminPanel = () => {
-        openModal('adminPanel');
-        loadAdminPhotoSelectors();
-    };
+        // ==================== LINKS MANAGER ====================
+        const defaultLinks = {
+            discord: { title: "Discord сервер", url: "https://discord.gg/ukrainegta", category: "social" },
+            instagram: { title: "Instagram", url: "https://www.instagram.com/ukraine_gta", category: "social" },
+            youtube: { title: "YouTube канал", url: "https://www.youtube.com/channel/UCAyONHpqibQDDrCxGiYc_hQ", category: "social" },
+            tiktok: { title: "TikTok", url: "https://www.tiktok.com/@ukraine_gta", category: "social" },
+            telegram: { title: "Telegram", url: "https://t.me/ukraine_gta", category: "social" },
+            mainSite: { title: "Головний сайт проєкту", url: "https://ukraine-gta.com.ua/uk/", category: "main" },
+            gallery: { title: "Галерея підрозділу", url: "gallery.html", category: "internal" },
+            cabinet: { title: "Особистий кабінет", url: "cabinet.html", category: "internal" }
+        };
 
-    async function loadAdminPhotoSelectors() {
-        try {
-            const featuredDoc = await getDoc(doc(db, "settings", "featuredPhotos"));
-            const featured = featuredDoc.exists() ? featuredDoc.data() : { fact1: 0, fact2: 1, fact3: 2 };
+        window.openLinksManager = async () => {
+            openModal('linksManagerModal');
+            await loadLinksManager();
+        };
 
-            [1, 2, 3].forEach(num => {
-                const container = document.getElementById(`adminSelector${num}`);
+        async function loadLinksManager() {
+            try {
+                const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+                const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
+
+                const container = document.getElementById('linksContainer');
                 container.innerHTML = '';
 
-                allGalleryPhotos.forEach((photo, index) => {
-                    const item = document.createElement('div');
-                    item.className = `admin-photo-item ${featured[`fact${num}`] === index ? 'selected' : ''}`;
-                    item.onclick = () => selectFeaturedPhoto(num, index);
-                    item.innerHTML = `<img src="${photo.imageUrl}" alt="">`;
-                    container.appendChild(item);
+                const categories = {
+                    social: "🌐 Соціальні мережі",
+                    main: "🏠 Головні посилання",
+                    internal: "📄 Внутрішні сторінки"
+                };
+
+                Object.keys(categories).forEach(category => {
+                    const categoryTitle = document.createElement('h3');
+                    categoryTitle.style.cssText = 'color: var(--primary-bright); margin: 30px 0 15px; font-size: 18px; font-weight: 800;';
+                    categoryTitle.textContent = categories[category];
+                    container.appendChild(categoryTitle);
+
+                    Object.keys(links).forEach(key => {
+                        const link = links[key];
+                        if (link.category === category) {
+                            container.appendChild(createLinkItem(key, link));
+                        }
+                    });
                 });
-            });
-        } catch (err) {
-            console.error("Error loading admin selectors:", err);
+            } catch (err) {
+                console.error("Error loading links:", err);
+            }
         }
-    }
 
-    async function selectFeaturedPhoto(factNum, photoIndex) {
-        try {
-            const featuredDoc = await getDoc(doc(db, "settings", "featuredPhotos"));
-            const current = featuredDoc.exists() ? featuredDoc.data() : {};
+        function createLinkItem(key, link) {
+            const item = document.createElement('div');
+            item.className = 'link-item';
+            item.id = `link-${key}`;
 
-            current[`fact${factNum}`] = photoIndex;
-
-            await setDoc(doc(db, "settings", "featuredPhotos"), current);
-
-            loadAdminPhotoSelectors();
-            loadWhySectionImagesFromDB();
-
-            showNotification(`Факт ${factNum} оновлено!`);
-        } catch (err) {
-            alert("Помилка збереження: " + err.message);
-        }
-    }
-
-    // ==================== LINKS MANAGER ====================
-    
-    const defaultLinks = {
-        discord: {
-            title: "Discord сервер",
-            url: "https://discord.gg/ukrainegta",
-            category: "social"
-        },
-        instagram: {
-            title: "Instagram",
-            url: "https://www.instagram.com/ukraine_gta",
-            category: "social"
-        },
-        youtube: {
-            title: "YouTube канал",
-            url: "https://www.youtube.com/channel/UCAyONHpqibQDDrCxGiYc_hQ",
-            category: "social"
-        },
-        tiktok: {
-            title: "TikTok",
-            url: "https://www.tiktok.com/@ukraine_gta",
-            category: "social"
-        },
-        telegram: {
-            title: "Telegram",
-            url: "https://t.me/ukraine_gta",
-            category: "social"
-        },
-        mainSite: {
-            title: "Головний сайт проєкту",
-            url: "https://ukraine-gta.com.ua/uk/",
-            category: "main"
-        },
-        gallery: {
-            title: "Галерея підрозділу",
-            url: "gallery.html",
-            category: "internal"
-        },
-        cabinet: {
-            title: "Особистий кабінет",
-            url: "cabinet.html",
-            category: "internal"
-        }
-    };
-
-    window.openLinksManager = async () => {
-        openModal('linksManagerModal');
-        await loadLinksManager();
-    };
-
-    async function loadLinksManager() {
-        try {
-            const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
-            const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
-
-            const container = document.getElementById('linksContainer');
-            container.innerHTML = '';
-
-            const categories = {
-                social: "Соціальні мережі",
-                main: "Головні посилання",
-                internal: "Внутрішні сторінки"
-            };
-
-            Object.keys(categories).forEach(category => {
-                const categoryTitle = document.createElement('h3');
-                categoryTitle.style.cssText = 'color: var(--primary-bright); margin: 30px 0 15px; font-size: 18px; font-weight: 800;';
-                categoryTitle.textContent = categories[category];
-                container.appendChild(categoryTitle);
-
-                Object.keys(links).forEach(key => {
-                    const link = links[key];
-                    if (link.category === category) {
-                        const item = createLinkItem(key, link);
-                        container.appendChild(item);
-                    }
-                });
-            });
-
-        } catch (err) {
-            console.error("Error loading links:", err);
-        }
-    }
-
-    function createLinkItem(key, link) {
-        const item = document.createElement('div');
-        item.className = 'link-item';
-        item.id = `link-${key}`;
-
-        item.innerHTML = `
-            <div class="link-header">
-                <div class="link-title">
-                    🔗 ${link.title}
+            item.innerHTML = `
+                <div class="link-header">
+                    <div class="link-title">🔗 ${link.title}</div>
+                    <div class="link-status" id="status-${key}">
+                        <div class="link-status-icon"></div>
+                        <span>Не перевірено</span>
+                    </div>
                 </div>
-                <div class="link-status" id="status-${key}">
-                    <div class="link-status-icon"></div>
-                    <span>Не перевірено</span>
+                <div class="link-input-group">
+                    <input type="url" class="link-input" id="input-${key}" value="${link.url}" placeholder="https://...">
+                    <button class="link-btn secondary" onclick="checkSingleLink('${key}')">Перевірити</button>
+                    <button class="link-btn" onclick="saveLink('${key}')">Зберегти</button>
                 </div>
-            </div>
-            <div class="link-input-group">
-                <input type="url" class="link-input" id="input-${key}" value="${link.url}" placeholder="https://...">
-                <button class="link-btn secondary" onclick="checkSingleLink('${key}')">Перевірити</button>
-                <button class="link-btn" onclick="saveLink('${key}')">Зберегти</button>
-            </div>
-            <div class="link-info" id="info-${key}">
-                Змініть посилання та натисніть "Зберегти"
-            </div>
-        `;
+                <div class="link-info" id="info-${key}">Змініть посилання та натисніть "Зберегти"</div>
+            `;
 
-        return item;
-    }
-
-    window.checkSingleLink = async (key) => {
-        const input = document.getElementById(`input-${key}`);
-        const status = document.getElementById(`status-${key}`);
-        const item = document.getElementById(`link-${key}`);
-        const info = document.getElementById(`info-${key}`);
-        
-        const url = input.value.trim();
-        
-        if (!url) {
-            status.className = 'link-status broken';
-            status.innerHTML = '<div class="link-status-icon"></div><span>Порожнє посилання</span>';
-            item.className = 'link-item broken';
-            return;
+            return item;
         }
 
-        status.className = 'link-status checking';
-        status.innerHTML = '<div class="link-status-icon"></div><span>Перевірка...</span>';
-        item.className = 'link-item checking';
-        info.textContent = 'Очікування відповіді від сервера...';
-
-        try {
-            const urlObj = new URL(url);
+        window.checkSingleLink = async (key) => {
+            const input = document.getElementById(`input-${key}`);
+            const status = document.getElementById(`status-${key}`);
+            const item = document.getElementById(`link-${key}`);
+            const info = document.getElementById(`info-${key}`);
+            const url = input.value.trim();
             
-            if (url.startsWith('http://') || url.startsWith('https://')) {
+            if (!url) {
+                status.className = 'link-status broken';
+                status.innerHTML = '<div class="link-status-icon"></div><span>Порожнє посилання</span>';
+                item.className = 'link-item broken';
+                return;
+            }
+
+            status.className = 'link-status checking';
+            status.innerHTML = '<div class="link-status-icon"></div><span>Перевірка...</span>';
+            item.className = 'link-item checking';
+            info.textContent = 'Очікування відповіді...';
+
+            try {
+                const urlObj = new URL(url);
                 status.className = 'link-status working';
                 status.innerHTML = '<div class="link-status-icon"></div><span>Працює ✓</span>';
                 item.className = 'link-item working';
                 info.textContent = `Посилання дійсне. Домен: ${urlObj.hostname}`;
-            } else {
-                status.className = 'link-status working';
-                status.innerHTML = '<div class="link-status-icon"></div><span>Працює ✓</span>';
-                item.className = 'link-item working';
-                info.textContent = 'Внутрішнє посилання';
+            } catch (err) {
+                // Maybe it's a relative URL
+                if (!url.includes('://')) {
+                    status.className = 'link-status working';
+                    status.innerHTML = '<div class="link-status-icon"></div><span>Внутрішнє ✓</span>';
+                    item.className = 'link-item working';
+                    info.textContent = 'Внутрішнє посилання';
+                } else {
+                    status.className = 'link-status broken';
+                    status.innerHTML = '<div class="link-status-icon"></div><span>Не працює ✗</span>';
+                    item.className = 'link-item broken';
+                    info.textContent = `Помилка: ${err.message}`;
+                }
             }
-        } catch (err) {
-            status.className = 'link-status broken';
-            status.innerHTML = '<div class="link-status-icon"></div><span>Не працює ✗</span>';
-            item.className = 'link-item broken';
-            info.textContent = `Помилка: ${err.message}`;
-        }
-    };
+        };
 
-    window.saveLink = async (key) => {
-        const input = document.getElementById(`input-${key}`);
-        const url = input.value.trim();
+        window.saveLink = async (key) => {
+            const input = document.getElementById(`input-${key}`);
+            const url = input.value.trim();
 
-        if (!url) {
-            alert("Введіть посилання!");
-            return;
-        }
+            if (!url) {
+                alert("Введіть посилання!");
+                return;
+            }
 
-        try {
+            try {
+                const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+                const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
+                links[key].url = url;
+                await setDoc(doc(db, "settings", "siteLinks"), links);
+                showNotification(`✅ Посилання "${links[key].title}" збережено!`);
+                await checkSingleLink(key);
+                updatePageLinks(links);
+            } catch (err) {
+                alert("Помилка збереження: " + err.message);
+            }
+        };
+
+        window.checkAllLinks = async () => {
             const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
             const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
 
-            links[key].url = url;
+            showNotification("🔄 Перевірка всіх посилань...");
 
-            await setDoc(doc(db, "settings", "siteLinks"), links);
-
-            showNotification(`Посилання "${links[key].title}" збережено!`);
-            
-            await checkSingleLink(key);
-            updatePageLinks(links);
-        } catch (err) {
-            alert("Помилка збереження: " + err.message);
-        }
-    };
-
-    window.checkAllLinks = async () => {
-        const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
-        const links = linksDoc.exists() ? linksDoc.data() : defaultLinks;
-
-        showNotification("Перевірка всіх посилань...");
-
-        for (const key of Object.keys(links)) {
-            await checkSingleLink(key);
-            await new Promise(resolve => setTimeout(resolve, 500));
-        }
-
-        showNotification("Перевірка завершена!");
-    };
-
-    function updatePageLinks(links) {
-        if (links.discord) {
-            const discordLink = document.querySelector('a[href*="discord"]');
-            if (discordLink) discordLink.href = links.discord.url;
-        }
-        if (links.instagram) {
-            const igLink = document.querySelector('a[href*="instagram"]');
-            if (igLink) igLink.href = links.instagram.url;
-        }
-        if (links.youtube) {
-            const ytLink = document.querySelector('a[href*="youtube"]');
-            if (ytLink) ytLink.href = links.youtube.url;
-        }
-        if (links.tiktok) {
-            const ttLink = document.querySelector('a[href*="tiktok"]');
-            if (ttLink) ttLink.href = links.tiktok.url;
-        }
-        if (links.telegram) {
-            const tgLink = document.querySelector('a[href*="t.me"]');
-            if (tgLink) tgLink.href = links.telegram.url;
-        }
-        if (links.mainSite) {
-            const mainLink = document.querySelector('a[href*="ukraine-gta.com.ua"]');
-            if (mainLink) mainLink.href = links.mainSite.url;
-        }
-    }
-
-    async function loadAndApplyLinks() {
-        try {
-            const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
-            if (linksDoc.exists()) {
-                updatePageLinks(linksDoc.data());
+            for (const key of Object.keys(links)) {
+                await checkSingleLink(key);
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
-        } catch (err) {
-            console.error("Error loading links:", err);
+
+            showNotification("✅ Перевірка завершена!");
+        };
+
+        function updatePageLinks(links) {
+            if (links.discord) {
+                const el = document.querySelector('a[href*="discord"]');
+                if (el) el.href = links.discord.url;
+            }
+            if (links.instagram) {
+                const el = document.querySelector('a[href*="instagram"]');
+                if (el) el.href = links.instagram.url;
+            }
+            if (links.youtube) {
+                const el = document.querySelector('a[href*="youtube"]');
+                if (el) el.href = links.youtube.url;
+            }
+            if (links.tiktok) {
+                const el = document.querySelector('a[href*="tiktok"]');
+                if (el) el.href = links.tiktok.url;
+            }
+            if (links.telegram) {
+                const el = document.querySelector('a[href*="t.me"]');
+                if (el) el.href = links.telegram.url;
+            }
+            if (links.mainSite) {
+                const el = document.querySelector('a[href*="ukraine-gta.com.ua"]');
+                if (el) el.href = links.mainSite.url;
+            }
         }
-    }
 
-    loadAndApplyLinks();
+        async function loadAndApplyLinks() {
+            try {
+                const linksDoc = await getDoc(doc(db, "settings", "siteLinks"));
+                if (linksDoc.exists()) {
+                    updatePageLinks(linksDoc.data());
+                }
+            } catch (err) {
+                console.error("Error loading links:", err);
+            }
+        }
 
-    // ==================== UTILITY FUNCTIONS ====================
-    
-    function showSuccessToast() {
-        const form = document.getElementById('applicationForm');
-        const container = form.parentElement;
-        container.innerHTML = `
-            <div style="text-align:center; padding: 50px 20px; animation: fadeInUp 0.5s ease;">
-                <div style="font-size: 70px; margin-bottom: 20px;">✅</div>
-                <h3 style="font-size: 24px; font-weight: 900; color: var(--primary-bright); margin-bottom: 12px;">Рапорт надіслано!</h3>
-                <p style="color: var(--text-gray); font-size: 16px;">Очікуй відповіді від командування ДШВ.<br>Ми розглянемо твою кандидатуру найближчим часом.</p>
-            </div>
-        `;
-    }
+        loadAndApplyLinks();
 
-    function showNotification(message) {
-        const notif = document.createElement('div');
-        notif.style.cssText = 'position: fixed; top: 20px; right: 20px; background: var(--primary); color: black; padding: 15px 25px; border-radius: 10px; font-weight: 700; z-index: 9999; animation: slideIn 0.3s ease;';
-        notif.textContent = message;
-        document.body.appendChild(notif);
-        setTimeout(() => notif.remove(), 2000);
-    }
-</script>
+        // ==================== UTILITY FUNCTIONS ====================
+        function showSuccessToast() {
+            const form = document.getElementById('applicationForm');
+            const container = form.parentElement;
+            container.innerHTML = `
+                <div style="text-align:center; padding: 50px 20px; animation: fadeInUp 0.5s ease;">
+                    <div style="font-size: 70px; margin-bottom: 20px;">✅</div>
+                    <h3 style="font-size: 24px; font-weight: 900; color: var(--primary-bright); margin-bottom: 12px;">Рапорт надіслано!</h3>
+                    <p style="color: var(--text-gray); font-size: 16px;">Очікуй відповіді від командування ДШВ.<br>Ми розглянемо твою кандидатуру найближчим часом.</p>
+                </div>
+            `;
+        }
+
+        function showNotification(message) {
+            // Remove existing notifications
+            document.querySelectorAll('.notification-toast').forEach(n => n.remove());
+            
+            const notif = document.createElement('div');
+            notif.className = 'notification-toast';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            setTimeout(() => {
+                if (notif.parentNode) notif.remove();
+            }, 2200);
+        }
+    </script>
 </body>
 </html>
-```
