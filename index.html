@@ -1136,11 +1136,11 @@
             <div class="news-grid" id="newsGrid"></div>
         </div>
         <div class="news-slider-nav">
-            <button class="news-nav-btn" id="newsPrevBtn" onclick="slideNews(-1)" disabled>
+            <button class="news-nav-btn" id="newsPrevBtn" disabled>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="news-dots" id="newsDots"></div>
-            <button class="news-nav-btn" id="newsNextBtn" onclick="slideNews(1)">
+            <button class="news-nav-btn" id="newsNextBtn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 18L15 12L9 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
         </div>
@@ -1590,7 +1590,8 @@
         });
 
         // ==================== APPLICATION FORM ====================
-        document.getElementById('applicationForm').addEventListener('submit', async (e) => {
+        const appForm = document.getElementById('applicationForm');
+        if (appForm) appForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('appSubmitBtn');
             btn.disabled = true; btn.textContent = "Відправка...";
@@ -1609,7 +1610,8 @@
                 e.target.reset();
             } catch (err) { alert("Помилка: " + err.message); }
             finally { btn.disabled = false; btn.textContent = "Відправити рапорт"; }
-        });
+            });
+        } // <-- закрывает if (appForm)
 
         async function sendApplicationWebhook(appData) {
             try {
@@ -1762,6 +1764,8 @@ function getNewsTotalSlides() {
 }
 
 window.slideNews = (dir) => {
+    document.getElementById('newsPrevBtn').addEventListener('click', () => slideNews(-1));
+    document.getElementById('newsNextBtn').addEventListener('click', () => slideNews(1));
     const total = getNewsTotalSlides();
     newsCurrentSlide = Math.max(0, Math.min(newsCurrentSlide + dir, total - 1));
     applyNewsSlide();
@@ -2484,6 +2488,7 @@ window.saveWebhookSettings = async () => {
     </script>
 </body>
 </html>
+
 
 
 
