@@ -459,29 +459,71 @@
 
 /* ==================== NEWS ==================== */
 .news-section { background: var(--bg); overflow: hidden; }
-.news-slider-wrapper { position: relative; max-width: 1400px; margin: 0 auto; }
+
+.news-slider-wrapper {
+    position: relative;
+    max-width: 1400px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
 .news-grid {
-    display: flex; gap: 30px;
-    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    gap: 30px;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     will-change: transform;
 }
-.news-grid .news-card { min-width: calc(33.333% - 20px); flex-shrink: 0; }
-@media (max-width: 1024px) { .news-grid .news-card { min-width: calc(50% - 15px); } }
-@media (max-width: 640px) { .news-grid .news-card { min-width: 100%; } }
+
+.news-card {
+    flex: 0 0 calc(33.333% - 20px);
+    min-width: calc(33.333% - 20px);
+}
+
+@media (max-width: 1024px) {
+    .news-card { flex: 0 0 calc(50% - 15px); min-width: calc(50% - 15px); }
+}
+
+@media (max-width: 640px) {
+    .news-card { flex: 0 0 100%; min-width: 100%; }
+}
+
 .news-slider-nav {
-    display: flex; justify-content: center;
-    align-items: center; gap: 20px; margin-top: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 40px;
 }
+
 .news-nav-btn {
-    background: var(--card-bg); border: 1px solid var(--glass-border);
-    color: white; width: 55px; height: 55px; border-radius: 50%;
+    background: var(--card-bg);
+    border: 1px solid var(--glass-border);
+    color: white;
+    width: 55px; height: 55px;
+    border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: all 0.3s;
+    cursor: pointer;
+    transition: all 0.3s;
 }
-.news-nav-btn:hover { background: var(--primary); color: black; transform: scale(1.1); box-shadow: 0 0 20px rgba(34,197,94,0.4); }
+
+.news-nav-btn:hover {
+    background: var(--primary); color: black;
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(34,197,94,0.4);
+}
+
 .news-nav-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
 .news-dots { display: flex; gap: 8px; align-items: center; }
-.news-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-dim); transition: all 0.3s; cursor: pointer; }
+
+.news-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
 .news-dot.active { background: var(--primary); width: 24px; border-radius: 4px; }
         
         /* ===== CUSTOM CONTEXT MENU (NEW! #7) ===== */
@@ -1094,7 +1136,7 @@
             <div class="news-grid" id="newsGrid"></div>
         </div>
         <div class="news-slider-nav">
-            <button class="news-nav-btn" id="newsPrevBtn" onclick="slideNews(-1)">
+            <button class="news-nav-btn" id="newsPrevBtn" onclick="slideNews(-1)" disabled>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
             <div class="news-dots" id="newsDots"></div>
@@ -1104,23 +1146,6 @@
         </div>
     </div>
 </section>
-    <!-- APPLICATION FORM -->
-    <section id="join" class="form-section">
-        <div class="section-header" data-aos="fade-up">
-            <h2 class="section-title">Подати рапорт на вступ</h2>
-            <p class="section-subtitle">Заповни форму та стань частиною нашої команди</p>
-        </div>
-        <div class="form-container" data-aos="zoom-in">
-            <form id="applicationForm">
-                <input type="text" id="appName" class="form-input" placeholder="Ваш NickName" required>
-                <input type="number" id="appAge" class="form-input" placeholder="Ваш реальний вік" required>
-                <input type="text" id="appRank" class="form-input" placeholder="Яке ваше звання?" required>
-                <input type="text" id="appDiscord" class="form-input" placeholder="Ваш Discord" required>
-                <textarea id="appMotivation" class="form-textarea" placeholder="Ваша мотивація (чому ви хочете до ДШВ)..." required></textarea>
-                <button type="submit" id="appSubmitBtn" class="btn-submit">Відправити рапорт</button>
-            </form>
-        </div>
-    </section>
 
     <!-- FOOTER (FIX #3) -->
     <footer class="footer">
@@ -1724,8 +1749,6 @@ function updateMainPhoto() {
 let allNewsData = [];
 let contextNewsId = null;
 let newsCurrentSlide = 0;
-let newsTotalSlides = 0;
-let newsPerView = 3;
 
 function getNewsPerView() {
     if (window.innerWidth <= 640) return 1;
@@ -1733,45 +1756,56 @@ function getNewsPerView() {
     return 3;
 }
 
+function getNewsTotalSlides() {
+    const perView = getNewsPerView();
+    return Math.max(1, allNewsData.length - perView + 1);
+}
+
 window.slideNews = (dir) => {
-    newsCurrentSlide += dir;
-    if (newsCurrentSlide < 0) newsCurrentSlide = 0;
-    if (newsCurrentSlide >= newsTotalSlides) newsCurrentSlide = newsTotalSlides - 1;
+    const total = getNewsTotalSlides();
+    newsCurrentSlide = Math.max(0, Math.min(newsCurrentSlide + dir, total - 1));
     applyNewsSlide();
 };
 
 function applyNewsSlide() {
     const grid = document.getElementById('newsGrid');
-    const cardWidth = grid.children[0] ? grid.children[0].offsetWidth + 30 : 0;
+    const firstCard = grid.querySelector('.news-card');
+    if (!firstCard) return;
+    const cardWidth = firstCard.offsetWidth + 30;
     grid.style.transform = `translateX(-${newsCurrentSlide * cardWidth}px)`;
+
+    const total = getNewsTotalSlides();
     document.getElementById('newsPrevBtn').disabled = newsCurrentSlide === 0;
-    document.getElementById('newsNextBtn').disabled = newsCurrentSlide >= newsTotalSlides - 1;
-    document.querySelectorAll('.news-dot').forEach((d, i) => d.classList.toggle('active', i === newsCurrentSlide));
+    document.getElementById('newsNextBtn').disabled = newsCurrentSlide >= total - 1;
+    document.querySelectorAll('.news-dot').forEach((d, i) => {
+        d.classList.toggle('active', i === newsCurrentSlide);
+    });
 }
 
 function buildNewsDots() {
     const dots = document.getElementById('newsDots');
+    if (!dots) return;
     dots.innerHTML = '';
-    for (let i = 0; i < newsTotalSlides; i++) {
+    const total = getNewsTotalSlides();
+    for (let i = 0; i < total; i++) {
         const d = document.createElement('div');
-        d.className = `news-dot ${i === 0 ? 'active' : ''}`;
+        d.className = 'news-dot' + (i === 0 ? ' active' : '');
         d.onclick = () => { newsCurrentSlide = i; applyNewsSlide(); };
         dots.appendChild(d);
     }
 }
 
 window.addEventListener('resize', () => {
-    newsPerView = getNewsPerView();
-    newsTotalSlides = Math.max(1, allNewsData.length - newsPerView + 1);
-    if (newsCurrentSlide >= newsTotalSlides) newsCurrentSlide = newsTotalSlides - 1;
+    if (newsCurrentSlide >= getNewsTotalSlides()) newsCurrentSlide = getNewsTotalSlides() - 1;
     buildNewsDots();
     applyNewsSlide();
 });
 
-const newsQuery = query(collection(db, "news"), orderBy("date", "desc"), limit(6));
+const newsQuery = query(collection(db, "news"), orderBy("date", "desc"), limit(9));
 onSnapshot(newsQuery, (snapshot) => {
     const container = document.getElementById('newsGrid');
-    container.innerHTML = ''; allNewsData = [];
+    container.innerHTML = '';
+    allNewsData = [];
 
     if (snapshot.empty) {
         container.innerHTML = '<div class="news-empty">Новини скоро з\'являться...</div>';
@@ -1784,7 +1818,6 @@ onSnapshot(newsQuery, (snapshot) => {
 
         const card = document.createElement('div');
         card.className = 'news-card';
-        card.setAttribute('data-aos', 'fade-up');
         card.setAttribute('data-news-id', d.id);
 
         let dateStr = 'Нещодавно';
@@ -1800,13 +1833,15 @@ onSnapshot(newsQuery, (snapshot) => {
 
         card.innerHTML = `
             ${adminBtns}
-            <div class="news-image"><img src="${data.imageUrl||''}" alt="${data.title}" onerror="this.style.display='none'"></div>
+            <div class="news-image">
+                <img src="${data.imageUrl||''}" alt="${data.title}" onerror="this.style.display='none'">
+            </div>
             <div class="news-content">
                 <h3 class="news-title">${data.title}</h3>
                 <p class="news-description">${data.description}</p>
                 <div class="news-footer">
                     <span class="news-date">${dateStr}</span>
-                    <span class="news-link">Читати далі →</span>
+                    <span class="news-link">Детальніше →</span>
                 </div>
             </div>
         `;
@@ -1822,13 +1857,11 @@ onSnapshot(newsQuery, (snapshot) => {
         container.appendChild(card);
     });
 
+    newsCurrentSlide = 0;
     setTimeout(() => {
-        AOS.refresh();
-        newsCurrentSlide = 0;
-        newsPerView = getNewsPerView();
-        newsTotalSlides = Math.max(1, allNewsData.length - newsPerView + 1);
         buildNewsDots();
         applyNewsSlide();
+        AOS.refresh();
     }, 100);
 });
         // ==================== CONTEXT MENU (#7) ====================
@@ -2451,6 +2484,7 @@ window.saveWebhookSettings = async () => {
     </script>
 </body>
 </html>
+
 
 
 
