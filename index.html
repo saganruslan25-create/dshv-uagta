@@ -1977,9 +1977,9 @@
                 const colorHex = (document.getElementById('newsEmbedColor')?.value || '#22c55e').replace('#', '');
                 const embedColor = parseInt(colorHex, 16);
 
-                // Clean role tag (remove <@&...> wrappers if user pasted full mention)
-                const rawTag = (data.newsRoleTag || '').trim().replace(/[<@&>]/g, '');
-                const mention = rawTag ? `<@&${rawTag}> 📰 Нова новина!` : null;
+                // Clean role tag — витягуємо тільки цифри ID
+                const rawTag = (data.newsRoleTag || '').trim().replace(/\D/g, '');
+                const mention = rawTag ? `<@&${rawTag}>` : null;
 
                 const embed = {
                     title: `📰 ${title}`,
@@ -1989,23 +1989,33 @@
                     timestamp: new Date().toISOString()
                 };
 
-                // Image: only add if it's a real URL (not base64)
-                if (imageUrl && !imageUrl.startsWith('data:')) {
-                    embed.image = { url: imageUrl };
+                if (link) { embed.url = link; embed.fields = [{ name: "🔗 Детальніше", value: link, inline: false }]; }
+
+                // Відправка з фото через multipart якщо є base64
+                if (imageUrl && imageUrl.startsWith('data:')) {
+                    // Конвертуємо base64 в blob і відправляємо як файл
+                    const res = await fetch(imageUrl);
+                    const blob = await res.blob();
+                    embed.image = { url: "attachment://news_photo.jpg" };
+                    const payload = { username: "ДШВ News", avatar_url: "https://i.imgur.com/AfFp7pu.png", content: mention, embeds: [embed] };
+                    const form = new FormData();
+                    form.append('payload_json', JSON.stringify(payload));
+                    form.append('files[0]', blob, 'news_photo.jpg');
+                    await fetch(webhookUrl, { method: 'POST', body: form });
+                } else {
+                    // Звичайна URL-картинка — просто додаємо в embed
+                    if (imageUrl) embed.image = { url: imageUrl };
+                    await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: "ДШВ News",
+                            avatar_url: "https://i.imgur.com/AfFp7pu.png",
+                            content: mention,
+                            embeds: [embed]
+                        })
+                    });
                 }
-
-                if (link) { embed.fields = [{ name: "🔗 Посилання", value: link, inline: false }]; embed.url = link; }
-
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: "ДШВ News",
-                        avatar_url: "https://i.imgur.com/AfFp7pu.png",
-                        content: mention,
-                        embeds: [embed]
-                    })
-                });
             } catch (err) { console.error("News webhook error:", err); }
         }
 
