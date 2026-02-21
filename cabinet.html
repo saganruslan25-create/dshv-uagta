@@ -641,7 +641,7 @@
 
             <!-- ЗМІНА 4: Замок ПОРУЧ з ім'ям -->
             <div class="header-user-group">
-                <span id="topName">...</span>
+                <span id="topName">...</span><span id="topRoleLabel" style="display:none;background:var(--primary);color:black;font-size:10px;font-weight:900;padding:3px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px;"></span>
                 <!-- Замок замість окремої кнопки в меню -->
                 <button id="lockInlineBtn" class="btn-lock-inline" onclick="toggleSystemAccess()" title="Керування доступом">🔒</button>
             </div>
@@ -844,6 +844,13 @@
         let editingUID = null;
         let cachedSecret = null;
 
+        // ========== ХЕЛПЕР РОЛЕЙ ==========
+        // creator і admin мають однакові права скрізь, крім Chats
+        // creator зберігається в БД як 'creator', але відображається як 'Адмін' в UI
+        function isAdminRole(role) {
+            return role === 'admin' || role === 'creator';
+        }
+
         const greetings = [
             "Раді бачити Вас!","Вітаємо з поверненням!","Приємно знову Вас бачити!",
             "З поверненням у стрій!","Раді знову Вас вітати!","Вітаємо на борту!",
@@ -929,22 +936,23 @@
         window.closeCreditsModal = () => document.getElementById('creditsModal').style.display = 'none';
 
         // ==================== ЗМІНА 3: РЕНДЕР МЕНЮ ЧАТІВ ====================
+        function isAdminRole(role) { return role === "admin" || role === "creator"; }
+
         function renderChatsMenuItem(role) {
             const wrapper = document.getElementById('chatsMenuWrapper');
             if (!wrapper) return;
-
             if (role === 'creator') {
-                // Creator бачить і може натиснути
+                // Тільки creator має повний доступ до Chats
                 wrapper.innerHTML = `<a href="chats.html" class="menu-item">💬 Chats / Information <div id="dot-chats" class="fire-dot"></div></a>`;
             } else if (role === 'admin') {
-                // Admin бачить але не може натиснути — показує помилку
+                // Admin бачить, але заблоковано — показує помилку при кліку
                 wrapper.innerHTML = `
                     <div class="menu-item-chats-locked" onclick="showAccessDenied()">
                         💬 Chats / Information
                         <span class="lock-badge">🔒</span>
                     </div>`;
             } else {
-                // Звичайні користувачі не бачать взагалі
+                // Всі інші — не бачать взагалі
                 wrapper.innerHTML = '';
             }
         }
@@ -977,7 +985,7 @@
             }
 
             myData = userDoc.data();
-            if (!myData.verified && myData.role !== 'admin' && myData.role !== 'creator') {
+            if (!myData.verified && !isAdminRole(myData.role)) {
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
             }
@@ -991,12 +999,12 @@
             renderChatsMenuItem(myData.role);
 
             // ЗМІНА 4: Показати замочок в хедері тільки для admin і creator
-            if (myData.role === 'admin' || myData.role === 'creator') {
+            if (isAdminRole(myData.role)) {
                 const lockBtn = document.getElementById('lockInlineBtn');
                 lockBtn.style.display = 'flex';
             }
 
-            if (myData.role === 'admin' || myData.role === 'creator') {
+            if (isAdminRole(myData.role)) {
                 document.getElementById('toggleStaffBtn').classList.add('visible');
                 document.getElementById('adminAppBtn').style.display = 'flex';
                 loadStaffList();
@@ -1005,7 +1013,7 @@
             }
             
             // Рулетка — кнопка всередині профільної картки
-            if (myData.role === 'admin' || myData.role === 'instructor' || myData.role === 'creator') {
+            if (isAdminRole(myData.role) || myData.role === 'instructor') {
                 const btn = document.getElementById('ryletkaBtn');
                 if (btn) btn.style.display = 'flex';
             }
@@ -1033,6 +1041,12 @@
 
             setTextIfChanged('userName', data.name || "---");
             setTextIfChanged('topName', data.name || "---");
+            const rl = document.getElementById('topRoleLabel');
+            if (rl) {
+                if (isAdminRole(data.role)) { rl.textContent = 'Admin'; rl.style.display = 'inline-block'; }
+                else if (data.role === 'instructor') { rl.textContent = 'Instructor'; rl.style.display = 'inline-block'; }
+                else { rl.style.display = 'none'; }
+            }
             setTextIfChanged('userID', "ID: " + (data.gameID || "---"));
             
             const fullRank = data.rank || "Рекрут | Службовець";
@@ -1059,7 +1073,7 @@
             const posValue = data.position || (parts[1] ? parts[1].trim() : "---");
             setTextIfChanged('userPosEdit', posValue);
 
-            const isAdmin = (myData && (myData.role === 'admin' || myData.role === 'creator'));
+            const isAdmin = (myData && isAdminRole(myData.role));
             const isSelf = (editingUID === currentUID);
 
             const btnRank = document.getElementById('btnEditRank');
@@ -1130,11 +1144,11 @@
                         const rName = rankParts[0].trim();
                         const pName = u.position || (rankParts[1] ? rankParts[1].trim() : "---");
 
-                        const editBtns = (myData.role === 'admin' || myData.role === 'creator') ? `
+                        const editBtns = isAdminRole(myData.role) ? `
                             <button class="edit-icon" style="display: inline-block; opacity: 1; margin-left:5px; color:var(--primary-bright);" onclick="window.openEditModal('${u.id}', 'rank', 'Звання', '${rName}')">✎</button>
                         ` : '';
 
-                        const roleBtn = (myData.role === 'admin' || myData.role === 'creator') ? `
+                        const roleBtn = isAdminRole(myData.role) ? `
                             <button class="btn-role" onclick="window.openRoleModal('${u.id}', '${u.role || 'user'}')">РОЛЬ</button>
                         ` : '';
 
@@ -1197,7 +1211,7 @@
         }
 
         window.changeStat = async (field, val) => {
-            if (!myData || (myData.role !== 'admin' && myData.role !== 'creator')) return; 
+            if (!myData || !isAdminRole(myData.role)) return; 
             const docRef = doc(db, "users", editingUID);
             const snap = await getDoc(docRef);
             const newVal = Math.max(0, (snap.data()[field] || 0) + val);
@@ -1244,8 +1258,8 @@
                         if (change.type === "added") {
                             const id = t + change.doc.id;
                             if (isRead(id) || document.getElementById('notif-' + id)) return;
-                            if (t === 'applications' && myData.role !== 'admin' && myData.role !== 'creator') return;
-                            if (t === 'ryletka' && myData.role !== 'admin' && myData.role !== 'instructor' && myData.role !== 'creator') return;
+                            if (t === 'applications' && !isAdminRole(myData.role)) return;
+                            if (t === 'ryletka' && !isAdminRole(myData.role) && myData.role !== 'instructor') return;
                             addNotification(`Новий запис: ${t}`, `${t}.html`, id);
                         }
                     });
