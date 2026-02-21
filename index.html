@@ -935,7 +935,7 @@
         .footer-tag { background: rgba(34, 197, 94, 0.1); border: 1px solid var(--glass-border); padding: 10px 20px; border-radius: 25px; font-size: 14px; font-weight: 700; color: var(--primary-bright); transition: 0.3s; }
         .footer-tag:hover { background: rgba(34, 197, 94, 0.2); border-color: var(--primary); transform: scale(1.05); }
         .footer-copyright { text-align: center; padding-top: 30px; border-top: 1px solid rgba(255, 255, 255, 0.05); width: 100%; }
-        .footer-copyright p { font-size: 14px; color: var(--text-dim); font-weight: 500; }
+        .footer-copyright p { font-size: 14px; color: #94a3b8; font-weight: 500; }
 
         /* NOTIFICATION */
         .notification-toast {
@@ -1215,24 +1215,6 @@
         </div>
     </section>
 
-    <!-- JOIN SECTION -->
-<section id="join" class="form-section">
-    <div class="section-header" data-aos="fade-up">
-        <h2 class="section-title">Подати рапорт на вступ</h2>
-        <p class="section-subtitle">Заповни форму та стань частиною нашої команди</p>
-    </div>
-    <div class="form-container" data-aos="zoom-in">
-        <form id="applicationForm">
-            <input type="text" id="appName" class="form-input" placeholder="Ваш NickName" required>
-            <input type="number" id="appAge" class="form-input" placeholder="Ваш реальний вік" required>
-            <input type="text" id="appRank" class="form-input" placeholder="Яке ваше звання?" required>
-            <input type="text" id="appDiscord" class="form-input" placeholder="Ваш Discord" required>
-            <textarea id="appMotivation" class="form-textarea" placeholder="Ваша мотивація (чому ви хочете до ДШВ)..." required></textarea>
-            <button type="submit" id="appSubmitBtn" class="btn-submit">Відправити рапорт</button>
-        </form>
-    </div>
-</section>
-
     <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-container">
@@ -1360,6 +1342,20 @@
                     <input type="text" id="newsTitle" class="form-input" placeholder="Заголовок новини" required maxlength="100" oninput="updateNewsPreview()">
                     <textarea id="newsDescription" class="form-textarea" placeholder="Повний текст новини" required rows="5" oninput="updateNewsPreview()"></textarea>
                     <input type="url" id="newsLink" class="form-input" placeholder="Посилання (необов'язково)" oninput="updateNewsPreview()">
+                    <div style="display:flex; align-items:center; gap:15px; margin-bottom:20px; background:rgba(0,0,0,0.3); border:2px solid rgba(255,255,255,0.1); border-radius:14px; padding:14px 18px; flex-wrap:wrap;">
+                        <label style="color:var(--text-gray); font-size:14px; font-weight:600; white-space:nowrap;">🎨 Колір Discord полоски:</label>
+                        <input type="color" id="newsEmbedColor" value="#22c55e" style="width:50px; height:38px; border:none; border-radius:8px; cursor:pointer; background:none;" oninput="updateNewsPreview()" title="Колір лівої полоски Discord повідомлення">
+                        <div id="colorPreviewBox" style="width:14px; height:38px; border-radius:4px; background:#22c55e; flex-shrink:0;"></div>
+                        <span id="colorHexLabel" style="color:var(--primary-bright); font-size:13px; font-weight:700; font-family:monospace;">#22c55e</span>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                            <span onclick="setEmbedColor('#22c55e')" style="cursor:pointer; width:24px; height:24px; border-radius:50%; background:#22c55e; border:2px solid rgba(255,255,255,0.3);" title="Зелений"></span>
+                            <span onclick="setEmbedColor('#3b82f6')" style="cursor:pointer; width:24px; height:24px; border-radius:50%; background:#3b82f6; border:2px solid rgba(255,255,255,0.3);" title="Синій"></span>
+                            <span onclick="setEmbedColor('#f59e0b')" style="cursor:pointer; width:24px; height:24px; border-radius:50%; background:#f59e0b; border:2px solid rgba(255,255,255,0.3);" title="Жовтий"></span>
+                            <span onclick="setEmbedColor('#ef4444')" style="cursor:pointer; width:24px; height:24px; border-radius:50%; background:#ef4444; border:2px solid rgba(255,255,255,0.3);" title="Червоний"></span>
+                            <span onclick="setEmbedColor('#a855f7')" style="cursor:pointer; width:24px; height:24px; border-radius:50%; background:#a855f7; border:2px solid rgba(255,255,255,0.3);" title="Фіолетовий"></span>
+                            <span onclick="setEmbedColor('#ffffff')" style="cursor:pointer; width:24px; height:24px; border-radius:50%; background:#ffffff; border:2px solid rgba(255,255,255,0.3);" title="Білий"></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="inner-block">
                     <h3>🖼️ Зображення</h3>
@@ -1544,17 +1540,16 @@
         });
 
         // MODALS
-        window.openModal = (id) => { document.getElementById(id).classList.add('active'); document.body.style.overflow = 'hidden'; };
-        window.closeModal = (id) => { document.getElementById(id).classList.remove('active'); document.body.style.overflow = 'auto'; };
+        window.openModal = (id) => { document.getElementById(id).classList.add('active'); };
+        window.closeModal = (id) => { document.getElementById(id).classList.remove('active'); };
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
-            overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.classList.remove('active'); document.body.style.overflow = 'auto'; } });
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) { overlay.classList.remove('active'); } });
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
                 closeNewsView();
                 document.getElementById('contextMenu').classList.remove('active');
-                document.body.style.overflow = 'auto';
             }
         });
 
@@ -1832,12 +1827,12 @@
             if (item.link) actionsHTML += `<a href="${item.link}" target="_blank" class="news-view-link" rel="nofollow">🔗 Детальніше</a>`;
             actionsHTML += `<button class="news-view-close-btn" onclick="closeNewsView()">← Закрити</button>`;
             document.getElementById('newsViewActions').innerHTML = actionsHTML;
-            modal.classList.add('active'); document.body.style.overflow = 'hidden';
+            modal.classList.add('active');
             requestAnimationFrame(() => { modal.style.opacity = '1'; });
         };
         window.closeNewsView = () => {
             const modal = document.getElementById('newsViewModal');
-            modal.classList.remove('active'); modal.style.opacity = '0'; document.body.style.overflow = 'auto';
+            modal.classList.remove('active'); modal.style.opacity = '0';
         };
         document.getElementById('newsViewModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeNewsView(); });
 
@@ -1904,6 +1899,12 @@
             };
             reader.readAsDataURL(input.files[0]);
         };
+        window.setEmbedColor = (hex) => {
+            const picker = document.getElementById('newsEmbedColor');
+            if (picker) picker.value = hex;
+            updateNewsPreview();
+        };
+
         window.updateNewsPreview = () => {
             const title = document.getElementById('newsTitle').value || 'Заголовок новини';
             const desc = document.getElementById('newsDescription').value || 'Опис новини...';
@@ -1921,6 +1922,15 @@
             const wpi = document.getElementById('webhookPreviewImage');
             if (imageUrl) { wpi.style.display = 'block'; document.getElementById('webhookPreviewImg').src = imageUrl; }
             else { wpi.style.display = 'none'; }
+
+            // Update color picker preview
+            const colorVal = document.getElementById('newsEmbedColor')?.value || '#22c55e';
+            const colorBox = document.getElementById('colorPreviewBox');
+            const colorLabel = document.getElementById('colorHexLabel');
+            const webhookPrev = document.getElementById('webhookPreview');
+            if (colorBox) colorBox.style.background = colorVal;
+            if (colorLabel) colorLabel.textContent = colorVal;
+            if (webhookPrev) webhookPrev.style.borderLeftColor = colorVal;
         };
         function resetPreview() {
             document.getElementById('previewTitle').textContent = 'Заголовок новини';
@@ -1962,11 +1972,40 @@
                 const data = wDoc.data();
                 const webhookUrl = data.newsWebhookUrl || data.webhookUrl;
                 if (!webhookUrl) return;
-                const embed = { title: `📰 ${title}`, description: description.substring(0, 500), color: 0x22c55e, footer: { text: "ДШВ | UKRAINE GTA" }, timestamp: new Date().toISOString() };
-                if (imageUrl && !imageUrl.startsWith('data:')) embed.image = { url: imageUrl };
-                else if (imageUrl) embed.thumbnail = { url: 'https://i.imgur.com/AfFp7pu.png' };
+
+                // Get color from picker
+                const colorHex = (document.getElementById('newsEmbedColor')?.value || '#22c55e').replace('#', '');
+                const embedColor = parseInt(colorHex, 16);
+
+                // Clean role tag (remove <@&...> wrappers if user pasted full mention)
+                const rawTag = (data.newsRoleTag || '').trim().replace(/[<@&>]/g, '');
+                const mention = rawTag ? `<@&${rawTag}> 📰 Нова новина!` : null;
+
+                const embed = {
+                    title: `📰 ${title}`,
+                    description: description.substring(0, 500),
+                    color: embedColor,
+                    footer: { text: "ДШВ | UKRAINE GTA" },
+                    timestamp: new Date().toISOString()
+                };
+
+                // Image: only add if it's a real URL (not base64)
+                if (imageUrl && !imageUrl.startsWith('data:')) {
+                    embed.image = { url: imageUrl };
+                }
+
                 if (link) { embed.fields = [{ name: "🔗 Посилання", value: link, inline: false }]; embed.url = link; }
-                await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: "ДШВ News", avatar_url: "https://i.imgur.com/AfFp7pu.png", content: data.newsRoleTag ? `<@&${data.newsRoleTag}> Нова новина!` : null, embeds: [embed] }) });
+
+                await fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: "ДШВ News",
+                        avatar_url: "https://i.imgur.com/AfFp7pu.png",
+                        content: mention,
+                        embeds: [embed]
+                    })
+                });
             } catch (err) { console.error("News webhook error:", err); }
         }
 
@@ -2157,65 +2196,6 @@
         }
         initMenuContent();
 
-        // APPLICATION FORM
-document.getElementById('applicationForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('appSubmitBtn');
-    btn.disabled = true; btn.textContent = "Відправка...";
-    try {
-        const appData = {
-            name: document.getElementById('appName').value,
-            age: document.getElementById('appAge').value,
-            rank: document.getElementById('appRank').value,
-            discord: document.getElementById('appDiscord').value,
-            motivation: document.getElementById('appMotivation').value,
-            status: "pending", timestamp: serverTimestamp()
-        };
-        await addDoc(collection(db, "applications"), appData);
-        try { await sendNewApplicationWebhook(appData); } catch(we) { console.error(we); }
-        showSuccessToast();
-        e.target.reset();
-    } catch (err) { alert("Помилка: " + err.message); }
-    finally { btn.disabled = false; btn.textContent = "Відправити рапорт"; }
-});
-
-async function sendNewApplicationWebhook(appData) {
-    try {
-        const webhookDoc = await getDoc(doc(db, "settings", "discord"));
-        if (!webhookDoc.exists() || !webhookDoc.data().webhookUrl) return;
-        const webhookUrl = webhookDoc.data().webhookUrl;
-        await fetch(webhookUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                username: "ДШВ Bot", avatar_url: "https://i.imgur.com/AfFp7pu.png",
-                embeds: [{ title: "📝 Новий рапорт на вступ до ДШВ!",
-                    description: `Кандидат **${appData.name}** подав рапорт.`,
-                    color: 0xf59e0b,
-                    fields: [
-                        { name: "👤 Нікнейм", value: appData.name || "-", inline: true },
-                        { name: "⭐ Звання", value: appData.rank || "-", inline: true },
-                        { name: "🎂 Вік", value: String(appData.age || "-"), inline: true },
-                        { name: "💬 Discord", value: appData.discord || "-", inline: false },
-                        { name: "📋 Мотивація", value: (appData.motivation || "-").substring(0, 300), inline: false }
-                    ],
-                    footer: { text: "ДШВ | UKRAINE GTA" }, timestamp: new Date().toISOString()
-                }]
-            })
-        });
-    } catch(err) { console.error("Webhook error:", err); }
-}
-
-function showSuccessToast() {
-    const container = document.getElementById('applicationForm').parentElement;
-    container.innerHTML = `
-        <div style="text-align:center; padding: 50px 20px; animation: fadeInUp 0.5s ease;">
-            <div style="font-size: 70px; margin-bottom: 20px;">✅</div>
-            <h3 style="font-size: 24px; font-weight: 900; color: var(--primary-bright); margin-bottom: 12px;">Рапорт надіслано!</h3>
-            <p style="color: var(--text-gray); font-size: 16px;">Очікуй відповіді від командування ДШВ.<br>Ми розглянемо твою кандидатуру найближчим часом.</p>
-        </div>
-    `;
-}
-
         // UTILITY
         function showNotification(message) {
             document.querySelectorAll('.notification-toast').forEach(n => n.remove());
@@ -2235,4 +2215,3 @@ function showSuccessToast() {
     </script>
 </body>
 </html>
-
