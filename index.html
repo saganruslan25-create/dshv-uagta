@@ -1417,7 +1417,10 @@
             <div class="inner-block" style="margin-top:20px;">
                 <h3>📰 Новини</h3>
                 <input type="url" id="webhookNewsUrl" class="form-input" placeholder="https://discord.com/api/webhooks/...">
-                <input type="text" id="webhookNewsRoleTag" class="form-input" placeholder="ID ролі для пінгу (необов'язково)">
+                <p style="color:var(--text-gray); font-size:13px; margin-bottom:8px;">Пінг ролі — вводь тільки цифри ID ролі або повністю <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">&lt;@&amp;123456789&gt;</code></p>
+                <input type="text" id="webhookNewsRoleTag" class="form-input" placeholder="ID ролі (напр: 1014210510440386591)">
+                <p style="color:var(--text-gray); font-size:13px; margin-bottom:8px;">Пінг юзера — вводь ID юзера або <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">&lt;@123456789&gt;</code></p>
+                <input type="text" id="webhookNewsUserTag" class="form-input" placeholder="ID юзера (необов'язково)">
                 <button class="btn-submit" onclick="saveWebhookSettings()">💾 Зберегти</button>
             </div>
         </div>
@@ -1518,7 +1521,12 @@
         // BURGER
         window.toggleMenu = () => {
             document.getElementById('burgerBtn').classList.toggle('active');
-            document.getElementById('navLinks').classList.toggle('active');
+            const navLinks = document.getElementById('navLinks');
+            navLinks.classList.toggle('active');
+            // Lock scroll on mobile when nav is open
+            if (window.innerWidth <= 950) {
+                document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : '';
+            }
         };
 
         // ADMIN DROPDOWN
@@ -1534,9 +1542,21 @@
             adminDropdown.addEventListener('mouseenter', () => { if (window.innerWidth > 950) { clearTimeout(dropdownTimeout); adminDropdown.classList.add('open'); } });
             adminDropdown.addEventListener('mouseleave', () => { if (window.innerWidth > 950) { dropdownTimeout = setTimeout(() => adminDropdown.classList.remove('open'), 400); } });
         }
+        // Track if mousedown started inside nav to prevent closing when selecting text
+        let mousedownInsideNav = false;
+        document.addEventListener('mousedown', (e) => {
+            const navLinks = document.getElementById('navLinks');
+            mousedownInsideNav = navLinks && navLinks.contains(e.target);
+        });
         document.addEventListener('click', (e) => {
             if (adminDropdown && !adminDropdown.contains(e.target)) adminDropdown.classList.remove('open');
             document.getElementById('contextMenu').classList.remove('active');
+            // Close mobile nav ONLY if click started AND ended outside nav
+            const navLinks = document.getElementById('navLinks');
+            if (!mousedownInsideNav && navLinks && navLinks.classList.contains('active') && !navLinks.contains(e.target) && !document.getElementById('burgerBtn').contains(e.target)) {
+                navLinks.classList.remove('active');
+                document.getElementById('burgerBtn').classList.remove('active');
+            }
         });
 
         // MODALS
@@ -1978,8 +1998,14 @@
                 const embedColor = parseInt(colorHex, 16);
 
                 // Clean role tag — витягуємо тільки цифри ID
-                const rawTag = (data.newsRoleTag || '').trim().replace(/\D/g, '');
-                const mention = rawTag ? `<@&${rawTag}>` : null;
+                // Clean role tag — тільки цифри
+                const rawRole = (data.newsRoleTag || '').trim().replace(/\D/g, '');
+                // Clean user tag — тільки цифри  
+                const rawUser = (data.newsUserTag || '').trim().replace(/\D/g, '');
+                const mentionParts = [];
+                if (rawRole) mentionParts.push(`<@&${rawRole}>`);
+                if (rawUser) mentionParts.push(`<@${rawUser}>`);
+                const mention = mentionParts.length ? mentionParts.join(' ') : null;
 
                 const embed = {
                     title: `📰 ${title}`,
@@ -2106,12 +2132,13 @@
                     document.getElementById('webhookApplicationUrl').value = d.webhookUrl || '';
                     document.getElementById('webhookNewsUrl').value = d.newsWebhookUrl || '';
                     document.getElementById('webhookNewsRoleTag').value = d.newsRoleTag || '';
+                    document.getElementById('webhookNewsUserTag').value = d.newsUserTag || '';
                 }
             } catch(e) { console.error(e); }
         };
         window.saveWebhookSettings = async () => {
             try {
-                await setDoc(doc(db, "settings", "discord"), { webhookUrl: document.getElementById('webhookApplicationUrl').value.trim(), newsWebhookUrl: document.getElementById('webhookNewsUrl').value.trim(), newsRoleTag: document.getElementById('webhookNewsRoleTag').value.trim() });
+                await setDoc(doc(db, "settings", "discord"), { webhookUrl: document.getElementById('webhookApplicationUrl').value.trim(), newsWebhookUrl: document.getElementById('webhookNewsUrl').value.trim(), newsRoleTag: document.getElementById('webhookNewsRoleTag').value.trim(), newsUserTag: document.getElementById('webhookNewsUserTag').value.trim() });
                 showNotification('✅ Webhook збережено!');
             } catch(e) { alert('Помилка: ' + e.message); }
         };
