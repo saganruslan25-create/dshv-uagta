@@ -219,27 +219,7 @@
             text-shadow: none;
         }
 
-        /* ==================== ЗМІНА 3: ЧАТИ - ЗАБЛОКОВАНО ДЛЯ НЕ CREATOR ==================== */
-        .menu-item-chats-locked {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 18px; background: rgba(255,255,255,0.02); border-radius: 12px;
-            color: #555; text-decoration: none; font-size:14px; font-weight:600;
-            border: 1px solid rgba(85,85,85,0.3);
-            cursor: not-allowed;
-            position: relative;
-        }
-        .menu-item-chats-locked:hover {
-            background: rgba(239,68,68,0.05);
-            border-color: var(--danger);
-            color: var(--danger);
-            transform: none;
-            box-shadow: none;
-            text-shadow: none;
-        }
-        .lock-badge {
-            font-size: 12px;
-            opacity: 0.6;
-        }
+        
 
         .fire-dot { width: 9px; height: 9px; background: var(--danger); border-radius: 50%; display: none; }
 
@@ -425,49 +405,7 @@
         .btn-danger { background: var(--danger); color: white; }
         .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
 
-        /* ==================== МОДАЛЬКА ПОМИЛКИ ДОСТУПУ ==================== */
-        #accessDeniedModal .modal-content {
-            border-color: var(--danger);
-            box-shadow: 0 0 60px rgba(239, 68, 68, 0.4);
-            text-align: center;
-        }
-        .access-denied-icon {
-            font-size: 64px;
-            display: block;
-            margin-bottom: 20px;
-            animation: shake 0.5s ease;
-        }
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-8px); }
-            40% { transform: translateX(8px); }
-            60% { transform: translateX(-6px); }
-            80% { transform: translateX(6px); }
-        }
-        .access-denied-title {
-            font-size: 20px;
-            font-weight: 900;
-            color: var(--danger);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }
-        .access-denied-text {
-            font-size: 14px;
-            color: var(--text-gray);
-            line-height: 1.7;
-            margin-bottom: 25px;
-        }
-        .access-denied-badge {
-            background: rgba(239,68,68,0.1);
-            border: 1px solid var(--danger);
-            border-radius: 10px;
-            padding: 12px;
-            font-size: 12px;
-            color: var(--danger);
-            font-weight: 700;
-            margin-bottom: 20px;
-        }
+        
 
         .role-btn {
             background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
@@ -659,9 +597,6 @@
                 <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
                 <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
 
-                <!-- ЗМІНА 3: ЧАТИ — видно тільки creator, для admin — заблоковано -->
-                <div id="chatsMenuWrapper"></div>
-
                 <a href="isput.html" class="menu-item">💼 Іспити</a>
                 <a href="applications.html" class="menu-item" id="adminAppBtn" style="display: none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
 
@@ -806,21 +741,6 @@
         </div>
     </div>
 
-    <!-- ЗМІНА 3: МОДАЛЬКА ПОМИЛКИ ДОСТУПУ ДЛЯ ADMIN -->
-    <div id="accessDeniedModal" class="modal-overlay">
-        <div class="modal-content" style="max-width: 420px;">
-            <button class="close-modal-btn" onclick="document.getElementById('accessDeniedModal').style.display='none'">&times;</button>
-            <span class="access-denied-icon">🚫</span>
-            <div class="access-denied-title">Доступ Заборонено</div>
-            <div class="access-denied-badge">Тех.Адмін заборонив вхід у дану сторінку</div>
-            <div class="access-denied-text">
-                Ця сторінка доступна тільки для ролі <strong style="color: var(--primary-bright);">Creator</strong>.<br>
-                Якщо вважаєте це помилкою — зверніться до головного розробника.
-            </div>
-            <button class="modal-btn btn-danger" onclick="document.getElementById('accessDeniedModal').style.display='none'">ЗРОЗУМІЛО</button>
-        </div>
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -845,10 +765,8 @@
         let cachedSecret = null;
 
         // ========== ХЕЛПЕР РОЛЕЙ ==========
-        // creator і admin мають однакові права скрізь, крім Chats
-        // creator зберігається в БД як 'creator', але відображається як 'Адмін' в UI
         function isAdminRole(role) {
-            return role === 'admin' || role === 'creator';
+            return role === 'admin';
         }
 
         const greetings = [
@@ -883,7 +801,7 @@
             return cachedSecret;
         }
 
-        // Функція для зміни пароля адміна (викликається тільки creator)
+        // Функція для зміни пароля адміна
         window.changeAdminPassword = async () => {
             const newPass = prompt("Введіть новий пароль адміна:");
             if (!newPass || newPass.length < 4) { alert("Пароль занадто короткий!"); return; }
@@ -935,29 +853,7 @@
         window.openCreditsModal = () => document.getElementById('creditsModal').style.display = 'flex';
         window.closeCreditsModal = () => document.getElementById('creditsModal').style.display = 'none';
 
-        // ==================== ЗМІНА 3: РЕНДЕР МЕНЮ ЧАТІВ ====================
-        function renderChatsMenuItem(role) {
-            const wrapper = document.getElementById('chatsMenuWrapper');
-            if (!wrapper) return;
-            if (role === 'creator') {
-                // Тільки creator має повний доступ до Chats
-                wrapper.innerHTML = `<a href="chats.html" class="menu-item">💬 Chats / Information <div id="dot-chats" class="fire-dot"></div></a>`;
-            } else if (role === 'admin') {
-                // Admin бачить, але заблоковано — показує помилку при кліку
-                wrapper.innerHTML = `
-                    <div class="menu-item-chats-locked" onclick="showAccessDenied()">
-                        💬 Chats / Information
-                        <span class="lock-badge">🔒</span>
-                    </div>`;
-            } else {
-                // Всі інші — не бачать взагалі
-                wrapper.innerHTML = '';
-            }
-        }
-
-        window.showAccessDenied = () => {
-            document.getElementById('accessDeniedModal').style.display = 'flex';
-        };
+        // Чати/Інформація прибрано
 
         // ==================== AUTH STATE ====================
         onAuthStateChanged(auth, async (user) => {
@@ -983,7 +879,7 @@
             }
 
             myData = userDoc.data();
-            if (!myData.verified && !isAdminRole(myData.role)) {
+            if (!myData.verified && myData.role !== 'admin') {
                 document.getElementById('verifyWaitingScreen').style.display = 'flex';
                 return;
             }
@@ -993,10 +889,8 @@
             listenToUserUpdates(user.uid);
             updateUI(myData);
 
-            // ЗМІНА 3: Рендер меню чатів залежно від ролі
-            renderChatsMenuItem(myData.role);
 
-            // ЗМІНА 4: Показати замочок в хедері тільки для admin і creator
+            // Показати замочок в хедері тільки для admin
             if (isAdminRole(myData.role)) {
                 const lockBtn = document.getElementById('lockInlineBtn');
                 lockBtn.style.display = 'flex';
@@ -1041,7 +935,7 @@
             setTextIfChanged('topName', data.name || "---");
             const rl = document.getElementById('topRoleLabel');
             if (rl) {
-                if (isAdminRole(data.role)) { rl.textContent = 'Admin'; rl.style.display = 'inline-block'; }
+                if (data.role === 'admin') { rl.textContent = 'Admin'; rl.style.display = 'inline-block'; }
                 else if (data.role === 'instructor') { rl.textContent = 'Instructor'; rl.style.display = 'inline-block'; }
                 else { rl.style.display = 'none'; }
             }
