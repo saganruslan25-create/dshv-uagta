@@ -665,20 +665,15 @@
                 <a href="isput.html" class="menu-item">💼 Іспити</a>
                 <a href="applications.html" class="menu-item" id="adminAppBtn" style="display: none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
 
-                <!-- ЗМІНА 1: РУЛЕТКА — картка з маленькою кнопкою кубика у правому верхньому куті -->
-                <div id="ryletkaCard" class="roulette-card" style="display: none;">
-                    <div class="roulette-card-info">
-                        <div class="roulette-card-name" id="rouletteCardName">...</div>
-                        <div class="roulette-card-rank" id="rouletteCardRank">...</div>
-                        <div class="roulette-card-pos" id="rouletteCardPos">...</div>
-                    </div>
-                    <a href="ryletka.html" class="roulette-dice-btn" title="Рулетка Удачі">🎲</a>
-                </div>
+
 
                 <!-- ЗМІНА 4: Кнопку КЕРУВАННЯ ДОСТУПОМ прибрано з меню (тепер це замочок в хедері) -->
             </div>
 
             <div class="profile-card">
+                <!-- Кнопка рулетки у правому верхньому куті профільної картки -->
+                <a href="ryletka.html" id="ryletkaBtn" class="roulette-dice-btn" title="Рулетка Удачі" style="display:none;">🎲</a>
+
                 <div class="avatar-circle">👤</div>
                 <div id="userName" class="user-name">...</div>
                 <h2 id="userRank">
@@ -1009,25 +1004,15 @@
                 document.getElementById('toggleStaffBtn').style.display = 'none';
             }
             
-            // ЗМІНА 1: Рулетка — картка з ім'ям/зданням/посадою
+            // Рулетка — кнопка всередині профільної картки
             if (myData.role === 'admin' || myData.role === 'instructor' || myData.role === 'creator') {
-                const card = document.getElementById('ryletkaCard');
-                card.style.display = 'flex';
-                // Заповнюємо дані картки
-                updateRouletteCard(myData);
+                const btn = document.getElementById('ryletkaBtn');
+                if (btn) btn.style.display = 'flex';
             }
 
             initNotifications();
             listenForMentions();
         });
-
-        // ЗМІНА 1: Оновлення картки рулетки
-        function updateRouletteCard(data) {
-            const rankParts = (data.rank || "Рекрут").split('|');
-            document.getElementById('rouletteCardName').textContent = data.name || '---';
-            document.getElementById('rouletteCardRank').textContent = rankParts[0].trim() || '---';
-            document.getElementById('rouletteCardPos').textContent = data.position || (rankParts[1] ? rankParts[1].trim() : '---');
-        }
 
         let userListenerUnsubscribe = null;
         function listenToUserUpdates(uid) {
@@ -1035,11 +1020,7 @@
             userListenerUnsubscribe = onSnapshot(doc(db, "users", uid), (docSnap) => {
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    if (editingUID === uid) {
-                        updateUI(data);
-                        // Оновлюємо і картку рулетки якщо це поточний юзер
-                        if (uid === currentUID) updateRouletteCard(data);
-                    }
+                    if (editingUID === uid) updateUI(data);
                 }
             });
         }
