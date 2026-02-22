@@ -2454,15 +2454,9 @@ showView('intro');
 };
 
 window.toggleAgreement = () => {
-    const checkbox = document.getElementById('agreementCheckbox');
-    agreementAccepted = checkbox.checked;
-    document.getElementById('startQuizBtn').disabled = !agreementAccepted;
-    if (agreementAccepted) {
-        const warn = document.getElementById('agWarn');
-        if (warn) warn.remove();
-        const box = document.querySelector('.agreement-box');
-        if (box) { box.style.borderColor = ''; box.style.boxShadow = ''; }
-    }
+const checkbox = document.getElementById('agreementCheckbox');
+agreementAccepted = checkbox.checked;
+document.getElementById('startQuizBtn').disabled = !agreementAccepted;
 };
 
 window.openLightbox = url => {
@@ -2477,24 +2471,13 @@ document.body.style.overflow = 'auto';
 };
 
 window.beginQuiz = () => {
-if (!agreementAccepted) {
-        const box = document.querySelector('.agreement-box');
-        if (box) {
-            box.style.borderColor = 'var(--danger)';
-            box.style.boxShadow = '0 0 20px rgba(239,68,68,0.5)';
-            box.style.animation = 'shake 0.5s';
-            box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (!document.getElementById('agWarn')) {
-                box.insertAdjacentHTML('afterend', '<div id="agWarn" style="color:var(--danger);font-size:13px;font-weight:800;text-align:center;margin:8px 0;animation:fadeIn 0.3s ease">⚠️ Потрібно підтвердити угоду перед початком!</div>');
-            }
-            setTimeout(() => {
-                box.style.borderColor = '';
-                box.style.boxShadow = '';
-                box.style.animation = '';
-            }, 3000);
-        }
-        return;
-    }
+if (!agreementAccepted) { alert('⚠️ Потрібно прийняти користувацьку угоду!'); return; }
+currentQ = 0;
+answers = {};
+sessionStorage.setItem('quizInProgress', JSON.stringify({ testId: currentTest.id, testData: currentTest, currentQ: 0, answers: {} }));
+showView('quiz');
+renderQuestion();
+};
 
 function renderQuestion() {
 if (!currentTest || currentQ >= currentTest.questions.length) { finishQuiz(); return; }
