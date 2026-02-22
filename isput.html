@@ -1932,15 +1932,20 @@ let contextMenuTestId = null;
 
 // Block modal state
 let blockModalTestId = null;
-let blockModalTempList = []; // temp blocked UIDs for current modal session
+let blockModalTempList = [];
+
+// ============================================================
+// ВИПРАВЛЕННЯ 1: beforeunload тільки під час проходження тесту
+// ============================================================
+let quizActiveFlag = false;
 
 window.addEventListener('beforeunload', (e) => {
-const quizInProgress = sessionStorage.getItem('quizInProgress');
-if (quizInProgress) {
-e.preventDefault();
-e.returnValue = '⚠️ Ви дійсно хочете вийти? Прогрес буде збережено, але ви маєте завершити іспит пізніше!';
-return e.returnValue;
-}
+  if (quizActiveFlag) {
+    e.preventDefault();
+    e.returnValue = '⚠️ Ви дійсно хочете вийти? Прогрес буде збережено, але ви маєте завершити іспит пізніше!';
+    return e.returnValue;
+  }
+  // На головній і всіх інших сторінках — без попередження
 });
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -1969,7 +1974,6 @@ return d.toLocaleDateString('uk') + ' ' + d.toLocaleTimeString('uk', {hour: '2-d
 
 function isUserBlocked(test) {
 if (!test || !test.blockedUsers) return false;
-// Check by uid or by name
 return test.blockedUsers.includes(ME.uid) || test.blockedUsers.includes(ME.name);
 }
 
@@ -1980,7 +1984,6 @@ blockModalTestId = contextMenuTestId;
 const t = tests.find(x => x.id === blockModalTestId);
 if (!t) return;
 
-// Init temp list from test's blockedUsers
 blockModalTempList = t.blockedUsers ? [...t.blockedUsers] : [];
 
 const subtitle = document.getElementById('blockModalSubtitle');
@@ -2006,7 +2009,7 @@ function renderBlockUserList(search) {
 const list = document.getElementById('blockUserList');
 const lowerSearch = search.toLowerCase();
 const filtered = allUsers.filter(u => {
-if (u.uid === ME.uid) return false; // не показуємо себе
+if (u.uid === ME.uid) return false;
 if (lowerSearch && !u.name.toLowerCase().includes(lowerSearch)) return false;
 return true;
 });
@@ -2032,14 +2035,11 @@ return '<div class="block-user-item ' + (isBlocked ? 'is-blocked' : '') + '">' +
 }
 
 window.toggleBlockUser = (uid, name) => {
-// Check if blocked by uid
 const hasUid = blockModalTempList.includes(uid);
 const hasName = blockModalTempList.includes(name);
 if (hasUid || hasName) {
-// unblock
 blockModalTempList = blockModalTempList.filter(x => x !== uid && x !== name);
 } else {
-// block by uid
 blockModalTempList.push(uid);
 }
 renderBlockUserList(document.getElementById('blockSearchInput').value);
@@ -2062,7 +2062,6 @@ window.saveBlockList = async () => {
 if (!blockModalTestId) return;
 try {
 await updateDoc(doc(db, 'tests', blockModalTestId), { blockedUsers: blockModalTempList });
-// Update local tests array
 const idx = tests.findIndex(x => x.id === blockModalTestId);
 if (idx !== -1) tests[idx].blockedUsers = [...blockModalTempList];
 closeBlockModal();
@@ -2082,7 +2081,6 @@ notif.classList.add('show');
 setTimeout(() => notif.classList.remove('show'), 3000);
 }
 
-// Close modal on overlay click
 document.getElementById('blockModal').addEventListener('click', function(e) {
 if (e.target === this) closeBlockModal();
 });
@@ -2280,33 +2278,53 @@ else if (ME.role === 'instructor') { rb.textContent = 'ІНСТРУКТОР'; rb
 else { rb.textContent = 'БІЄЦЬ'; rb.className = 'role-badge role-fighter'; }
 
 buildNav();
-
-// ✅ ФІКС: Спочатку показуємо home, потім починаємо завантаження даних
-// viewHome вже має плейсхолдер "Завантаження..."
 showView('home');
 
-// Завантажуємо дані ПІСЛЯ показу UI
 loadTestsFromFirebase();
 loadResultsFromFirebase();
 });
 
+// ============================================================
+// ВИПРАВЛЕННЯ 2: Авто-ретрай якщо іспити не завантажились
+// ============================================================
+let testsLoaded = false;
+let testsRetryTimer = null;
+
 function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
+
+// Якщо через 8 секунд тести ще не завантажились — показуємо кнопку перезавантаження
+testsRetryTimer = setTimeout(() => {
+  if (!testsLoaded) {
+    document.getElementById('testsGrid').innerHTML =
+      '<div style="text-align:center;padding:40px;width:100%">' +
+      '<div style="font-size:14px;color:var(--warning);margin-bottom:15px">⚠️ Іспити завантажуються довше звичайного...</div>' +
+      '<button class="btn btn-primary" onclick="location.reload()" style="padding:12px 24px;font-size:13px">🔄 Оновити сторінку</button>' +
+      '</div>';
+  }
+}, 8000);
+
 onSnapshot(q, snapshot => {
-tests = [];
-snapshot.forEach(docSnap => { tests.push({id: docSnap.id, ...docSnap.data()}); });
-const activeView = document.querySelector('.view.active');
-if (activeView) {
-if (activeView.id === 'viewHome') renderHome();
-if (activeView.id === 'viewManage') renderManage();
-if (activeView.id === 'viewHistory') renderHistory();
-}
-// Якщо ми на home — обов'язково оновлюємо
-if (!activeView || activeView.id === 'viewHome') renderHome();
+  testsLoaded = true;
+  clearTimeout(testsRetryTimer);
+  tests = [];
+  snapshot.forEach(docSnap => { tests.push({id: docSnap.id, ...docSnap.data()}); });
+  const activeView = document.querySelector('.view.active');
+  if (activeView) {
+    if (activeView.id === 'viewHome') renderHome();
+    if (activeView.id === 'viewManage') renderManage();
+    if (activeView.id === 'viewHistory') renderHistory();
+  }
+  if (!activeView || activeView.id === 'viewHome') renderHome();
 }, error => {
-console.error('Помилка завантаження тестів:', error);
-document.getElementById('testsGrid').innerHTML =
-'<div style="color:var(--danger);text-align:center;padding:40px;font-size:14px;width:100%">❌ Помилка завантаження. Оновіть сторінку.</div>';
+  testsLoaded = true;
+  clearTimeout(testsRetryTimer);
+  console.error('Помилка завантаження тестів:', error);
+  document.getElementById('testsGrid').innerHTML =
+    '<div style="text-align:center;padding:40px;width:100%">' +
+    '<div style="font-size:14px;color:var(--danger);margin-bottom:15px">❌ Помилка завантаження іспитів</div>' +
+    '<button class="btn btn-primary" onclick="location.reload()" style="padding:12px 24px;font-size:13px">🔄 Спробувати знову</button>' +
+    '</div>';
 });
 }
 
@@ -2468,7 +2486,6 @@ document.getElementById('myResults').innerHTML = '<div class="results-table"><ta
 }
 }
 
-// Show error when blocked user tries to open test
 window.showBlockedError = (testName) => {
 alert('🚫 Доступ заблоковано!\n\nКерівництво заборонило вам користуватись іспитом "' + testName + '".\n\nЗверніться до свого керівника для отримання додаткової інформації.');
 };
@@ -2696,13 +2713,11 @@ window.startIntro = id => {
 const t = tests.find(x => x.id === id);
 if (!t) return;
 
-// ✅ Перевіряємо блокування
 if (isUserBlocked(t)) {
 showBlockedError(t.name || 'іспит');
 return;
 }
 
-// ✅ ФІКС: завжди скидаємо стан угоди ПЕРЕД будь-якими перевірками
 agreementAccepted = false;
 
 if (!IS_PUBLIC_MODE) {
@@ -2729,7 +2744,6 @@ photosHtml += '</div></div>';
 
 let agreementHtml = '';
 if (t.agreementText && t.agreementText.trim()) {
-// Угода є — залишаємо false, чекаємо чекбокс
 agreementHtml =
 '<div class="agreement-box">' +
 '<label class="agreement-check">' +
@@ -2739,7 +2753,6 @@ agreementHtml =
 '</div>' +
 '<div class="agreement-hint" id="agreementHint">⚠️ Щоб розпочати іспит, потрібно підтвердити користувацьку угоду. Натисніть на поле з галочкою вище.</div>';
 } else {
-// Угоди немає — одразу дозволяємо
 agreementAccepted = true;
 }
 
@@ -2772,7 +2785,6 @@ window.toggleAgreement = () => {
 const checkbox = document.getElementById('agreementCheckbox');
 agreementAccepted = checkbox.checked;
 const hint = document.getElementById('agreementHint');
-// Hide hint if user checked it
 if (hint && agreementAccepted) hint.classList.remove('show');
 };
 
@@ -2789,12 +2801,10 @@ document.body.style.overflow = 'auto';
 
 window.beginQuiz = () => {
 if (!agreementAccepted) {
-// ✅ Показуємо підказку замість alert
 const hint = document.getElementById('agreementHint');
 if (hint) {
 hint.classList.add('show');
 hint.scrollIntoView({behavior: 'smooth', block: 'center'});
-// Анімація shake на agreement-box
 const box = document.querySelector('.agreement-box');
 if (box) {
 box.style.animation = 'shake 0.5s';
@@ -2805,6 +2815,8 @@ return;
 }
 currentQ = 0;
 answers = {};
+// Вмикаємо флаг — тепер beforeunload буде спрацьовувати
+quizActiveFlag = true;
 sessionStorage.setItem('quizInProgress', JSON.stringify({ testId: currentTest.id, testData: currentTest, currentQ: 0, answers: {} }));
 showView('quiz');
 renderQuestion();
@@ -2958,6 +2970,10 @@ nextBtn.textContent = isLastQuestion ? '✅ Завершити іспит' : 'Д
 
 async function finishQuiz() {
 clearInterval(timer);
+// Вимикаємо флаг — іспит завершено, попередження більше не потрібне
+quizActiveFlag = false;
+sessionStorage.removeItem('quizInProgress');
+
 let score = 0;
 let correctCount = 0;
 let details = [];
@@ -3007,7 +3023,6 @@ if (!IS_PUBLIC_MODE) addNotif('📝 Ви завершили іспит "' + curr
 } catch (e) { console.error('❌ Помилка збереження результату:', e); alert('❌ Помилка збереження результату: ' + e.message); return; }
 
 showResult(result);
-sessionStorage.removeItem('quizInProgress');
 }
 
 function showResult(result) {
@@ -3406,10 +3421,9 @@ document.onkeydown = e => {
 if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) return false;
 };
 
-console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.4 — ОНОВЛЕННЯ ЗАСТОСОВАНО');
-console.log('✅ Новинка 1: Блокування користувачів для іспитів (ПКМ → 🚫 Блокування)');
-console.log('✅ Новинка 2: Підказка при натисканні "Почати" без підтвердження угоди');
-console.log('✅ Фікс 3: Іспити грузяться правильно при оновленні сторінки');
+console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.5');
+console.log('✅ Фікс 1: beforeunload тільки під час проходження тесту');
+console.log('✅ Фікс 2: Авто-показ кнопки "Оновити" якщо іспити не завантажились за 8с');
 </script>
 </body>
 </html>
