@@ -700,7 +700,7 @@ select.form-input option{background:#0a0d11}
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import{getFirestore,doc,getDoc,setDoc,updateDoc,collection,addDoc,onSnapshot,deleteDoc,query,orderBy,serverTimestamp,getDocs,increment}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import{getStorage,ref,uploadString,getDownloadURL,deleteObject}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
 
 const app=initializeApp({
   apiKey:"AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -710,7 +710,7 @@ const app=initializeApp({
   messagingSenderId:"661591588818",
   appId:"1:661591588818:web:a8e8dca3d061447e24d20b"
 });
-const auth=getAuth(app),db=getFirestore(app),storage=getStorage(app);
+const auth=getAuth(app),db=getFirestore(app);
 let uid=null,myData=null,isAdmin=false,allQuests=[],allUsers=[],qFilter='all',selDiffVal='easy',abandonQID=null,abandonPen=0;
 const DI={easy:'🟢',medium:'🟡',hard:'🔴',elite:'💜'};
 const DCl={easy:'diff-easy',medium:'diff-medium',hard:'diff-hard',elite:'diff-elite'};
@@ -1187,13 +1187,13 @@ function bCS(cid,sel,cb){
 
 function initPC(){bCS('zoneColors',zoneColor,c=>zoneColor=c);bCS('markerColors',markerColor,c=>markerColor=c);}
 
-// ---- IndexedDB — local cache for fast startup ----
-function openIDB(){return new Promise((r,j)=>{const req=indexedDB.open('dsv_mapdb',2);req.onupgradeneeded=e=>{const d2=e.target.result;if(!d2.objectStoreNames.contains('maps'))d2.createObjectStore('maps');};req.onsuccess=e=>r(e.target.result);req.onerror=j;});}
+// ---- IndexedDB — local cache для швидкого старту ----
+function openIDB(){return new Promise((r,j)=>{const req=indexedDB.open('dsv_mapdb',3);req.onupgradeneeded=e=>{const d2=e.target.result;if(!d2.objectStoreNames.contains('maps'))d2.createObjectStore('maps');};req.onsuccess=e=>r(e.target.result);req.onerror=j;});}
 async function saveIDB(d){try{const db2=await openIDB();const tx=db2.transaction('maps','readwrite');tx.objectStore('maps').put(d,'mapImage');await new Promise(r=>{tx.oncomplete=r;});}catch(e){}}
 async function loadIDB(){try{const db2=await openIDB();return new Promise(r=>{const tx=db2.transaction('maps','readonly');const req=tx.objectStore('maps').get('mapImage');req.onsuccess=()=>r(req.result||null);req.onerror=()=>r(null);});}catch(e){return null;}}
 async function clearIDB(){try{const db2=await openIDB();db2.transaction('maps','readwrite').objectStore('maps').delete('mapImage');}catch(e){}}
 
-// ---- Compress image before upload (canvas resize) ----
+// ---- Стиснення зображення (canvas) ----
 function compressImage(file,maxW,maxH,quality){
   return new Promise(resolve=>{
     const img=new Image(),url=URL.createObjectURL(file);
@@ -1202,40 +1202,75 @@ function compressImage(file,maxW,maxH,quality){
       let w=img.width,h=img.height;
       const ratio=Math.min(maxW/w,maxH/h,1);
       w=Math.round(w*ratio);h=Math.round(h*ratio);
-      const c=document.createElement('canvas');c.width=w;c.height=h;
-      c.getContext('2d').drawImage(img,0,0,w,h);
-      resolve(c.toDataURL('image/jpeg',quality));
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(cv.toDataURL('image/jpeg',quality));
     };
     img.src=url;
   });
 }
 
-// ---- Firebase Storage upload/delete ----
-// Use versioned filenames so each upload is unique — no caching conflicts
-let currentStoragePath=null;
-async function uploadMapToStorage(base64DataUrl){
-  // Delete previous file if known
-  if(currentStoragePath){
-    try{await deleteObject(ref(storage,currentStoragePath));}catch(e){}
+// ---- Зберігання base64 в Firestore chunks (900KB кожен) ----
+// Це єдиний надійний спосіб — без Storage Rules / CORS проблем
+const CHUNK_SIZE=900*1024; // 900KB chars per chunk doc
+
+async function saveImageToFirestore(base64DataUrl){
+  // base64DataUrl = "data:image/jpeg;base64,XXXX..."
+  const payload=base64DataUrl; // зберігаємо весь data URL
+  const chunks=[];
+  for(let i=0;i<payload.length;i+=CHUNK_SIZE){
+    chunks.push(payload.slice(i,i+CHUNK_SIZE));
   }
-  // Also try to delete legacy fixed-name file
-  try{await deleteObject(ref(storage,'mapData/mapImage.jpg'));}catch(e){}
-  // New unique path with timestamp
-  const path='mapData/map_'+Date.now()+'.jpg';
-  currentStoragePath=path;
-  const storRef=ref(storage,path);
-  await uploadString(storRef,base64DataUrl,'data_url',{contentType:'image/jpeg'});
-  const url=await getDownloadURL(storRef);
-  return {url,path};
-}
-async function deleteMapFromStorage(path){
-  const targets=[path,'mapData/mapImage.jpg'].filter(Boolean);
-  for(const p of targets){try{await deleteObject(ref(storage,p));}catch(e){}}
+  const ver=Date.now().toString();
+  // Зберігаємо мета-дані
+  await setDoc(doc(db,'appData','mapImage'),{
+    version:ver,
+    totalChunks:chunks.length,
+    updatedAt:serverTimestamp()
+  });
+  // Зберігаємо кожен chunk
+  const writes=chunks.map((ch,i)=>
+    setDoc(doc(db,'appData','mapChunk_'+i),{data:ch,version:ver})
+  );
+  await Promise.all(writes);
+  return ver;
 }
 
-// ---- Firestore map data — zones, markers + shared imageUrl ----
+async function loadImageFromFirestore(){
+  const metaSnap=await getDoc(doc(db,'appData','mapImage'));
+  if(!metaSnap.exists())return null;
+  const {version,totalChunks}=metaSnap.data();
+  if(!totalChunks)return null;
+  const reads=[];
+  for(let i=0;i<totalChunks;i++) reads.push(getDoc(doc(db,'appData','mapChunk_'+i)));
+  const snaps=await Promise.all(reads);
+  // Verify all chunks are from same version
+  let full='';
+  for(const s of snaps){
+    if(!s.exists()||s.data().version!==version)return null;
+    full+=s.data().data;
+  }
+  return full;
+}
+
+async function clearImageFromFirestore(){
+  // Get count first
+  try{
+    const metaSnap=await getDoc(doc(db,'appData','mapImage'));
+    if(metaSnap.exists()){
+      const {totalChunks}=metaSnap.data();
+      const dels=[];
+      for(let i=0;i<(totalChunks||0);i++) dels.push(deleteDoc(doc(db,'appData','mapChunk_'+i)));
+      dels.push(deleteDoc(doc(db,'appData','mapImage')));
+      await Promise.all(dels);
+    }
+  }catch(e){console.warn('clearImage:',e);}
+}
+
+// ---- Firestore map data — zones, markers ----
 const MAP_DOC='mapData';
-let mapDataUnsubscribe=null,currentMapImageUrl=null,currentMapVersion='';
+let mapDataUnsubscribe=null,mapImageUnsubscribe=null;
+let currentMapVersion='';
 
 function listenMapData(){
   if(mapDataUnsubscribe)mapDataUnsubscribe();
@@ -1244,52 +1279,48 @@ function listenMapData(){
       const d=snap.data();
       zones=d.zones||[];
       markers=d.markers||[];
-      // imageUrl is versioned — different URL = different image = always reload
-      const newUrl=d.imageUrl||null;
-      const newVer=d.imageVersion||'';
-      if(newUrl&&(newUrl!==currentMapImageUrl||newVer!==currentMapVersion)){
-        currentMapImageUrl=newUrl;
-        currentMapVersion=newVer;
-        currentStoragePath=d.storagePath||null;
-        // Bust IDB cache when version changes
-        if(newVer!==currentMapVersion){clearIDB();}
-        applyBgFromUrl(newUrl);
-      }else if(!newUrl&&currentMapImageUrl){
-        currentMapImageUrl=null;currentMapVersion='';
+      if(mapInited){updateLeg();drawMap();}
+    }
+  });
+  // Окремий listener для мета-даних зображення
+  if(mapImageUnsubscribe)mapImageUnsubscribe();
+  mapImageUnsubscribe=onSnapshot(doc(db,'appData','mapImage'),async snap=>{
+    if(!snap.exists()){
+      // Зображення видалено
+      if(currentMapVersion!==''){
+        currentMapVersion='';
         mapBg=null;mapBgW=0;mapBgH=0;
-        clearIDB();
+        await clearIDB();
         const st=document.getElementById('mapImageStatus');if(st)st.textContent='—';
         if(mapInited)drawMap();
       }
-      if(mapInited){updateLeg();drawMap();}
+      return;
+    }
+    const {version}=snap.data();
+    if(version===currentMapVersion)return; // вже актуальна
+    currentMapVersion=version;
+    // Спочатку показуємо з IDB кешу
+    const cached=await loadIDB();
+    if(cached){applyBg(cached);}
+    // Завантажуємо актуальну з Firestore
+    const st=document.getElementById('mapImageStatus');
+    if(st)st.textContent='⟳ Завантаження...';
+    const full=await loadImageFromFirestore();
+    if(full){
+      await saveIDB(full);
+      applyBg(full);
+      if(st)st.textContent='✅';
+    } else {
+      if(st)st.textContent='❌';
     }
   });
 }
 
-// Download from Storage URL, cache in IDB, apply as background
-async function applyBgFromUrl(url){
-  // Show cached version immediately while downloading
-  const cached=await loadIDB();
-  if(cached)applyBg(cached);
-  try{
-    const resp=await fetch(url);
-    if(!resp.ok)throw new Error('fetch failed');
-    const blob=await resp.blob();
-    const reader=new FileReader();
-    reader.onload=async e=>{
-      const data=e.target.result;
-      await saveIDB(data);
-      applyBg(data);
-    };
-    reader.readAsDataURL(blob);
-  }catch(err){console.warn('Map image fetch failed:',err);}
-}
-
-async function saveMapDataToFirestore(extra={}){
+async function saveMapDataToFirestore(){
   const sb=document.getElementById('syncBadge');
   if(sb){sb.style.display='block';sb.textContent='⟳ SYNC';}
   try{
-    await setDoc(doc(db,'appData',MAP_DOC),{zones,markers,updatedAt:serverTimestamp(),...extra},{merge:true});
+    await setDoc(doc(db,'appData',MAP_DOC),{zones,markers,updatedAt:serverTimestamp()},{merge:true});
     if(sb){sb.textContent='✅ OK';setTimeout(()=>{sb.style.display='none';},1200);}
   }catch(e){
     if(sb){sb.textContent='❌ ERR';setTimeout(()=>{sb.style.display='none';},2000);}
@@ -1322,7 +1353,7 @@ function initMap(){
   // Load from localStorage as initial (Firestore listener will override with shared data)
   loadMD();
   updateLeg();loadDS();
-  // Load cached image from IDB for fast startup; listenMapData will refresh from Storage URL
+  // IDB cache для швидкого старту — listenMapData оновить якщо версія змінилась
   loadIDB().then(src=>{if(src&&!mapBg)applyBg(src);});
   scale=minZoom;
   resizeMap();clamp();drawMap();redrawDS();
@@ -1729,20 +1760,19 @@ window.loadMapImage=async input=>{
   const st=document.getElementById('mapImageStatus');
   if(st)st.textContent='⟳ Стискаємо...';
   try{
-    const compressed=await compressImage(file,3000,3000,0.85);
-    if(st)st.textContent='⟳ Завантаження...';
-    const {url,path}=await uploadMapToStorage(compressed);
-    const ver=Date.now().toString();
-    // Save unique URL + version + path → all clients reload
-    await saveMapDataToFirestore({imageUrl:url,storagePath:path,imageVersion:ver});
+    // Стискаємо до 1200x1200 щоб влізло в Firestore (~600KB base64)
+    const compressed=await compressImage(file,1200,1200,0.80);
+    if(st)st.textContent='⟳ Зберігаємо...';
+    await saveImageToFirestore(compressed);
+    // Кешуємо локально
     await saveIDB(compressed);
     applyBg(compressed);
     if(st)st.textContent='✅';
-    toast('✅ Карта завантажена для всіх!');
+    toast('✅ Карта збережена — видно всім!');
   }catch(e){
-    console.error('Upload error:',e);
+    console.error('Map save error:',e);
     if(st)st.textContent='❌ Помилка';
-    toast('❌ Помилка завантаження: '+e.message);
+    toast('❌ Помилка: '+e.message);
   }
 };
 
@@ -1750,17 +1780,16 @@ window.clearMapImage=async()=>{
   const st=document.getElementById('mapImageStatus');
   if(st)st.textContent='⟳';
   try{
-    await deleteMapFromStorage(currentStoragePath);
-    await saveMapDataToFirestore({imageUrl:null,storagePath:null,imageVersion:null});
+    await clearImageFromFirestore();
     await clearIDB();
-    currentMapImageUrl=null;currentMapVersion='';currentStoragePath=null;
+    currentMapVersion='';
     mapBg=null;mapBgW=0;mapBgH=0;
     if(st)st.textContent='—';
     if(mapInited)drawMap();
     toast('🗑 Карту видалено для всіх');
   }catch(e){
     if(st)st.textContent='❌';
-    toast('❌ Помилка');
+    toast('❌ Помилка: '+e.message);
   }
 };
 function applyBg(src){mapBg=new Image();mapBg.onload=()=>{mapBgW=mapBg.naturalWidth;mapBgH=mapBg.naturalHeight;if(mapInited){clamp();drawMap();redrawDS();}};mapBg.src=src;document.getElementById('mapImageStatus').textContent='✅';}
