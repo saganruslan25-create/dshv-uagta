@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ДШВ | КАБІНЕТ ПІЛОТА</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #22c55e;
+            --primary-bright: #4ade80;
+            --primary-glow: rgba(34, 197, 94, 0.6);
+            --bg: #030507;
+            --card-bg: rgba(10, 12, 16, 0.7);
+            --glass-border: rgba(34, 197, 94, 0.2);
+            --danger: #ef4444;
+            --warning: #fbbf24;
+            --text-gray: #94a3b8;
+            --accent-blue: #38bdf8;
+            --gold: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(ellipse at 10% 20%, rgba(34, 197, 94, 0.07) 0%, transparent 50%),
+                radial-gradient(ellipse at 90% 80%, rgba(56, 189, 248, 0.05) 0%, transparent 50%);
+            color: white;
+            font-family: 'Exo 2', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+
+        /* NAV */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 5%;
+            background: rgba(3,5,7,0.9);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 1000;
+            backdrop-filter: blur(15px);
+        }
+        .logo-box {
+            background: var(--primary); color: black; padding: 6px 14px;
+            border-radius: 8px; font-weight: 900; text-decoration: none;
+            font-family: 'Rajdhani', sans-serif; font-size: 16px; letter-spacing: 2px;
+            box-shadow: 0 0 20px rgba(34,197,94,0.3);
+        }
+        .nav-right { display: flex; align-items: center; gap: 12px; }
+        .nav-link {
+            color: white; text-decoration: none; font-weight: 600; font-size: 13px;
+            padding: 8px 14px; border-radius: 8px; transition: 0.2s;
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.05); color: var(--primary-bright); }
+        .nav-page-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 14px; font-weight: 700;
+            color: var(--primary-bright);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            border: 1px solid var(--glass-border);
+            padding: 6px 16px; border-radius: 8px;
+        }
+
+        /* LAYOUT */
+        .page-wrapper { display: flex; height: calc(100vh - 57px); overflow: hidden; }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 240px; min-width: 240px;
+            background: rgba(5,8,12,0.8);
+            border-right: 1px solid var(--glass-border);
+            display: flex; flex-direction: column;
+            padding: 20px 12px;
+            gap: 6px;
+            overflow-y: auto;
+        }
+
+        .sidebar-label {
+            font-size: 9px; font-weight: 800; color: var(--text-gray);
+            letter-spacing: 3px; text-transform: uppercase;
+            padding: 12px 8px 6px;
+        }
+
+        .sidebar-btn {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; border-radius: 10px;
+            background: transparent; border: 1px solid transparent;
+            color: #8899aa; font-family: 'Exo 2', sans-serif;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: 0.2s; text-decoration: none; width: 100%;
+            text-align: left;
+        }
+        .sidebar-btn:hover, .sidebar-btn.active {
+            background: rgba(34,197,94,0.08);
+            border-color: var(--glass-border);
+            color: white;
+        }
+        .sidebar-btn.active { color: var(--primary-bright); border-color: rgba(34,197,94,0.4); }
+        .sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; }
+        .sidebar-btn .badge {
+            margin-left: auto; background: var(--primary); color: black;
+            font-size: 10px; font-weight: 900; padding: 2px 7px; border-radius: 20px;
+        }
+        .sidebar-btn .badge-danger { background: var(--danger); color: white; }
+
+        /* BALANCE WIDGET in sidebar */
+        .balance-widget {
+            background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(34,197,94,0.03));
+            border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 16px; margin-bottom: 8px;
+        }
+        .balance-label { font-size: 10px; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
+        .balance-amount {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 32px; font-weight: 700; color: var(--gold);
+            text-shadow: 0 0 20px rgba(245,158,11,0.5);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .balance-coin { font-size: 22px; }
+        .balance-sub { font-size: 10px; color: var(--text-gray); margin-top: 3px; }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1; overflow-y: auto; overflow-x: hidden;
+        }
+
+        /* TABS / SECTIONS */
+        .tab-section { display: none; height: 100%; }
+        .tab-section.active { display: block; }
+
+        /* ======================== DASHBOARD ======================== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px; padding: 30px;
+        }
+        .dash-card {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 18px; padding: 24px;
+            position: relative; overflow: hidden;
+            transition: 0.3s;
+        }
+        .dash-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(34,197,94,0.1);
+            border-color: rgba(34,197,94,0.4);
+        }
+        .dash-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--primary), transparent);
+        }
+        .dash-card-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+        .dash-card-num {
+            font-family: 'Rajdhani', sans-serif; font-size: 40px; font-weight: 700;
+            color: var(--primary-bright); text-shadow: 0 0 15px var(--primary-glow);
+        }
+        .dash-card-label { font-size: 12px; font-weight: 700; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
+
+        .pilot-hero {
+            margin: 30px 30px 0;
+            background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(56,189,248,0.04));
+            border: 1px solid var(--glass-border); border-radius: 20px;
+            padding: 30px; display: flex; align-items: center; gap: 25px;
+            position: relative; overflow: hidden;
+        }
+        .pilot-hero::after {
+            content: '✈'; position: absolute; right: 30px; top: 50%; transform: translateY(-50%);
+            font-size: 80px; opacity: 0.06;
+        }
+        .pilot-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            border: 3px solid var(--primary);
+            background: #111; display: flex; align-items: center; justify-content: center;
+            font-size: 36px; box-shadow: 0 0 25px var(--primary-glow); flex-shrink: 0;
+        }
+        .pilot-info h2 { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; }
+        .pilot-info p { color: var(--primary-bright); font-size: 13px; margin-top: 4px; }
+        .pilot-rank-badge {
+            display: inline-block; background: var(--primary); color: black;
+            padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 900;
+            margin-top: 8px; letter-spacing: 1px;
+        }
+
+        /* XP BAR */
+        .xp-bar-wrap { margin: 20px 30px 0; padding: 16px 24px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 14px; }
+        .xp-bar-top { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: var(--text-gray); font-weight: 700; }
+        .xp-bar-bg { background: rgba(255,255,255,0.05); border-radius: 20px; height: 8px; overflow: hidden; }
+        .xp-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent-blue)); border-radius: 20px; transition: width 1s ease; box-shadow: 0 0 10px var(--primary-glow); }
+
+        /* ======================== QUESTS ======================== */
+        .quests-header {
+            padding: 25px 30px 15px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .quests-title { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 2px; color: var(--primary-bright); }
+        .btn-add-quest {
+            background: var(--primary); color: black; border: none;
+            padding: 10px 20px; border-radius: 10px; font-family: 'Exo 2', sans-serif;
+            font-weight: 800; font-size: 12px; cursor: pointer;
+            box-shadow: 0 0 15px rgba(34,197,94,0.3); transition: 0.2s;
+            display: none;
+        }
+        .btn-add-quest:hover { transform: translateY(-2px); box-shadow: 0 0 25px rgba(34,197,94,0.5); }
+        .btn-add-quest.visible { display: block; }
+
+        .quest-filters {
+            padding: 15px 30px;
+            display: flex; gap: 10px; flex-wrap: wrap;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .filter-btn {
+            padding: 7px 16px; border-radius: 20px; border: 1px solid #333;
+            background: transparent; color: var(--text-gray);
+            font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: 0.2s; letter-spacing: 0.5px;
+        }
+        .filter-btn.active, .filter-btn:hover {
+            border-color: var(--primary); color: var(--primary-bright);
+            background: rgba(34,197,94,0.08);
+        }
+
+        .quests-list { padding: 20px 30px; display: flex; flex-direction: column; gap: 14px; }
+
+        .quest-card {
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; padding: 20px 24px;
+            display: flex; align-items: center; gap: 20px;
+            transition: 0.3s; cursor: pointer; position: relative; overflow: hidden;
+        }
+        .quest-card:hover { border-color: var(--glass-border); transform: translateX(4px); background: rgba(15,20,25,0.8); }
+        .quest-card.taken { border-left: 3px solid var(--primary); }
+        .quest-card.completed { border-left: 3px solid var(--gold); opacity: 0.7; }
+
+        .quest-diff {
+            width: 44px; height: 44px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 20px;
+            flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .diff-easy { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); }
+        .diff-medium { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.3); }
+        .diff-hard { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
+        .diff-elite { background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.3); }
+
+        .quest-info { flex: 1; min-width: 0; }
+        .quest-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+        .quest-desc { font-size: 12px; color: var(--text-gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .quest-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .quest-tag {
+            font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px;
+            letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .tag-type { background: rgba(56,189,248,0.1); color: var(--accent-blue); border: 1px solid rgba(56,189,248,0.2); }
+        .tag-diff-easy { background: rgba(34,197,94,0.1); color: var(--primary-bright); border: 1px solid rgba(34,197,94,0.2); }
+        .tag-diff-medium { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
+        .tag-diff-hard { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
+        .tag-diff-elite { background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
+
+        .quest-reward {
+            display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0;
+        }
+        .quest-coins {
+            font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700;
+            color: var(--gold); display: flex; align-items: center; gap: 5px;
+        }
+        .quest-xp { font-size: 11px; color: var(--accent-blue); font-weight: 700; }
+
+        .btn-take-quest {
+            padding: 8px 18px; border-radius: 8px; font-family: 'Exo 2', sans-serif;
+            font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s;
+            border: 1px solid var(--primary); background: rgba(34,197,94,0.1); color: var(--primary-bright);
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-take-quest:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary-glow); }
+        .btn-take-quest.taken-btn { border-color: var(--gold); color: var(--gold); background: rgba(245,158,11,0.1); }
+        .btn-take-quest.taken-btn:hover { background: var(--gold); color: black; }
+
+        .quest-admin-btns { display: flex; gap: 6px; margin-top: 8px; }
+        .btn-admin-q {
+            padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 800;
+            cursor: pointer; border: none; transition: 0.2s;
+        }
+        .btn-q-edit { background: rgba(56,189,248,0.15); color: var(--accent-blue); border: 1px solid rgba(56,189,248,0.3); }
+        .btn-q-del { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+        .btn-q-complete { background: rgba(245,158,11,0.1); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+        .btn-q-edit:hover { background: var(--accent-blue); color: black; }
+        .btn-q-del:hover { background: var(--danger); color: white; }
+        .btn-q-complete:hover { background: var(--gold); color: black; }
+
+        /* ======================== MAP ======================== */
+        .map-section { display: none; height: 100%; flex-direction: column; }
+        .map-section.active { display: flex; }
+
+        .map-toolbar {
+            padding: 12px 20px;
+            background: rgba(5,8,12,0.95);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+        }
+        .map-tool-btn {
+            padding: 8px 14px; border-radius: 8px;
+            background: rgba(255,255,255,0.04); border: 1px solid #333;
+            color: #aaa; font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700;
+            cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 6px;
+        }
+        .map-tool-btn.active, .map-tool-btn:hover {
+            border-color: var(--primary); color: var(--primary-bright);
+            background: rgba(34,197,94,0.08);
+        }
+        .map-tool-sep { width: 1px; height: 30px; background: #222; margin: 0 4px; }
+
+        .map-container { flex: 1; position: relative; overflow: hidden; background: #05090e; }
+        #mapCanvas { position: absolute; top: 0; left: 0; cursor: crosshair; }
+
+        .map-info-panel {
+            position: absolute; left: 15px; bottom: 15px;
+            background: rgba(3,5,7,0.92); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 14px 18px;
+            min-width: 200px; backdrop-filter: blur(10px);
+            font-size: 12px;
+        }
+        .map-info-title { font-size: 9px; font-weight: 800; color: var(--primary); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+        .map-info-row { display: flex; justify-content: space-between; gap: 20px; color: var(--text-gray); margin-top: 4px; }
+        .map-info-val { color: white; font-weight: 700; font-family: 'Rajdhani', sans-serif; font-size: 14px; }
+        .map-zone-name { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+        .map-zone-label { font-size: 9px; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; }
+        .map-zone-val { color: var(--primary-bright); font-weight: 700; margin-top: 3px; font-size: 14px; }
+
+        .map-legend {
+            position: absolute; right: 15px; top: 15px;
+            background: rgba(3,5,7,0.92); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 14px 18px;
+            min-width: 180px; backdrop-filter: blur(10px);
+        }
+        .map-legend-title { font-size: 9px; font-weight: 800; color: var(--primary); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-gray); margin-bottom: 7px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+        /* ======================== MODALS ======================== */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 5000;
+            display: none; justify-content: center; align-items: center;
+            backdrop-filter: blur(5px);
+        }
+        .modal-box {
+            background: #0a0d11; border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 30px; width: 90%; max-width: 500px;
+            max-height: 90vh; overflow-y: auto;
+            position: relative;
+            animation: modalPop 0.25s ease;
+        }
+        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-title {
+            font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700;
+            color: var(--primary-bright); margin-bottom: 20px; letter-spacing: 1px;
+        }
+        .close-modal {
+            position: absolute; top: 15px; right: 18px;
+            font-size: 26px; color: #555; cursor: pointer; background: none; border: none;
+        }
+        .close-modal:hover { color: white; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 11px; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; }
+        .form-input {
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #222;
+            color: white; padding: 11px 14px; border-radius: 10px;
+            font-family: 'Exo 2', sans-serif; font-size: 14px; outline: none;
+            transition: 0.2s; user-select: text;
+        }
+        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(34,197,94,0.2); }
+        textarea.form-input { resize: vertical; min-height: 80px; }
+        select.form-input option { background: #0a0d11; }
+
+        .btn-form-primary {
+            width: 100%; padding: 13px; border-radius: 10px; border: none;
+            background: var(--primary); color: black; font-family: 'Exo 2', sans-serif;
+            font-weight: 900; font-size: 14px; cursor: pointer;
+            box-shadow: 0 0 15px rgba(34,197,94,0.3); transition: 0.2s;
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn-form-primary:hover { box-shadow: 0 0 25px rgba(34,197,94,0.5); transform: translateY(-1px); }
+
+        .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .diff-option {
+            padding: 10px; border-radius: 8px; border: 1px solid #333;
+            text-align: center; cursor: pointer; font-size: 12px; font-weight: 700;
+            transition: 0.2s;
+        }
+        .diff-option.selected-easy { border-color: var(--primary); background: rgba(34,197,94,0.1); color: var(--primary-bright); }
+        .diff-option.selected-medium { border-color: var(--warning); background: rgba(251,191,36,0.1); color: var(--warning); }
+        .diff-option.selected-hard { border-color: var(--danger); background: rgba(239,68,68,0.1); color: #f87171; }
+        .diff-option.selected-elite { border-color: #a855f7; background: rgba(168,85,247,0.1); color: #c084fc; }
+        .diff-option:hover { border-color: #555; }
+
+        /* TOAST */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #0a0d11; border: 1px solid var(--primary);
+            padding: 12px 24px; border-radius: 12px;
+            font-size: 13px; font-weight: 700; color: var(--primary-bright);
+            z-index: 9999; display: none;
+            box-shadow: 0 0 30px rgba(34,197,94,0.3);
+            animation: toastIn 0.3s ease;
+        }
+        @keyframes toastIn { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-gray); }
+        .empty-state-icon { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
+        .empty-state p { font-size: 14px; }
+
+        /* MAP ZONE ADMIN */
+        .zone-admin-panel {
+            position: absolute; right: 15px; bottom: 15px;
+            background: rgba(3,5,7,0.92); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 14px;
+            width: 200px; backdrop-filter: blur(10px);
+            display: none;
+        }
+        .zone-admin-panel.visible { display: block; }
+        .zone-admin-title { font-size: 9px; font-weight: 800; color: var(--warning); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .zone-input {
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333;
+            color: white; padding: 7px 10px; border-radius: 7px;
+            font-size: 12px; outline: none; margin-bottom: 6px;
+            font-family: 'Exo 2', sans-serif; user-select: text;
+        }
+        .zone-color-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+        .zone-color { width: 20px; height: 20px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; }
+        .zone-color.selected { border-color: white; }
+        .btn-zone-save {
+            width: 100%; padding: 7px; border-radius: 7px; border: none;
+            background: var(--warning); color: black; font-weight: 900; font-size: 11px;
+            cursor: pointer; transition: 0.2s;
+        }
+        .btn-zone-clear {
+            width: 100%; padding: 6px; border-radius: 7px; border: 1px solid #333;
+            background: none; color: #666; font-size: 11px; cursor: pointer; margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; min-width: 60px; }
+            .sidebar-btn span:not(.icon) { display: none; }
+            .balance-widget { padding: 10px; }
+            .balance-amount { font-size: 18px; }
+            .balance-label, .balance-sub { display: none; }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<nav>
+    <a href="index.html" class="logo-box">ДШВ</a>
+    <span class="nav-page-title">✈ КАБІНЕТ ПІЛОТА</span>
+    <div class="nav-right">
+        <a href="javascript:window.history.back()" class="nav-link">← НАЗАД</a>
+    </div>
+</nav>
+
+<div class="page-wrapper">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="balance-widget">
+            <div class="balance-label">БАЛАНС</div>
+            <div class="balance-amount"><span class="balance-coin">🪙</span><span id="sideBalance">0</span></div>
+            <div class="balance-sub">Коїни пілота</div>
+        </div>
+
+        <div class="sidebar-label">НАВІГАЦІЯ</div>
+        <button class="sidebar-btn active" onclick="showTab('dashboard', this)">
+            <span class="icon">🏠</span><span>Панель</span>
+        </button>
+        <button class="sidebar-btn" onclick="showTab('quests', this)">
+            <span class="icon">📋</span><span>Квести</span>
+            <span class="badge" id="activeQuestsBadge" style="display:none"></span>
+        </button>
+        <button class="sidebar-btn" onclick="showTab('myquests', this)">
+            <span class="icon">⚔️</span><span>Мої квести</span>
+        </button>
+        <button class="sidebar-btn" onclick="showTab('map', this)" id="mapTabBtn">
+            <span class="icon">🗺️</span><span>Карта</span>
+        </button>
+
+        <div class="sidebar-label" id="adminSideLabel" style="display:none">АДМІНІСТРАЦІЯ</div>
+        <button class="sidebar-btn" onclick="showTab('admin', this)" id="adminTabBtn" style="display:none">
+            <span class="icon">⚙️</span><span>Управління</span>
+        </button>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- DASHBOARD TAB -->
+        <div id="tab-dashboard" class="tab-section active">
+            <div id="pilotHero" class="pilot-hero">
+                <div class="pilot-avatar">✈️</div>
+                <div class="pilot-info">
+                    <h2 id="pilotName">Завантаження...</h2>
+                    <p id="pilotRank">Пілот</p>
+                    <span class="pilot-rank-badge" id="pilotLevel">РІВЕНЬ 1</span>
+                </div>
+            </div>
+            <div class="xp-bar-wrap">
+                <div class="xp-bar-top">
+                    <span>ДОСВІД</span>
+                    <span id="xpText">0 / 1000 XP</span>
+                </div>
+                <div class="xp-bar-bg">
+                    <div class="xp-bar-fill" id="xpFill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="dashboard-grid">
+                <div class="dash-card">
+                    <span class="dash-card-icon">🪙</span>
+                    <div class="dash-card-num" id="dashBalance">0</div>
+                    <div class="dash-card-label">Коїнів зароблено</div>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-card-icon">✅</span>
+                    <div class="dash-card-num" id="dashCompleted">0</div>
+                    <div class="dash-card-label">Квестів виконано</div>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-card-icon">⚔️</span>
+                    <div class="dash-card-num" id="dashActive">0</div>
+                    <div class="dash-card-label">Активних квестів</div>
+                </div>
+                <div class="dash-card">
+                    <span class="dash-card-icon">⭐</span>
+                    <div class="dash-card-num" id="dashXP">0</div>
+                    <div class="dash-card-label">Очок досвіду</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUESTS TAB -->
+        <div id="tab-quests" class="tab-section">
+            <div class="quests-header">
+                <div class="quests-title">📋 АКТИВНІ КВЕСТИ</div>
+                <button class="btn-add-quest" id="btnAddQuest" onclick="openQuestModal()">+ СТВОРИТИ КВЕСТ</button>
+            </div>
+            <div class="quest-filters">
+                <button class="filter-btn active" onclick="filterQuests('all', this)">Всі</button>
+                <button class="filter-btn" onclick="filterQuests('easy', this)">Легкі</button>
+                <button class="filter-btn" onclick="filterQuests('medium', this)">Середні</button>
+                <button class="filter-btn" onclick="filterQuests('hard', this)">Важкі</button>
+                <button class="filter-btn" onclick="filterQuests('elite', this)">Еліта</button>
+            </div>
+            <div class="quests-list" id="questsList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Завантаження квестів...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MY QUESTS TAB -->
+        <div id="tab-myquests" class="tab-section">
+            <div class="quests-header">
+                <div class="quests-title">⚔️ МОЇ КВЕСТИ</div>
+            </div>
+            <div class="quests-list" id="myQuestsList">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⚔️</div>
+                    <p>У вас поки немає активних квестів</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- MAP TAB (flex layout) -->
+        <div id="tab-map" class="tab-section map-section">
+            <div class="map-toolbar">
+                <button class="map-tool-btn active" id="tool-cursor" onclick="setMapTool('cursor', this)">🖱️ Курсор</button>
+                <button class="map-tool-btn" id="tool-marker" onclick="setMapTool('marker', this)">📍 Мітка</button>
+                <div class="map-tool-sep"></div>
+                <button class="map-tool-btn" id="tool-zone" onclick="setMapTool('zone', this)" style="display:none" id="btnZoneTool">✏️ Зона</button>
+                <button class="map-tool-btn" id="tool-clear-zones" onclick="clearAllZones()" style="display:none" id="btnClearZones">🗑️ Очистити зони</button>
+                <div class="map-tool-sep" id="adminMapSep" style="display:none"></div>
+                <span style="font-size: 12px; color: var(--text-gray); margin-left: auto;">Масштаб: <b id="zoomDisplay" style="color:white">100%</b></span>
+                <button class="map-tool-btn" onclick="resetMapView()">↺ Скинути</button>
+            </div>
+
+            <div class="map-container" id="mapContainer">
+                <canvas id="mapCanvas"></canvas>
+
+                <!-- Info panel bottom-left -->
+                <div class="map-info-panel">
+                    <div class="map-info-title">📡 ІНФОРМАЦІЯ</div>
+                    <div class="map-info-row">
+                        <span>X:</span><span class="map-info-val" id="mapX">0</span>
+                    </div>
+                    <div class="map-info-row">
+                        <span>Y:</span><span class="map-info-val" id="mapY">0</span>
+                    </div>
+                    <div class="map-zone-name">
+                        <div class="map-zone-label">ЗОНА / МІСТО</div>
+                        <div class="map-zone-val" id="currentZoneName">Невідома зона</div>
+                    </div>
+                </div>
+
+                <!-- Zone legend top-right -->
+                <div class="map-legend" id="mapLegend">
+                    <div class="map-legend-title">📌 ЛЕГЕНДА</div>
+                    <div id="legendItems">
+                        <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div> <span>Безпечна зона</span></div>
+                    </div>
+                </div>
+
+                <!-- Admin zone draw panel bottom-right -->
+                <div class="zone-admin-panel" id="zoneAdminPanel">
+                    <div class="zone-admin-title">⚙️ НОВА ЗОНА</div>
+                    <input type="text" class="zone-input" id="zoneNameInput" placeholder="Назва зони">
+                    <div class="zone-color-picker" id="colorPicker">
+                        <div class="zone-color selected" style="background:#22c55e" data-color="#22c55e" onclick="selectZoneColor(this)"></div>
+                        <div class="zone-color" style="background:#38bdf8" data-color="#38bdf8" onclick="selectZoneColor(this)"></div>
+                        <div class="zone-color" style="background:#ef4444" data-color="#ef4444" onclick="selectZoneColor(this)"></div>
+                        <div class="zone-color" style="background:#f59e0b" data-color="#f59e0b" onclick="selectZoneColor(this)"></div>
+                        <div class="zone-color" style="background:#a855f7" data-color="#a855f7" onclick="selectZoneColor(this)"></div>
+                        <div class="zone-color" style="background:#f97316" data-color="#f97316" onclick="selectZoneColor(this)"></div>
+                    </div>
+                    <button class="btn-zone-save" onclick="saveCurrentZone()">ЗБЕРЕГТИ ЗОНУ</button>
+                    <button class="btn-zone-clear" onclick="cancelZoneDraw()">СКАСУВАТИ</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN TAB -->
+        <div id="tab-admin" class="tab-section">
+            <div class="quests-header">
+                <div class="quests-title">⚙️ АДМІН-ПАНЕЛЬ</div>
+            </div>
+            <div style="padding: 20px 30px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px;">
+                    <div style="font-size: 14px; font-weight: 800; color: var(--primary-bright); margin-bottom: 15px;">💰 ВИДАТИ КОЇНИ ПІЛОТУ</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end;">
+                        <div>
+                            <label class="form-label">Пілот (UID)</label>
+                            <select class="form-input" id="adminPilotSelect"></select>
+                        </div>
+                        <div>
+                            <label class="form-label">Кількість коїнів</label>
+                            <input type="number" class="form-input" id="adminCoinAmount" placeholder="100" min="1">
+                        </div>
+                        <button class="btn-form-primary" style="width: auto; padding: 11px 20px;" onclick="adminGiveCoins()">ВИДАТИ</button>
+                    </div>
+                </div>
+                <div style="background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 20px;">
+                    <div style="font-size: 14px; font-weight: 800; color: var(--primary-bright); margin-bottom: 15px;">✅ ЗАВЕРШИТИ КВЕСТ ВРУЧНУ</div>
+                    <div id="adminQuestList" style="display: flex; flex-direction: column; gap: 8px;">
+                        <p style="color: var(--text-gray); font-size: 13px;">Завантаження...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- QUEST MODAL -->
+<div class="modal-overlay" id="questModal" onclick="if(event.target===this)closeQuestModal()">
+    <div class="modal-box">
+        <button class="close-modal" onclick="closeQuestModal()">×</button>
+        <div class="modal-title" id="questModalTitle">➕ НОВИЙ КВЕСТ</div>
+
+        <input type="hidden" id="editingQuestId">
+        <div class="form-group">
+            <label class="form-label">Назва квесту</label>
+            <input type="text" class="form-input" id="qName" placeholder="Введіть назву квесту">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Опис</label>
+            <textarea class="form-input" id="qDesc" placeholder="Опишіть завдання..."></textarea>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Тип</label>
+            <select class="form-input" id="qType">
+                <option value="Бойова місія">⚔️ Бойова місія</option>
+                <option value="Розвідка">🔍 Розвідка</option>
+                <option value="Доставка">📦 Доставка</option>
+                <option value="Патрулювання">🛡️ Патрулювання</option>
+                <option value="Спеціальна операція">🎯 Спеціальна операція</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Складність</label>
+            <div class="diff-grid">
+                <div class="diff-option selected-easy" data-diff="easy" onclick="selectDiff('easy')">🟢 Легко</div>
+                <div class="diff-option" data-diff="medium" onclick="selectDiff('medium')">🟡 Середня</div>
+                <div class="diff-option" data-diff="hard" onclick="selectDiff('hard')">🔴 Важко</div>
+                <div class="diff-option" data-diff="elite" onclick="selectDiff('elite')">💜 Еліта</div>
+            </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+                <label class="form-label">Нагорода (коїни)</label>
+                <input type="number" class="form-input" id="qCoins" placeholder="100" min="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Нагорода (XP)</label>
+                <input type="number" class="form-input" id="qXP" placeholder="50" min="0">
+            </div>
+        </div>
+        <button class="btn-form-primary" onclick="saveQuest()">ЗБЕРЕГТИ КВЕСТ</button>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import {
+        getFirestore, doc, getDoc, updateDoc, collection,
+        addDoc, onSnapshot, deleteDoc, query, orderBy,
+        serverTimestamp, getDocs, increment
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUID = null;
+    let myData = null;
+    let isAdmin = false;
+    let allQuests = [];
+    let currentFilter = 'all';
+    let selectedDiff = 'easy';
+    let allUsers = [];
+
+    // =========== AUTH ===========
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = "index.html"; return; }
+        currentUID = user.uid;
+
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!snap.exists()) { window.location.href = "index.html"; return; }
+        myData = snap.data();
+        isAdmin = myData.role === 'admin';
+
+        // Ensure pilot fields exist
+        if (myData.coins === undefined || myData.xp === undefined) {
+            await updateDoc(doc(db, "users", user.uid), {
+                coins: myData.coins ?? 0,
+                xp: myData.xp ?? 0,
+                completedQuests: myData.completedQuests ?? 0,
+                activeQuestIds: myData.activeQuestIds ?? []
+            });
+            const refreshed = await getDoc(doc(db, "users", user.uid));
+            myData = refreshed.data();
+        }
+
+        loadUserUI();
+        listenQuests();
+        if (isAdmin) {
+            document.getElementById('btnAddQuest').classList.add('visible');
+            document.getElementById('adminTabBtn').style.display = 'flex';
+            document.getElementById('adminSideLabel').style.display = 'block';
+            document.getElementById('tool-zone') && (document.getElementById('tool-zone').style.display = 'flex');
+            document.getElementById('tool-clear-zones') && (document.getElementById('tool-clear-zones').style.display = 'flex');
+            document.getElementById('adminMapSep') && (document.getElementById('adminMapSep').style.display = 'block');
+            loadAdminPanel();
+        }
+
+        // Live user updates
+        onSnapshot(doc(db, "users", user.uid), (s) => {
+            if (s.exists()) { myData = s.data(); loadUserUI(); }
+        });
+    });
+
+    function loadUserUI() {
+        const name = myData.name || "Пілот";
+        const coins = myData.coins || 0;
+        const xp = myData.xp || 0;
+        const completed = myData.completedQuests || 0;
+        const activeCount = (myData.activeQuestIds || []).length;
+        const level = Math.floor(xp / 1000) + 1;
+        const xpInLevel = xp % 1000;
+        const xpNeeded = 1000;
+
+        document.getElementById('pilotName').textContent = name;
+        document.getElementById('pilotRank').textContent = myData.rank?.split('|')[0]?.trim() || 'Пілот';
+        document.getElementById('pilotLevel').textContent = `РІВЕНЬ ${level}`;
+        document.getElementById('xpText').textContent = `${xpInLevel} / ${xpNeeded} XP`;
+        document.getElementById('xpFill').style.width = `${(xpInLevel / xpNeeded) * 100}%`;
+
+        document.getElementById('sideBalance').textContent = coins;
+        document.getElementById('dashBalance').textContent = coins;
+        document.getElementById('dashCompleted').textContent = completed;
+        document.getElementById('dashActive').textContent = activeCount;
+        document.getElementById('dashXP').textContent = xp;
+
+        const badge = document.getElementById('activeQuestsBadge');
+        if (activeCount > 0) { badge.style.display = 'inline-block'; badge.textContent = activeCount; }
+        else { badge.style.display = 'none'; }
+    }
+
+    // =========== QUESTS ===========
+    function listenQuests() {
+        const q = query(collection(db, "pilotQuests"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snap) => {
+            allQuests = [];
+            snap.forEach(d => allQuests.push({ id: d.id, ...d.data() }));
+            renderQuests();
+            renderMyQuests();
+            renderAdminQuestList();
+        });
+    }
+
+    window.filterQuests = (filter, btn) => {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderQuests();
+    };
+
+    function diffIcon(d) {
+        return { easy: '🟢', medium: '🟡', hard: '🔴', elite: '💜' }[d] || '⚪';
+    }
+    function diffClass(d) {
+        return { easy: 'diff-easy', medium: 'diff-medium', hard: 'diff-hard', elite: 'diff-elite' }[d] || '';
+    }
+    function diffTagClass(d) {
+        return `tag-diff-${d}`;
+    }
+    function diffLabel(d) {
+        return { easy: 'Легко', medium: 'Середня', hard: 'Важко', elite: 'Еліта' }[d] || d;
+    }
+
+    function renderQuests() {
+        const list = document.getElementById('questsList');
+        const myActive = myData?.activeQuestIds || [];
+        const myCompleted = myData?.completedQuestIds || [];
+
+        let filtered = allQuests.filter(q => q.status !== 'archived');
+        if (currentFilter !== 'all') filtered = filtered.filter(q => q.difficulty === currentFilter);
+
+        if (filtered.length === 0) {
+            list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><p>Квестів не знайдено</p></div>`;
+            return;
+        }
+
+        list.innerHTML = filtered.map(q => {
+            const isTaken = myActive.includes(q.id);
+            const isCompleted = myCompleted && myCompleted.includes(q.id);
+            const adminBtns = isAdmin ? `
+                <div class="quest-admin-btns">
+                    <button class="btn-admin-q btn-q-edit" onclick="event.stopPropagation(); editQuest('${q.id}')">✎ РЕДАГУВАТИ</button>
+                    <button class="btn-admin-q btn-q-del" onclick="event.stopPropagation(); deleteQuest('${q.id}')">✖ ВИДАЛИТИ</button>
+                </div>
+            ` : '';
+
+            return `
+                <div class="quest-card ${isTaken ? 'taken' : ''} ${isCompleted ? 'completed' : ''}">
+                    <div class="quest-diff ${diffClass(q.difficulty)}">${diffIcon(q.difficulty)}</div>
+                    <div class="quest-info">
+                        <div class="quest-name">${q.name}</div>
+                        <div class="quest-desc">${q.description}</div>
+                        <div class="quest-tags">
+                            <span class="quest-tag tag-type">${q.type || 'Місія'}</span>
+                            <span class="quest-tag ${diffTagClass(q.difficulty)}">${diffLabel(q.difficulty)}</span>
+                        </div>
+                        ${adminBtns}
+                    </div>
+                    <div class="quest-reward">
+                        <div class="quest-coins">🪙 ${q.coins || 0}</div>
+                        <div class="quest-xp">+${q.xp || 0} XP</div>
+                        ${!isCompleted ? `<button class="btn-take-quest ${isTaken ? 'taken-btn' : ''}" onclick="event.stopPropagation(); takeQuest('${q.id}')">
+                            ${isTaken ? '✅ Взято' : '+ ВЗЯТИ'}
+                        </button>` : `<span style="font-size: 11px; color: var(--gold); font-weight:800;">✔ ЗАВЕРШЕНО</span>`}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderMyQuests() {
+        const list = document.getElementById('myQuestsList');
+        const myActive = myData?.activeQuestIds || [];
+        const taken = allQuests.filter(q => myActive.includes(q.id));
+
+        if (taken.length === 0) {
+            list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚔️</div><p>У вас немає активних квестів.<br>Перейдіть до розділу "Квести" щоб взяти завдання!</p></div>`;
+            return;
+        }
+
+        list.innerHTML = taken.map(q => `
+            <div class="quest-card taken">
+                <div class="quest-diff ${diffClass(q.difficulty)}">${diffIcon(q.difficulty)}</div>
+                <div class="quest-info">
+                    <div class="quest-name">${q.name}</div>
+                    <div class="quest-desc">${q.description}</div>
+                    <div class="quest-tags">
+                        <span class="quest-tag tag-type">${q.type || 'Місія'}</span>
+                        <span class="quest-tag ${diffTagClass(q.difficulty)}">${diffLabel(q.difficulty)}</span>
+                    </div>
+                </div>
+                <div class="quest-reward">
+                    <div class="quest-coins">🪙 ${q.coins || 0}</div>
+                    <div class="quest-xp">+${q.xp || 0} XP</div>
+                    <button class="btn-take-quest taken-btn" onclick="abandonQuest('${q.id}')">✖ ВІДМОВИТИСЬ</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    window.takeQuest = async (qId) => {
+        const myActive = myData?.activeQuestIds || [];
+        if (myActive.includes(qId)) {
+            // Already taken — toggle off
+            const updated = myActive.filter(id => id !== qId);
+            await updateDoc(doc(db, "users", currentUID), { activeQuestIds: updated });
+            showToast("❌ Квест скасовано");
+        } else {
+            const updated = [...myActive, qId];
+            await updateDoc(doc(db, "users", currentUID), { activeQuestIds: updated });
+            showToast("✅ Квест взято! Успіхів!");
+        }
+    };
+
+    window.abandonQuest = async (qId) => {
+        const myActive = (myData?.activeQuestIds || []).filter(id => id !== qId);
+        await updateDoc(doc(db, "users", currentUID), { activeQuestIds: myActive });
+        showToast("❌ Квест скасовано");
+    };
+
+    // =========== ADMIN QUEST COMPLETE ===========
+    function renderAdminQuestList() {
+        const cont = document.getElementById('adminQuestList');
+        if (!cont) return;
+        if (allQuests.length === 0) { cont.innerHTML = `<p style="color: var(--text-gray); font-size:13px;">Квестів немає</p>`; return; }
+        cont.innerHTML = allQuests.map(q => `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                <div>
+                    <div style="font-size: 13px; font-weight: 700;">${q.name}</div>
+                    <div style="font-size: 11px; color: var(--text-gray);">🪙 ${q.coins} · +${q.xp} XP</div>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <select class="form-input" id="completeTarget_${q.id}" style="padding: 6px 10px; font-size: 12px; width: 150px;">
+                        <option value="">Обрати пілота</option>
+                        ${allUsers.map(u => `<option value="${u.id}">${u.name}</option>`).join('')}
+                    </select>
+                    <button class="btn-admin-q btn-q-complete" onclick="adminCompleteQuest('${q.id}', ${q.coins}, ${q.xp})">✔ ВИДАТИ</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    async function loadAdminPanel() {
+        const snap = await getDocs(collection(db, "users"));
+        allUsers = [];
+        snap.forEach(d => allUsers.push({ id: d.id, ...d.data() }));
+
+        // Populate pilot select
+        const sel = document.getElementById('adminPilotSelect');
+        if (sel) sel.innerHTML = allUsers.map(u => `<option value="${u.id}">${u.name || u.id}</option>`).join('');
+        renderAdminQuestList();
+    }
+
+    window.adminGiveCoins = async () => {
+        const sel = document.getElementById('adminPilotSelect');
+        const amount = parseInt(document.getElementById('adminCoinAmount').value);
+        if (!sel.value || isNaN(amount) || amount <= 0) { showToast("❌ Заповніть всі поля!"); return; }
+        await updateDoc(doc(db, "users", sel.value), { coins: increment(amount) });
+        showToast(`✅ Видано ${amount} коїнів!`);
+    };
+
+    window.adminCompleteQuest = async (qId, coins, xp) => {
+        const sel = document.getElementById(`completeTarget_${qId}`);
+        if (!sel || !sel.value) { showToast("❌ Оберіть пілота!"); return; }
+        const uid = sel.value;
+        const userSnap = await getDoc(doc(db, "users", uid));
+        if (!userSnap.exists()) return;
+        const userData = userSnap.data();
+        const completedIds = userData.completedQuestIds || [];
+        const activeIds = (userData.activeQuestIds || []).filter(id => id !== qId);
+        if (completedIds.includes(qId)) { showToast("❌ Цей пілот вже виконав квест!"); return; }
+        await updateDoc(doc(db, "users", uid), {
+            coins: increment(coins),
+            xp: increment(xp),
+            completedQuests: increment(1),
+            completedQuestIds: [...completedIds, qId],
+            activeQuestIds: activeIds
+        });
+        showToast(`✅ Квест виконано! +${coins} коїнів, +${xp} XP`);
+    };
+
+    // =========== QUEST CRUD ===========
+    window.openQuestModal = () => {
+        document.getElementById('editingQuestId').value = '';
+        document.getElementById('questModalTitle').textContent = '➕ НОВИЙ КВЕСТ';
+        document.getElementById('qName').value = '';
+        document.getElementById('qDesc').value = '';
+        document.getElementById('qType').value = 'Бойова місія';
+        document.getElementById('qCoins').value = '';
+        document.getElementById('qXP').value = '';
+        selectedDiff = 'easy';
+        document.querySelectorAll('.diff-option').forEach(el => el.className = 'diff-option');
+        document.querySelector(`[data-diff="easy"]`).className = `diff-option selected-easy`;
+        document.getElementById('questModal').style.display = 'flex';
+    };
+    window.closeQuestModal = () => document.getElementById('questModal').style.display = 'none';
+
+    window.editQuest = (id) => {
+        const q = allQuests.find(x => x.id === id);
+        if (!q) return;
+        document.getElementById('editingQuestId').value = id;
+        document.getElementById('questModalTitle').textContent = '✎ РЕДАГУВАТИ КВЕСТ';
+        document.getElementById('qName').value = q.name || '';
+        document.getElementById('qDesc').value = q.description || '';
+        document.getElementById('qType').value = q.type || 'Бойова місія';
+        document.getElementById('qCoins').value = q.coins || '';
+        document.getElementById('qXP').value = q.xp || '';
+        selectedDiff = q.difficulty || 'easy';
+        document.querySelectorAll('.diff-option').forEach(el => el.className = 'diff-option');
+        document.querySelector(`[data-diff="${selectedDiff}"]`).className = `diff-option selected-${selectedDiff}`;
+        document.getElementById('questModal').style.display = 'flex';
+    };
+
+    window.saveQuest = async () => {
+        const id = document.getElementById('editingQuestId').value;
+        const name = document.getElementById('qName').value.trim();
+        const desc = document.getElementById('qDesc').value.trim();
+        const type = document.getElementById('qType').value;
+        const coins = parseInt(document.getElementById('qCoins').value) || 0;
+        const xp = parseInt(document.getElementById('qXP').value) || 0;
+        if (!name) { showToast("❌ Введіть назву!"); return; }
+
+        const data = { name, description: desc, type, difficulty: selectedDiff, coins, xp, status: 'active' };
+        if (id) {
+            await updateDoc(doc(db, "pilotQuests", id), data);
+            showToast("✅ Квест оновлено!");
+        } else {
+            data.createdAt = serverTimestamp();
+            await addDoc(collection(db, "pilotQuests"), data);
+            showToast("✅ Квест створено!");
+        }
+        closeQuestModal();
+    };
+
+    window.deleteQuest = async (id) => {
+        if (!confirm("Видалити квест?")) return;
+        await deleteDoc(doc(db, "pilotQuests", id));
+        showToast("🗑️ Квест видалено");
+    };
+
+    window.selectDiff = (diff) => {
+        selectedDiff = diff;
+        document.querySelectorAll('.diff-option').forEach(el => el.className = 'diff-option');
+        document.querySelector(`[data-diff="${diff}"]`).className = `diff-option selected-${diff}`;
+    };
+
+    // =========== TOAST ===========
+    window.showToast = (msg) => {
+        const t = document.getElementById('toast');
+        t.textContent = msg; t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+    };
+
+    // =========== TABS ===========
+    window.showTab = (name, btn) => {
+        document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+        const el = document.getElementById(`tab-${name}`);
+        if (el) el.classList.add('active');
+        if (btn) btn.classList.add('active');
+        if (name === 'map') initMap();
+    };
+
+    // =========== MAP ENGINE ===========
+    let mapCtx, mapCanvas, mapContainer;
+    let mapScale = 1, mapOffX = 0, mapOffY = 0;
+    let isDragging = false, lastMouseX, lastMouseY;
+    let currentTool = 'cursor';
+    let markers = [];
+    let zones = [];
+    let drawingZone = false;
+    let currentZonePoints = [];
+    let selectedZoneColor = '#22c55e';
+    let mapInited = false;
+
+    window.setMapTool = (tool, btn) => {
+        currentTool = tool;
+        document.querySelectorAll('.map-tool-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (tool === 'zone') {
+            document.getElementById('zoneAdminPanel').classList.add('visible');
+            drawingZone = true; currentZonePoints = [];
+        } else {
+            drawingZone = false; currentZonePoints = [];
+            document.getElementById('zoneAdminPanel').classList.remove('visible');
+        }
+        drawMap();
+    };
+
+    window.selectZoneColor = (el) => {
+        document.querySelectorAll('.zone-color').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedZoneColor = el.dataset.color;
+    };
+
+    window.resetMapView = () => { mapScale = 1; mapOffX = 0; mapOffY = 0; drawMap(); document.getElementById('zoomDisplay').textContent = '100%'; };
+
+    window.clearAllZones = () => {
+        if (!confirm("Видалити всі зони?")) return;
+        zones = []; updateLegend(); drawMap(); saveMapData();
+    };
+
+    window.saveCurrentZone = () => {
+        const name = document.getElementById('zoneNameInput').value.trim();
+        if (!name || currentZonePoints.length < 3) { showToast("❌ Намалюйте зону (мін. 3 точки) та введіть назву!"); return; }
+        zones.push({ name, color: selectedZoneColor, points: [...currentZonePoints] });
+        currentZonePoints = []; drawingZone = false;
+        document.getElementById('zoneNameInput').value = '';
+        document.getElementById('zoneAdminPanel').classList.remove('visible');
+        document.getElementById('tool-cursor').click();
+        updateLegend(); drawMap(); saveMapData();
+        showToast(`✅ Зона "${name}" збережена!`);
+    };
+
+    window.cancelZoneDraw = () => {
+        currentZonePoints = []; drawingZone = false;
+        document.getElementById('zoneAdminPanel').classList.remove('visible');
+        document.getElementById('tool-cursor').click();
+        drawMap();
+    };
+
+    function saveMapData() {
+        try { localStorage.setItem('dsv_map_zones', JSON.stringify(zones)); } catch(e){}
+    }
+    function loadMapData() {
+        try { zones = JSON.parse(localStorage.getItem('dsv_map_zones') || '[]'); } catch(e){ zones = []; }
+    }
+
+    function updateLegend() {
+        const cont = document.getElementById('legendItems');
+        cont.innerHTML = zones.map(z => `
+            <div class="legend-item">
+                <div class="legend-dot" style="background:${z.color}"></div>
+                <span>${z.name}</span>
+            </div>
+        `).join('') || `<div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span>Немає зон</span></div>`;
+    }
+
+    function getZoneAtPoint(wx, wy) {
+        for (let i = zones.length - 1; i >= 0; i--) {
+            const z = zones[i];
+            if (pointInPolygon(wx, wy, z.points)) return z.name;
+        }
+        return null;
+    }
+
+    function pointInPolygon(px, py, poly) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            const xi = poly[i].x, yi = poly[i].y;
+            const xj = poly[j].x, yj = poly[j].y;
+            const intersect = ((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    }
+
+    function canvasToWorld(cx, cy) {
+        return { x: Math.round((cx - mapOffX) / mapScale), y: Math.round((cy - mapOffY) / mapScale) };
+    }
+    function worldToCanvas(wx, wy) {
+        return { x: wx * mapScale + mapOffX, y: wy * mapScale + mapOffY };
+    }
+
+    function drawMap() {
+        if (!mapCtx) return;
+        const W = mapCanvas.width, H = mapCanvas.height;
+        mapCtx.clearRect(0, 0, W, H);
+
+        // Background
+        mapCtx.fillStyle = '#06090d';
+        mapCtx.fillRect(0, 0, W, H);
+
+        // Grid
+        mapCtx.save();
+        mapCtx.translate(mapOffX, mapOffY);
+        mapCtx.scale(mapScale, mapScale);
+
+        const gridSize = 50;
+        mapCtx.strokeStyle = 'rgba(34,197,94,0.06)';
+        mapCtx.lineWidth = 1 / mapScale;
+        const startX = Math.floor(-mapOffX / mapScale / gridSize) * gridSize;
+        const startY = Math.floor(-mapOffY / mapScale / gridSize) * gridSize;
+        const endX = startX + W / mapScale + gridSize;
+        const endY = startY + H / mapScale + gridSize;
+        for (let x = startX; x < endX; x += gridSize) {
+            mapCtx.beginPath(); mapCtx.moveTo(x, startY); mapCtx.lineTo(x, endY); mapCtx.stroke();
+        }
+        for (let y = startY; y < endY; y += gridSize) {
+            mapCtx.beginPath(); mapCtx.moveTo(startX, y); mapCtx.lineTo(endX, y); mapCtx.stroke();
+        }
+
+        // Axis labels
+        mapCtx.fillStyle = 'rgba(34,197,94,0.3)';
+        mapCtx.font = `${Math.max(10, 11 / mapScale)}px Rajdhani`;
+        mapCtx.textAlign = 'center';
+        for (let x = Math.ceil(startX/gridSize)*gridSize; x < endX; x += gridSize) {
+            mapCtx.fillText(x, x, startY + 14 / mapScale);
+        }
+        mapCtx.textAlign = 'right';
+        for (let y = Math.ceil(startY/gridSize)*gridSize; y < endY; y += gridSize) {
+            mapCtx.fillText(y, startX + 30 / mapScale, y + 4 / mapScale);
+        }
+
+        // Draw zones
+        zones.forEach(z => {
+            if (z.points.length < 2) return;
+            mapCtx.beginPath();
+            mapCtx.moveTo(z.points[0].x, z.points[0].y);
+            z.points.forEach(p => mapCtx.lineTo(p.x, p.y));
+            mapCtx.closePath();
+            mapCtx.fillStyle = z.color + '22';
+            mapCtx.fill();
+            mapCtx.strokeStyle = z.color + 'aa';
+            mapCtx.lineWidth = 2 / mapScale;
+            mapCtx.stroke();
+
+            // Label
+            const cx = z.points.reduce((s, p) => s + p.x, 0) / z.points.length;
+            const cy = z.points.reduce((s, p) => s + p.y, 0) / z.points.length;
+            mapCtx.fillStyle = z.color;
+            mapCtx.font = `bold ${Math.max(12, 13 / mapScale)}px Exo 2`;
+            mapCtx.textAlign = 'center';
+            mapCtx.fillText(z.name, cx, cy);
+        });
+
+        // Drawing zone in progress
+        if (drawingZone && currentZonePoints.length > 0) {
+            mapCtx.beginPath();
+            mapCtx.moveTo(currentZonePoints[0].x, currentZonePoints[0].y);
+            currentZonePoints.forEach(p => mapCtx.lineTo(p.x, p.y));
+            mapCtx.strokeStyle = selectedZoneColor;
+            mapCtx.lineWidth = 2 / mapScale;
+            mapCtx.setLineDash([6 / mapScale, 4 / mapScale]);
+            mapCtx.stroke();
+            mapCtx.setLineDash([]);
+            currentZonePoints.forEach(p => {
+                mapCtx.beginPath();
+                mapCtx.arc(p.x, p.y, 4 / mapScale, 0, Math.PI * 2);
+                mapCtx.fillStyle = selectedZoneColor;
+                mapCtx.fill();
+            });
+        }
+
+        // Markers
+        markers.forEach(m => {
+            mapCtx.font = `${24 / mapScale}px serif`;
+            mapCtx.textAlign = 'center';
+            mapCtx.fillText('📍', m.x, m.y);
+            if (m.label) {
+                mapCtx.font = `bold ${12 / mapScale}px Exo 2`;
+                mapCtx.fillStyle = 'white';
+                mapCtx.fillText(m.label, m.x, m.y + 18 / mapScale);
+            }
+        });
+
+        mapCtx.restore();
+    }
+
+    function initMap() {
+        if (mapInited) return;
+        mapInited = true;
+        mapCanvas = document.getElementById('mapCanvas');
+        mapContainer = document.getElementById('mapContainer');
+        mapCtx = mapCanvas.getContext('2d');
+        loadMapData();
+        updateLegend();
+        resizeMap();
+        drawMap();
+
+        // Show admin tools
+        if (isAdmin) {
+            document.getElementById('tool-zone').style.display = 'flex';
+            document.getElementById('tool-clear-zones').style.display = 'flex';
+            document.getElementById('adminMapSep').style.display = 'block';
+        }
+
+        mapCanvas.addEventListener('mousedown', (e) => {
+            if (currentTool === 'cursor') { isDragging = true; lastMouseX = e.clientX; lastMouseY = e.clientY; }
+        });
+        mapCanvas.addEventListener('mousemove', (e) => {
+            const rect = mapCanvas.getBoundingClientRect();
+            const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+            const world = canvasToWorld(cx, cy);
+            document.getElementById('mapX').textContent = world.x;
+            document.getElementById('mapY').textContent = world.y;
+            const zone = getZoneAtPoint(world.x, world.y);
+            document.getElementById('currentZoneName').textContent = zone || 'Відкрита місцевість';
+
+            if (isDragging && currentTool === 'cursor') {
+                mapOffX += e.clientX - lastMouseX;
+                mapOffY += e.clientY - lastMouseY;
+                lastMouseX = e.clientX; lastMouseY = e.clientY;
+                drawMap();
+            }
+        });
+        mapCanvas.addEventListener('mouseup', () => isDragging = false);
+        mapCanvas.addEventListener('mouseleave', () => isDragging = false);
+        mapCanvas.addEventListener('click', (e) => {
+            const rect = mapCanvas.getBoundingClientRect();
+            const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+            const world = canvasToWorld(cx, cy);
+            if (currentTool === 'marker') {
+                const label = prompt("Назва мітки (необов'язково):");
+                markers.push({ x: world.x, y: world.y, label: label || '' });
+                drawMap();
+            } else if (currentTool === 'zone' && drawingZone) {
+                currentZonePoints.push(world);
+                drawMap();
+            }
+        });
+        mapCanvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const rect = mapCanvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+            const delta = e.deltaY > 0 ? 0.85 : 1.15;
+            const newScale = Math.max(0.2, Math.min(5, mapScale * delta));
+            mapOffX = mx - (mx - mapOffX) * (newScale / mapScale);
+            mapOffY = my - (my - mapOffY) * (newScale / mapScale);
+            mapScale = newScale;
+            document.getElementById('zoomDisplay').textContent = Math.round(mapScale * 100) + '%';
+            drawMap();
+        }, { passive: false });
+
+        window.addEventListener('resize', resizeMap);
+    }
+
+    function resizeMap() {
+        if (!mapCanvas || !mapContainer) return;
+        mapCanvas.width = mapContainer.clientWidth;
+        mapCanvas.height = mapContainer.clientHeight;
+        drawMap();
+    }
+</script>
+
+<script>
+    document.onkeydown = function(e) {
+        if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73,74,67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false;
+    };
+</script>
+</body>
+</html>
