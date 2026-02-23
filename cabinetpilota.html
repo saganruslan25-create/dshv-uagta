@@ -1193,7 +1193,7 @@ async function saveIDB(d){try{const db2=await openIDB();const tx=db2.transaction
 async function loadIDB(){try{const db2=await openIDB();return new Promise(r=>{const tx=db2.transaction('maps','readonly');const req=tx.objectStore('maps').get('mapImage');req.onsuccess=()=>r(req.result||null);req.onerror=()=>r(null);});}catch(e){return null;}}
 async function clearIDB(){try{const db2=await openIDB();db2.transaction('maps','readwrite').objectStore('maps').delete('mapImage');}catch(e){}}
 
-// ---- Стиснення зображення (canvas) ----
+// ---- Стиснення зображення ----
 function compressImage(file,maxW,maxH,quality){
   return new Promise(resolve=>{
     const img=new Image(),url=URL.createObjectURL(file);
@@ -1210,67 +1210,40 @@ function compressImage(file,maxW,maxH,quality){
   });
 }
 
-// ---- Зберігання base64 в Firestore chunks (900KB кожен) ----
-// Це єдиний надійний спосіб — без Storage Rules / CORS проблем
-const CHUNK_SIZE=900*1024; // 900KB chars per chunk doc
+// ---- Cloudinary — безкоштовне сховище зображень (25GB free) ----
+const CLOUDINARY_CLOUD = 'dcmrlzw1v';
+const CLOUDINARY_PRESET = 'dsv_map_preset'; // unsigned upload preset
+const CLOUDINARY_PUBLIC_ID = 'dsv_shared_map'; // один спільний файл
 
-async function saveImageToFirestore(base64DataUrl){
-  // base64DataUrl = "data:image/jpeg;base64,XXXX..."
-  const payload=base64DataUrl; // зберігаємо весь data URL
-  const chunks=[];
-  for(let i=0;i<payload.length;i+=CHUNK_SIZE){
-    chunks.push(payload.slice(i,i+CHUNK_SIZE));
-  }
-  const ver=Date.now().toString();
-  // Зберігаємо мета-дані
-  await setDoc(doc(db,'appData','mapImage'),{
-    version:ver,
-    totalChunks:chunks.length,
-    updatedAt:serverTimestamp()
+async function uploadToCloudinary(base64DataUrl){
+  const formData=new FormData();
+  formData.append('file',base64DataUrl);
+  formData.append('upload_preset',CLOUDINARY_PRESET);
+  formData.append('public_id',CLOUDINARY_PUBLIC_ID);
+  formData.append('overwrite','true');
+  formData.append('invalidate','true'); // очищає CDN кеш
+  const resp=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`,{
+    method:'POST',
+    body:formData
   });
-  // Зберігаємо кожен chunk
-  const writes=chunks.map((ch,i)=>
-    setDoc(doc(db,'appData','mapChunk_'+i),{data:ch,version:ver})
-  );
-  await Promise.all(writes);
-  return ver;
-}
-
-async function loadImageFromFirestore(){
-  const metaSnap=await getDoc(doc(db,'appData','mapImage'));
-  if(!metaSnap.exists())return null;
-  const {version,totalChunks}=metaSnap.data();
-  if(!totalChunks)return null;
-  const reads=[];
-  for(let i=0;i<totalChunks;i++) reads.push(getDoc(doc(db,'appData','mapChunk_'+i)));
-  const snaps=await Promise.all(reads);
-  // Verify all chunks are from same version
-  let full='';
-  for(const s of snaps){
-    if(!s.exists()||s.data().version!==version)return null;
-    full+=s.data().data;
+  if(!resp.ok){
+    const err=await resp.json();
+    throw new Error(err.error?.message||'Cloudinary upload failed');
   }
-  return full;
+  const data=await resp.json();
+  return data.secure_url; // https://res.cloudinary.com/...
 }
 
-async function clearImageFromFirestore(){
-  // Get count first
-  try{
-    const metaSnap=await getDoc(doc(db,'appData','mapImage'));
-    if(metaSnap.exists()){
-      const {totalChunks}=metaSnap.data();
-      const dels=[];
-      for(let i=0;i<(totalChunks||0);i++) dels.push(deleteDoc(doc(db,'appData','mapChunk_'+i)));
-      dels.push(deleteDoc(doc(db,'appData','mapImage')));
-      await Promise.all(dels);
-    }
-  }catch(e){console.warn('clearImage:',e);}
+async function deleteFromCloudinary(){
+  // Cloudinary видалення через unsigned — просто перезаписуємо при наступному upload
+  // Для справжнього видалення потрібен API Secret (серверна сторона)
+  console.log('Map cleared locally; Cloudinary file will be overwritten on next upload');
 }
 
-// ---- Firestore map data — zones, markers ----
+// ---- Firestore map data — zones, markers, imageUrl ----
 const MAP_DOC='mapData';
 let mapDataUnsubscribe=null,mapImageUnsubscribe=null;
-let currentMapVersion='';
+let currentMapVersion='',currentMapUrl='';
 
 function listenMapData(){
   if(mapDataUnsubscribe)mapDataUnsubscribe();
@@ -1282,13 +1255,12 @@ function listenMapData(){
       if(mapInited){updateLeg();drawMap();}
     }
   });
-  // Окремий listener для мета-даних зображення
+  // Listener для мета-даних зображення
   if(mapImageUnsubscribe)mapImageUnsubscribe();
-  mapImageUnsubscribe=onSnapshot(doc(db,'appData','mapImage'),async snap=>{
+  mapImageUnsubscribe=onSnapshot(doc(db,'appData','mapMeta'),async snap=>{
     if(!snap.exists()){
-      // Зображення видалено
-      if(currentMapVersion!==''){
-        currentMapVersion='';
+      if(currentMapVersion){
+        currentMapVersion='';currentMapUrl='';
         mapBg=null;mapBgW=0;mapBgH=0;
         await clearIDB();
         const st=document.getElementById('mapImageStatus');if(st)st.textContent='—';
@@ -1296,22 +1268,31 @@ function listenMapData(){
       }
       return;
     }
-    const {version}=snap.data();
-    if(version===currentMapVersion)return; // вже актуальна
+    const {version,url}=snap.data();
+    if(version===currentMapVersion)return;
     currentMapVersion=version;
-    // Спочатку показуємо з IDB кешу
+    currentMapUrl=url;
     const cached=await loadIDB();
-    if(cached){applyBg(cached);}
-    // Завантажуємо актуальну з Firestore
+    if(cached&&!mapBg)applyBg(cached);
     const st=document.getElementById('mapImageStatus');
     if(st)st.textContent='⟳ Завантаження...';
-    const full=await loadImageFromFirestore();
-    if(full){
-      await saveIDB(full);
-      applyBg(full);
-      if(st)st.textContent='✅';
-    } else {
-      if(st)st.textContent='❌';
+    try{
+      // Cloudinary URL публічний — fetch без CORS проблем
+      const cacheBust=url+(url.includes('?')?'&':'?')+'v='+version;
+      const resp=await fetch(cacheBust);
+      if(!resp.ok)throw new Error('HTTP '+resp.status);
+      const blob=await resp.blob();
+      const reader=new FileReader();
+      reader.onload=async e=>{
+        const data=e.target.result;
+        await saveIDB(data);
+        applyBg(data);
+        if(st)st.textContent='✅';
+      };
+      reader.readAsDataURL(blob);
+    }catch(err){
+      console.warn('Map fetch failed:',err);
+      if(st)st.textContent='❌ '+err.message;
     }
   });
 }
@@ -1760,19 +1741,20 @@ window.loadMapImage=async input=>{
   const st=document.getElementById('mapImageStatus');
   if(st)st.textContent='⟳ Стискаємо...';
   try{
-    // Стискаємо до 1200x1200 щоб влізло в Firestore (~600KB base64)
-    const compressed=await compressImage(file,1200,1200,0.80);
-    if(st)st.textContent='⟳ Зберігаємо...';
-    await saveImageToFirestore(compressed);
-    // Кешуємо локально
+    const compressed=await compressImage(file,4000,4000,0.88);
+    if(st)st.textContent='⟳ Завантаження в Cloudinary...';
+    const url=await uploadToCloudinary(compressed);
+    const ver=Date.now().toString();
+    await setDoc(doc(db,'appData','mapMeta'),{url,version:ver,updatedAt:serverTimestamp()});
     await saveIDB(compressed);
     applyBg(compressed);
+    currentMapVersion=ver;currentMapUrl=url;
     if(st)st.textContent='✅';
-    toast('✅ Карта збережена — видно всім!');
+    toast('✅ Карта завантажена — видно всім!');
   }catch(e){
-    console.error('Map save error:',e);
+    console.error('Map upload error:',e);
     if(st)st.textContent='❌ Помилка';
-    toast('❌ Помилка: '+e.message);
+    toast('❌ '+e.message);
   }
 };
 
@@ -1780,19 +1762,20 @@ window.clearMapImage=async()=>{
   const st=document.getElementById('mapImageStatus');
   if(st)st.textContent='⟳';
   try{
-    await clearImageFromFirestore();
+    await deleteFromCloudinary();
+    await deleteDoc(doc(db,'appData','mapMeta'));
     await clearIDB();
-    currentMapVersion='';
+    currentMapVersion='';currentMapUrl='';
     mapBg=null;mapBgW=0;mapBgH=0;
     if(st)st.textContent='—';
     if(mapInited)drawMap();
-    toast('🗑 Карту видалено для всіх');
+    toast('🗑 Карту видалено');
   }catch(e){
     if(st)st.textContent='❌';
-    toast('❌ Помилка: '+e.message);
+    toast('❌ '+e.message);
   }
 };
-function applyBg(src){mapBg=new Image();mapBg.onload=()=>{mapBgW=mapBg.naturalWidth;mapBgH=mapBg.naturalHeight;if(mapInited){clamp();drawMap();redrawDS();}};mapBg.src=src;document.getElementById('mapImageStatus').textContent='✅';}
+function applyBg(src){const img=new Image();img.crossOrigin="anonymous";img.onload=()=>{mapBg=img;mapBgW=img.naturalWidth;mapBgH=img.naturalHeight;if(mapInited){clamp();drawMap();redrawDS();}};img.src=src;document.getElementById('mapImageStatus').textContent='✅';}
 
 function s2w(e){const r=drawCvs.getBoundingClientRect(),cx=e.clientX-r.left,cy=e.clientY-r.top;return{cx,cy,wx:Math.round((cx-offX)/scale),wy:Math.round((cy-offY)/scale)};}
 function w2s(wx,wy){return{sx:wx*scale+offX,sy:wy*scale+offY};}
