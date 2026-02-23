@@ -1,435 +1,526 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ДШВ | КАБІНЕТ ПІЛОТА</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #22c55e; --primary-bright: #4ade80;
-            --primary-glow: rgba(34,197,94,0.6); --bg: #030507;
-            --card-bg: rgba(10,12,16,0.7); --glass-border: rgba(34,197,94,0.2);
-            --danger: #ef4444; --warning: #fbbf24; --text-gray: #94a3b8;
-            --accent-blue: #38bdf8; --gold: #f59e0b;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: var(--bg); background-image: radial-gradient(ellipse at 10% 20%, rgba(34,197,94,0.07) 0%, transparent 50%),radial-gradient(ellipse at 90% 80%, rgba(56,189,248,0.05) 0%, transparent 50%); color: white; font-family: 'Exo 2', sans-serif; min-height: 100vh; overflow-x: hidden; user-select: none; }
-        /* FIX #4 allow text selection in inputs/modals */
-        input, textarea, select { user-select: text !important; -webkit-user-select: text !important; }
-        .modal-box { user-select: text; }
-        ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: #05070a; } ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 14px 5%; background: rgba(3,5,7,0.9); border-bottom: 1px solid var(--glass-border); position: sticky; top: 0; z-index: 1000; backdrop-filter: blur(15px); }
-        .logo-box { background: var(--primary); color: black; padding: 6px 14px; border-radius: 8px; font-weight: 900; text-decoration: none; font-family: 'Rajdhani', sans-serif; font-size: 16px; letter-spacing: 2px; box-shadow: 0 0 20px rgba(34,197,94,0.3); }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .nav-link { color: white; text-decoration: none; font-weight: 600; font-size: 13px; padding: 8px 14px; border-radius: 8px; transition: 0.2s; }
-        .nav-link:hover { background: rgba(255,255,255,0.05); color: var(--primary-bright); }
-        .nav-page-title { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700; color: var(--primary-bright); letter-spacing: 3px; text-transform: uppercase; border: 1px solid var(--glass-border); padding: 6px 16px; border-radius: 8px; }
-        .page-wrapper { display: flex; height: calc(100vh - 57px); overflow: hidden; }
-        .sidebar { width: 240px; min-width: 240px; background: rgba(5,8,12,0.8); border-right: 1px solid var(--glass-border); display: flex; flex-direction: column; padding: 20px 12px; gap: 6px; overflow-y: auto; }
-        .sidebar-label { font-size: 9px; font-weight: 800; color: var(--text-gray); letter-spacing: 3px; text-transform: uppercase; padding: 12px 8px 6px; }
-        .sidebar-btn { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; background: transparent; border: 1px solid transparent; color: #8899aa; font-family: 'Exo 2', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: 0.2s; text-decoration: none; width: 100%; text-align: left; }
-        .sidebar-btn:hover, .sidebar-btn.active { background: rgba(34,197,94,0.08); border-color: var(--glass-border); color: white; }
-        .sidebar-btn.active { color: var(--primary-bright); border-color: rgba(34,197,94,0.4); }
-        .sidebar-btn .icon { font-size: 16px; width: 20px; text-align: center; }
-        .sidebar-btn .badge { margin-left: auto; background: var(--primary); color: black; font-size: 10px; font-weight: 900; padding: 2px 7px; border-radius: 20px; }
-        .balance-widget { background: linear-gradient(135deg,rgba(34,197,94,0.1),rgba(34,197,94,0.03)); border: 1px solid var(--glass-border); border-radius: 14px; padding: 16px; margin-bottom: 8px; }
-        .balance-label { font-size: 10px; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 6px; }
-        .balance-amount { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; color: var(--gold); text-shadow: 0 0 20px rgba(245,158,11,0.5); display: flex; align-items: center; gap: 8px; }
-        .balance-sub { font-size: 10px; color: var(--text-gray); margin-top: 3px; }
-        .main-content { flex: 1; overflow-y: auto; overflow-x: hidden; }
-        .tab-section { display: none; } .tab-section.active { display: block; }
-        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; padding: 25px 30px; }
-        .dash-card { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 18px; padding: 24px; position: relative; overflow: hidden; transition: 0.3s; }
-        .dash-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.4); }
-        .dash-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg,transparent,var(--primary),transparent); }
-        .dash-card-icon { font-size: 32px; margin-bottom: 10px; display: block; }
-        .dash-card-num { font-family: 'Rajdhani', sans-serif; font-size: 38px; font-weight: 700; color: var(--primary-bright); }
-        .dash-card-label { font-size: 11px; font-weight: 700; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-top: 5px; }
-        .pilot-hero { margin: 25px 30px 0; background: linear-gradient(135deg,rgba(34,197,94,0.08),rgba(56,189,248,0.04)); border: 1px solid var(--glass-border); border-radius: 20px; padding: 25px 30px; display: flex; align-items: center; gap: 25px; position: relative; overflow: hidden; }
-        .pilot-hero::after { content: '✈'; position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-size: 80px; opacity: 0.06; }
-        .pilot-avatar { width: 76px; height: 76px; border-radius: 50%; border: 3px solid var(--primary); background: #111; display: flex; align-items: center; justify-content: center; font-size: 34px; box-shadow: 0 0 25px var(--primary-glow); flex-shrink: 0; }
-        .pilot-info h2 { font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700; }
-        .pilot-info p { color: var(--primary-bright); font-size: 13px; margin-top: 4px; }
-        .pilot-rank-badge { display: inline-block; background: var(--primary); color: black; padding: 4px 12px; border-radius: 6px; font-size: 11px; font-weight: 900; margin-top: 8px; }
-        .xp-bar-wrap { margin: 16px 30px 0; padding: 14px 22px; background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 14px; }
-        .xp-bar-top { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: var(--text-gray); font-weight: 700; }
-        .xp-bar-bg { background: rgba(255,255,255,0.05); border-radius: 20px; height: 7px; overflow: hidden; }
-        .xp-bar-fill { height: 100%; background: linear-gradient(90deg,var(--primary),var(--accent-blue)); border-radius: 20px; transition: width 1s ease; box-shadow: 0 0 10px var(--primary-glow); }
-        /* QUESTS */
-        .quests-header { padding: 22px 30px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.04); flex-wrap: wrap; gap: 10px; }
-        .quests-title { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; color: var(--primary-bright); }
-        .btn-add-quest { background: var(--primary); color: black; border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Exo 2', sans-serif; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: none; }
-        .btn-add-quest.visible { display: block; }
-        .quest-filters { padding: 12px 30px; display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .filter-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid #333; background: transparent; color: var(--text-gray); font-family: 'Exo 2', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
-        .filter-btn.active, .filter-btn:hover { border-color: var(--primary); color: var(--primary-bright); background: rgba(34,197,94,0.08); }
-        .quests-list { padding: 18px 30px; display: flex; flex-direction: column; gap: 12px; }
-        .quest-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 18px 22px; display: flex; align-items: flex-start; gap: 18px; transition: 0.3s; }
-        .quest-card:hover { border-color: var(--glass-border); background: rgba(15,20,25,0.8); }
-        .quest-card.taken { border-left: 3px solid var(--primary); }
-        .quest-card.completed { border-left: 3px solid var(--gold); opacity: 0.7; }
-        .quest-diff { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 1px solid rgba(255,255,255,0.1); }
-        .diff-easy { background: rgba(34,197,94,0.15); border-color: rgba(34,197,94,0.3); }
-        .diff-medium { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.3); }
-        .diff-hard { background: rgba(239,68,68,0.15); border-color: rgba(239,68,68,0.3); }
-        .diff-elite { background: rgba(168,85,247,0.15); border-color: rgba(168,85,247,0.3); }
-        .quest-info { flex: 1; min-width: 0; }
-        .quest-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
-        .quest-desc { font-size: 12px; color: var(--text-gray); line-height: 1.5; }
-        /* FIX #8 location */
-        .quest-location { font-size: 11px; color: var(--accent-blue); margin-top: 5px; }
-        .quest-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-        .quest-tag { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 5px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .tag-type { background: rgba(56,189,248,0.1); color: var(--accent-blue); border: 1px solid rgba(56,189,248,0.2); }
-        .tag-diff-easy { background: rgba(34,197,94,0.1); color: var(--primary-bright); border: 1px solid rgba(34,197,94,0.2); }
-        .tag-diff-medium { background: rgba(251,191,36,0.1); color: var(--warning); border: 1px solid rgba(251,191,36,0.2); }
-        .tag-diff-hard { background: rgba(239,68,68,0.1); color: #f87171; border: 1px solid rgba(239,68,68,0.2); }
-        .tag-diff-elite { background: rgba(168,85,247,0.1); color: #c084fc; border: 1px solid rgba(168,85,247,0.2); }
-        .quest-admin-btns { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
-        .btn-admin-q { padding: 5px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .btn-q-edit { background: rgba(56,189,248,0.15); color: var(--accent-blue); border: 1px solid rgba(56,189,248,0.3); }
-        .btn-q-del { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
-        .btn-q-complete { background: rgba(245,158,11,0.1); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
-        .btn-q-edit:hover { background: var(--accent-blue); color: black; }
-        .btn-q-del:hover { background: var(--danger); color: white; }
-        .btn-q-complete:hover { background: var(--gold); color: black; }
-        /* FIX #6/#7/#9 reward area */
-        .quest-reward { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; min-width: 110px; }
-        .quest-coins { font-family: 'Rajdhani', sans-serif; font-size: 19px; font-weight: 700; color: var(--gold); }
-        .quest-xp { font-size: 11px; color: var(--accent-blue); font-weight: 700; }
-        .quest-penalty { font-size: 11px; color: var(--danger); font-weight: 700; }
-        .quest-btn-col { display: flex; flex-direction: column; gap: 5px; width: 100%; }
-        .btn-take { padding: 7px 12px; border-radius: 8px; font-family: 'Exo 2',sans-serif; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; border: 1px solid var(--primary); background: rgba(34,197,94,0.1); color: var(--primary-bright); text-transform: uppercase; white-space: nowrap; }
-        .btn-take:hover { background: var(--primary); color: black; }
-        .btn-cancel { padding: 7px 12px; border-radius: 8px; font-family: 'Exo 2',sans-serif; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; border: 1px solid var(--danger); background: rgba(239,68,68,0.08); color: #f87171; text-transform: uppercase; white-space: nowrap; }
-        .btn-cancel:hover { background: var(--danger); color: white; }
-        .btn-submit { padding: 7px 12px; border-radius: 8px; font-family: 'Exo 2',sans-serif; font-size: 11px; font-weight: 800; cursor: pointer; transition: 0.2s; border: 1px solid var(--warning); background: rgba(251,191,36,0.08); color: var(--warning); text-transform: uppercase; white-space: nowrap; }
-        .btn-submit:hover { background: var(--warning); color: black; }
-        /* MAP */
-        .map-section { display: none; height: calc(100vh - 57px); flex-direction: column; }
-        .map-section.active { display: flex; }
-        .map-toolbar { padding: 9px 14px; background: rgba(5,8,12,0.97); border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
-        .map-tool-btn { padding: 7px 11px; border-radius: 7px; background: rgba(255,255,255,0.04); border: 1px solid #333; color: #aaa; font-family: 'Exo 2',sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px; }
-        .map-tool-btn.active, .map-tool-btn:hover { border-color: var(--primary); color: var(--primary-bright); background: rgba(34,197,94,0.08); }
-        .map-tool-sep { width: 1px; height: 26px; background: #222; flex-shrink: 0; }
-        .dc-swatch { width: 20px; height: 20px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; transition: 0.15s; flex-shrink: 0; }
-        .dc-swatch.active { border-color: white; transform: scale(1.2); }
-        .ds-btn { width: 26px; height: 26px; border-radius: 6px; background: rgba(255,255,255,0.04); border: 1px solid #333; color: #aaa; cursor: pointer; font-size: 10px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
-        .ds-btn.active, .ds-btn:hover { border-color: var(--primary); color: var(--primary-bright); background: rgba(34,197,94,0.08); }
-        .map-container { flex: 1; position: relative; overflow: hidden; background: #05090e; }
-        #mapCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
-        #drawCanvas { position: absolute; top: 0; left: 0; cursor: grab; }
-        .map-info-panel { position: absolute; left: 15px; bottom: 15px; background: rgba(3,5,7,0.92); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px 18px; min-width: 190px; backdrop-filter: blur(10px); font-size: 12px; pointer-events: none; }
-        .map-info-title { font-size: 9px; font-weight: 800; color: var(--primary); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
-        .map-info-row { display: flex; justify-content: space-between; gap: 20px; color: var(--text-gray); margin-top: 4px; }
-        .map-info-val { color: white; font-weight: 700; font-family: 'Rajdhani', sans-serif; font-size: 14px; }
-        .map-zone-name { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
-        .map-zone-label { font-size: 9px; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; }
-        .map-zone-val { color: var(--primary-bright); font-weight: 700; margin-top: 3px; font-size: 14px; }
-        .map-legend { position: absolute; right: 15px; top: 15px; background: rgba(3,5,7,0.92); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px 18px; min-width: 170px; backdrop-filter: blur(10px); pointer-events: none; }
-        .map-legend-title { font-size: 9px; font-weight: 800; color: var(--primary); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 10px; }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-gray); margin-bottom: 7px; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .zone-admin-panel { position: absolute; right: 15px; bottom: 15px; background: rgba(3,5,7,0.92); border: 1px solid var(--glass-border); border-radius: 14px; padding: 14px; width: 210px; backdrop-filter: blur(10px); display: none; }
-        .zone-admin-panel.visible { display: block; }
-        .zone-admin-title { font-size: 9px; font-weight: 800; color: var(--warning); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
-        .zone-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #333; color: white; padding: 7px 10px; border-radius: 7px; font-size: 12px; outline: none; margin-bottom: 6px; font-family: 'Exo 2',sans-serif; }
-        .zone-color-picker { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-        .zone-color { width: 20px; height: 20px; border-radius: 5px; cursor: pointer; border: 2px solid transparent; }
-        .zone-color.selected { border-color: white; }
-        .btn-zone-save { width: 100%; padding: 7px; border-radius: 7px; border: none; background: var(--warning); color: black; font-weight: 900; font-size: 11px; cursor: pointer; }
-        .btn-zone-clear { width: 100%; padding: 6px; border-radius: 7px; border: 1px solid #333; background: none; color: #666; font-size: 11px; cursor: pointer; margin-top: 5px; }
-        /* MODALS */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.87); z-index: 5000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-box { background: #0a0d11; border: 1px solid var(--glass-border); border-radius: 20px; padding: 30px; width: 90%; max-width: 520px; max-height: 90vh; overflow-y: auto; position: relative; animation: modalPop 0.22s ease; }
-        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-title { font-family: 'Rajdhani',sans-serif; font-size: 22px; font-weight: 700; color: var(--primary-bright); margin-bottom: 20px; letter-spacing: 1px; }
-        .close-modal { position: absolute; top: 14px; right: 17px; font-size: 26px; color: #555; cursor: pointer; background: none; border: none; }
-        .close-modal:hover { color: white; }
-        .form-group { margin-bottom: 15px; }
-        .form-label { display: block; font-size: 11px; font-weight: 800; color: var(--text-gray); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 7px; }
-        .form-input { width: 100%; background: rgba(0,0,0,0.5); border: 1px solid #222; color: white; padding: 10px 13px; border-radius: 10px; font-family: 'Exo 2',sans-serif; font-size: 14px; outline: none; transition: 0.2s; }
-        .form-input:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(34,197,94,0.15); }
-        textarea.form-input { resize: vertical; min-height: 75px; }
-        select.form-input option { background: #0a0d11; }
-        .btn-form-primary { width: 100%; padding: 13px; border-radius: 10px; border: none; background: var(--primary); color: black; font-family: 'Exo 2',sans-serif; font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s; text-transform: uppercase; margin-top: 5px; }
-        .btn-form-primary:hover { box-shadow: 0 0 20px rgba(34,197,94,0.4); transform: translateY(-1px); }
-        .btn-form-danger { width: 100%; padding: 13px; border-radius: 10px; border: 1px solid var(--danger); background: rgba(239,68,68,0.1); color: var(--danger); font-family: 'Exo 2',sans-serif; font-weight: 900; font-size: 14px; cursor: pointer; transition: 0.2s; text-transform: uppercase; margin-top: 5px; }
-        .btn-form-danger:hover { background: var(--danger); color: white; }
-        .diff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .diff-option { padding: 9px; border-radius: 8px; border: 1px solid #333; text-align: center; cursor: pointer; font-size: 12px; font-weight: 700; transition: 0.2s; }
-        .diff-option.selected-easy { border-color: var(--primary); background: rgba(34,197,94,0.1); color: var(--primary-bright); }
-        .diff-option.selected-medium { border-color: var(--warning); background: rgba(251,191,36,0.1); color: var(--warning); }
-        .diff-option.selected-hard { border-color: var(--danger); background: rgba(239,68,68,0.1); color: #f87171; }
-        .diff-option.selected-elite { border-color: #a855f7; background: rgba(168,85,247,0.1); color: #c084fc; }
-        .toast { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); background: #0a0d11; border: 1px solid var(--primary); padding: 11px 22px; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--primary-bright); z-index: 9999; display: none; box-shadow: 0 0 25px rgba(34,197,94,0.3); }
-        .empty-state { text-align: center; padding: 55px 20px; color: var(--text-gray); }
-        .empty-state-icon { font-size: 44px; margin-bottom: 14px; opacity: 0.45; }
-        .empty-state p { font-size: 13px; }
-        /* ADMIN */
-        .admin-block { background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 16px; padding: 22px; margin-bottom: 12px; }
-        .admin-block-title { font-size: 14px; font-weight: 800; color: var(--primary-bright); margin-bottom: 14px; }
-        .admin-block-desc { font-size: 11px; color: var(--text-gray); margin-bottom: 12px; line-height: 1.6; }
-        .webhook-events { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
-        .webhook-ev { display: flex; flex-direction: column; gap: 5px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); }
-        .webhook-ev-label { font-size: 10px; font-weight: 800; color: var(--text-gray); letter-spacing: 1px; text-transform: uppercase; }
-        .row-flex { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
-        .btn-sm { padding: 9px 16px; border-radius: 8px; border: none; background: var(--primary); color: black; font-weight: 900; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s; }
-        .btn-sm:hover { box-shadow: 0 0 15px var(--primary-glow); }
-        .btn-sm-outline { padding: 9px 16px; border-radius: 8px; border: 1px solid var(--accent-blue); background: rgba(56,189,248,0.08); color: var(--accent-blue); font-weight: 900; font-size: 12px; cursor: pointer; transition: 0.2s; }
-        .btn-sm-outline:hover { background: var(--accent-blue); color: black; }
-        @media (max-width: 768px) {
-            .sidebar { width: 60px; min-width: 60px; }
-            .sidebar-btn span:not(.icon) { display: none; }
-            .balance-widget { padding: 10px; }
-            .balance-amount { font-size: 18px; }
-            .balance-label, .balance-sub { display: none; }
-            .webhook-events { grid-template-columns: 1fr; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ДШВ | КАБІНЕТ ПІЛОТА</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Exo+2:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{--pr:#22c55e;--pb:#4ade80;--pg:rgba(34,197,94,.6);--bg:#030507;--cb:rgba(10,12,16,.7);--gb:rgba(34,197,94,.2);--dn:#ef4444;--wn:#fbbf24;--tg:#94a3b8;--bl:#38bdf8;--gd:#f59e0b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#030507;background-image:radial-gradient(ellipse at 10% 20%,rgba(34,197,94,.07) 0%,transparent 50%),radial-gradient(ellipse at 90% 80%,rgba(56,189,248,.05) 0%,transparent 50%);color:#fff;font-family:'Exo 2',sans-serif;min-height:100vh;overflow-x:hidden;user-select:none}
+input,textarea,select{user-select:text!important;-webkit-user-select:text!important}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#05070a}::-webkit-scrollbar-thumb{background:var(--pr);border-radius:10px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:14px 5%;background:rgba(3,5,7,.9);border-bottom:1px solid var(--gb);position:sticky;top:0;z-index:1000;backdrop-filter:blur(15px)}
+.logo-box{background:var(--pr);color:#000;padding:6px 14px;border-radius:8px;font-weight:900;text-decoration:none;font-family:'Rajdhani',sans-serif;font-size:16px;letter-spacing:2px}
+.nav-link{color:#fff;text-decoration:none;font-weight:600;font-size:13px;padding:8px 14px;border-radius:8px;transition:.2s}
+.nav-link:hover{background:rgba(255,255,255,.05);color:var(--pb)}
+.nav-page-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;color:var(--pb);letter-spacing:3px;text-transform:uppercase;border:1px solid var(--gb);padding:6px 16px;border-radius:8px}
+.page-wrapper{display:flex;height:calc(100vh - 57px);overflow:hidden}
+.sidebar{width:240px;min-width:240px;background:rgba(5,8,12,.8);border-right:1px solid var(--gb);display:flex;flex-direction:column;padding:20px 12px;gap:6px;overflow-y:auto}
+.sidebar-label{font-size:9px;font-weight:800;color:var(--tg);letter-spacing:3px;text-transform:uppercase;padding:12px 8px 6px}
+.sidebar-btn{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;background:transparent;border:1px solid transparent;color:#8899aa;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;width:100%;text-align:left}
+.sidebar-btn:hover,.sidebar-btn.active{background:rgba(34,197,94,.08);border-color:var(--gb);color:#fff}
+.sidebar-btn.active{color:var(--pb);border-color:rgba(34,197,94,.4)}
+.sidebar-btn .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-btn .badge{margin-left:auto;background:var(--pr);color:#000;font-size:10px;font-weight:900;padding:2px 7px;border-radius:20px}
+.balance-widget{background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,197,94,.03));border:1px solid var(--gb);border-radius:14px;padding:16px;margin-bottom:8px}
+.balance-label{font-size:10px;font-weight:800;color:var(--tg);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.balance-amount{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--gd);text-shadow:0 0 20px rgba(245,158,11,.5);display:flex;align-items:center;gap:8px}
+.balance-sub{font-size:10px;color:var(--tg);margin-top:3px}
+.main-content{flex:1;overflow-y:auto;overflow-x:hidden}
+.tab-section{display:none}.tab-section.active{display:block}
+/* dashboard */
+.dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;padding:25px 30px}
+.dash-card{background:var(--cb);border:1px solid var(--gb);border-radius:18px;padding:24px;position:relative;overflow:hidden;transition:.3s}
+.dash-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(34,197,94,.1)}
+.dash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--pr),transparent)}
+.dash-card-icon{font-size:30px;margin-bottom:10px;display:block}
+.dash-card-num{font-family:'Rajdhani',sans-serif;font-size:36px;font-weight:700;color:var(--pb)}
+.dash-card-label{font-size:11px;font-weight:700;color:var(--tg);letter-spacing:2px;text-transform:uppercase;margin-top:4px}
+.pilot-hero{margin:25px 30px 0;background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(56,189,248,.04));border:1px solid var(--gb);border-radius:20px;padding:25px 30px;display:flex;align-items:center;gap:25px;position:relative;overflow:hidden}
+.pilot-hero::after{content:'✈';position:absolute;right:30px;top:50%;transform:translateY(-50%);font-size:80px;opacity:.06}
+.pilot-avatar{width:76px;height:76px;border-radius:50%;border:3px solid var(--pr);background:#111;display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 0 25px var(--pg);flex-shrink:0}
+.pilot-info h2{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700}
+.pilot-info p{color:var(--pb);font-size:13px;margin-top:4px}
+.pilot-rank-badge{display:inline-block;background:var(--pr);color:#000;padding:4px 12px;border-radius:6px;font-size:11px;font-weight:900;margin-top:8px}
+.xp-bar-wrap{margin:16px 30px 0;padding:14px 22px;background:var(--cb);border:1px solid var(--gb);border-radius:14px}
+.xp-bar-top{display:flex;justify-content:space-between;margin-bottom:8px;font-size:12px;color:var(--tg);font-weight:700}
+.xp-bar-bg{background:rgba(255,255,255,.05);border-radius:20px;height:7px;overflow:hidden}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--pr),var(--bl));border-radius:20px;transition:width 1s ease;box-shadow:0 0 10px var(--pg)}
+/* quests */
+.quests-header{padding:22px 30px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.04);flex-wrap:wrap;gap:10px}
+.quests-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;color:var(--pb)}
+.btn-add-quest{background:var(--pr);color:#000;border:none;padding:10px 20px;border-radius:10px;font-family:'Exo 2',sans-serif;font-weight:800;font-size:12px;cursor:pointer;transition:.2s;display:none}
+.btn-add-quest.visible{display:block}
+.quest-filters{padding:12px 30px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.04)}
+.filter-btn{padding:6px 14px;border-radius:20px;border:1px solid #333;background:transparent;color:var(--tg);font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.filter-btn.active,.filter-btn:hover{border-color:var(--pr);color:var(--pb);background:rgba(34,197,94,.08)}
+.quests-list{padding:18px 30px;display:flex;flex-direction:column;gap:12px}
+.quest-card{background:var(--cb);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:18px 22px;display:flex;align-items:flex-start;gap:18px;transition:.3s}
+.quest-card:hover{border-color:var(--gb)}
+.quest-card.taken{border-left:3px solid var(--pr)}
+.quest-card.completed{border-left:3px solid var(--gd);opacity:.7}
+.quest-diff{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1px solid rgba(255,255,255,.1)}
+.diff-easy{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3)}
+.diff-medium{background:rgba(251,191,36,.15);border-color:rgba(251,191,36,.3)}
+.diff-hard{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.3)}
+.diff-elite{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.3)}
+.quest-info{flex:1;min-width:0}
+.quest-name{font-size:14px;font-weight:700;margin-bottom:4px}
+.quest-desc{font-size:12px;color:var(--tg);line-height:1.5}
+.quest-location{font-size:11px;color:var(--bl);margin-top:5px;cursor:pointer}
+.quest-location:hover{color:var(--pb)}
+.quest-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.quest-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;letter-spacing:.5px;text-transform:uppercase}
+.tag-type{background:rgba(56,189,248,.1);color:var(--bl);border:1px solid rgba(56,189,248,.2)}
+.tag-diff-easy{background:rgba(34,197,94,.1);color:var(--pb);border:1px solid rgba(34,197,94,.2)}
+.tag-diff-medium{background:rgba(251,191,36,.1);color:var(--wn);border:1px solid rgba(251,191,36,.2)}
+.tag-diff-hard{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2)}
+.tag-diff-elite{background:rgba(168,85,247,.1);color:#c084fc;border:1px solid rgba(168,85,247,.2)}
+.quest-admin-btns{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.btn-aq{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:800;cursor:pointer;transition:.2s}
+.btn-q-edit{background:rgba(56,189,248,.15);color:var(--bl);border:1px solid rgba(56,189,248,.3)}
+.btn-q-del{background:rgba(239,68,68,.1);color:var(--dn);border:1px solid rgba(239,68,68,.3)}
+.btn-q-cmp{background:rgba(245,158,11,.1);color:var(--gd);border:1px solid rgba(245,158,11,.3)}
+.btn-q-edit:hover{background:var(--bl);color:#000}.btn-q-del:hover{background:var(--dn);color:#fff}.btn-q-cmp:hover{background:var(--gd);color:#000}
+.quest-reward{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;min-width:110px}
+.quest-coins{font-family:'Rajdhani',sans-serif;font-size:19px;font-weight:700;color:var(--gd)}
+.quest-xp{font-size:11px;color:var(--bl);font-weight:700}
+.quest-penalty{font-size:11px;color:var(--dn);font-weight:700}
+.quest-btn-col{display:flex;flex-direction:column;gap:5px;width:100%}
+.btn-take{padding:7px 12px;border-radius:8px;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:.2s;border:1px solid var(--pr);background:rgba(34,197,94,.1);color:var(--pb);text-transform:uppercase;white-space:nowrap}
+.btn-take:hover{background:var(--pr);color:#000}
+.btn-cancel{padding:7px 12px;border-radius:8px;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:.2s;border:1px solid var(--dn);background:rgba(239,68,68,.08);color:#f87171;text-transform:uppercase;white-space:nowrap}
+.btn-cancel:hover{background:var(--dn);color:#fff}
+.btn-submit{padding:7px 12px;border-radius:8px;font-family:'Exo 2',sans-serif;font-size:11px;font-weight:800;cursor:pointer;transition:.2s;border:1px solid var(--wn);background:rgba(251,191,36,.08);color:var(--wn);text-transform:uppercase;white-space:nowrap}
+.btn-submit:hover{background:var(--wn);color:#000}
+/* map */
+.map-section{display:none;height:calc(100vh - 57px);flex-direction:column}
+.map-section.active{display:flex}
+.map-toolbar{padding:9px 14px;background:rgba(5,8,12,.97);border-bottom:1px solid var(--gb);display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex-shrink:0}
+.mtb{padding:7px 11px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid #333;color:#aaa;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.mtb.active,.mtb:hover{border-color:var(--pr);color:var(--pb);background:rgba(34,197,94,.08)}
+.tsep{width:1px;height:26px;background:#222;flex-shrink:0}
+.dcs{width:20px;height:20px;border-radius:5px;cursor:pointer;border:2px solid transparent;transition:.15s;flex-shrink:0}
+.dcs.active{border-color:#fff;transform:scale(1.2)}
+.dsb{width:26px;height:26px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid #333;color:#aaa;cursor:pointer;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}
+.dsb.active,.dsb:hover{border-color:var(--pr);color:var(--pb);background:rgba(34,197,94,.08)}
+.map-container{flex:1;position:relative;overflow:hidden;background:#05090e}
+#mapCanvas{position:absolute;top:0;left:0;pointer-events:none}
+#drawCanvas{position:absolute;top:0;left:0}
+.map-info{position:absolute;left:15px;bottom:15px;background:rgba(3,5,7,.93);border:1px solid var(--gb);border-radius:14px;padding:14px 18px;min-width:190px;backdrop-filter:blur(10px);font-size:12px;pointer-events:none;z-index:10}
+.mit{font-size:9px;font-weight:800;color:var(--pr);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+.mir{display:flex;justify-content:space-between;gap:20px;color:var(--tg);margin-top:4px}
+.miv{color:#fff;font-weight:700;font-family:'Rajdhani',sans-serif;font-size:14px}
+.mzn{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06)}
+.mzl{font-size:9px;font-weight:800;color:var(--tg);letter-spacing:2px;text-transform:uppercase}
+.mzv{color:var(--pb);font-weight:700;margin-top:3px;font-size:14px}
+.map-legend{position:absolute;right:15px;top:15px;background:rgba(3,5,7,.93);border:1px solid var(--gb);border-radius:14px;padding:14px 18px;min-width:160px;backdrop-filter:blur(10px);pointer-events:none;z-index:10}
+.mlt{font-size:9px;font-weight:800;color:var(--pr);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tg);margin-bottom:7px}
+.ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+/* floating panels */
+.map-panel{position:absolute;right:15px;bottom:15px;background:rgba(3,5,7,.96);border:1px solid var(--gb);border-radius:14px;padding:16px;width:220px;backdrop-filter:blur(10px);display:none;z-index:20}
+.map-panel.vis{display:block}
+.mp-title{font-size:9px;font-weight:800;color:var(--wn);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.mp-input{width:100%;background:rgba(0,0,0,.5);border:1px solid #333;color:#fff;padding:7px 10px;border-radius:7px;font-size:12px;outline:none;margin-bottom:8px;font-family:'Exo 2',sans-serif}
+.mp-colors{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.cc{width:20px;height:20px;border-radius:5px;cursor:pointer;border:2px solid transparent;flex-shrink:0}
+.cc.sel{border-color:#fff}
+.cc-custom{width:22px;height:22px;border-radius:5px;cursor:pointer;border:1px dashed #555;background:linear-gradient(135deg,#f00,#0f0,#00f);flex-shrink:0;position:relative;overflow:hidden}
+.cc-custom input{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.mp-hint{font-size:10px;color:var(--tg);margin-bottom:8px}
+.mp-btn{width:100%;padding:8px;border-radius:7px;border:none;background:var(--wn);color:#000;font-weight:900;font-size:11px;cursor:pointer;margin-bottom:5px}
+.mp-btn-sec{width:100%;padding:7px;border-radius:7px;border:1px solid #333;background:none;color:#666;font-size:11px;cursor:pointer}
+/* context menu */
+.ctx{position:fixed;background:rgba(8,12,18,.97);border:1px solid var(--gb);border-radius:12px;padding:6px;z-index:9000;display:none;min-width:170px;backdrop-filter:blur(15px);box-shadow:0 10px 40px rgba(0,0,0,.7)}
+.ctx.vis{display:block}
+.cti{padding:9px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:9px;color:#ddd}
+.cti:hover{background:rgba(34,197,94,.1);color:var(--pb)}
+.cti.danger:hover{background:rgba(239,68,68,.1);color:var(--dn)}
+.ct-sep{height:1px;background:rgba(255,255,255,.06);margin:4px 0}
+/* modals */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.87);z-index:5000;display:none;justify-content:center;align-items:center;backdrop-filter:blur(5px)}
+.modal-box{background:#0a0d11;border:1px solid var(--gb);border-radius:20px;padding:30px;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;position:relative;animation:mpop .22s ease}
+.modal-box.wide{max-width:720px}
+@keyframes mpop{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--pb);margin-bottom:20px;letter-spacing:1px}
+.close-modal{position:absolute;top:14px;right:17px;font-size:26px;color:#555;cursor:pointer;background:none;border:none}
+.close-modal:hover{color:#fff}
+.form-group{margin-bottom:15px}
+.form-label{display:block;font-size:11px;font-weight:800;color:var(--tg);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.form-input{width:100%;background:rgba(0,0,0,.5);border:1px solid #222;color:#fff;padding:10px 13px;border-radius:10px;font-family:'Exo 2',sans-serif;font-size:14px;outline:none;transition:.2s}
+.form-input:focus{border-color:var(--pr);box-shadow:0 0 10px rgba(34,197,94,.15)}
+textarea.form-input{resize:vertical;min-height:75px}
+select.form-input option{background:#0a0d11}
+.btn-fp{width:100%;padding:13px;border-radius:10px;border:none;background:var(--pr);color:#000;font-family:'Exo 2',sans-serif;font-weight:900;font-size:14px;cursor:pointer;transition:.2s;text-transform:uppercase;margin-top:5px}
+.btn-fp:hover{box-shadow:0 0 20px rgba(34,197,94,.4);transform:translateY(-1px)}
+.btn-fd{width:100%;padding:13px;border-radius:10px;border:1px solid var(--dn);background:rgba(239,68,68,.1);color:var(--dn);font-family:'Exo 2',sans-serif;font-weight:900;font-size:14px;cursor:pointer;transition:.2s;text-transform:uppercase;margin-top:5px}
+.btn-fd:hover{background:var(--dn);color:#fff}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.dfo{padding:9px;border-radius:8px;border:1px solid #333;text-align:center;cursor:pointer;font-size:12px;font-weight:700;transition:.2s}
+.dfo.sel-easy{border-color:var(--pr);background:rgba(34,197,94,.1);color:var(--pb)}
+.dfo.sel-medium{border-color:var(--wn);background:rgba(251,191,36,.1);color:var(--wn)}
+.dfo.sel-hard{border-color:var(--dn);background:rgba(239,68,68,.1);color:#f87171}
+.dfo.sel-elite{border-color:#a855f7;background:rgba(168,85,247,.1);color:#c084fc}
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#0a0d11;border:1px solid var(--pr);padding:11px 22px;border-radius:12px;font-size:13px;font-weight:700;color:var(--pb);z-index:9999;display:none;box-shadow:0 0 25px rgba(34,197,94,.3)}
+.empty-state{text-align:center;padding:55px 20px;color:var(--tg)}
+.empty-state-icon{font-size:44px;margin-bottom:14px;opacity:.45}
+/* admin */
+.ablock{background:var(--cb);border:1px solid var(--gb);border-radius:16px;padding:22px;margin-bottom:12px}
+.ablock-t{font-size:14px;font-weight:800;color:var(--pb);margin-bottom:14px}
+.ablock-d{font-size:11px;color:var(--tg);margin-bottom:12px;line-height:1.6}
+.webhook-events{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.wev{display:flex;flex-direction:column;gap:5px;background:rgba(0,0,0,.3);padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.05)}
+.wev-l{font-size:10px;font-weight:800;color:var(--tg);letter-spacing:1px;text-transform:uppercase}
+.rflex{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}
+.bsm{padding:9px 16px;border-radius:8px;border:none;background:var(--pr);color:#000;font-weight:900;font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s}
+.bsmo{padding:9px 16px;border-radius:8px;border:1px solid var(--bl);background:rgba(56,189,248,.08);color:var(--bl);font-weight:900;font-size:12px;cursor:pointer;transition:.2s}
+.bsmo:hover{background:var(--bl);color:#000}
+/* submissions */
+.sub-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:16px 20px;display:flex;flex-direction:column;gap:8px}
+.sub-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.sub-name{font-size:14px;font-weight:700}
+.sub-quest{font-size:11px;color:var(--bl);font-weight:700}
+.sub-status{padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase}
+.status-pending{background:rgba(251,191,36,.1);color:var(--wn);border:1px solid rgba(251,191,36,.3)}
+.status-approved{background:rgba(34,197,94,.1);color:var(--pb);border:1px solid rgba(34,197,94,.3)}
+.status-rejected{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.3)}
+.sub-body{font-size:12px;color:var(--tg);line-height:1.6}
+.sub-link{color:var(--bl);font-size:12px;word-break:break-all}
+.sub-acts{display:flex;gap:8px;margin-top:4px;flex-wrap:wrap}
+/* loc picker mini map */
+.loc-map-wrap{position:relative;width:100%;height:380px;background:#05090e;border-radius:12px;overflow:hidden;border:1px solid var(--gb)}
+#locCanvas,#locPickCanvas{position:absolute;top:0;left:0}
+/* color swatch combo */
+.swatch-row{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.sw{width:22px;height:22px;border-radius:5px;cursor:pointer;border:2px solid transparent;flex-shrink:0;transition:.15s}
+.sw.sel{border-color:#fff;transform:scale(1.15)}
+.sw-custom{position:relative;overflow:hidden;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);border:1px dashed #777}
+.sw-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+@media(max-width:768px){.sidebar{width:60px;min-width:60px}.sidebar-btn span:not(.icon){display:none}.balance-label,.balance-sub{display:none}.webhook-events{grid-template-columns:1fr}}
+</style>
 </head>
 <body oncontextmenu="return false;">
 
 <nav>
-    <a href="index.html" class="logo-box">ДШВ</a>
-    <span class="nav-page-title">✈ КАБІНЕТ ПІЛОТА</span>
-    <div class="nav-right"><a href="javascript:window.history.back()" class="nav-link">← НАЗАД</a></div>
+  <a href="index.html" class="logo-box">ДШВ</a>
+  <span class="nav-page-title">✈ КАБІНЕТ ПІЛОТА</span>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="javascript:window.history.back()" class="nav-link">← НАЗАД</a>
+  </div>
 </nav>
 
 <div class="page-wrapper">
-    <aside class="sidebar">
-        <div class="balance-widget">
-            <div class="balance-label">БАЛАНС</div>
-            <div class="balance-amount">🪙<span id="sideBalance">0</span></div>
-            <div class="balance-sub">Коїни пілота</div>
-        </div>
-        <div class="sidebar-label">НАВІГАЦІЯ</div>
-        <button class="sidebar-btn active" onclick="showTab('dashboard',this)"><span class="icon">🏠</span><span>Панель</span></button>
-        <button class="sidebar-btn" onclick="showTab('quests',this)"><span class="icon">📋</span><span>Квести</span><span class="badge" id="activeQuestsBadge" style="display:none"></span></button>
-        <button class="sidebar-btn" onclick="showTab('myquests',this)"><span class="icon">⚔️</span><span>Мої квести</span></button>
-        <button class="sidebar-btn" onclick="showTab('map',this)"><span class="icon">🗺️</span><span>Карта</span></button>
-        <div class="sidebar-label" id="adminSideLabel" style="display:none">АДМІНІСТРАЦІЯ</div>
-        <button class="sidebar-btn" onclick="showTab('admin',this)" id="adminTabBtn" style="display:none"><span class="icon">⚙️</span><span>Управління</span></button>
-    </aside>
+<aside class="sidebar">
+  <div class="balance-widget">
+    <div class="balance-label">БАЛАНС</div>
+    <div class="balance-amount">🪙<span id="sideBalance">0</span></div>
+    <div class="balance-sub">Коїни пілота</div>
+  </div>
+  <div class="sidebar-label">НАВІГАЦІЯ</div>
+  <button class="sidebar-btn active" onclick="showTab('dashboard',this)"><span class="icon">🏠</span><span>Панель</span></button>
+  <button class="sidebar-btn" onclick="showTab('quests',this)"><span class="icon">📋</span><span>Квести</span><span class="badge" id="qBadge" style="display:none"></span></button>
+  <button class="sidebar-btn" onclick="showTab('myquests',this)"><span class="icon">⚔️</span><span>Мої квести</span></button>
+  <button class="sidebar-btn" onclick="showTab('map',this)"><span class="icon">🗺️</span><span>Карта</span></button>
+  <div class="sidebar-label" id="adminSideLabel" style="display:none">АДМІНІСТРАЦІЯ</div>
+  <button class="sidebar-btn" onclick="showTab('admin',this)" id="adminTabBtn" style="display:none"><span class="icon">⚙️</span><span>Управління</span></button>
+  <button class="sidebar-btn" onclick="showTab('submissions',this)" id="subTabBtn" style="display:none"><span class="icon">📨</span><span>Здачі квестів</span><span class="badge" id="subBadge" style="display:none;background:var(--wn);color:#000"></span></button>
+</aside>
 
-    <main class="main-content">
-        <!-- DASHBOARD -->
-        <div id="tab-dashboard" class="tab-section active">
-            <div class="pilot-hero">
-                <div class="pilot-avatar">✈️</div>
-                <div class="pilot-info"><h2 id="pilotName">Завантаження...</h2><p id="pilotRank">Пілот</p><span class="pilot-rank-badge" id="pilotLevel">РІВЕНЬ 1</span></div>
-            </div>
-            <div class="xp-bar-wrap">
-                <div class="xp-bar-top"><span>ДОСВІД</span><span id="xpText">0 / 1000 XP</span></div>
-                <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill" style="width:0%"></div></div>
-            </div>
-            <div class="dashboard-grid">
-                <div class="dash-card"><span class="dash-card-icon">🪙</span><div class="dash-card-num" id="dashBalance">0</div><div class="dash-card-label">Коїнів зароблено</div></div>
-                <div class="dash-card"><span class="dash-card-icon">✅</span><div class="dash-card-num" id="dashCompleted">0</div><div class="dash-card-label">Квестів виконано</div></div>
-                <div class="dash-card"><span class="dash-card-icon">⚔️</span><div class="dash-card-num" id="dashActive">0</div><div class="dash-card-label">Активних квестів</div></div>
-                <div class="dash-card"><span class="dash-card-icon">⭐</span><div class="dash-card-num" id="dashXP">0</div><div class="dash-card-label">Очок досвіду</div></div>
-            </div>
-        </div>
+<main class="main-content">
 
-        <!-- QUESTS -->
-        <div id="tab-quests" class="tab-section">
-            <div class="quests-header">
-                <div class="quests-title">📋 АКТИВНІ КВЕСТИ</div>
-                <button class="btn-add-quest" id="btnAddQuest" onclick="openQuestModal()">+ СТВОРИТИ КВЕСТ</button>
-            </div>
-            <div class="quest-filters">
-                <button class="filter-btn active" onclick="filterQuests('all',this)">Всі</button>
-                <button class="filter-btn" onclick="filterQuests('easy',this)">Легкі</button>
-                <button class="filter-btn" onclick="filterQuests('medium',this)">Середні</button>
-                <button class="filter-btn" onclick="filterQuests('hard',this)">Важкі</button>
-                <button class="filter-btn" onclick="filterQuests('elite',this)">Еліта</button>
-            </div>
-            <div class="quests-list" id="questsList"><div class="empty-state"><div class="empty-state-icon">📋</div><p>Завантаження...</p></div></div>
-        </div>
-
-        <!-- MY QUESTS -->
-        <div id="tab-myquests" class="tab-section">
-            <div class="quests-header"><div class="quests-title">⚔️ МОЇ КВЕСТИ</div></div>
-            <div class="quests-list" id="myQuestsList"><div class="empty-state"><div class="empty-state-icon">⚔️</div><p>Немає активних квестів</p></div></div>
-        </div>
-
-        <!-- MAP -->
-        <div id="tab-map" class="tab-section map-section">
-            <div class="map-toolbar">
-                <button class="map-tool-btn active" id="tool-cursor" onclick="setMapTool('cursor',this)">🖱️ Курсор</button>
-                <button class="map-tool-btn" id="tool-marker" onclick="setMapTool('marker',this)">📍 Мітка</button>
-                <button class="map-tool-btn" id="tool-draw" onclick="setMapTool('draw',this)">✏️ Малювати</button>
-                <!-- Draw colors, shown when draw tool active -->
-                <div id="drawColors" style="display:none; gap:5px; align-items:center; flex-wrap:nowrap;">
-                    <div class="dc-swatch active" style="background:#22c55e" data-color="#22c55e" onclick="setDrawColor(this)"></div>
-                    <div class="dc-swatch" style="background:#ef4444" data-color="#ef4444" onclick="setDrawColor(this)"></div>
-                    <div class="dc-swatch" style="background:#38bdf8" data-color="#38bdf8" onclick="setDrawColor(this)"></div>
-                    <div class="dc-swatch" style="background:#f59e0b" data-color="#f59e0b" onclick="setDrawColor(this)"></div>
-                    <div class="dc-swatch" style="background:#ffffff" data-color="#ffffff" onclick="setDrawColor(this)"></div>
-                    <div class="dc-swatch" style="background:#f97316" data-color="#f97316" onclick="setDrawColor(this)"></div>
-                </div>
-                <div id="drawSizes" style="display:none; gap:4px; align-items:center;">
-                    <button class="ds-btn active" data-size="3" onclick="setDrawSize(this)">S</button>
-                    <button class="ds-btn" data-size="8" onclick="setDrawSize(this)">M</button>
-                    <button class="ds-btn" data-size="16" onclick="setDrawSize(this)">L</button>
-                </div>
-                <button class="map-tool-btn" id="tool-erase" onclick="setMapTool('erase',this)" style="display:none">🧹 Гумка</button>
-                <button class="map-tool-btn" id="btnClearDraw" onclick="clearDrawing()" style="display:none">🗑️ Очист.малюнок</button>
-                <div class="map-tool-sep"></div>
-                <!-- Admin tools -->
-                <button class="map-tool-btn" id="tool-zone" onclick="setMapTool('zone',this)" style="display:none">🏙️ Зона</button>
-                <button class="map-tool-btn" id="btnClearZones" onclick="clearAllZones()" style="display:none">🗑️ Зони</button>
-                <div class="map-tool-sep" id="adminMapSep" style="display:none"></div>
-                <!-- FIX #2 zone toggle -->
-                <button class="map-tool-btn active" id="btnToggleZones" onclick="toggleZones(this)">👁️ Зони</button>
-                <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-                    <span style="font-size:11px; color:var(--text-gray);">Масштаб: <b id="zoomDisplay" style="color:white">100%</b></span>
-                    <button class="map-tool-btn" onclick="resetMapView()">↺ Скинути</button>
-                </div>
-            </div>
-            <div class="map-container" id="mapContainer">
-                <canvas id="mapCanvas"></canvas>
-                <canvas id="drawCanvas"></canvas>
-                <div class="map-info-panel">
-                    <div class="map-info-title">📡 ІНФОРМАЦІЯ</div>
-                    <div class="map-info-row"><span>X:</span><span class="map-info-val" id="mapX">0</span></div>
-                    <div class="map-info-row"><span>Y:</span><span class="map-info-val" id="mapY">0</span></div>
-                    <div class="map-zone-name"><div class="map-zone-label">ЗОНА / МІСТО</div><div class="map-zone-val" id="currentZoneName">Відкрита місцевість</div></div>
-                </div>
-                <div class="map-legend"><div class="map-legend-title">📌 ЛЕГЕНДА</div><div id="legendItems"></div></div>
-                <div class="zone-admin-panel" id="zoneAdminPanel">
-                    <div class="zone-admin-title">⚙️ НОВА ЗОНА</div>
-                    <input type="text" class="zone-input" id="zoneNameInput" placeholder="Назва зони">
-                    <div class="zone-color-picker">
-                        <div class="zone-color selected" style="background:#22c55e" data-color="#22c55e" onclick="selectZoneColor(this)"></div>
-                        <div class="zone-color" style="background:#38bdf8" data-color="#38bdf8" onclick="selectZoneColor(this)"></div>
-                        <div class="zone-color" style="background:#ef4444" data-color="#ef4444" onclick="selectZoneColor(this)"></div>
-                        <div class="zone-color" style="background:#f59e0b" data-color="#f59e0b" onclick="selectZoneColor(this)"></div>
-                        <div class="zone-color" style="background:#a855f7" data-color="#a855f7" onclick="selectZoneColor(this)"></div>
-                    </div>
-                    <button class="btn-zone-save" onclick="saveCurrentZone()">ЗБЕРЕГТИ ЗОНУ</button>
-                    <button class="btn-zone-clear" onclick="cancelZoneDraw()">СКАСУВАТИ</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ADMIN -->
-        <div id="tab-admin" class="tab-section">
-            <div class="quests-header"><div class="quests-title">⚙️ УПРАВЛІННЯ</div></div>
-            <div style="padding:18px 30px; display:flex; flex-direction:column; gap:12px;">
-
-                <!-- FIX #1 — map image upload -->
-                <div class="admin-block">
-                    <div class="admin-block-title">🗺️ ЗАВАНТАЖИТИ КАРТУ (ФОТО)</div>
-                    <div class="admin-block-desc">Завантажте зображення карти — воно відобразиться як фон на вкладці "Карта". Рекомендований розмір: від 1500×1500px.</div>
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <input type="file" id="mapImageInput" accept="image/*" style="display:none" onchange="loadMapImage(this)">
-                        <button class="btn-sm" onclick="document.getElementById('mapImageInput').click()">📁 ОБРАТИ ФАЙЛ</button>
-                        <button class="btn-sm-outline" onclick="clearMapImage()">🗑️ СКИНУТИ</button>
-                        <span id="mapImageStatus" style="font-size:12px; color:var(--text-gray);">Карту не завантажено</span>
-                    </div>
-                </div>
-
-                <!-- Give coins -->
-                <div class="admin-block">
-                    <div class="admin-block-title">💰 ВИДАТИ КОЇНИ ПІЛОТУ</div>
-                    <div class="row-flex">
-                        <div style="flex:1; min-width:140px;"><label class="form-label">Пілот</label><select class="form-input" id="adminPilotSelect"></select></div>
-                        <div style="min-width:120px;"><label class="form-label">Кількість</label><input type="number" class="form-input" id="adminCoinAmount" placeholder="100" min="1"></div>
-                        <button class="btn-sm" onclick="adminGiveCoins()">ВИДАТИ</button>
-                    </div>
-                </div>
-
-                <!-- Complete quest manually -->
-                <div class="admin-block">
-                    <div class="admin-block-title">✅ ЗАВЕРШИТИ КВЕСТ ВРУЧНУ</div>
-                    <div id="adminQuestList" style="display:flex; flex-direction:column; gap:8px;"><p style="color:var(--text-gray); font-size:13px;">Завантаження...</p></div>
-                </div>
-
-                <!-- FIX #10 Discord webhook -->
-                <div class="admin-block">
-                    <div class="admin-block-title">🔔 DISCORD WEBHOOK</div>
-                    <div class="admin-block-desc">Вставте Discord Webhook URL. Бот надсилатиме повідомлення при ключових подіях. Використовуйте {name}, {quest}, {coins}, {xp}, {penalty}, {difficulty} у шаблонах.</div>
-                    <div class="row-flex" style="margin-bottom:12px;">
-                        <div style="flex:1; min-width:200px;"><label class="form-label">Webhook URL</label><input type="text" class="form-input" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."></div>
-                        <button class="btn-sm" onclick="saveWebhook()">ЗБЕРЕГТИ</button>
-                        <button class="btn-sm-outline" onclick="testWebhook()">🧪 ТЕСТ</button>
-                    </div>
-                    <div class="admin-block-title" style="font-size:12px; margin-bottom:10px;">✏️ ШАБЛОНИ ПОВІДОМЛЕНЬ</div>
-                    <div class="webhook-events">
-                        <div class="webhook-ev"><span class="webhook-ev-label">📋 Взяття квесту</span><textarea class="form-input" id="wmsg_take" rows="2">Пілот {name} взяв квест «{quest}»!</textarea></div>
-                        <div class="webhook-ev"><span class="webhook-ev-label">❌ Відмова (скасування)</span><textarea class="form-input" id="wmsg_cancel" rows="2">Пілот {name} відмовився від «{quest}» — штраф -{penalty} XP</textarea></div>
-                        <div class="webhook-ev"><span class="webhook-ev-label">📨 Здача доказів</span><textarea class="form-input" id="wmsg_submit" rows="2">Пілот {name} здав докази по квесту «{quest}»</textarea></div>
-                        <div class="webhook-ev"><span class="webhook-ev-label">✅ Квест виконано</span><textarea class="form-input" id="wmsg_complete" rows="2">Квест «{quest}» виконано {name}! +{coins} 🪙 +{xp} XP</textarea></div>
-                        <div class="webhook-ev"><span class="webhook-ev-label">💰 Видача коїнів</span><textarea class="form-input" id="wmsg_coins" rows="2">Адмін видав пілоту {name} +{coins} 🪙</textarea></div>
-                        <div class="webhook-ev"><span class="webhook-ev-label">🆕 Новий квест</span><textarea class="form-input" id="wmsg_newquest" rows="2">🆕 Новий квест: «{quest}» [{difficulty}] 🪙{coins} +{xp}XP</textarea></div>
-                    </div>
-                    <button class="btn-sm" style="margin-top:12px; width:100%;" onclick="saveWebhookMessages()">ЗБЕРЕГТИ ШАБЛОНИ</button>
-                </div>
-            </div>
-        </div>
-    </main>
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-section active">
+  <div class="pilot-hero">
+    <div class="pilot-avatar">✈️</div>
+    <div class="pilot-info"><h2 id="pilotName">...</h2><p id="pilotRank">Пілот</p><span class="pilot-rank-badge" id="pilotLevel">РІВЕНЬ 1</span></div>
+  </div>
+  <div class="xp-bar-wrap">
+    <div class="xp-bar-top"><span>ДОСВІД</span><span id="xpText">0/1000 XP</span></div>
+    <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill" style="width:0%"></div></div>
+  </div>
+  <div class="dashboard-grid">
+    <div class="dash-card"><span class="dash-card-icon">🪙</span><div class="dash-card-num" id="dashBalance">0</div><div class="dash-card-label">Коїнів зароблено</div></div>
+    <div class="dash-card"><span class="dash-card-icon">✅</span><div class="dash-card-num" id="dashCompleted">0</div><div class="dash-card-label">Квестів виконано</div></div>
+    <div class="dash-card"><span class="dash-card-icon">⚔️</span><div class="dash-card-num" id="dashActive">0</div><div class="dash-card-label">Активних квестів</div></div>
+    <div class="dash-card"><span class="dash-card-icon">⭐</span><div class="dash-card-num" id="dashXP">0</div><div class="dash-card-label">Очок досвіду</div></div>
+  </div>
 </div>
 
-<!-- QUEST MODAL -->
+<!-- QUESTS -->
+<div id="tab-quests" class="tab-section">
+  <div class="quests-header">
+    <div class="quests-title">📋 АКТИВНІ КВЕСТИ</div>
+    <button class="btn-add-quest" id="btnAddQuest" onclick="openQuestModal()">+ СТВОРИТИ КВЕСТ</button>
+  </div>
+  <div class="quest-filters">
+    <button class="filter-btn active" onclick="filterQ('all',this)">Всі</button>
+    <button class="filter-btn" onclick="filterQ('easy',this)">Легкі</button>
+    <button class="filter-btn" onclick="filterQ('medium',this)">Середні</button>
+    <button class="filter-btn" onclick="filterQ('hard',this)">Важкі</button>
+    <button class="filter-btn" onclick="filterQ('elite',this)">Еліта</button>
+  </div>
+  <div class="quests-list" id="questsList"><div class="empty-state"><div class="empty-state-icon">📋</div><p>Завантаження...</p></div></div>
+</div>
+
+<!-- MY QUESTS -->
+<div id="tab-myquests" class="tab-section">
+  <div class="quests-header"><div class="quests-title">⚔️ МОЇ КВЕСТИ</div></div>
+  <div class="quests-list" id="myQuestsList"><div class="empty-state"><div class="empty-state-icon">⚔️</div><p>Немає активних квестів</p></div></div>
+</div>
+
+<!-- MAP -->
+<div id="tab-map" class="tab-section map-section">
+  <div class="map-toolbar">
+    <button class="mtb active" id="tool-cursor" onclick="setTool('cursor',this)">🖱️ Курсор</button>
+    <button class="mtb" id="tool-marker" onclick="setTool('marker',this)">📍 Мітка</button>
+    <button class="mtb" id="tool-draw" onclick="setTool('draw',this)">✏️ Малювати</button>
+    <div id="drawColors" style="display:none;gap:5px;align-items:center;">
+      <div class="dcs active" style="background:#22c55e" data-c="#22c55e" onclick="setDC(this)"></div>
+      <div class="dcs" style="background:#ef4444" data-c="#ef4444" onclick="setDC(this)"></div>
+      <div class="dcs" style="background:#38bdf8" data-c="#38bdf8" onclick="setDC(this)"></div>
+      <div class="dcs" style="background:#f59e0b" data-c="#f59e0b" onclick="setDC(this)"></div>
+      <div class="dcs" style="background:#fff" data-c="#fff" onclick="setDC(this)"></div>
+      <div class="dcs" style="background:#f97316" data-c="#f97316" onclick="setDC(this)"></div>
+      <div class="dcs sw-custom" title="Свій колір"><input type="color" id="dcCustom" onchange="setDCCustom(this.value)"></div>
+    </div>
+    <div id="drawSizes" style="display:none;gap:4px;align-items:center;">
+      <button class="dsb active" data-s="3" onclick="setDS(this)">S</button>
+      <button class="dsb" data-s="8" onclick="setDS(this)">M</button>
+      <button class="dsb" data-s="16" onclick="setDS(this)">L</button>
+    </div>
+    <button class="mtb" id="tool-erase" onclick="setTool('erase',this)" style="display:none">🧹 Гумка</button>
+    <button class="mtb" id="btnClearDraw" onclick="clearDraw()" style="display:none">🗑️ Малюнок</button>
+    <div class="tsep"></div>
+    <button class="mtb" id="tool-zone" onclick="setTool('zone',this)" style="display:none">🏙️ Зона</button>
+    <button class="mtb" id="btnClearZones" onclick="clearAllZones()" style="display:none">🗑️ Зони</button>
+    <div class="tsep" id="adminMapSep" style="display:none"></div>
+    <button class="mtb active" id="btnToggleZones" onclick="toggleZones(this)">👁️ Зони</button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:11px;color:var(--tg);">⚡<b id="zoomDisplay" style="color:#fff">100%</b></span>
+      <button class="mtb" onclick="resetView()">↺ Скинути</button>
+    </div>
+  </div>
+  <div class="map-container" id="mapContainer">
+    <canvas id="mapCanvas"></canvas>
+    <canvas id="drawCanvas"></canvas>
+    <div class="map-info">
+      <div class="mit">📡 ІНФОРМАЦІЯ</div>
+      <div class="mir"><span>X:</span><span class="miv" id="mapX">0</span></div>
+      <div class="mir"><span>Y:</span><span class="miv" id="mapY">0</span></div>
+      <div class="mzn"><div class="mzl">ЗОНА / МІСТО</div><div class="mzv" id="curZone">Відкрита місцевість</div></div>
+    </div>
+    <div class="map-legend" id="mapLegend"><div class="mlt">📌 ЛЕГЕНДА</div><div id="legendItems"></div></div>
+    <!-- Zone draw panel -->
+    <div class="map-panel" id="zonePanel">
+      <div class="mp-title">⚙️ НОВА ЗОНА</div>
+      <input type="text" class="mp-input" id="zoneNameInput" placeholder="Назва зони">
+      <div class="mp-colors" id="zoneColors"></div>
+      <div class="mp-hint">Ctrl+Z — скасувати точку • ПКМ — завершити</div>
+      <button class="mp-btn" onclick="saveZone()">ЗБЕРЕГТИ ЗОНУ</button>
+      <button class="mp-btn-sec" onclick="cancelZone()">СКАСУВАТИ</button>
+    </div>
+    <!-- Marker placement panel -->
+    <div class="map-panel" id="markerPanel" style="right:245px">
+      <div class="mp-title">📍 НОВА МІТКА</div>
+      <input type="text" class="mp-input" id="markerNameInput" placeholder="Назва мітки">
+      <div class="mp-colors" id="markerColors"></div>
+      <div class="mp-hint">Клікніть на карті щоб поставити мітку</div>
+      <button class="mp-btn-sec" onclick="cancelMarker()">СКАСУВАТИ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="tab-admin" class="tab-section">
+  <div class="quests-header"><div class="quests-title">⚙️ УПРАВЛІННЯ</div></div>
+  <div style="padding:18px 30px;display:flex;flex-direction:column;gap:12px;">
+    <div class="ablock">
+      <div class="ablock-t">🗺️ ЗАВАНТАЖИТИ КАРТУ (ФОТО)</div>
+      <div class="ablock-d">Зображення відобразиться як фон карти. Межі карти будуть обмежувати панорамування.</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <input type="file" id="mapImageInput" accept="image/*" style="display:none" onchange="loadMapImage(this)">
+        <button class="bsm" onclick="document.getElementById('mapImageInput').click()">📁 ОБРАТИ ФАЙЛ</button>
+        <button class="bsmo" onclick="clearMapImage()">🗑️ СКИНУТИ</button>
+        <span id="mapImageStatus" style="font-size:12px;color:var(--tg)">Карту не завантажено</span>
+      </div>
+    </div>
+    <div class="ablock">
+      <div class="ablock-t">💰 ВИДАТИ КОЇНИ ПІЛОТУ</div>
+      <div class="rflex">
+        <div style="flex:1;min-width:140px"><label class="form-label">Пілот</label><select class="form-input" id="adminPilotSelect"></select></div>
+        <div style="min-width:120px"><label class="form-label">Кількість</label><input type="number" class="form-input" id="adminCoinAmount" placeholder="100" min="1"></div>
+        <button class="bsm" onclick="adminGiveCoins()">ВИДАТИ</button>
+      </div>
+    </div>
+    <div class="ablock">
+      <div class="ablock-t">✅ ЗАВЕРШИТИ КВЕСТ ВРУЧНУ</div>
+      <div id="adminQuestList" style="display:flex;flex-direction:column;gap:8px"><p style="color:var(--tg);font-size:13px">Завантаження...</p></div>
+    </div>
+    <div class="ablock">
+      <div class="ablock-t">🔔 DISCORD WEBHOOK</div>
+      <div class="ablock-d">Вставте Discord Webhook URL. Змінні: {name},{quest},{coins},{xp},{penalty},{difficulty}</div>
+      <div class="rflex" style="margin-bottom:12px">
+        <div style="flex:1;min-width:200px"><label class="form-label">Webhook URL</label><input type="text" class="form-input" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."></div>
+        <button class="bsm" onclick="saveWebhook()">ЗБЕРЕГТИ</button>
+        <button class="bsmo" onclick="testWebhook()">🧪 ТЕСТ</button>
+      </div>
+      <div class="ablock-t" style="font-size:12px;margin-bottom:10px">✏️ ШАБЛОНИ ПОВІДОМЛЕНЬ</div>
+      <div class="webhook-events">
+        <div class="wev"><span class="wev-l">📋 Взяття квесту</span><textarea class="form-input" id="wmsg_take" rows="2">Пілот {name} взяв квест «{quest}»!</textarea></div>
+        <div class="wev"><span class="wev-l">❌ Відмова</span><textarea class="form-input" id="wmsg_cancel" rows="2">Пілот {name} відмовився від «{quest}» — штраф -{penalty} XP</textarea></div>
+        <div class="wev"><span class="wev-l">📨 Здача доказів</span><textarea class="form-input" id="wmsg_submit" rows="2">Пілот {name} здав докази по квесту «{quest}»</textarea></div>
+        <div class="wev"><span class="wev-l">✅ Квест виконано</span><textarea class="form-input" id="wmsg_complete" rows="2">Квест «{quest}» виконано {name}! +{coins}🪙 +{xp}XP</textarea></div>
+        <div class="wev"><span class="wev-l">💰 Видача коїнів</span><textarea class="form-input" id="wmsg_coins" rows="2">Адмін видав {name} +{coins}🪙</textarea></div>
+        <div class="wev"><span class="wev-l">🆕 Новий квест</span><textarea class="form-input" id="wmsg_newquest" rows="2">🆕 Квест: «{quest}» [{difficulty}] 🪙{coins} +{xp}XP</textarea></div>
+      </div>
+      <button class="bsm" style="margin-top:12px;width:100%" onclick="saveWebhookMessages()">ЗБЕРЕГТИ ШАБЛОНИ</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUBMISSIONS (#7) -->
+<div id="tab-submissions" class="tab-section">
+  <div class="quests-header">
+    <div class="quests-title">📨 ЗДАЧІ КВЕСТІВ</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="filter-btn active" onclick="filterSubs('all',this)">Всі</button>
+      <button class="filter-btn" onclick="filterSubs('pending',this)">🟡 Очікують</button>
+      <button class="filter-btn" onclick="filterSubs('approved',this)">✅ Прийнято</button>
+      <button class="filter-btn" onclick="filterSubs('rejected',this)">❌ Відхилено</button>
+    </div>
+  </div>
+  <div style="padding:18px 30px;display:flex;flex-direction:column;gap:10px" id="submissionsList">
+    <div class="empty-state"><div class="empty-state-icon">📨</div><p>Завантаження...</p></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- Context menu -->
+<div class="ctx" id="ctxMenu">
+  <div id="ctxEditZone" class="cti" onclick="ctxDo('editzone')">✎ Редагувати зону</div>
+  <div id="ctxDeleteZone" class="cti danger" onclick="ctxDo('delzone')">🗑 Видалити зону</div>
+  <div class="ct-sep" id="ctxSep2"></div>
+  <div id="ctxEditMarker" class="cti" onclick="ctxDo('editmarker')" style="display:none">✎ Редагувати мітку</div>
+  <div id="ctxMoveMarker" class="cti" onclick="ctxDo('movemarker')" style="display:none">✥ Перемістити мітку</div>
+  <div id="ctxDelMarker" class="cti danger" onclick="ctxDo('delmarker')" style="display:none">🗑 Видалити мітку</div>
+</div>
+
+<!-- Quest modal -->
 <div class="modal-overlay" id="questModal">
-    <div class="modal-box" onclick="event.stopPropagation()">
-        <button class="close-modal" onclick="closeQuestModal()">×</button>
-        <div class="modal-title" id="questModalTitle">➕ НОВИЙ КВЕСТ</div>
-        <input type="hidden" id="editingQuestId">
-        <div class="form-group"><label class="form-label">Назва квесту</label><input type="text" class="form-input" id="qName" placeholder="Введіть назву"></div>
-        <div class="form-group"><label class="form-label">Опис</label><textarea class="form-input" id="qDesc" placeholder="Опишіть завдання..."></textarea></div>
-        <div class="form-group"><label class="form-label">Тип</label>
-            <select class="form-input" id="qType">
-                <option>⚔️ Бойова місія</option><option>🔍 Розвідка</option>
-                <option>📦 Доставка</option><option>🛡️ Патрулювання</option>
-                <option>🎯 Спеціальна операція</option>
-            </select>
-        </div>
-        <!-- FIX #8 — location -->
-        <div class="form-group"><label class="form-label">📍 Місце виконання</label><input type="text" class="form-input" id="qLocation" placeholder="Напр: Київ, координати 300/200..."></div>
-        <div class="form-group"><label class="form-label">Складність</label>
-            <div class="diff-grid">
-                <div class="diff-option selected-easy" data-diff="easy" onclick="selectDiff('easy')">🟢 Легко</div>
-                <div class="diff-option" data-diff="medium" onclick="selectDiff('medium')">🟡 Середня</div>
-                <div class="diff-option" data-diff="hard" onclick="selectDiff('hard')">🔴 Важко</div>
-                <div class="diff-option" data-diff="elite" onclick="selectDiff('elite')">💜 Еліта</div>
-            </div>
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
-            <div class="form-group"><label class="form-label">🪙 Нагорода</label><input type="number" class="form-input" id="qCoins" placeholder="100" min="0"></div>
-            <div class="form-group"><label class="form-label">XP Нагорода</label><input type="number" class="form-input" id="qXP" placeholder="50" min="0"></div>
-            <!-- FIX #7 — penalty -->
-            <div class="form-group"><label class="form-label" style="color:var(--danger);">❌ Штраф XP</label><input type="number" class="form-input" id="qPenalty" placeholder="20" min="0" style="border-color:rgba(239,68,68,0.3)"></div>
-        </div>
-        <button class="btn-form-primary" onclick="saveQuest()">ЗБЕРЕГТИ КВЕСТ</button>
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="close-modal" onclick="closeQM()">×</button>
+    <div class="modal-title" id="qModalTitle">➕ НОВИЙ КВЕСТ</div>
+    <input type="hidden" id="editingQID">
+    <div class="form-group"><label class="form-label">Назва</label><input type="text" class="form-input" id="qName" placeholder="Назва квесту"></div>
+    <div class="form-group"><label class="form-label">Опис</label><textarea class="form-input" id="qDesc" placeholder="Опис завдання..."></textarea></div>
+    <div class="form-group"><label class="form-label">Тип</label>
+      <select class="form-input" id="qType">
+        <option>⚔️ Бойова місія</option><option>🔍 Розвідка</option>
+        <option>📦 Доставка</option><option>🛡️ Патрулювання</option>
+        <option>🎯 Спеціальна операція</option>
+      </select>
     </div>
+    <!-- #6 Location picker -->
+    <div class="form-group">
+      <label class="form-label">📍 Місце виконання</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" class="form-input" id="qLocation" placeholder="Або оберіть на карті →" style="flex:1">
+        <button type="button" class="bsm" style="flex-shrink:0" onclick="openLocPicker()">🗺️ Карта</button>
+      </div>
+      <input type="hidden" id="qLocX"><input type="hidden" id="qLocY">
+    </div>
+    <div class="form-group"><label class="form-label">Складність</label>
+      <div class="diff-grid">
+        <div class="dfo sel-easy" data-d="easy" onclick="selDiff('easy')">🟢 Легко</div>
+        <div class="dfo" data-d="medium" onclick="selDiff('medium')">🟡 Середня</div>
+        <div class="dfo" data-d="hard" onclick="selDiff('hard')">🔴 Важко</div>
+        <div class="dfo" data-d="elite" onclick="selDiff('elite')">💜 Еліта</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div class="form-group"><label class="form-label">🪙 Нагорода</label><input type="number" class="form-input" id="qCoins" placeholder="100" min="0"></div>
+      <div class="form-group"><label class="form-label">XP Нагорода</label><input type="number" class="form-input" id="qXP" placeholder="50" min="0"></div>
+      <div class="form-group"><label class="form-label" style="color:var(--dn)">❌ Штраф XP</label><input type="number" class="form-input" id="qPenalty" placeholder="20" min="0" style="border-color:rgba(239,68,68,.3)"></div>
+    </div>
+    <button class="btn-fp" onclick="saveQuest()">ЗБЕРЕГТИ КВЕСТ</button>
+  </div>
 </div>
 
-<!-- ABANDON MODAL FIX #6/#7 -->
+<!-- Location picker modal (#6) -->
+<div class="modal-overlay" id="locPickerModal">
+  <div class="modal-box wide" onclick="event.stopPropagation()">
+    <button class="close-modal" onclick="closeLocPicker()">×</button>
+    <div class="modal-title">🗺️ ОБЕРІТЬ МІСЦЕ НА КАРТІ</div>
+    <p style="font-size:12px;color:var(--tg);margin-bottom:12px">Клікніть на карті щоб встановити мітку місця виконання квесту</p>
+    <div class="loc-map-wrap" id="locMapWrap">
+      <canvas id="locCanvas"></canvas>
+      <canvas id="locPickCanvas"></canvas>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:12px;color:var(--tg)">Обрано: <b id="locCoords" style="color:var(--pb)">не обрано</b></span>
+      <button class="btn-fp" style="width:auto;padding:10px 24px" onclick="confirmLoc()">ПІДТВЕРДИТИ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Marker edit modal -->
+<div class="modal-overlay" id="markerEditModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="close-modal" onclick="closeMarkerEdit()">×</button>
+    <div class="modal-title">📍 РЕДАГУВАННЯ МІТКИ</div>
+    <input type="hidden" id="editMIdx">
+    <div class="form-group"><label class="form-label">Назва</label><input type="text" class="form-input" id="editMName"></div>
+    <div class="form-group"><label class="form-label">Колір</label>
+      <div class="swatch-row" id="editMColors"></div>
+    </div>
+    <button class="btn-fp" onclick="saveMarkerEdit()">ЗБЕРЕГТИ</button>
+    <button class="btn-fd" onclick="deleteMarker()">ВИДАЛИТИ МІТКУ</button>
+  </div>
+</div>
+
+<!-- Zone edit modal -->
+<div class="modal-overlay" id="zoneEditModal">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="close-modal" onclick="closeZoneEdit()">×</button>
+    <div class="modal-title">🏙️ РЕДАГУВАННЯ ЗОНИ</div>
+    <input type="hidden" id="editZIdx">
+    <div class="form-group"><label class="form-label">Назва зони</label><input type="text" class="form-input" id="editZName"></div>
+    <div class="form-group"><label class="form-label">Колір</label>
+      <div class="swatch-row" id="editZColors"></div>
+    </div>
+    <button class="btn-fp" onclick="saveZoneEdit()">ЗБЕРЕГТИ</button>
+    <button class="btn-fd" onclick="deleteZone()">ВИДАЛИТИ ЗОНУ</button>
+  </div>
+</div>
+
+<!-- Abandon modal -->
 <div class="modal-overlay" id="abandonModal">
-    <div class="modal-box" onclick="event.stopPropagation()">
-        <button class="close-modal" onclick="closeAbandonModal()">×</button>
-        <div class="modal-title">❌ ВІДМОВА ВІД КВЕСТУ</div>
-        <p id="abandonText" style="color:var(--text-gray); font-size:14px; margin-bottom:22px; line-height:1.7;"></p>
-        <button class="btn-form-danger" onclick="confirmAbandon()">ПІДТВЕРДИТИ ВІДМОВУ</button>
-        <button class="btn-form-primary" style="background:#222; color:white; box-shadow:none; border:1px solid #333;" onclick="closeAbandonModal()">СКАСУВАТИ</button>
-    </div>
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="close-modal" onclick="document.getElementById('abandonModal').style.display='none'">×</button>
+    <div class="modal-title">❌ ВІДМОВА ВІД КВЕСТУ</div>
+    <p id="abandonText" style="color:var(--tg);font-size:14px;margin-bottom:22px;line-height:1.7"></p>
+    <button class="btn-fd" onclick="confirmAbandon()">ПІДТВЕРДИТИ ВІДМОВУ</button>
+    <button class="btn-fp" style="background:#222;color:#fff;box-shadow:none;border:1px solid #333" onclick="document.getElementById('abandonModal').style.display='none'">СКАСУВАТИ</button>
+  </div>
 </div>
 
-<!-- SUBMIT PROOF MODAL FIX #9 -->
+<!-- Submit proof modal -->
 <div class="modal-overlay" id="submitModal">
-    <div class="modal-box" onclick="event.stopPropagation()">
-        <button class="close-modal" onclick="closeSubmitModal()">×</button>
-        <div class="modal-title">📨 ЗДАТИ КВЕСТ</div>
-        <p style="color:var(--text-gray); font-size:13px; margin-bottom:18px; line-height:1.6;">Надайте докази виконання. Адміністратор перевірить та нарахує нагороду.</p>
-        <input type="hidden" id="submitQuestId">
-        <div class="form-group"><label class="form-label">Ваше ім'я (автоматично)</label><input type="text" class="form-input" id="submitName" readonly style="opacity:0.6; cursor:default;"></div>
-        <div class="form-group"><label class="form-label">Посилання (скріншот / відео)</label><input type="text" class="form-input" id="submitLink" placeholder="https://..."></div>
-        <div class="form-group"><label class="form-label">Коментар / опис</label><textarea class="form-input" id="submitText" placeholder="Що саме ви виконали..." rows="3"></textarea></div>
-        <button class="btn-form-primary" onclick="submitQuestProof()">📨 НАДІСЛАТИ</button>
-    </div>
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <button class="close-modal" onclick="document.getElementById('submitModal').style.display='none'">×</button>
+    <div class="modal-title">📨 ЗДАТИ КВЕСТ</div>
+    <p style="color:var(--tg);font-size:13px;margin-bottom:18px;line-height:1.6">Надайте докази виконання. Адміністратор перевірить та нарахує нагороду.</p>
+    <input type="hidden" id="submitQID">
+    <div class="form-group"><label class="form-label">Ваше ім'я</label><input type="text" class="form-input" id="submitName" readonly style="opacity:.6"></div>
+    <div class="form-group"><label class="form-label">Посилання (скріншот/відео)</label><input type="text" class="form-input" id="submitLink" placeholder="https://..."></div>
+    <div class="form-group"><label class="form-label">Коментар</label><textarea class="form-input" id="submitText" placeholder="Що саме ви виконали..." rows="3"></textarea></div>
+    <button class="btn-fp" onclick="submitProof()">📨 НАДІСЛАТИ</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -437,492 +528,858 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, onSnapshot, deleteDoc, query, orderBy, serverTimestamp, getDocs, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore,doc,getDoc,updateDoc,collection,addDoc,onSnapshot,deleteDoc,query,orderBy,where,serverTimestamp,getDocs,increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const firebaseConfig = { apiKey:"AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00", authDomain:"dsv-gta.firebaseapp.com", projectId:"dsv-gta", storageBucket:"dsv-gta.firebasestorage.app", messagingSenderId:"661591588818", appId:"1:661591588818:web:a8e8dca3d061447e24d20b" };
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const app = initializeApp({apiKey:"AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",authDomain:"dsv-gta.firebaseapp.com",projectId:"dsv-gta",storageBucket:"dsv-gta.firebasestorage.app",messagingSenderId:"661591588818",appId:"1:661591588818:web:a8e8dca3d061447e24d20b"});
+const auth = getAuth(app), db = getFirestore(app);
 
-let currentUID = null, myData = null, isAdmin = false;
-let allQuests = [], allUsers = [], currentFilter = 'all', selectedDiff = 'easy';
-let abandonQuestId = null, abandonPenalty = 0;
+let uid=null,myData=null,isAdmin=false,allQuests=[],allUsers=[],qFilter='all',selDiffVal='easy',abandonQID=null,abandonPen=0;
+const DI={easy:'🟢',medium:'🟡',hard:'🔴',elite:'💜'};
+const DC={easy:'diff-easy',medium:'diff-medium',hard:'diff-hard',elite:'diff-elite'};
+const DL={easy:'Легко',medium:'Середня',hard:'Важко',elite:'Еліта'};
 
-const DI = {easy:'🟢',medium:'🟡',hard:'🔴',elite:'💜'};
-const DC = {easy:'diff-easy',medium:'diff-medium',hard:'diff-hard',elite:'diff-elite'};
-const DL = {easy:'Легко',medium:'Середня',hard:'Важко',elite:'Еліта'};
-
-onAuthStateChanged(auth, async (user) => {
-    if (!user) { window.location.href = "index.html"; return; }
-    currentUID = user.uid;
-    const snap = await getDoc(doc(db, "users", user.uid));
-    if (!snap.exists()) { window.location.href = "index.html"; return; }
-    myData = snap.data();
-    isAdmin = myData.role === 'admin';
-    if (myData.coins === undefined) {
-        await updateDoc(doc(db, "users", user.uid), { coins:0, xp:0, completedQuests:0, activeQuestIds:[], completedQuestIds:[] });
-        myData = (await getDoc(doc(db,"users",user.uid))).data();
-    }
-    loadUserUI(); listenQuests();
-    if (isAdmin) {
-        document.getElementById('btnAddQuest').classList.add('visible');
-        document.getElementById('adminTabBtn').style.display = 'flex';
-        document.getElementById('adminSideLabel').style.display = 'block';
-        loadAdminPanel(); loadWebhookSettings();
-    }
-    onSnapshot(doc(db,"users",user.uid), s => { if (s.exists()) { myData = s.data(); loadUserUI(); renderQuests(); renderMyQuests(); } });
+onAuthStateChanged(auth,async user=>{
+  if(!user){location.href='index.html';return;}
+  uid=user.uid;
+  const snap=await getDoc(doc(db,'users',user.uid));
+  if(!snap.exists()){location.href='index.html';return;}
+  myData=snap.data();isAdmin=myData.role==='admin';
+  if(myData.coins===undefined){await updateDoc(doc(db,'users',uid),{coins:0,xp:0,completedQuests:0,activeQuestIds:[],completedQuestIds:[]});myData=(await getDoc(doc(db,'users',uid))).data();}
+  loadUI();listenQuests();
+  if(isAdmin){
+    document.getElementById('btnAddQuest').classList.add('visible');
+    document.getElementById('adminTabBtn').style.display='flex';
+    document.getElementById('subTabBtn').style.display='flex';
+    document.getElementById('adminSideLabel').style.display='block';
+    loadAdminPanel();loadWebhookSettings();listenSubmissions();
+  }
+  onSnapshot(doc(db,'users',uid),s=>{if(s.exists()){myData=s.data();loadUI();renderQ();renderMQ();}});
 });
 
-function loadUserUI() {
-    const coins = myData.coins||0, xp = myData.xp||0;
-    const level = Math.floor(xp/1000)+1, xpIn = xp%1000;
-    const activeCount = (myData.activeQuestIds||[]).length;
-    document.getElementById('pilotName').textContent = myData.name||"Пілот";
-    document.getElementById('pilotRank').textContent = myData.rank?.split('|')[0]?.trim()||'Пілот';
-    document.getElementById('pilotLevel').textContent = `РІВЕНЬ ${level}`;
-    document.getElementById('xpText').textContent = `${xpIn} / 1000 XP`;
-    document.getElementById('xpFill').style.width = `${(xpIn/1000)*100}%`;
-    document.getElementById('sideBalance').textContent = coins;
-    document.getElementById('dashBalance').textContent = coins;
-    document.getElementById('dashCompleted').textContent = myData.completedQuests||0;
-    document.getElementById('dashActive').textContent = activeCount;
-    document.getElementById('dashXP').textContent = xp;
-    const badge = document.getElementById('activeQuestsBadge');
-    badge.style.display = activeCount>0?'inline-block':'none';
-    badge.textContent = activeCount;
+function loadUI(){
+  const c=myData.coins||0,x=myData.xp||0,lv=Math.floor(x/1000)+1,xi=x%1000,ac=(myData.activeQuestIds||[]).length;
+  document.getElementById('pilotName').textContent=myData.name||'Пілот';
+  document.getElementById('pilotRank').textContent=myData.rank?.split('|')[0]?.trim()||'Пілот';
+  document.getElementById('pilotLevel').textContent=`РІВЕНЬ ${lv}`;
+  document.getElementById('xpText').textContent=`${xi}/1000 XP`;
+  document.getElementById('xpFill').style.width=`${xi/10}%`;
+  document.getElementById('sideBalance').textContent=c;
+  document.getElementById('dashBalance').textContent=c;
+  document.getElementById('dashCompleted').textContent=myData.completedQuests||0;
+  document.getElementById('dashActive').textContent=ac;
+  document.getElementById('dashXP').textContent=x;
+  const b=document.getElementById('qBadge');b.style.display=ac>0?'inline-block':'none';b.textContent=ac;
 }
 
-function listenQuests() {
-    const q = query(collection(db,"pilotQuests"), orderBy("createdAt","desc"));
-    onSnapshot(q, snap => { allQuests=[]; snap.forEach(d => allQuests.push({id:d.id,...d.data()})); renderQuests(); renderMyQuests(); renderAdminQuestList(); });
+/* ===== QUESTS ===== */
+function listenQuests(){
+  onSnapshot(query(collection(db,'pilotQuests'),orderBy('createdAt','desc')),snap=>{
+    allQuests=[];snap.forEach(d=>allQuests.push({id:d.id,...d.data()}));
+    renderQ();renderMQ();renderAdminQ();
+  });
 }
-window.filterQuests = (f, btn) => { currentFilter=f; document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); renderQuests(); };
+window.filterQ=(f,btn)=>{qFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderQ();};
 
-function questCard(q, isTaken, isCompleted, showAdminBtns) {
-    const locationHtml = q.location ? `<div class="quest-location">📍 ${q.location}</div>` : '';
-    const penaltyHtml = (q.penalty>0) ? `<div class="quest-penalty">Штраф скас.: -${q.penalty} XP</div>` : '';
-    const adminBtns = showAdminBtns ? `<div class="quest-admin-btns"><button class="btn-admin-q btn-q-edit" onclick="event.stopPropagation();editQuest('${q.id}')">✎ РЕД.</button><button class="btn-admin-q btn-q-del" onclick="event.stopPropagation();deleteQuest('${q.id}')">✖ ВИДАЛ.</button></div>` : '';
-    let actionBtns;
-    if (isCompleted) actionBtns = `<span style="font-size:11px;color:var(--gold);font-weight:800;">✔ ЗАВЕРШЕНО</span>`;
-    else if (isTaken) actionBtns = `<div class="quest-btn-col"><button class="btn-submit" onclick="event.stopPropagation();openSubmitModal('${q.id}')">📨 ЗДАТИ КВЕСТ</button><button class="btn-cancel" onclick="event.stopPropagation();openAbandonModal('${q.id}','${(q.name||'').replace(/'/g,"\\'")}',${q.penalty||0})">✖ СКАСУВАТИ КВЕСТ</button></div>`;
-    else actionBtns = `<button class="btn-take" onclick="event.stopPropagation();takeQuest('${q.id}','${(q.name||'').replace(/'/g,"\\'")}')">+ ВЗЯТИ КВЕСТ</button>`;
-    return `<div class="quest-card ${isTaken?'taken':''} ${isCompleted?'completed':''}">
-        <div class="quest-diff ${DC[q.difficulty]||'diff-easy'}">${DI[q.difficulty]||'⬜'}</div>
-        <div class="quest-info">
-            <div class="quest-name">${q.name}</div>
-            <div class="quest-desc">${q.description||''}</div>
-            ${locationHtml}
-            <div class="quest-tags"><span class="quest-tag tag-type">${q.type||'Місія'}</span><span class="quest-tag tag-diff-${q.difficulty||'easy'}">${DL[q.difficulty]||'Легко'}</span></div>
-            ${adminBtns}
-        </div>
-        <div class="quest-reward">
-            <div class="quest-coins">🪙 ${q.coins||0}</div>
-            <div class="quest-xp">+${q.xp||0} XP</div>
-            ${penaltyHtml}
-            ${actionBtns}
-        </div>
+function qCard(q,isTaken,isComp,admin){
+  const loc=q.locationX!==undefined?`<div class="quest-location" onclick="showQLocOnMap(${q.locationX},${q.locationY})">📍 ${q.location||'Переглянути на карті'}</div>`:q.location?`<div class="quest-location">📍 ${q.location}</div>`:'';
+  const pen=(q.penalty>0)?`<div class="quest-penalty">Штраф: -${q.penalty} XP</div>`:'';
+  const adm=admin?`<div class="quest-admin-btns"><button class="btn-aq btn-q-edit" onclick="event.stopPropagation();editQuest('${q.id}')">✎ РЕД.</button><button class="btn-aq btn-q-del" onclick="event.stopPropagation();delQuest('${q.id}')">✖ ВИДАЛ.</button></div>`:'';
+  let btns;
+  if(isComp)btns=`<span style="font-size:11px;color:var(--gd);font-weight:800">✔ ЗАВЕРШЕНО</span>`;
+  else if(isTaken)btns=`<div class="quest-btn-col"><button class="btn-submit" onclick="event.stopPropagation();openSubmit('${q.id}')">📨 ЗДАТИ КВЕСТ</button><button class="btn-cancel" onclick="event.stopPropagation();openAbandon('${q.id}','${(q.name||'').replace(/'/g,"\\'")}',${q.penalty||0})">✖ СКАСУВАТИ</button></div>`;
+  else btns=`<button class="btn-take" onclick="event.stopPropagation();takeQ('${q.id}','${(q.name||'').replace(/'/g,"\\'")}')">+ ВЗЯТИ КВЕСТ</button>`;
+  return`<div class="quest-card ${isTaken?'taken':''} ${isComp?'completed':''}">
+    <div class="quest-diff ${DC[q.difficulty]||'diff-easy'}">${DI[q.difficulty]||'⬜'}</div>
+    <div class="quest-info"><div class="quest-name">${q.name}</div><div class="quest-desc">${q.description||''}</div>${loc}<div class="quest-tags"><span class="quest-tag tag-type">${q.type||'Місія'}</span><span class="quest-tag tag-diff-${q.difficulty||'easy'}">${DL[q.difficulty]||'Легко'}</span></div>${adm}</div>
+    <div class="quest-reward"><div class="quest-coins">🪙${q.coins||0}</div><div class="quest-xp">+${q.xp||0}XP</div>${pen}${btns}</div>
+  </div>`;
+}
+
+function renderQ(){
+  const el=document.getElementById('questsList');
+  const a=myData?.activeQuestIds||[],c=myData?.completedQuestIds||[];
+  let f=allQuests.filter(q=>q.status!=='archived');
+  if(qFilter!=='all')f=f.filter(q=>q.difficulty===qFilter);
+  el.innerHTML=f.length?f.map(q=>qCard(q,a.includes(q.id),c.includes(q.id),isAdmin)).join(''):`<div class="empty-state"><div class="empty-state-icon">📋</div><p>Квестів не знайдено</p></div>`;
+}
+function renderMQ(){
+  const el=document.getElementById('myQuestsList');
+  const a=myData?.activeQuestIds||[];
+  const taken=allQuests.filter(q=>a.includes(q.id));
+  el.innerHTML=taken.length?taken.map(q=>qCard(q,true,false,false)).join(''):`<div class="empty-state"><div class="empty-state-icon">⚔️</div><p>Немає активних квестів</p></div>`;
+}
+
+window.takeQ=async(qid,qname)=>{
+  const a=myData?.activeQuestIds||[];if(a.includes(qid))return;
+  await updateDoc(doc(db,'users',uid),{activeQuestIds:[...a,qid]});
+  toast('✅ Квест взято!');sendWebhook('take',{name:myData.name,quest:qname});
+};
+window.openAbandon=(qid,qname,pen)=>{
+  abandonQID=qid;abandonPen=pen||0;
+  const pl=abandonPen>0?`<br><br>⚠️ Штраф: <b style="color:var(--dn)">-${abandonPen} XP</b>`:'';
+  document.getElementById('abandonText').innerHTML=`Відмовитись від квесту <b>"${qname}"</b>?<br><br>Нагороди не буде.${pl}`;
+  document.getElementById('abandonModal').style.display='flex';
+};
+window.confirmAbandon=async()=>{
+  const q=allQuests.find(x=>x.id===abandonQID);
+  const upd={activeQuestIds:(myData?.activeQuestIds||[]).filter(id=>id!==abandonQID)};
+  if(abandonPen>0)upd.xp=increment(-abandonPen);
+  await updateDoc(doc(db,'users',uid),upd);
+  document.getElementById('abandonModal').style.display='none';
+  toast(abandonPen>0?`❌ Скасовано. -${abandonPen}XP`:'❌ Квест скасовано');
+  sendWebhook('cancel',{name:myData.name,quest:q?.name||'',penalty:abandonPen});
+  abandonQID=null;abandonPen=0;
+};
+window.openSubmit=qid=>{
+  document.getElementById('submitQID').value=qid;
+  document.getElementById('submitName').value=myData.name||'';
+  document.getElementById('submitLink').value='';
+  document.getElementById('submitText').value='';
+  document.getElementById('submitModal').style.display='flex';
+};
+window.submitProof=async()=>{
+  const qid=document.getElementById('submitQID').value;
+  const link=document.getElementById('submitLink').value.trim();
+  const text=document.getElementById('submitText').value.trim();
+  const q=allQuests.find(x=>x.id===qid);
+  if(!text&&!link){toast('❌ Надайте посилання або коментар!');return;}
+  await addDoc(collection(db,'questSubmissions'),{questId:qid,questName:q?.name||'',uid,pilotName:myData.name||'',link,text,status:'pending',createdAt:serverTimestamp()});
+  document.getElementById('submitModal').style.display='none';
+  toast('📨 Докази надіслано!');sendWebhook('submit',{name:myData.name,quest:q?.name||''});
+};
+
+/* ===== QUEST CRUD ===== */
+window.openQuestModal=()=>{
+  document.getElementById('editingQID').value='';
+  document.getElementById('qModalTitle').textContent='➕ НОВИЙ КВЕСТ';
+  ['qName','qDesc','qLocation','qCoins','qXP','qPenalty'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('qLocX').value='';document.getElementById('qLocY').value='';
+  document.getElementById('qType').selectedIndex=0;
+  selDiffVal='easy';document.querySelectorAll('.dfo').forEach(e=>e.className='dfo');
+  document.querySelector('[data-d="easy"]').className='dfo sel-easy';
+  document.getElementById('questModal').style.display='flex';
+};
+window.closeQM=()=>document.getElementById('questModal').style.display='none';
+window.editQuest=id=>{
+  const q=allQuests.find(x=>x.id===id);if(!q)return;
+  document.getElementById('editingQID').value=id;
+  document.getElementById('qModalTitle').textContent='✎ РЕДАГУВАТИ КВЕСТ';
+  document.getElementById('qName').value=q.name||'';
+  document.getElementById('qDesc').value=q.description||'';
+  document.getElementById('qLocation').value=q.location||'';
+  document.getElementById('qLocX').value=q.locationX??'';
+  document.getElementById('qLocY').value=q.locationY??'';
+  document.getElementById('qCoins').value=q.coins||'';
+  document.getElementById('qXP').value=q.xp||'';
+  document.getElementById('qPenalty').value=q.penalty||'';
+  selDiffVal=q.difficulty||'easy';
+  document.querySelectorAll('.dfo').forEach(e=>e.className='dfo');
+  document.querySelector(`[data-d="${selDiffVal}"]`).className=`dfo sel-${selDiffVal}`;
+  document.getElementById('questModal').style.display='flex';
+};
+window.saveQuest=async()=>{
+  const id=document.getElementById('editingQID').value;
+  const name=document.getElementById('qName').value.trim();
+  if(!name){toast('❌ Введіть назву!');return;}
+  const lx=document.getElementById('qLocX').value;
+  const ly=document.getElementById('qLocY').value;
+  const data={name,description:document.getElementById('qDesc').value.trim(),type:document.getElementById('qType').value,location:document.getElementById('qLocation').value.trim(),difficulty:selDiffVal,coins:parseInt(document.getElementById('qCoins').value)||0,xp:parseInt(document.getElementById('qXP').value)||0,penalty:parseInt(document.getElementById('qPenalty').value)||0,status:'active'};
+  if(lx!==''&&ly!==''){data.locationX=parseFloat(lx);data.locationY=parseFloat(ly);}
+  if(id){await updateDoc(doc(db,'pilotQuests',id),data);toast('✅ Квест оновлено!');}
+  else{data.createdAt=serverTimestamp();await addDoc(collection(db,'pilotQuests'),data);toast('✅ Квест створено!');sendWebhook('newquest',{quest:name,difficulty:DL[selDiffVal],coins:data.coins,xp:data.xp});}
+  closeQM();
+};
+window.delQuest=async id=>{if(!confirm('Видалити квест?'))return;await deleteDoc(doc(db,'pilotQuests',id));toast('🗑️ Видалено');};
+window.selDiff=d=>{selDiffVal=d;document.querySelectorAll('.dfo').forEach(e=>e.className='dfo');document.querySelector(`[data-d="${d}"]`).className=`dfo sel-${d}`;};
+
+/* ===== ADMIN ===== */
+function renderAdminQ(){
+  const el=document.getElementById('adminQuestList');if(!el)return;
+  el.innerHTML=allQuests.length?allQuests.map(q=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.03);padding:11px 15px;border-radius:10px;border:1px solid rgba(255,255,255,.05);flex-wrap:wrap;gap:8px">
+      <div><div style="font-size:13px;font-weight:700">${q.name}</div><div style="font-size:11px;color:var(--tg)">🪙${q.coins||0}·+${q.xp||0}XP</div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <select class="form-input" id="ct_${q.id}" style="padding:6px 10px;font-size:12px;width:140px"><option value="">Пілот...</option>${allUsers.map(u=>`<option value="${u.id}">${u.name||u.id}</option>`).join('')}</select>
+        <button class="btn-aq btn-q-cmp" onclick="adminCmpQ('${q.id}',${q.coins||0},${q.xp||0})">✔ ВИДАТИ</button>
+      </div>
+    </div>`).join(''):`<p style="color:var(--tg);font-size:13px">Квестів немає</p>`;
+}
+async function loadAdminPanel(){
+  const snap=await getDocs(collection(db,'users'));
+  allUsers=[];snap.forEach(d=>allUsers.push({id:d.id,...d.data()}));
+  const sel=document.getElementById('adminPilotSelect');
+  if(sel)sel.innerHTML=allUsers.map(u=>`<option value="${u.id}">${u.name||u.id}</option>`).join('');
+  renderAdminQ();
+}
+window.adminGiveCoins=async()=>{
+  const sel=document.getElementById('adminPilotSelect');
+  const amt=parseInt(document.getElementById('adminCoinAmount').value);
+  if(!sel.value||isNaN(amt)||amt<=0){toast('❌ Заповніть поля!');return;}
+  const t=allUsers.find(u=>u.id===sel.value);
+  await updateDoc(doc(db,'users',sel.value),{coins:increment(amt)});
+  toast(`✅ Видано ${amt}🪙`);sendWebhook('coins',{name:t?.name||sel.value,coins:amt});
+};
+window.adminCmpQ=async(qid,coins,xp)=>{
+  const sel=document.getElementById(`ct_${qid}`);if(!sel?.value){toast('❌ Оберіть пілота!');return;}
+  const us=await getDoc(doc(db,'users',sel.value));if(!us.exists())return;
+  const ud=us.data(),comp=ud.completedQuestIds||[];
+  if(comp.includes(qid)){toast('❌ Вже виконав!');return;}
+  const q=allQuests.find(x=>x.id===qid);
+  await updateDoc(doc(db,'users',sel.value),{coins:increment(coins),xp:increment(xp),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid)});
+  toast(`✅ +${coins}🪙+${xp}XP`);sendWebhook('complete',{name:ud.name||sel.value,quest:q?.name||'',coins,xp});
+};
+
+/* ===== SUBMISSIONS (#7) ===== */
+let allSubs=[],subFilter='all';
+function listenSubmissions(){
+  onSnapshot(query(collection(db,'questSubmissions'),orderBy('createdAt','desc')),snap=>{
+    allSubs=[];snap.forEach(d=>allSubs.push({id:d.id,...d.data()}));
+    const pending=allSubs.filter(s=>s.status==='pending').length;
+    const sb=document.getElementById('subBadge');
+    sb.style.display=pending>0?'inline-block':'none';sb.textContent=pending;
+    renderSubs();
+  });
+}
+window.filterSubs=(f,btn)=>{subFilter=f;document.querySelectorAll('#tab-submissions .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderSubs();};
+function renderSubs(){
+  const el=document.getElementById('submissionsList');if(!el)return;
+  let f=allSubs;if(subFilter!=='all')f=f.filter(s=>s.status===subFilter);
+  if(!f.length){el.innerHTML=`<div class="empty-state"><div class="empty-state-icon">📨</div><p>Здач немає</p></div>`;return;}
+  el.innerHTML=f.map(s=>{
+    const ts=s.createdAt?.seconds?new Date(s.createdAt.seconds*1000).toLocaleString('uk-UA'):'';
+    const statusLbl={pending:'🟡 Очікує',approved:'✅ Прийнято',rejected:'❌ Відхилено'}[s.status]||s.status;
+    const admBtns=isAdmin&&s.status==='pending'?`<div class="sub-acts">
+      <button class="bsm" style="background:var(--pr);padding:7px 14px;font-size:11px" onclick="reviewSub('${s.id}','approved','${s.questId||''}',${s.uid?`'${s.uid}'`:'null'})">✅ ПРИЙНЯТИ</button>
+      <button class="bsm" style="background:var(--dn);padding:7px 14px;font-size:11px" onclick="reviewSub('${s.id}','rejected','','')">❌ ВІДХИЛИТИ</button>
+    </div>`:'';
+    return`<div class="sub-card">
+      <div class="sub-head">
+        <div><div class="sub-name">${s.pilotName||'Невідомий'}</div><div class="sub-quest">📋 ${s.questName||'Без назви'}</div></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span class="sub-status status-${s.status}">${statusLbl}</span><span style="font-size:10px;color:var(--tg)">${ts}</span></div>
+      </div>
+      ${s.text?`<div class="sub-body">${s.text}</div>`:''}
+      ${s.link?`<a href="${s.link}" target="_blank" class="sub-link">🔗 ${s.link}</a>`:''}
+      ${admBtns}
     </div>`;
+  }).join('');
 }
-
-function renderQuests() {
-    const list = document.getElementById('questsList');
-    const myActive = myData?.activeQuestIds||[], myComp = myData?.completedQuestIds||[];
-    let filtered = allQuests.filter(q => q.status!=='archived');
-    if (currentFilter!=='all') filtered = filtered.filter(q=>q.difficulty===currentFilter);
-    if (!filtered.length) { list.innerHTML=`<div class="empty-state"><div class="empty-state-icon">📋</div><p>Квестів не знайдено</p></div>`; return; }
-    list.innerHTML = filtered.map(q => questCard(q, myActive.includes(q.id), myComp.includes(q.id), isAdmin)).join('');
-}
-
-function renderMyQuests() {
-    const list = document.getElementById('myQuestsList');
-    const myActive = myData?.activeQuestIds||[];
-    const taken = allQuests.filter(q=>myActive.includes(q.id));
-    if (!taken.length) { list.innerHTML=`<div class="empty-state"><div class="empty-state-icon">⚔️</div><p>Немає активних квестів.<br>Перейдіть до "Квести" щоб взяти завдання!</p></div>`; return; }
-    list.innerHTML = taken.map(q => questCard(q, true, false, false)).join('');
-}
-
-window.takeQuest = async (qId, qName) => {
-    const myActive = myData?.activeQuestIds||[];
-    if (myActive.includes(qId)) return;
-    await updateDoc(doc(db,"users",currentUID), { activeQuestIds:[...myActive,qId] });
-    showToast("✅ Квест взято! Успіхів!"); sendWebhook('take',{name:myData.name,quest:qName});
-};
-
-window.openAbandonModal = (qId, qName, penalty) => {
-    abandonQuestId=qId; abandonPenalty=penalty||0;
-    const pLine = abandonPenalty>0 ? `<br><br>⚠️ Штраф за відмову: <b style="color:var(--danger)">-${abandonPenalty} XP</b>` : '';
-    document.getElementById('abandonText').innerHTML = `Ви впевнені що хочете відмовитись від квесту<br><b>"${qName}"</b>?<br><br>Нагороди не буде.${pLine}`;
-    document.getElementById('abandonModal').style.display='flex';
-};
-window.closeAbandonModal = () => document.getElementById('abandonModal').style.display='none';
-window.confirmAbandon = async () => {
-    if (!abandonQuestId) return;
-    const q = allQuests.find(x=>x.id===abandonQuestId);
-    const upd = { activeQuestIds:(myData?.activeQuestIds||[]).filter(id=>id!==abandonQuestId) };
-    if (abandonPenalty>0) upd.xp = increment(-abandonPenalty);
-    await updateDoc(doc(db,"users",currentUID), upd);
-    closeAbandonModal();
-    showToast(abandonPenalty>0?`❌ Квест скасовано. -${abandonPenalty} XP`:"❌ Квест скасовано");
-    sendWebhook('cancel',{name:myData.name,quest:q?.name||'',penalty:abandonPenalty});
-    abandonQuestId=null; abandonPenalty=0;
-};
-
-window.openSubmitModal = (qId) => {
-    document.getElementById('submitQuestId').value=qId;
-    document.getElementById('submitName').value=myData.name||'';
-    document.getElementById('submitLink').value='';
-    document.getElementById('submitText').value='';
-    document.getElementById('submitModal').style.display='flex';
-};
-window.closeSubmitModal = () => document.getElementById('submitModal').style.display='none';
-window.submitQuestProof = async () => {
-    const qId = document.getElementById('submitQuestId').value;
-    const link = document.getElementById('submitLink').value.trim();
-    const text = document.getElementById('submitText').value.trim();
-    const q = allQuests.find(x=>x.id===qId);
-    if (!text&&!link) { showToast("❌ Надайте посилання або коментар!"); return; }
-    await addDoc(collection(db,"questSubmissions"),{ questId:qId, questName:q?.name||'', uid:currentUID, pilotName:myData.name||'', link, text, status:'pending', createdAt:serverTimestamp() });
-    closeSubmitModal(); showToast("📨 Докази надіслано на перевірку!");
-    sendWebhook('submit',{name:myData.name,quest:q?.name||''});
-};
-
-function renderAdminQuestList() {
-    const cont = document.getElementById('adminQuestList');
-    if (!cont) return;
-    if (!allQuests.length) { cont.innerHTML=`<p style="color:var(--text-gray);font-size:13px;">Квестів немає</p>`; return; }
-    cont.innerHTML = allQuests.map(q=>`
-        <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03);padding:11px 15px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);flex-wrap:wrap;gap:8px;">
-            <div><div style="font-size:13px;font-weight:700;">${q.name}</div><div style="font-size:11px;color:var(--text-gray);">🪙${q.coins||0} · +${q.xp||0}XP${q.penalty?` · штраф-${q.penalty}XP`:''}</div></div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                <select class="form-input" id="ct_${q.id}" style="padding:6px 10px;font-size:12px;width:140px;"><option value="">Обрати пілота</option>${allUsers.map(u=>`<option value="${u.id}">${u.name||u.id}</option>`).join('')}</select>
-                <button class="btn-admin-q btn-q-complete" onclick="adminCompleteQuest('${q.id}',${q.coins||0},${q.xp||0})">✔ ВИДАТИ</button>
-            </div>
-        </div>`).join('');
-}
-
-async function loadAdminPanel() {
-    const snap = await getDocs(collection(db,"users"));
-    allUsers = []; snap.forEach(d=>allUsers.push({id:d.id,...d.data()}));
-    const sel = document.getElementById('adminPilotSelect');
-    if (sel) sel.innerHTML = allUsers.map(u=>`<option value="${u.id}">${u.name||u.id}</option>`).join('');
-    renderAdminQuestList();
-}
-
-window.adminGiveCoins = async () => {
-    const sel = document.getElementById('adminPilotSelect');
-    const amount = parseInt(document.getElementById('adminCoinAmount').value);
-    if (!sel.value||isNaN(amount)||amount<=0) { showToast("❌ Заповніть всі поля!"); return; }
-    const target = allUsers.find(u=>u.id===sel.value);
-    await updateDoc(doc(db,"users",sel.value),{coins:increment(amount)});
-    showToast(`✅ Видано ${amount} коїнів!`);
-    sendWebhook('coins',{name:target?.name||sel.value,coins:amount});
-};
-window.adminCompleteQuest = async (qId,coins,xp) => {
-    const sel = document.getElementById(`ct_${qId}`);
-    if (!sel?.value) { showToast("❌ Оберіть пілота!"); return; }
-    const uid = sel.value;
-    const us = await getDoc(doc(db,"users",uid)); if (!us.exists()) return;
-    const ud = us.data();
-    const compIds = ud.completedQuestIds||[];
-    if (compIds.includes(qId)) { showToast("❌ Цей пілот вже виконав квест!"); return; }
-    const q = allQuests.find(x=>x.id===qId);
-    await updateDoc(doc(db,"users",uid),{coins:increment(coins),xp:increment(xp),completedQuests:increment(1),completedQuestIds:[...compIds,qId],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qId)});
-    showToast(`✅ +${coins}🪙 +${xp}XP`);
-    sendWebhook('complete',{name:ud.name||uid,quest:q?.name||'',coins,xp});
-};
-
-window.openQuestModal = () => {
-    document.getElementById('editingQuestId').value='';
-    document.getElementById('questModalTitle').textContent='➕ НОВИЙ КВЕСТ';
-    ['qName','qDesc','qLocation','qCoins','qXP','qPenalty'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('qType').selectedIndex=0;
-    selectedDiff='easy'; document.querySelectorAll('.diff-option').forEach(el=>el.className='diff-option');
-    document.querySelector('[data-diff="easy"]').className='diff-option selected-easy';
-    document.getElementById('questModal').style.display='flex';
-};
-window.closeQuestModal = () => document.getElementById('questModal').style.display='none';
-window.editQuest = (id) => {
-    const q=allQuests.find(x=>x.id===id); if (!q) return;
-    document.getElementById('editingQuestId').value=id;
-    document.getElementById('questModalTitle').textContent='✎ РЕДАГУВАТИ КВЕСТ';
-    document.getElementById('qName').value=q.name||'';
-    document.getElementById('qDesc').value=q.description||'';
-    document.getElementById('qLocation').value=q.location||'';
-    document.getElementById('qCoins').value=q.coins||'';
-    document.getElementById('qXP').value=q.xp||'';
-    document.getElementById('qPenalty').value=q.penalty||'';
-    selectedDiff=q.difficulty||'easy';
-    document.querySelectorAll('.diff-option').forEach(el=>el.className='diff-option');
-    document.querySelector(`[data-diff="${selectedDiff}"]`).className=`diff-option selected-${selectedDiff}`;
-    document.getElementById('questModal').style.display='flex';
-};
-window.saveQuest = async () => {
-    const id=document.getElementById('editingQuestId').value;
-    const name=document.getElementById('qName').value.trim();
-    if (!name) { showToast("❌ Введіть назву!"); return; }
-    const data={ name, description:document.getElementById('qDesc').value.trim(), type:document.getElementById('qType').value, location:document.getElementById('qLocation').value.trim(), difficulty:selectedDiff, coins:parseInt(document.getElementById('qCoins').value)||0, xp:parseInt(document.getElementById('qXP').value)||0, penalty:parseInt(document.getElementById('qPenalty').value)||0, status:'active' };
-    if (id) { await updateDoc(doc(db,"pilotQuests",id),data); showToast("✅ Квест оновлено!"); }
-    else { data.createdAt=serverTimestamp(); await addDoc(collection(db,"pilotQuests"),data); showToast("✅ Квест створено!"); sendWebhook('newquest',{quest:name,difficulty:DL[selectedDiff],coins:data.coins,xp:data.xp}); }
-    closeQuestModal();
-};
-window.deleteQuest = async (id) => { if (!confirm("Видалити квест?")) return; await deleteDoc(doc(db,"pilotQuests",id)); showToast("🗑️ Видалено"); };
-window.selectDiff = (d) => { selectedDiff=d; document.querySelectorAll('.diff-option').forEach(el=>el.className='diff-option'); document.querySelector(`[data-diff="${d}"]`).className=`diff-option selected-${d}`; };
-
-// ===== WEBHOOK =====
-function loadWebhookSettings() {
-    try {
-        document.getElementById('webhookUrl').value = localStorage.getItem('dsv_wh_url')||'';
-        const msgs = JSON.parse(localStorage.getItem('dsv_wh_msgs')||'{}');
-        ['take','cancel','submit','complete','coins','newquest'].forEach(k=>{ if (msgs[k]) document.getElementById(`wmsg_${k}`).value=msgs[k]; });
-    } catch(e) {}
-}
-window.saveWebhook = () => { localStorage.setItem('dsv_wh_url', document.getElementById('webhookUrl').value.trim()); showToast("✅ Webhook збережено!"); };
-window.saveWebhookMessages = () => {
-    const msgs = {};
-    ['take','cancel','submit','complete','coins','newquest'].forEach(k=>{ msgs[k]=document.getElementById(`wmsg_${k}`).value; });
-    localStorage.setItem('dsv_wh_msgs', JSON.stringify(msgs)); showToast("✅ Шаблони збережено!");
-};
-window.testWebhook = async () => {
-    const url = document.getElementById('webhookUrl').value.trim();
-    if (!url) { showToast("❌ Введіть URL!"); return; }
-    try { await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({embeds:[{title:"✅ ДШВ Webhook Тест",description:"Підключення успішне! Кабінет пілота готовий до роботи.",color:0x22c55e,footer:{text:"Кабінет пілота ДШВ"}}]})}); showToast("✅ Тест надіслано!"); } catch(e) { showToast("❌ Помилка: " + e.message); }
-};
-async function sendWebhook(event, vars={}) {
-    const url = localStorage.getItem('dsv_wh_url'); if (!url) return;
-    const msgs = JSON.parse(localStorage.getItem('dsv_wh_msgs')||'{}');
-    const tpl = {take:'Пілот {name} взяв квест «{quest}»!',cancel:'Пілот {name} відмовився від «{quest}» — штраф -{penalty} XP',submit:'Пілот {name} здав докази по «{quest}»',complete:'Квест «{quest}» виконано {name}! +{coins}🪙 +{xp}XP',coins:'Адмін видав {name} +{coins}🪙',newquest:'🆕 Новий квест: «{quest}» [{difficulty}] 🪙{coins} +{xp}XP'};
-    let msg = msgs[event]||tpl[event]||event;
-    for (const [k,v] of Object.entries(vars)) msg = msg.replaceAll(`{${k}}`,v);
-    const colors={take:0x22c55e,cancel:0xef4444,submit:0xf59e0b,complete:0x22c55e,coins:0xf59e0b,newquest:0x38bdf8};
-    try { await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({embeds:[{description:msg,color:colors[event]||0x22c55e,footer:{text:"Кабінет пілота ДШВ"},timestamp:new Date().toISOString()}]})}); } catch(e){}
-}
-
-window.showToast = (msg) => {
-    const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block';
-    clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',3000);
-};
-window.showTab = (name, btn) => {
-    document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
-    document.querySelectorAll('.sidebar-btn').forEach(b=>b.classList.remove('active'));
-    const el=document.getElementById(`tab-${name}`); if (el) el.classList.add('active');
-    if (btn) btn.classList.add('active');
-    if (name==='map') setTimeout(initMap, 30);
-};
-
-// ===== MAP ENGINE =====
-let mapCtx, drawCtx, mapCanvas, drawCanvas, mapCont;
-let mapScale=1, mapOffX=0, mapOffY=0;
-let isDragging=false, lastMX, lastMY;
-let currentTool='cursor';
-let markers=[], zones=[];
-let drawingZone=false, currentZonePoints=[];
-let selectedZoneColor='#22c55e';
-let zonesVisible=true;
-let mapBgImage=null;
-let isDrawing=false, drawColor='#22c55e', drawSize=3;
-let mapInited=false;
-
-// FIX #1
-window.loadMapImage = (input) => {
-    if (!input.files?.[0]) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const data = e.target.result;
-        try { localStorage.setItem('dsv_map_img', data); } catch(err) { showToast("❌ Файл занадто великий для зберігання. Завантажте менший."); }
-        applyMapBg(data);
-        document.getElementById('mapImageStatus').textContent='✅ Карту завантажено!';
-        showToast("✅ Карту завантажено! Відкрийте вкладку 'Карта'");
-    };
-    reader.readAsDataURL(input.files[0]);
-};
-window.clearMapImage = () => {
-    localStorage.removeItem('dsv_map_img'); mapBgImage=null;
-    document.getElementById('mapImageStatus').textContent='Карту не завантажено';
-    showToast("🗑️ Карту скинуто"); if (mapInited) drawMap();
-};
-function applyMapBg(src) {
-    mapBgImage = new Image();
-    mapBgImage.onload = () => { if (mapInited) drawMap(); };
-    mapBgImage.src = src;
-}
-
-// FIX #2
-window.toggleZones = (btn) => {
-    zonesVisible = !zonesVisible;
-    btn.textContent = zonesVisible ? '👁️ Зони' : '👁️‍🗨️ Зони';
-    btn.classList.toggle('active', zonesVisible);
-    if (mapInited) drawMap();
-};
-
-// FIX #3
-window.setDrawColor = (el) => {
-    document.querySelectorAll('.dc-swatch').forEach(e=>e.classList.remove('active'));
-    el.classList.add('active'); drawColor=el.dataset.color;
-};
-window.setDrawSize = (btn) => {
-    document.querySelectorAll('.ds-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); drawSize=parseInt(btn.dataset.size);
-};
-window.clearDrawing = () => { if (drawCtx) drawCtx.clearRect(0,0,drawCanvas.width,drawCanvas.height); };
-
-window.setMapTool = (tool, btn) => {
-    currentTool = tool;
-    document.querySelectorAll('.map-tool-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    const isDraw = tool==='draw', isErase = tool==='erase';
-    const dc = document.getElementById('drawColors'), ds = document.getElementById('drawSizes');
-    if (dc) dc.style.display = isDraw ? 'flex' : 'none';
-    if (ds) ds.style.display = (isDraw||isErase) ? 'flex' : 'none';
-    if (drawCanvas) drawCanvas.style.cursor = {cursor:'grab',marker:'crosshair',draw:'crosshair',erase:'cell',zone:'crosshair'}[tool]||'default';
-    if (tool==='zone') { document.getElementById('zoneAdminPanel')?.classList.add('visible'); drawingZone=true; currentZonePoints=[]; }
-    else { document.getElementById('zoneAdminPanel')?.classList.remove('visible'); drawingZone=false; currentZonePoints=[]; }
-    if (mapInited) drawMap();
-};
-
-window.resetMapView = () => { mapScale=1; mapOffX=0; mapOffY=0; drawMap(); document.getElementById('zoomDisplay').textContent='100%'; };
-window.clearAllZones = () => { if (!confirm("Видалити всі зони?")) return; zones=[]; updateLegend(); drawMap(); saveMapData(); };
-window.saveCurrentZone = () => {
-    const name=document.getElementById('zoneNameInput').value.trim();
-    if (!name||currentZonePoints.length<3) { showToast("❌ Намалюйте зону (мін. 3 точки) та введіть назву!"); return; }
-    zones.push({name,color:selectedZoneColor,points:[...currentZonePoints]});
-    currentZonePoints=[]; drawingZone=false;
-    document.getElementById('zoneNameInput').value='';
-    document.getElementById('zoneAdminPanel').classList.remove('visible');
-    setMapTool('cursor', document.getElementById('tool-cursor'));
-    updateLegend(); drawMap(); saveMapData(); showToast(`✅ Зона "${name}" збережена!`);
-};
-window.cancelZoneDraw = () => { currentZonePoints=[]; drawingZone=false; document.getElementById('zoneAdminPanel')?.classList.remove('visible'); setMapTool('cursor',document.getElementById('tool-cursor')); drawMap(); };
-window.selectZoneColor = (el) => { document.querySelectorAll('.zone-color').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); selectedZoneColor=el.dataset.color; };
-function saveMapData() { try { localStorage.setItem('dsv_map_zones',JSON.stringify(zones)); } catch(e){} }
-function loadMapData() { try { zones=JSON.parse(localStorage.getItem('dsv_map_zones')||'[]'); } catch(e){zones=[];} }
-function updateLegend() {
-    const cont=document.getElementById('legendItems');
-    cont.innerHTML = zones.map(z=>`<div class="legend-item"><div class="legend-dot" style="background:${z.color}"></div><span>${z.name}</span></div>`).join('')||'<div style="font-size:11px;color:var(--text-gray);">Зон немає</div>';
-}
-function getZoneAtPoint(wx,wy) { for (let i=zones.length-1;i>=0;i--) if (ptInPoly(wx,wy,zones[i].points)) return zones[i].name; return null; }
-function ptInPoly(px,py,poly) { let inside=false; for (let i=0,j=poly.length-1;i<poly.length;j=i++){const xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y;if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;} return inside; }
-function cToW(cx,cy){return{x:Math.round((cx-mapOffX)/mapScale),y:Math.round((cy-mapOffY)/mapScale)};}
-
-function drawMap() {
-    if (!mapCtx) return;
-    const W=mapCanvas.width, H=mapCanvas.height;
-    mapCtx.clearRect(0,0,W,H);
-    mapCtx.fillStyle='#06090d'; mapCtx.fillRect(0,0,W,H);
-    mapCtx.save(); mapCtx.translate(mapOffX,mapOffY); mapCtx.scale(mapScale,mapScale);
-    if (mapBgImage?.complete) mapCtx.drawImage(mapBgImage,0,0,mapBgImage.naturalWidth,mapBgImage.naturalHeight);
-    const ga = mapBgImage?0.04:0.09, gs=50;
-    mapCtx.strokeStyle=`rgba(34,197,94,${ga})`; mapCtx.lineWidth=1/mapScale;
-    const sx=Math.floor(-mapOffX/mapScale/gs)*gs, sy=Math.floor(-mapOffY/mapScale/gs)*gs;
-    const ex=sx+W/mapScale+gs, ey=sy+H/mapScale+gs;
-    for (let x=sx;x<ex;x+=gs){mapCtx.beginPath();mapCtx.moveTo(x,sy);mapCtx.lineTo(x,ey);mapCtx.stroke();}
-    for (let y=sy;y<ey;y+=gs){mapCtx.beginPath();mapCtx.moveTo(sx,y);mapCtx.lineTo(ex,y);mapCtx.stroke();}
-    mapCtx.fillStyle=`rgba(34,197,94,${mapBgImage?0.5:0.3})`; mapCtx.font=`${Math.max(9,10/mapScale)}px Rajdhani`; mapCtx.textAlign='center';
-    for (let x=Math.ceil(sx/gs)*gs;x<ex;x+=gs) mapCtx.fillText(x,x,sy+13/mapScale);
-    mapCtx.textAlign='right';
-    for (let y=Math.ceil(sy/gs)*gs;y<ey;y+=gs) mapCtx.fillText(y,sx+28/mapScale,y+4/mapScale);
-    if (zonesVisible) {
-        zones.forEach(z=>{
-            if (z.points.length<2) return;
-            mapCtx.beginPath(); mapCtx.moveTo(z.points[0].x,z.points[0].y); z.points.forEach(p=>mapCtx.lineTo(p.x,p.y)); mapCtx.closePath();
-            mapCtx.fillStyle=z.color+'22'; mapCtx.fill();
-            mapCtx.strokeStyle=z.color+'aa'; mapCtx.lineWidth=2/mapScale; mapCtx.stroke();
-            const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length, cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;
-            mapCtx.fillStyle=z.color; mapCtx.font=`bold ${Math.max(11,12/mapScale)}px Exo 2`; mapCtx.textAlign='center'; mapCtx.fillText(z.name,cx,cy);
-        });
-    }
-    if (drawingZone&&currentZonePoints.length>0) {
-        mapCtx.beginPath(); mapCtx.moveTo(currentZonePoints[0].x,currentZonePoints[0].y); currentZonePoints.forEach(p=>mapCtx.lineTo(p.x,p.y));
-        mapCtx.strokeStyle=selectedZoneColor; mapCtx.lineWidth=2/mapScale; mapCtx.setLineDash([6/mapScale,4/mapScale]); mapCtx.stroke(); mapCtx.setLineDash([]);
-        currentZonePoints.forEach(p=>{mapCtx.beginPath();mapCtx.arc(p.x,p.y,4/mapScale,0,Math.PI*2);mapCtx.fillStyle=selectedZoneColor;mapCtx.fill();});
-    }
-    // FIX #5 — proper pin markers without emoji
-    markers.forEach(m=>{
-        // Shadow
-        mapCtx.beginPath(); mapCtx.arc(m.x,m.y+2/mapScale,9/mapScale,0,Math.PI*2); mapCtx.fillStyle='rgba(0,0,0,0.4)'; mapCtx.fill();
-        // Pin circle
-        mapCtx.beginPath(); mapCtx.arc(m.x,m.y,8/mapScale,0,Math.PI*2); mapCtx.fillStyle='#ef4444'; mapCtx.fill();
-        mapCtx.strokeStyle='#fff'; mapCtx.lineWidth=1.5/mapScale; mapCtx.stroke();
-        mapCtx.beginPath(); mapCtx.arc(m.x,m.y,3/mapScale,0,Math.PI*2); mapCtx.fillStyle='#fff'; mapCtx.fill();
-        if (m.label) {
-            mapCtx.font=`bold ${Math.max(10,11/mapScale)}px Exo 2`; mapCtx.fillStyle='white'; mapCtx.textAlign='center';
-            mapCtx.shadowColor='rgba(0,0,0,0.8)'; mapCtx.shadowBlur=4/mapScale;
-            mapCtx.fillText(m.label,m.x,m.y-13/mapScale); mapCtx.shadowBlur=0;
+window.reviewSub=async(sid,status,qid,targetUid)=>{
+  await updateDoc(doc(db,'questSubmissions',sid),{status});
+  if(status==='approved'&&qid&&targetUid){
+    const q=allQuests.find(x=>x.id===qid);
+    if(q){
+      const us=await getDoc(doc(db,'users',targetUid));
+      if(us.exists()){
+        const ud=us.data(),comp=ud.completedQuestIds||[];
+        if(!comp.includes(qid)){
+          await updateDoc(doc(db,'users',targetUid),{coins:increment(q.coins||0),xp:increment(q.xp||0),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid)});
+          sendWebhook('complete',{name:ud.name||targetUid,quest:q.name||'',coins:q.coins||0,xp:q.xp||0});
         }
-    });
-    mapCtx.restore();
-}
-
-function initMap() {
-    if (mapInited) { resizeMap(); return; }
-    mapInited=true;
-    mapCanvas=document.getElementById('mapCanvas'); drawCanvas=document.getElementById('drawCanvas');
-    mapCont=document.getElementById('mapContainer');
-    mapCtx=mapCanvas.getContext('2d'); drawCtx=drawCanvas.getContext('2d');
-    loadMapData(); updateLegend();
-    const savedImg=localStorage.getItem('dsv_map_img');
-    if (savedImg) { applyMapBg(savedImg); document.getElementById('mapImageStatus').textContent='✅ Карту завантажено!'; }
-    resizeMap(); drawMap();
-    if (isAdmin) {
-        ['tool-zone','btnClearZones','adminMapSep','tool-erase','btnClearDraw'].forEach(id=>{
-            const el=document.getElementById(id); if(el) el.style.display=id==='adminMapSep'?'block':'flex';
-        });
+      }
     }
-    drawCanvas.addEventListener('mousedown', e=>{
-        if (currentTool==='cursor'){isDragging=true;lastMX=e.clientX;lastMY=e.clientY;drawCanvas.style.cursor='grabbing';}
-        if (currentTool==='draw'||currentTool==='erase'){isDrawing=true;paintAt(e,true);}
-    });
-    drawCanvas.addEventListener('mousemove', e=>{
-        const rect=drawCanvas.getBoundingClientRect();
-        const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
-        const w=cToW(cx,cy);
-        document.getElementById('mapX').textContent=w.x;
-        document.getElementById('mapY').textContent=w.y;
-        const zone=getZoneAtPoint(w.x,w.y);
-        document.getElementById('currentZoneName').textContent=zone||'Відкрита місцевість';
-        if (isDragging&&currentTool==='cursor'){mapOffX+=e.clientX-lastMX;mapOffY+=e.clientY-lastMY;lastMX=e.clientX;lastMY=e.clientY;drawMap();}
-        if (isDrawing&&(currentTool==='draw'||currentTool==='erase')) paintAt(e,false);
-    });
-    drawCanvas.addEventListener('mouseup',()=>{isDragging=false;isDrawing=false;drawCanvas.style.cursor=currentTool==='cursor'?'grab':'crosshair';});
-    drawCanvas.addEventListener('mouseleave',()=>{isDragging=false;isDrawing=false;});
-    drawCanvas.addEventListener('click',e=>{
-        const rect=drawCanvas.getBoundingClientRect();
-        const w=cToW(e.clientX-rect.left,e.clientY-rect.top);
-        if (currentTool==='marker'){const label=prompt("Назва мітки:");if(label===null)return;markers.push({x:w.x,y:w.y,label});drawMap();}
-        else if (currentTool==='zone'&&drawingZone){currentZonePoints.push(w);drawMap();}
-    });
-    drawCanvas.addEventListener('wheel',e=>{
-        e.preventDefault();
-        const rect=drawCanvas.getBoundingClientRect();
-        const mx=e.clientX-rect.left, my=e.clientY-rect.top;
-        const d=e.deltaY>0?0.85:1.15, ns=Math.max(0.15,Math.min(10,mapScale*d));
-        mapOffX=mx-(mx-mapOffX)*(ns/mapScale); mapOffY=my-(my-mapOffY)*(ns/mapScale); mapScale=ns;
-        document.getElementById('zoomDisplay').textContent=Math.round(mapScale*100)+'%'; drawMap();
-    },{passive:false});
-    window.addEventListener('resize',resizeMap);
+  }
+  toast(status==='approved'?'✅ Прийнято і нараховано нагороду!':'❌ Відхилено');
+};
+
+/* ===== WEBHOOK ===== */
+function loadWebhookSettings(){
+  try{
+    document.getElementById('webhookUrl').value=localStorage.getItem('dsv_wh_url')||'';
+    const m=JSON.parse(localStorage.getItem('dsv_wh_msgs')||'{}');
+    ['take','cancel','submit','complete','coins','newquest'].forEach(k=>{if(m[k])document.getElementById(`wmsg_${k}`).value=m[k];});
+  }catch(e){}
+}
+window.saveWebhook=()=>{localStorage.setItem('dsv_wh_url',document.getElementById('webhookUrl').value.trim());toast('✅ Webhook збережено!');};
+window.saveWebhookMessages=()=>{
+  const m={};['take','cancel','submit','complete','coins','newquest'].forEach(k=>m[k]=document.getElementById(`wmsg_${k}`).value);
+  localStorage.setItem('dsv_wh_msgs',JSON.stringify(m));toast('✅ Шаблони збережено!');
+};
+window.testWebhook=async()=>{
+  const url=document.getElementById('webhookUrl').value.trim();if(!url){toast('❌ Введіть URL!');return;}
+  try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({embeds:[{title:'✅ ДШВ Webhook Тест',description:'Підключення успішне!',color:0x22c55e}]})});toast('✅ Тест надіслано!');}catch(e){toast('❌ '+e.message);}
+};
+async function sendWebhook(ev,vars={}){
+  const url=localStorage.getItem('dsv_wh_url');if(!url)return;
+  const m=JSON.parse(localStorage.getItem('dsv_wh_msgs')||'{}');
+  const tpl={take:'Пілот {name} взяв квест «{quest}»!',cancel:'Пілот {name} відмовився від «{quest}» — -{penalty}XP',submit:'Пілот {name} здав докази по «{quest}»',complete:'«{quest}» виконано {name}! +{coins}🪙+{xp}XP',coins:'Адмін видав {name} +{coins}🪙',newquest:'🆕 Квест: «{quest}» [{difficulty}] 🪙{coins}+{xp}XP'};
+  let msg=m[ev]||tpl[ev]||ev;
+  for(const[k,v]of Object.entries(vars))msg=msg.replaceAll(`{${k}}`,v);
+  const clr={take:0x22c55e,cancel:0xef4444,submit:0xf59e0b,complete:0x22c55e,coins:0xf59e0b,newquest:0x38bdf8};
+  try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({embeds:[{description:msg,color:clr[ev]||0x22c55e,footer:{text:'Кабінет пілота ДШВ'},timestamp:new Date().toISOString()}]})});}catch(e){}
 }
 
-function paintAt(e, startNew) {
-    const rect=drawCanvas.getBoundingClientRect();
-    const cx=e.clientX-rect.left, cy=e.clientY-rect.top;
-    drawCtx.lineCap='round'; drawCtx.lineJoin='round';
-    const size=currentTool==='erase'?drawSize*5:drawSize;
-    if (currentTool==='erase'){drawCtx.globalCompositeOperation='destination-out';drawCtx.strokeStyle='rgba(0,0,0,1)';}
-    else{drawCtx.globalCompositeOperation='source-over';drawCtx.strokeStyle=drawColor;}
-    drawCtx.lineWidth=size;
-    if (startNew){drawCtx.beginPath();drawCtx.moveTo(cx,cy);}
-    else{drawCtx.lineTo(cx,cy);drawCtx.stroke();}
+/* ===== TABS ===== */
+window.showTab=(name,btn)=>{
+  document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.sidebar-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById(`tab-${name}`)?.classList.add('active');
+  btn?.classList.add('active');
+  if(name==='map')setTimeout(initMap,30);
+};
+window.toast=(msg,dur=3000)=>{
+  const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',dur);
+};
+
+/* ===== MAP ENGINE ===== */
+const COLORS=['#22c55e','#ef4444','#38bdf8','#f59e0b','#a855f7','#f97316'];
+let mapCtx,drawCtx,mapCvs,drawCvs,mapCont;
+let scale=1,offX=0,offY=0,isDrag=false,lmx,lmy;
+let tool='cursor';
+let zones=[],markers=[];
+let drawingZone=false,zonePoints=[];
+let zoneColor='#22c55e',markerColor='#ef4444';
+let zonesVis=true,mapBg=null,mapBgW=0,mapBgH=0;
+let drawColor='#22c55e',drawSize=3,isDrawing=false;
+let mapInited=false;
+// dragging a marker
+let draggingMarkerIdx=-1,movingMarkerIdx=-1;
+// dragging a zone point
+let draggingZonePt=null; // {zi, pi}
+// context menu target
+let ctxTarget=null; // {type:'zone'|'marker'|'zonepoint', idx}
+
+/* Color swatches builder */
+function buildColorSwatches(containerId,selectedColor,onSelect){
+  const el=document.getElementById(containerId);if(!el)return;
+  el.innerHTML='';
+  COLORS.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='sw'+(c===selectedColor?' sel':'');
+    d.style.background=c;d.dataset.c=c;
+    d.onclick=()=>{el.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');onSelect(c);};
+    el.appendChild(d);
+  });
+  // custom picker
+  const cc=document.createElement('div');cc.className='sw sw-custom';
+  const inp=document.createElement('input');inp.type='color';inp.value=selectedColor;
+  inp.onchange=()=>{el.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));cc.classList.add('sel');onSelect(inp.value);};
+  cc.appendChild(inp);el.appendChild(cc);
 }
 
-function resizeMap() {
-    if (!mapCanvas||!drawCanvas||!mapCont) return;
-    mapCanvas.width=mapCont.clientWidth; mapCanvas.height=mapCont.clientHeight;
-    drawCanvas.width=mapCont.clientWidth; drawCanvas.height=mapCont.clientHeight;
-    drawMap();
+/* init color swatches for zone/marker panels */
+function initPanelColors(){
+  // zone panel
+  const zc=document.getElementById('zoneColors');
+  if(zc){zc.innerHTML='';buildColorSwatches('zoneColors',zoneColor,c=>zoneColor=c);}
+  const mc=document.getElementById('markerColors');
+  if(mc){mc.innerHTML='';buildColorSwatches('markerColors',markerColor,c=>markerColor=c);}
 }
+
+/* ===== MAP INIT ===== */
+function initMap(){
+  if(mapInited){resizeMap();return;}
+  mapInited=true;
+  mapCvs=document.getElementById('mapCanvas');drawCvs=document.getElementById('drawCanvas');
+  mapCont=document.getElementById('mapContainer');
+  mapCtx=mapCvs.getContext('2d');drawCtx=drawCvs.getContext('2d');
+  loadMapData();updateLegend();
+  const si=localStorage.getItem('dsv_map_img');
+  if(si)applyBg(si);
+  resizeMap();drawMap();
+  initPanelColors();
+  // show admin tools
+  if(isAdmin){
+    ['tool-zone','btnClearZones','adminMapSep','tool-erase','btnClearDraw'].forEach(id=>{
+      const e=document.getElementById(id);if(e)e.style.display=id==='adminMapSep'?'block':'flex';
+    });
+  }
+  drawCvs.addEventListener('mousedown',onMD);
+  drawCvs.addEventListener('mousemove',onMM);
+  drawCvs.addEventListener('mouseup',onMU);
+  drawCvs.addEventListener('mouseleave',()=>{isDrag=false;isDrawing=false;draggingMarkerIdx=-1;draggingZonePt=null;});
+  drawCvs.addEventListener('click',onClick);
+  drawCvs.addEventListener('contextmenu',onRClick);
+  drawCvs.addEventListener('wheel',onWheel,{passive:false});
+  document.addEventListener('keydown',onKey);
+  window.addEventListener('resize',resizeMap);
+}
+
+/* ===== EVENTS ===== */
+function onMD(e){
+  hideCtx();
+  const {wx,wy}=screenToWorld(e);
+  if(tool==='draw'||tool==='erase'){isDrawing=true;paintAt(e,true);return;}
+  // check marker drag
+  if(tool==='cursor'||tool==='marker'){
+    const mi=getMarkerAt(wx,wy);
+    if(mi!==-1&&e.button===0){draggingMarkerIdx=mi;return;}
+  }
+  // check zone point drag (admin)
+  if(isAdmin&&tool==='cursor'){
+    const zp=getZonePointAt(wx,wy);
+    if(zp){draggingZonePt=zp;return;}
+  }
+  if(tool==='cursor'){isDrag=true;lmx=e.clientX;lmy=e.clientY;}
+}
+function onMM(e){
+  const {cx,cy,wx,wy}=screenToWorld(e);
+  document.getElementById('mapX').textContent=wx;
+  document.getElementById('mapY').textContent=wy;
+  const z=getZoneAt(wx,wy);
+  document.getElementById('curZone').textContent=z||'Відкрита місцевість';
+  if(isDrawing&&(tool==='draw'||tool==='erase')){paintAt(e,false);return;}
+  if(draggingMarkerIdx!==-1){
+    markers[draggingMarkerIdx].x=wx;markers[draggingMarkerIdx].y=wy;drawMap();return;
+  }
+  if(draggingZonePt){
+    zones[draggingZonePt.zi].points[draggingZonePt.pi]={x:wx,y:wy};drawMap();return;
+  }
+  if(isDrag){mapOffPan(e);}
+  // hover cursor
+  const mi=getMarkerAt(wx,wy);
+  drawCvs.style.cursor=mi!==-1?'grab':tool==='cursor'?'default':tool==='draw'||tool==='erase'?'crosshair':'crosshair';
+}
+function onMU(e){
+  isDrag=false;isDrawing=false;
+  if(draggingMarkerIdx!==-1){saveMapData();draggingMarkerIdx=-1;}
+  if(draggingZonePt){saveMapData();draggingZonePt=null;}
+}
+function onClick(e){
+  if(e.button!==0)return;
+  const {wx,wy}=screenToWorld(e);
+  if(tool==='marker'){
+    const name=document.getElementById('markerNameInput').value.trim();
+    markers.push({x:wx,y:wy,label:name||'Мітка',color:markerColor});
+    saveMapData();drawMap();
+    return;
+  }
+  if(tool==='zone'&&drawingZone){
+    zonePoints.push({x:wx,y:wy});drawMap();return;
+  }
+  // click on marker -> show edit
+  if(tool==='cursor'){
+    const mi=getMarkerAt(wx,wy);
+    if(mi!==-1){openMarkerEdit(mi);return;}
+  }
+}
+function onRClick(e){
+  e.preventDefault();
+  const {wx,wy}=screenToWorld(e);
+  // check marker
+  const mi=getMarkerAt(wx,wy);
+  if(mi!==-1){showCtxMenu(e.clientX,e.clientY,'marker',mi);return;}
+  // check zone
+  const zi=getZoneIdxAt(wx,wy);
+  if(zi!==-1){showCtxMenu(e.clientX,e.clientY,'zone',zi);return;}
+}
+function onWheel(e){
+  e.preventDefault();
+  const r=drawCvs.getBoundingClientRect();
+  const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.1,Math.min(10,scale*d));
+  offX=mx-(mx-offX)*(ns/scale);offY=my-(my-offY)*(ns/scale);
+  scale=ns;
+  // #4 clamp to image bounds
+  clampOffset();
+  document.getElementById('zoomDisplay').textContent=Math.round(scale*100)+'%';
+  drawMap();
+}
+function onKey(e){
+  // Ctrl+Z for zone points
+  if(e.ctrlKey&&e.key==='z'&&tool==='zone'&&drawingZone&&zonePoints.length>0){
+    zonePoints.pop();drawMap();
+  }
+}
+
+function mapOffPan(e){
+  offX+=e.clientX-lmx;offY+=e.clientY-lmy;
+  lmx=e.clientX;lmy=e.clientY;
+  clampOffset();drawMap();
+}
+/* #4 clamp pan to bg image */
+function clampOffset(){
+  if(!mapBg||!mapCvs)return;
+  const W=mapCvs.width,H=mapCvs.height;
+  const imgW=mapBgW*scale,imgH=mapBgH*scale;
+  // Don't let user pan beyond image edges
+  if(imgW>W){offX=Math.min(0,Math.max(W-imgW,offX));}else{offX=Math.max(0,Math.min(W-imgW,offX));}
+  if(imgH>H){offY=Math.min(0,Math.max(H-imgH,offY));}else{offY=Math.max(0,Math.min(H-imgH,offY));}
+}
+
+/* ===== CONTEXT MENU ===== */
+function showCtxMenu(cx,cy,type,idx){
+  ctxTarget={type,idx};
+  const m=document.getElementById('ctxMenu');
+  // show/hide items
+  document.getElementById('ctxEditZone').style.display=type==='zone'?'flex':'none';
+  document.getElementById('ctxDeleteZone').style.display=type==='zone'?'flex':'none';
+  document.getElementById('ctxSep2').style.display=type==='marker'?'block':'none';
+  document.getElementById('ctxEditMarker').style.display=type==='marker'?'flex':'none';
+  document.getElementById('ctxMoveMarker').style.display=type==='marker'?'flex':'none';
+  document.getElementById('ctxDelMarker').style.display=type==='marker'?'flex':'none';
+  m.style.left=cx+'px';m.style.top=cy+'px';m.classList.add('vis');
+}
+function hideCtx(){document.getElementById('ctxMenu').classList.remove('vis');}
+window.ctxDo=action=>{
+  hideCtx();if(!ctxTarget)return;
+  const{type,idx}=ctxTarget;
+  if(action==='editzone'&&type==='zone')openZoneEdit(idx);
+  if(action==='delzone'&&type==='zone'){if(confirm('Видалити зону?')){zones.splice(idx,1);saveMapData();updateLegend();drawMap();}}
+  if(action==='editmarker'&&type==='marker')openMarkerEdit(idx);
+  if(action==='movemarker'&&type==='marker'){toast('🖱️ Затисніть та перетягніть мітку',2000);}
+  if(action==='delmarker'&&type==='marker'){markers.splice(idx,1);saveMapData();drawMap();}
+};
+document.addEventListener('click',e=>{if(!e.target.closest('.ctx'))hideCtx();});
+
+/* ===== MARKER EDIT MODAL ===== */
+let editMarkerColor='#ef4444';
+window.openMarkerEdit=idx=>{
+  document.getElementById('editMIdx').value=idx;
+  document.getElementById('editMName').value=markers[idx].label||'';
+  editMarkerColor=markers[idx].color||'#ef4444';
+  buildColorSwatches('editMColors',editMarkerColor,c=>{editMarkerColor=c;});
+  document.getElementById('markerEditModal').style.display='flex';
+};
+window.closeMarkerEdit=()=>document.getElementById('markerEditModal').style.display='none';
+window.saveMarkerEdit=()=>{
+  const idx=parseInt(document.getElementById('editMIdx').value);
+  markers[idx].label=document.getElementById('editMName').value.trim()||'Мітка';
+  markers[idx].color=editMarkerColor;
+  saveMapData();drawMap();closeMarkerEdit();toast('✅ Мітку оновлено!');
+};
+window.deleteMarker=()=>{
+  const idx=parseInt(document.getElementById('editMIdx').value);
+  markers.splice(idx,1);saveMapData();drawMap();closeMarkerEdit();toast('🗑️ Мітку видалено');
+};
+
+/* ===== ZONE EDIT MODAL ===== */
+let editZoneColor='#22c55e';
+window.openZoneEdit=idx=>{
+  document.getElementById('editZIdx').value=idx;
+  document.getElementById('editZName').value=zones[idx].name||'';
+  editZoneColor=zones[idx].color||'#22c55e';
+  buildColorSwatches('editZColors',editZoneColor,c=>{editZoneColor=c;});
+  document.getElementById('zoneEditModal').style.display='flex';
+};
+window.closeZoneEdit=()=>document.getElementById('zoneEditModal').style.display='none';
+window.saveZoneEdit=()=>{
+  const idx=parseInt(document.getElementById('editZIdx').value);
+  zones[idx].name=document.getElementById('editZName').value.trim()||zones[idx].name;
+  zones[idx].color=editZoneColor;
+  saveMapData();updateLegend();drawMap();closeZoneEdit();toast('✅ Зону оновлено!');
+};
+window.deleteZone=()=>{
+  const idx=parseInt(document.getElementById('editZIdx').value);
+  zones.splice(idx,1);saveMapData();updateLegend();drawMap();closeZoneEdit();toast('🗑️ Зону видалено');
+};
+
+/* ===== ZONE DRAW ===== */
+window.saveZone=()=>{
+  const n=document.getElementById('zoneNameInput').value.trim();
+  if(!n||zonePoints.length<3){toast('❌ Мін. 3 точки та назва!');return;}
+  zones.push({name:n,color:zoneColor,points:[...zonePoints]});
+  zonePoints=[];drawingZone=false;
+  document.getElementById('zoneNameInput').value='';
+  document.getElementById('zonePanel').classList.remove('vis');
+  setTool('cursor',document.getElementById('tool-cursor'));
+  updateLegend();saveMapData();drawMap();toast(`✅ Зона "${n}" збережена!`);
+};
+window.cancelZone=()=>{
+  zonePoints=[];drawingZone=false;
+  document.getElementById('zonePanel').classList.remove('vis');
+  setTool('cursor',document.getElementById('tool-cursor'));drawMap();
+};
+window.clearAllZones=()=>{if(!confirm('Видалити всі зони?'))return;zones=[];updateLegend();saveMapData();drawMap();};
+
+/* ===== MARKER TOOL ===== */
+window.cancelMarker=()=>{
+  document.getElementById('markerPanel').classList.remove('vis');
+  setTool('cursor',document.getElementById('tool-cursor'));
+};
+
+/* ===== TOOL SWITCH ===== */
+window.setTool=(t,btn)=>{
+  tool=t;
+  document.querySelectorAll('.mtb').forEach(b=>b.classList.remove('active'));
+  btn?.classList.add('active');
+  const isDraw=t==='draw',isErase=t==='erase';
+  const dc=document.getElementById('drawColors'),ds=document.getElementById('drawSizes');
+  if(dc)dc.style.display=isDraw?'flex':'none';
+  if(ds)ds.style.display=(isDraw||isErase)?'flex':'none';
+  drawCvs.style.cursor=({cursor:'default',marker:'crosshair',draw:'crosshair',erase:'cell',zone:'crosshair'})[t]||'default';
+  if(t==='zone'){
+    document.getElementById('zonePanel').classList.add('vis');
+    document.getElementById('markerPanel').classList.remove('vis');
+    drawingZone=true;zonePoints=[];
+  } else if(t==='marker'){
+    document.getElementById('markerPanel').classList.add('vis');
+    document.getElementById('zonePanel').classList.remove('vis');
+    drawingZone=false;
+  } else {
+    document.getElementById('zonePanel').classList.remove('vis');
+    document.getElementById('markerPanel').classList.remove('vis');
+    drawingZone=false;
+  }
+  drawMap();
+};
+window.setDC=el=>{document.querySelectorAll('.dcs').forEach(e=>e.classList.remove('active'));el.classList.add('active');drawColor=el.dataset.c;};
+window.setDCCustom=v=>{document.querySelectorAll('.dcs').forEach(e=>e.classList.remove('active'));drawColor=v;};
+window.setDS=btn=>{document.querySelectorAll('.dsb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');drawSize=parseInt(btn.dataset.s);};
+window.clearDraw=()=>{if(drawCtx)drawCtx.clearRect(0,0,drawCvs.width,drawCvs.height);};
+window.toggleZones=btn=>{zonesVis=!zonesVis;btn.textContent=zonesVis?'👁️ Зони':'👁️‍🗨️ Зони';btn.classList.toggle('active',zonesVis);drawMap();};
+window.resetView=()=>{scale=1;offX=0;offY=0;drawMap();document.getElementById('zoomDisplay').textContent='100%';};
+
+/* ===== DRAW ===== */
+function paintAt(e,start){
+  const r=drawCvs.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  drawCtx.lineCap='round';drawCtx.lineJoin='round';
+  drawCtx.lineWidth=tool==='erase'?drawSize*5:drawSize;
+  if(tool==='erase'){drawCtx.globalCompositeOperation='destination-out';drawCtx.strokeStyle='rgba(0,0,0,1)';}
+  else{drawCtx.globalCompositeOperation='source-over';drawCtx.strokeStyle=drawColor;}
+  if(start){drawCtx.beginPath();drawCtx.moveTo(cx,cy);}
+  else{drawCtx.lineTo(cx,cy);drawCtx.stroke();}
+}
+
+/* ===== MAP BACKGROUND ===== */
+window.loadMapImage=input=>{
+  if(!input.files?.[0])return;
+  const rd=new FileReader();
+  rd.onload=e=>{
+    const d=e.target.result;
+    try{localStorage.setItem('dsv_map_img',d);}catch(er){toast('❌ Файл занадто великий!');}
+    applyBg(d);
+    document.getElementById('mapImageStatus').textContent='✅ Карту завантажено!';
+    toast('✅ Карту завантажено!');
+  };rd.readAsDataURL(input.files[0]);
+};
+window.clearMapImage=()=>{localStorage.removeItem('dsv_map_img');mapBg=null;mapBgW=0;mapBgH=0;document.getElementById('mapImageStatus').textContent='Карту не завантажено';toast('🗑️ Карту скинуто');if(mapInited)drawMap();};
+function applyBg(src){
+  mapBg=new Image();
+  mapBg.onload=()=>{mapBgW=mapBg.naturalWidth;mapBgH=mapBg.naturalHeight;if(mapInited)drawMap();};
+  mapBg.src=src;
+  document.getElementById('mapImageStatus').textContent='✅ Карту завантажено!';
+}
+
+/* ===== HELPERS ===== */
+function screenToWorld(e){
+  const r=drawCvs.getBoundingClientRect();
+  const cx=e.clientX-r.left,cy=e.clientY-r.top;
+  return{cx,cy,wx:Math.round((cx-offX)/scale),wy:Math.round((cy-offY)/scale)};
+}
+function worldToScreen(wx,wy){return{sx:wx*scale+offX,sy:wy*scale+offY};}
+function getZoneAt(wx,wy){
+  for(let i=zones.length-1;i>=0;i--)if(ptInPoly(wx,wy,zones[i].points))return zones[i].name;
+  return null;
+}
+function getZoneIdxAt(wx,wy){
+  for(let i=zones.length-1;i>=0;i--)if(ptInPoly(wx,wy,zones[i].points))return i;
+  return-1;
+}
+function getMarkerAt(wx,wy){
+  const r=12/scale;
+  for(let i=markers.length-1;i>=0;i--){const m=markers[i];if(Math.hypot(m.x-wx,m.y-wy)<r)return i;}
+  return-1;
+}
+function getZonePointAt(wx,wy){
+  const r=10/scale;
+  for(let zi=0;zi<zones.length;zi++){
+    for(let pi=0;pi<zones[zi].points.length;pi++){
+      const p=zones[zi].points[pi];
+      if(Math.hypot(p.x-wx,p.y-wy)<r)return{zi,pi};
+    }
+  }
+  return null;
+}
+function ptInPoly(px,py,poly){
+  let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y;
+    if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;
+  }return inside;
+}
+function updateLegend(){
+  const el=document.getElementById('legendItems');
+  el.innerHTML=zones.map(z=>`<div class="li"><div class="ld" style="background:${z.color}"></div><span>${z.name}</span></div>`).join('')||'<div style="font-size:11px;color:var(--tg)">Зон немає</div>';
+}
+function saveMapData(){
+  try{localStorage.setItem('dsv_map_zones',JSON.stringify(zones));localStorage.setItem('dsv_map_markers',JSON.stringify(markers));}catch(e){}
+}
+function loadMapData(){
+  try{zones=JSON.parse(localStorage.getItem('dsv_map_zones')||'[]');}catch(e){zones=[];}
+  try{markers=JSON.parse(localStorage.getItem('dsv_map_markers')||'[]');}catch(e){markers=[];}
+}
+
+/* ===== DRAW MAP ===== */
+function drawMap(){
+  if(!mapCtx)return;
+  const W=mapCvs.width,H=mapCvs.height;
+  mapCtx.clearRect(0,0,W,H);
+  mapCtx.fillStyle='#06090d';mapCtx.fillRect(0,0,W,H);
+  mapCtx.save();mapCtx.translate(offX,offY);mapCtx.scale(scale,scale);
+  // bg image
+  if(mapBg?.complete&&mapBgW>0)mapCtx.drawImage(mapBg,0,0,mapBgW,mapBgH);
+  // grid
+  const ga=mapBg?0.04:0.08,gs=50;
+  mapCtx.strokeStyle=`rgba(34,197,94,${ga})`;mapCtx.lineWidth=1/scale;
+  const sx=Math.floor(-offX/scale/gs)*gs,sy=Math.floor(-offY/scale/gs)*gs;
+  const ex=sx+W/scale+gs,ey=sy+H/scale+gs;
+  for(let x=sx;x<ex;x+=gs){mapCtx.beginPath();mapCtx.moveTo(x,sy);mapCtx.lineTo(x,ey);mapCtx.stroke();}
+  for(let y=sy;y<ey;y+=gs){mapCtx.beginPath();mapCtx.moveTo(sx,y);mapCtx.lineTo(ex,y);mapCtx.stroke();}
+  // coord labels
+  mapCtx.fillStyle=`rgba(34,197,94,${mapBg?0.5:0.3})`;mapCtx.font=`${Math.max(9,10/scale)}px Rajdhani`;
+  mapCtx.textAlign='center';
+  for(let x=Math.ceil(sx/gs)*gs;x<ex;x+=gs)mapCtx.fillText(x,x,sy+13/scale);
+  mapCtx.textAlign='right';
+  for(let y=Math.ceil(sy/gs)*gs;y<ey;y+=gs)mapCtx.fillText(y,sx+28/scale,y+4/scale);
+  // zones
+  if(zonesVis){
+    zones.forEach(z=>{
+      if(z.points.length<2)return;
+      mapCtx.beginPath();mapCtx.moveTo(z.points[0].x,z.points[0].y);
+      z.points.forEach(p=>mapCtx.lineTo(p.x,p.y));mapCtx.closePath();
+      mapCtx.fillStyle=z.color+'22';mapCtx.fill();
+      mapCtx.strokeStyle=z.color+'bb';mapCtx.lineWidth=2/scale;mapCtx.stroke();
+      const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;
+      const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;
+      mapCtx.fillStyle=z.color;mapCtx.font=`bold ${Math.max(11,12/scale)}px Exo 2`;
+      mapCtx.textAlign='center';mapCtx.fillText(z.name,cx,cy);
+      // show zone point handles for admin cursor tool
+      if(isAdmin&&tool==='cursor'){
+        z.points.forEach(p=>{
+          mapCtx.beginPath();mapCtx.arc(p.x,p.y,5/scale,0,Math.PI*2);
+          mapCtx.fillStyle=z.color;mapCtx.fill();
+          mapCtx.strokeStyle='#fff';mapCtx.lineWidth=1/scale;mapCtx.stroke();
+        });
+      }
+    });
+  }
+  // zone drawing in progress
+  if(drawingZone&&zonePoints.length>0){
+    mapCtx.beginPath();mapCtx.moveTo(zonePoints[0].x,zonePoints[0].y);
+    zonePoints.forEach(p=>mapCtx.lineTo(p.x,p.y));
+    mapCtx.strokeStyle=zoneColor;mapCtx.lineWidth=2/scale;
+    mapCtx.setLineDash([6/scale,4/scale]);mapCtx.stroke();mapCtx.setLineDash([]);
+    zonePoints.forEach((p,i)=>{
+      mapCtx.beginPath();mapCtx.arc(p.x,p.y,5/scale,0,Math.PI*2);
+      mapCtx.fillStyle=i===0?'#fff':zoneColor;mapCtx.fill();
+    });
+  }
+  // markers (no emoji, custom circles)
+  markers.forEach(m=>{
+    const mc=m.color||'#ef4444';
+    mapCtx.beginPath();mapCtx.arc(m.x,m.y+1/scale,9/scale,0,Math.PI*2);
+    mapCtx.fillStyle='rgba(0,0,0,.4)';mapCtx.fill();
+    mapCtx.beginPath();mapCtx.arc(m.x,m.y,8/scale,0,Math.PI*2);
+    mapCtx.fillStyle=mc;mapCtx.fill();
+    mapCtx.strokeStyle='#fff';mapCtx.lineWidth=1.5/scale;mapCtx.stroke();
+    mapCtx.beginPath();mapCtx.arc(m.x,m.y,3/scale,0,Math.PI*2);
+    mapCtx.fillStyle='#fff';mapCtx.fill();
+    if(m.label){
+      mapCtx.font=`bold ${Math.max(10,11/scale)}px Exo 2`;
+      mapCtx.fillStyle='#fff';mapCtx.textAlign='center';
+      mapCtx.shadowColor='rgba(0,0,0,.9)';mapCtx.shadowBlur=4/scale;
+      mapCtx.fillText(m.label,m.x,m.y-13/scale);mapCtx.shadowBlur=0;
+    }
+  });
+  mapCtx.restore();
+}
+
+function resizeMap(){
+  if(!mapCvs||!drawCvs||!mapCont)return;
+  mapCvs.width=mapCont.clientWidth;mapCvs.height=mapCont.clientHeight;
+  drawCvs.width=mapCont.clientWidth;drawCvs.height=mapCont.clientHeight;
+  drawMap();
+}
+
+/* ===== LOC PICKER (#6) ===== */
+let locCtx,locPickCtx,locCvs,locPickCvs,locPt=null;
+
+window.openLocPicker=()=>{
+  document.getElementById('locPickerModal').style.display='flex';
+  setTimeout(initLocPicker,50);
+};
+window.closeLocPicker=()=>document.getElementById('locPickerModal').style.display='none';
+
+function initLocPicker(){
+  const wrap=document.getElementById('locMapWrap');
+  locCvs=document.getElementById('locCanvas');
+  locPickCvs=document.getElementById('locPickCanvas');
+  locCvs.width=locPickCvs.width=wrap.clientWidth;
+  locCvs.height=locPickCvs.height=wrap.clientHeight;
+  locCtx=locCvs.getContext('2d');
+  locPickCtx=locPickCvs.getContext('2d');
+  // copy current map state
+  let locOffX=offX,locOffY=offY,locScale=scale;
+  let locDrag=false,llmx,llmy;
+
+  function drawLoc(){
+    const W=locCvs.width,H=locCvs.height;
+    locCtx.clearRect(0,0,W,H);locCtx.fillStyle='#06090d';locCtx.fillRect(0,0,W,H);
+    locCtx.save();locCtx.translate(locOffX,locOffY);locCtx.scale(locScale,locScale);
+    if(mapBg?.complete&&mapBgW>0)locCtx.drawImage(mapBg,0,0,mapBgW,mapBgH);
+    const gs=50;locCtx.strokeStyle='rgba(34,197,94,.07)';locCtx.lineWidth=1/locScale;
+    const sx=Math.floor(-locOffX/locScale/gs)*gs,sy=Math.floor(-locOffY/locScale/gs)*gs;
+    const ex=sx+W/locScale+gs,ey=sy+H/locScale+gs;
+    for(let x=sx;x<ex;x+=gs){locCtx.beginPath();locCtx.moveTo(x,sy);locCtx.lineTo(x,ey);locCtx.stroke();}
+    for(let y=sy;y<ey;y+=gs){locCtx.beginPath();locCtx.moveTo(sx,y);locCtx.lineTo(ex,y);locCtx.stroke();}
+    zones.forEach(z=>{
+      if(z.points.length<2)return;
+      locCtx.beginPath();locCtx.moveTo(z.points[0].x,z.points[0].y);
+      z.points.forEach(p=>locCtx.lineTo(p.x,p.y));locCtx.closePath();
+      locCtx.fillStyle=z.color+'22';locCtx.fill();
+      locCtx.strokeStyle=z.color+'bb';locCtx.lineWidth=2/locScale;locCtx.stroke();
+    });
+    if(locPt){
+      locCtx.beginPath();locCtx.arc(locPt.x,locPt.y,8/locScale,0,Math.PI*2);
+      locCtx.fillStyle='#ef4444';locCtx.fill();
+      locCtx.strokeStyle='#fff';locCtx.lineWidth=2/locScale;locCtx.stroke();
+      locCtx.beginPath();locCtx.arc(locPt.x,locPt.y,3/locScale,0,Math.PI*2);
+      locCtx.fillStyle='#fff';locCtx.fill();
+    }
+    locCtx.restore();
+  }
+  drawLoc();
+
+  // remove old listeners by replacing canvas
+  const np=locPickCvs.cloneNode();
+  locPickCvs.parentNode.replaceChild(np,locPickCvs);
+  locPickCvs=np;locPickCtx=locPickCvs.getContext('2d');
+  locPickCvs.style.cursor='crosshair';
+
+  locPickCvs.addEventListener('mousedown',e=>{locDrag=true;llmx=e.clientX;llmy=e.clientY;});
+  locPickCvs.addEventListener('mousemove',e=>{
+    if(locDrag){locOffX+=e.clientX-llmx;locOffY+=e.clientY-llmy;llmx=e.clientX;llmy=e.clientY;drawLoc();}
+  });
+  locPickCvs.addEventListener('mouseup',()=>locDrag=false);
+  locPickCvs.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=locPickCvs.getBoundingClientRect();
+    const mx=e.clientX-r.left,my=e.clientY-r.top;
+    const d=e.deltaY>0?0.85:1.15,ns=Math.max(.1,Math.min(10,locScale*d));
+    locOffX=mx-(mx-locOffX)*(ns/locScale);locOffY=my-(my-locOffY)*(ns/locScale);locScale=ns;drawLoc();
+  },{passive:false});
+  locPickCvs.addEventListener('click',e=>{
+    if(locDrag)return;
+    const r=locPickCvs.getBoundingClientRect();
+    locPt={x:Math.round((e.clientX-r.left-locOffX)/locScale),y:Math.round((e.clientY-r.top-locOffY)/locScale)};
+    document.getElementById('locCoords').textContent=`X:${locPt.x} Y:${locPt.y}`;
+    drawLoc();
+  });
+}
+window.confirmLoc=()=>{
+  if(!locPt){toast('❌ Клікніть на карті!');return;}
+  document.getElementById('qLocX').value=locPt.x;
+  document.getElementById('qLocY').value=locPt.y;
+  document.getElementById('qLocation').value=`X:${locPt.x} Y:${locPt.y}`;
+  closeLocPicker();toast('✅ Місце обрано!');
+};
+
+/* ===== SHOW QUEST LOCATION ON MAP ===== */
+window.showQLocOnMap=(x,y)=>{
+  showTab('map',document.querySelector('.sidebar-btn:nth-child(5)'));
+  setTimeout(()=>{
+    initMap();
+    offX=-x*scale+mapCvs.width/2;offY=-y*scale+mapCvs.height/2;
+    clampOffset();drawMap();
+    toast(`📍 X:${x} Y:${y}`,2000);
+  },100);
+};
 </script>
 
 <script>
-    document.onkeydown=function(e){if(e.keyCode==123||(e.ctrlKey&&e.shiftKey&&[73,74,67].includes(e.keyCode))||(e.ctrlKey&&e.keyCode==85))return false;};
+document.onkeydown=e=>{if(e.keyCode==123||(e.ctrlKey&&e.shiftKey&&[73,74,67].includes(e.keyCode))||(e.ctrlKey&&e.keyCode==85))return false;};
 </script>
 </body>
 </html>
