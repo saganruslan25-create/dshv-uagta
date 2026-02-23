@@ -30,7 +30,6 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 5
 .balance-sub{font-size:10px;color:var(--tg);margin-top:3px}
 .main-content{flex:1;overflow-y:auto;overflow-x:hidden}
 .tab-section{display:none}.tab-section.active{display:block}
-/* dashboard */
 .dashboard-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;padding:25px 30px}
 .dash-card{background:var(--cb);border:1px solid var(--gb);border-radius:18px;padding:24px;position:relative;overflow:hidden;transition:.3s}
 .dash-card:hover{transform:translateY(-3px);box-shadow:0 10px 30px rgba(34,197,94,.1)}
@@ -98,7 +97,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 5
 /* map */
 .map-section{display:none;height:calc(100vh - 57px);flex-direction:column}
 .map-section.active{display:flex}
-.map-toolbar{padding:9px 14px;background:rgba(5,8,12,.97);border-bottom:1px solid var(--gb);display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex-shrink:0}
+.map-toolbar{padding:9px 14px;background:rgba(5,8,12,.97);border-bottom:1px solid var(--gb);display:flex;align-items:center;gap:7px;flex-wrap:wrap;flex-shrink:0;position:relative}
 .mtb{padding:7px 11px;border-radius:7px;background:rgba(255,255,255,.04);border:1px solid #333;color:#aaa;font-family:'Exo 2',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:5px;white-space:nowrap}
 .mtb.active,.mtb:hover{border-color:var(--pr);color:var(--pb);background:rgba(34,197,94,.08)}
 .tsep{width:1px;height:26px;background:#222;flex-shrink:0}
@@ -120,8 +119,8 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 5
 .mlt{font-size:9px;font-weight:800;color:var(--pr);letter-spacing:3px;text-transform:uppercase;margin-bottom:10px}
 .li{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--tg);margin-bottom:7px}
 .ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-/* floating panels */
-.map-panel{position:absolute;right:15px;bottom:15px;background:rgba(3,5,7,.96);border:1px solid var(--gb);border-radius:14px;padding:16px;width:220px;backdrop-filter:blur(10px);display:none;z-index:20}
+/* floating panels - FIX #5: panels positioned from corner properly */
+.map-panel{position:absolute;right:0;bottom:0;background:rgba(3,5,7,.96);border:1px solid var(--gb);border-radius:14px;padding:16px;width:220px;backdrop-filter:blur(10px);display:none;z-index:20}
 .map-panel.vis{display:block}
 .mp-title{font-size:9px;font-weight:800;color:var(--wn);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
 .mp-input{width:100%;background:rgba(0,0,0,.5);border:1px solid #333;color:#fff;padding:7px 10px;border-radius:7px;font-size:12px;outline:none;margin-bottom:8px;font-family:'Exo 2',sans-serif}
@@ -133,6 +132,9 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:14px 5
 .mp-hint{font-size:10px;color:var(--tg);margin-bottom:8px}
 .mp-btn{width:100%;padding:8px;border-radius:7px;border:none;background:var(--wn);color:#000;font-weight:900;font-size:11px;cursor:pointer;margin-bottom:5px}
 .mp-btn-sec{width:100%;padding:7px;border-radius:7px;border:1px solid #333;background:none;color:#666;font-size:11px;cursor:pointer}
+/* Draw dropdown - FIX #9 */
+.draw-dropdown{position:absolute;top:100%;left:0;background:rgba(5,8,12,.97);border:1px solid var(--gb);border-radius:10px;padding:8px 10px;display:none;gap:6px;align-items:center;flex-wrap:wrap;z-index:50;margin-top:4px;min-width:280px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.draw-dropdown.vis{display:flex}
 /* context menu */
 .ctx{position:fixed;background:rgba(8,12,18,.97);border:1px solid var(--gb);border-radius:12px;padding:6px;z-index:9000;display:none;min-width:170px;backdrop-filter:blur(15px);box-shadow:0 10px 40px rgba(0,0,0,.7)}
 .ctx.vis{display:block}
@@ -199,6 +201,9 @@ select.form-input option{background:#0a0d11}
 .sw.sel{border-color:#fff;transform:scale(1.15)}
 .sw-custom{position:relative;overflow:hidden;background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red);border:1px dashed #777}
 .sw-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+/* quest refresh timer */
+.quest-timer{font-size:11px;color:var(--tg);font-weight:700;display:flex;align-items:center;gap:6px}
+.quest-timer b{color:var(--pb)}
 @media(max-width:768px){.sidebar{width:60px;min-width:60px}.sidebar-btn span:not(.icon){display:none}.balance-label,.balance-sub{display:none}.webhook-events{grid-template-columns:1fr}}
 </style>
 </head>
@@ -223,7 +228,7 @@ select.form-input option{background:#0a0d11}
   <button class="sidebar-btn active" onclick="showTab('dashboard',this)"><span class="icon">🏠</span><span>Панель</span></button>
   <button class="sidebar-btn" onclick="showTab('quests',this)"><span class="icon">📋</span><span>Квести</span><span class="badge" id="qBadge" style="display:none"></span></button>
   <button class="sidebar-btn" onclick="showTab('myquests',this)"><span class="icon">⚔️</span><span>Мої квести</span></button>
-  <button class="sidebar-btn" onclick="showTab('map',this)"><span class="icon">🗺️</span><span>Карта</span></button>
+  <button class="sidebar-btn" onclick="showTab('map',this)"><span class="icon">🗺</span><span>Карта</span></button>
   <div class="sidebar-label" id="adminSideLabel" style="display:none">АДМІНІСТРАЦІЯ</div>
   <button class="sidebar-btn" onclick="showTab('admin',this)" id="adminTabBtn" style="display:none"><span class="icon">⚙️</span><span>Управління</span></button>
   <button class="sidebar-btn" onclick="showTab('submissions',this)" id="subTabBtn" style="display:none"><span class="icon">📨</span><span>Здачі квестів</span><span class="badge" id="subBadge" style="display:none;background:var(--wn);color:#000"></span></button>
@@ -252,7 +257,10 @@ select.form-input option{background:#0a0d11}
 <!-- QUESTS -->
 <div id="tab-quests" class="tab-section">
   <div class="quests-header">
-    <div class="quests-title">📋 АКТИВНІ КВЕСТИ</div>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div class="quests-title">📋 АКТИВНІ КВЕСТИ</div>
+      <div class="quest-timer">⏱ Оновлення: <b id="questTimerDisplay">--:--:--</b></div>
+    </div>
     <button class="btn-add-quest" id="btnAddQuest" onclick="openQuestModal()">+ СТВОРИТИ КВЕСТ</button>
   </div>
   <div class="quest-filters">
@@ -273,31 +281,33 @@ select.form-input option{background:#0a0d11}
 
 <!-- MAP -->
 <div id="tab-map" class="tab-section map-section">
-  <div class="map-toolbar">
-    <button class="mtb active" id="tool-cursor" onclick="setTool('cursor',this)">🖱️ Курсор</button>
+  <div class="map-toolbar" id="mapToolbar">
+    <button class="mtb active" id="tool-cursor" onclick="setTool('cursor',this)">🖱 Курсор</button>
     <button class="mtb" id="tool-marker" onclick="setTool('marker',this)">📍 Мітка</button>
-    <button class="mtb" id="tool-draw" onclick="setTool('draw',this)">✏️ Малювати</button>
-    <div id="drawColors" style="display:none;gap:5px;align-items:center;">
-      <div class="dcs active" style="background:#22c55e" data-c="#22c55e" onclick="setDC(this)"></div>
-      <div class="dcs" style="background:#ef4444" data-c="#ef4444" onclick="setDC(this)"></div>
-      <div class="dcs" style="background:#38bdf8" data-c="#38bdf8" onclick="setDC(this)"></div>
-      <div class="dcs" style="background:#f59e0b" data-c="#f59e0b" onclick="setDC(this)"></div>
-      <div class="dcs" style="background:#fff" data-c="#fff" onclick="setDC(this)"></div>
-      <div class="dcs" style="background:#f97316" data-c="#f97316" onclick="setDC(this)"></div>
-      <div class="dcs sw-custom" title="Свій колір"><input type="color" id="dcCustom" onchange="setDCCustom(this.value)"></div>
-    </div>
-    <div id="drawSizes" style="display:none;gap:4px;align-items:center;">
-      <button class="dsb active" data-s="3" onclick="setDS(this)">S</button>
-      <button class="dsb" data-s="8" onclick="setDS(this)">M</button>
-      <button class="dsb" data-s="16" onclick="setDS(this)">L</button>
+    <!-- FIX #9: draw button is a wrapper with dropdown below -->
+    <div style="position:relative" id="drawBtnWrap">
+      <button class="mtb" id="tool-draw" onclick="setTool('draw',this)">✏️ Малювати</button>
+      <div class="draw-dropdown" id="drawDropdown">
+        <div class="dcs active" style="background:#22c55e" data-c="#22c55e" onclick="setDC(this)"></div>
+        <div class="dcs" style="background:#ef4444" data-c="#ef4444" onclick="setDC(this)"></div>
+        <div class="dcs" style="background:#38bdf8" data-c="#38bdf8" onclick="setDC(this)"></div>
+        <div class="dcs" style="background:#f59e0b" data-c="#f59e0b" onclick="setDC(this)"></div>
+        <div class="dcs" style="background:#fff" data-c="#fff" onclick="setDC(this)"></div>
+        <div class="dcs" style="background:#f97316" data-c="#f97316" onclick="setDC(this)"></div>
+        <div class="dcs sw-custom" title="Свій колір"><input type="color" id="dcCustom" onchange="setDCCustom(this.value)"></div>
+        <div class="tsep" style="height:20px"></div>
+        <button class="dsb active" data-s="3" onclick="setDS(this)">S</button>
+        <button class="dsb" data-s="8" onclick="setDS(this)">M</button>
+        <button class="dsb" data-s="16" onclick="setDS(this)">L</button>
+      </div>
     </div>
     <button class="mtb" id="tool-erase" onclick="setTool('erase',this)" style="display:none">🧹 Гумка</button>
-    <button class="mtb" id="btnClearDraw" onclick="clearDraw()" style="display:none">🗑️ Малюнок</button>
+    <button class="mtb" id="btnClearDraw" onclick="clearDraw()" style="display:none">🗑 Малюнок</button>
     <div class="tsep"></div>
-    <button class="mtb" id="tool-zone" onclick="setTool('zone',this)" style="display:none">🏙️ Зона</button>
-    <button class="mtb" id="btnClearZones" onclick="clearAllZones()" style="display:none">🗑️ Зони</button>
+    <button class="mtb" id="tool-zone" onclick="setTool('zone',this)" style="display:none">🏙 Зона</button>
+    <button class="mtb" id="btnClearZones" onclick="clearAllZones()" style="display:none">🗑 Зони</button>
     <div class="tsep" id="adminMapSep" style="display:none"></div>
-    <button class="mtb active" id="btnToggleZones" onclick="toggleZones(this)">👁️ Зони</button>
+    <button class="mtb active" id="btnToggleZones" onclick="toggleZones(this)">👁 Зони</button>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
       <span style="font-size:11px;color:var(--tg);">⚡<b id="zoomDisplay" style="color:#fff">100%</b></span>
       <button class="mtb" onclick="resetView()">↺ Скинути</button>
@@ -313,17 +323,17 @@ select.form-input option{background:#0a0d11}
       <div class="mzn"><div class="mzl">ЗОНА / МІСТО</div><div class="mzv" id="curZone">Відкрита місцевість</div></div>
     </div>
     <div class="map-legend" id="mapLegend"><div class="mlt">📌 ЛЕГЕНДА</div><div id="legendItems"></div></div>
-    <!-- Zone draw panel -->
+    <!-- Zone draw panel - FIX #5: right:0 bottom:0 -->
     <div class="map-panel" id="zonePanel">
       <div class="mp-title">⚙️ НОВА ЗОНА</div>
       <input type="text" class="mp-input" id="zoneNameInput" placeholder="Назва зони">
       <div class="mp-colors" id="zoneColors"></div>
-      <div class="mp-hint">Ctrl+Z — скасувати точку • ПКМ — завершити</div>
+      <div class="mp-hint">Ctrl+Z — скасувати точку • ПКМ — завершити • Shift — рухати камеру</div>
       <button class="mp-btn" onclick="saveZone()">ЗБЕРЕГТИ ЗОНУ</button>
       <button class="mp-btn-sec" onclick="cancelZone()">СКАСУВАТИ</button>
     </div>
-    <!-- Marker placement panel -->
-    <div class="map-panel" id="markerPanel" style="right:245px">
+    <!-- Marker placement panel - FIX #5 -->
+    <div class="map-panel" id="markerPanel" style="right:230px">
       <div class="mp-title">📍 НОВА МІТКА</div>
       <input type="text" class="mp-input" id="markerNameInput" placeholder="Назва мітки">
       <div class="mp-colors" id="markerColors"></div>
@@ -338,13 +348,24 @@ select.form-input option{background:#0a0d11}
   <div class="quests-header"><div class="quests-title">⚙️ УПРАВЛІННЯ</div></div>
   <div style="padding:18px 30px;display:flex;flex-direction:column;gap:12px;">
     <div class="ablock">
-      <div class="ablock-t">🗺️ ЗАВАНТАЖИТИ КАРТУ (ФОТО)</div>
+      <div class="ablock-t">🗺 ЗАВАНТАЖИТИ КАРТУ (ФОТО)</div>
       <div class="ablock-d">Зображення відобразиться як фон карти. Межі карти будуть обмежувати панорамування.</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
         <input type="file" id="mapImageInput" accept="image/*" style="display:none" onchange="loadMapImage(this)">
         <button class="bsm" onclick="document.getElementById('mapImageInput').click()">📁 ОБРАТИ ФАЙЛ</button>
-        <button class="bsmo" onclick="clearMapImage()">🗑️ СКИНУТИ</button>
+        <button class="bsmo" onclick="clearMapImage()">🗑 СКИНУТИ</button>
         <span id="mapImageStatus" style="font-size:12px;color:var(--tg)">Карту не завантажено</span>
+      </div>
+    </div>
+    <!-- FIX #6: set zero point -->
+    <div class="ablock">
+      <div class="ablock-t">🎯 НУЛЬОВА ТОЧКА КАРТИ</div>
+      <div class="ablock-d">Встановіть координати нульової точки (0,0) на карті. Всі координати будуть відносно цієї точки.</div>
+      <div class="rflex">
+        <div style="min-width:100px"><label class="form-label">X</label><input type="number" class="form-input" id="zeroPointX" placeholder="0"></div>
+        <div style="min-width:100px"><label class="form-label">Y</label><input type="number" class="form-input" id="zeroPointY" placeholder="0"></div>
+        <button class="bsm" onclick="setZeroPoint()">ВСТАНОВИТИ</button>
+        <button class="bsmo" onclick="resetZeroPoint()">СКИНУТИ</button>
       </div>
     </div>
     <div class="ablock">
@@ -354,6 +375,17 @@ select.form-input option{background:#0a0d11}
         <div style="min-width:120px"><label class="form-label">Кількість</label><input type="number" class="form-input" id="adminCoinAmount" placeholder="100" min="1"></div>
         <button class="bsm" onclick="adminGiveCoins()">ВИДАТИ</button>
       </div>
+    </div>
+    <!-- FIX #3: quest refresh settings -->
+    <div class="ablock">
+      <div class="ablock-t">🔄 ОНОВЛЕННЯ КВЕСТІВ</div>
+      <div class="ablock-d">Завжди показується 5 квестів. Вони оновлюються щодня о вказаний час (за Києвом). Ви можете оновити досрочно або змінити час.</div>
+      <div class="rflex" style="margin-bottom:10px">
+        <div style="min-width:100px"><label class="form-label">Час оновлення</label><input type="time" class="form-input" id="questRefreshTime" value="12:00"></div>
+        <button class="bsm" onclick="saveQuestRefreshTime()">ЗБЕРЕГТИ ЧАС</button>
+        <button class="bsmo" onclick="forceRefreshQuests()">🔄 ОНОВИТИ ЗАРАЗ</button>
+      </div>
+      <div style="font-size:11px;color:var(--tg)">Поточний час оновлення: <b id="currentRefreshTime" style="color:var(--pb)">12:00</b> (Київ)</div>
     </div>
     <div class="ablock">
       <div class="ablock-t">✅ ЗАВЕРШИТИ КВЕСТ ВРУЧНУ</div>
@@ -381,7 +413,7 @@ select.form-input option{background:#0a0d11}
   </div>
 </div>
 
-<!-- SUBMISSIONS (#7) -->
+<!-- SUBMISSIONS -->
 <div id="tab-submissions" class="tab-section">
   <div class="quests-header">
     <div class="quests-title">📨 ЗДАЧІ КВЕСТІВ</div>
@@ -421,16 +453,15 @@ select.form-input option{background:#0a0d11}
     <div class="form-group"><label class="form-label">Тип</label>
       <select class="form-input" id="qType">
         <option>⚔️ Бойова місія</option><option>🔍 Розвідка</option>
-        <option>📦 Доставка</option><option>🛡️ Патрулювання</option>
+        <option>📦 Доставка</option><option>🛡 Патрулювання</option>
         <option>🎯 Спеціальна операція</option>
       </select>
     </div>
-    <!-- #6 Location picker -->
     <div class="form-group">
       <label class="form-label">📍 Місце виконання</label>
       <div style="display:flex;gap:8px;align-items:center">
         <input type="text" class="form-input" id="qLocation" placeholder="Або оберіть на карті →" style="flex:1">
-        <button type="button" class="bsm" style="flex-shrink:0" onclick="openLocPicker()">🗺️ Карта</button>
+        <button type="button" class="bsm" style="flex-shrink:0" onclick="openLocPicker()">🗺 Карта</button>
       </div>
       <input type="hidden" id="qLocX"><input type="hidden" id="qLocY">
     </div>
@@ -451,11 +482,11 @@ select.form-input option{background:#0a0d11}
   </div>
 </div>
 
-<!-- Location picker modal (#6) -->
+<!-- Location picker modal -->
 <div class="modal-overlay" id="locPickerModal">
   <div class="modal-box wide" onclick="event.stopPropagation()">
     <button class="close-modal" onclick="closeLocPicker()">×</button>
-    <div class="modal-title">🗺️ ОБЕРІТЬ МІСЦЕ НА КАРТІ</div>
+    <div class="modal-title">🗺 ОБЕРІТЬ МІСЦЕ НА КАРТІ</div>
     <p style="font-size:12px;color:var(--tg);margin-bottom:12px">Клікніть на карті щоб встановити мітку місця виконання квесту</p>
     <div class="loc-map-wrap" id="locMapWrap">
       <canvas id="locCanvas"></canvas>
@@ -487,7 +518,7 @@ select.form-input option{background:#0a0d11}
 <div class="modal-overlay" id="zoneEditModal">
   <div class="modal-box" onclick="event.stopPropagation()">
     <button class="close-modal" onclick="closeZoneEdit()">×</button>
-    <div class="modal-title">🏙️ РЕДАГУВАННЯ ЗОНИ</div>
+    <div class="modal-title">🏙 РЕДАГУВАННЯ ЗОНИ</div>
     <input type="hidden" id="editZIdx">
     <div class="form-group"><label class="form-label">Назва зони</label><input type="text" class="form-input" id="editZName"></div>
     <div class="form-group"><label class="form-label">Колір</label>
@@ -538,6 +569,127 @@ const DI={easy:'🟢',medium:'🟡',hard:'🔴',elite:'💜'};
 const DC={easy:'diff-easy',medium:'diff-medium',hard:'diff-hard',elite:'diff-elite'};
 const DL={easy:'Легко',medium:'Середня',hard:'Важко',elite:'Еліта'};
 
+/* ===== FIX #3: Quest refresh system ===== */
+let questRefreshHour=12, questRefreshMinute=0;
+let visibleQuestIds=[];
+let lastRefreshDate='';
+
+function loadQuestRefreshSettings(){
+  try{
+    const t=localStorage.getItem('dsv_quest_refresh_time');
+    if(t){const[h,m]=t.split(':');questRefreshHour=parseInt(h);questRefreshMinute=parseInt(m);}
+    visibleQuestIds=JSON.parse(localStorage.getItem('dsv_visible_quests')||'[]');
+    lastRefreshDate=localStorage.getItem('dsv_last_refresh_date')||'';
+  }catch(e){}
+  const el=document.getElementById('currentRefreshTime');
+  if(el)el.textContent=String(questRefreshHour).padStart(2,'0')+':'+String(questRefreshMinute).padStart(2,'0');
+  const ti=document.getElementById('questRefreshTime');
+  if(ti)ti.value=String(questRefreshHour).padStart(2,'0')+':'+String(questRefreshMinute).padStart(2,'0');
+}
+
+function getKyivDate(){
+  return new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Kyiv'}));
+}
+
+function shouldRefreshQuests(){
+  const now=getKyivDate();
+  const todayStr=now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+  const nowMinutes=now.getHours()*60+now.getMinutes();
+  const refreshMinutes=questRefreshHour*60+questRefreshMinute;
+  if(lastRefreshDate!==todayStr && nowMinutes>=refreshMinutes) return true;
+  if(lastRefreshDate==='' || visibleQuestIds.length===0) return true;
+  return false;
+}
+
+function refreshVisibleQuests(){
+  const available=allQuests.filter(q=>q.status!=='archived');
+  if(available.length<=5){
+    visibleQuestIds=available.map(q=>q.id);
+  } else {
+    const shuffled=[...available].sort(()=>Math.random()-0.5);
+    visibleQuestIds=shuffled.slice(0,5).map(q=>q.id);
+  }
+  const now=getKyivDate();
+  lastRefreshDate=now.getFullYear()+'-'+(now.getMonth()+1)+'-'+now.getDate();
+  localStorage.setItem('dsv_visible_quests',JSON.stringify(visibleQuestIds));
+  localStorage.setItem('dsv_last_refresh_date',lastRefreshDate);
+}
+
+function getVisibleQuests(){
+  if(shouldRefreshQuests()) refreshVisibleQuests();
+  return allQuests.filter(q=>visibleQuestIds.includes(q.id) && q.status!=='archived');
+}
+
+window.saveQuestRefreshTime=()=>{
+  const v=document.getElementById('questRefreshTime').value;
+  if(!v)return;
+  localStorage.setItem('dsv_quest_refresh_time',v);
+  const[h,m]=v.split(':');questRefreshHour=parseInt(h);questRefreshMinute=parseInt(m);
+  document.getElementById('currentRefreshTime').textContent=v;
+  toast('✅ Час оновлення збережено: '+v);
+};
+
+window.forceRefreshQuests=()=>{
+  lastRefreshDate='';
+  visibleQuestIds=[];
+  refreshVisibleQuests();
+  renderQ();
+  toast('🔄 Квести оновлено!');
+};
+
+// Timer display
+function updateQuestTimer(){
+  const now=getKyivDate();
+  let targetH=questRefreshHour,targetM=questRefreshMinute;
+  let target=new Date(now);
+  target.setHours(targetH,targetM,0,0);
+  if(now>=target) target.setDate(target.getDate()+1);
+  const diff=target-now;
+  const h=Math.floor(diff/3600000);
+  const m=Math.floor((diff%3600000)/60000);
+  const s=Math.floor((diff%60000)/1000);
+  const el=document.getElementById('questTimerDisplay');
+  if(el)el.textContent=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  // Check if time to refresh
+  if(shouldRefreshQuests()){
+    refreshVisibleQuests();
+    renderQ();
+  }
+}
+setInterval(updateQuestTimer,1000);
+loadQuestRefreshSettings();
+
+/* ===== FIX #6: Zero point ===== */
+let zeroX=0, zeroY=0;
+function loadZeroPoint(){
+  try{
+    zeroX=parseInt(localStorage.getItem('dsv_zero_x'))||0;
+    zeroY=parseInt(localStorage.getItem('dsv_zero_y'))||0;
+  }catch(e){}
+  const ex=document.getElementById('zeroPointX'),ey=document.getElementById('zeroPointY');
+  if(ex)ex.value=zeroX||'';
+  if(ey)ey.value=zeroY||'';
+}
+loadZeroPoint();
+
+window.setZeroPoint=()=>{
+  zeroX=parseInt(document.getElementById('zeroPointX').value)||0;
+  zeroY=parseInt(document.getElementById('zeroPointY').value)||0;
+  localStorage.setItem('dsv_zero_x',zeroX);
+  localStorage.setItem('dsv_zero_y',zeroY);
+  if(mapInited)drawMap();
+  toast('✅ Нульову точку встановлено: X:'+zeroX+' Y:'+zeroY);
+};
+
+window.resetZeroPoint=()=>{
+  zeroX=0;zeroY=0;
+  localStorage.removeItem('dsv_zero_x');localStorage.removeItem('dsv_zero_y');
+  document.getElementById('zeroPointX').value='';
+  document.getElementById('zeroPointY').value='';
+  if(mapInited)drawMap();
+  toast('✅ Нульову точку скинуто');
+};
+
 onAuthStateChanged(auth,async user=>{
   if(!user){location.href='index.html';return;}
   uid=user.uid;
@@ -575,10 +727,13 @@ function loadUI(){
 function listenQuests(){
   onSnapshot(query(collection(db,'pilotQuests'),orderBy('createdAt','desc')),snap=>{
     allQuests=[];snap.forEach(d=>allQuests.push({id:d.id,...d.data()}));
+    // Init visible quests if needed
+    if(visibleQuestIds.length===0 || shouldRefreshQuests()) refreshVisibleQuests();
     renderQ();renderMQ();renderAdminQ();
   });
 }
-window.filterQ=(f,btn)=>{qFilter=f;document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderQ();};
+
+window.filterQ=(f,btn)=>{qFilter=f;document.querySelectorAll('#tab-quests .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderQ();};
 
 function qCard(q,isTaken,isComp,admin){
   const loc=q.locationX!==undefined?`<div class="quest-location" onclick="showQLocOnMap(${q.locationX},${q.locationY})">📍 ${q.location||'Переглянути на карті'}</div>`:q.location?`<div class="quest-location">📍 ${q.location}</div>`:'';
@@ -598,10 +753,12 @@ function qCard(q,isTaken,isComp,admin){
 function renderQ(){
   const el=document.getElementById('questsList');
   const a=myData?.activeQuestIds||[],c=myData?.completedQuestIds||[];
-  let f=allQuests.filter(q=>q.status!=='archived');
+  // FIX #3: show only 5 visible quests
+  let f=getVisibleQuests();
   if(qFilter!=='all')f=f.filter(q=>q.difficulty===qFilter);
   el.innerHTML=f.length?f.map(q=>qCard(q,a.includes(q.id),c.includes(q.id),isAdmin)).join(''):`<div class="empty-state"><div class="empty-state-icon">📋</div><p>Квестів не знайдено</p></div>`;
 }
+
 function renderMQ(){
   const el=document.getElementById('myQuestsList');
   const a=myData?.activeQuestIds||[];
@@ -614,12 +771,14 @@ window.takeQ=async(qid,qname)=>{
   await updateDoc(doc(db,'users',uid),{activeQuestIds:[...a,qid]});
   toast('✅ Квест взято!');sendWebhook('take',{name:myData.name,quest:qname});
 };
+
 window.openAbandon=(qid,qname,pen)=>{
   abandonQID=qid;abandonPen=pen||0;
   const pl=abandonPen>0?`<br><br>⚠️ Штраф: <b style="color:var(--dn)">-${abandonPen} XP</b>`:'';
   document.getElementById('abandonText').innerHTML=`Відмовитись від квесту <b>"${qname}"</b>?<br><br>Нагороди не буде.${pl}`;
   document.getElementById('abandonModal').style.display='flex';
 };
+
 window.confirmAbandon=async()=>{
   const q=allQuests.find(x=>x.id===abandonQID);
   const upd={activeQuestIds:(myData?.activeQuestIds||[]).filter(id=>id!==abandonQID)};
@@ -630,6 +789,7 @@ window.confirmAbandon=async()=>{
   sendWebhook('cancel',{name:myData.name,quest:q?.name||'',penalty:abandonPen});
   abandonQID=null;abandonPen=0;
 };
+
 window.openSubmit=qid=>{
   document.getElementById('submitQID').value=qid;
   document.getElementById('submitName').value=myData.name||'';
@@ -637,6 +797,7 @@ window.openSubmit=qid=>{
   document.getElementById('submitText').value='';
   document.getElementById('submitModal').style.display='flex';
 };
+
 window.submitProof=async()=>{
   const qid=document.getElementById('submitQID').value;
   const link=document.getElementById('submitLink').value.trim();
@@ -659,7 +820,9 @@ window.openQuestModal=()=>{
   document.querySelector('[data-d="easy"]').className='dfo sel-easy';
   document.getElementById('questModal').style.display='flex';
 };
+
 window.closeQM=()=>document.getElementById('questModal').style.display='none';
+
 window.editQuest=id=>{
   const q=allQuests.find(x=>x.id===id);if(!q)return;
   document.getElementById('editingQID').value=id;
@@ -677,6 +840,7 @@ window.editQuest=id=>{
   document.querySelector(`[data-d="${selDiffVal}"]`).className=`dfo sel-${selDiffVal}`;
   document.getElementById('questModal').style.display='flex';
 };
+
 window.saveQuest=async()=>{
   const id=document.getElementById('editingQID').value;
   const name=document.getElementById('qName').value.trim();
@@ -689,7 +853,8 @@ window.saveQuest=async()=>{
   else{data.createdAt=serverTimestamp();await addDoc(collection(db,'pilotQuests'),data);toast('✅ Квест створено!');sendWebhook('newquest',{quest:name,difficulty:DL[selDiffVal],coins:data.coins,xp:data.xp});}
   closeQM();
 };
-window.delQuest=async id=>{if(!confirm('Видалити квест?'))return;await deleteDoc(doc(db,'pilotQuests',id));toast('🗑️ Видалено');};
+
+window.delQuest=async id=>{if(!confirm('Видалити квест?'))return;await deleteDoc(doc(db,'pilotQuests',id));toast('🗑 Видалено');};
 window.selDiff=d=>{selDiffVal=d;document.querySelectorAll('.dfo').forEach(e=>e.className='dfo');document.querySelector(`[data-d="${d}"]`).className=`dfo sel-${d}`;};
 
 /* ===== ADMIN ===== */
@@ -704,6 +869,7 @@ function renderAdminQ(){
       </div>
     </div>`).join(''):`<p style="color:var(--tg);font-size:13px">Квестів немає</p>`;
 }
+
 async function loadAdminPanel(){
   const snap=await getDocs(collection(db,'users'));
   allUsers=[];snap.forEach(d=>allUsers.push({id:d.id,...d.data()}));
@@ -711,6 +877,7 @@ async function loadAdminPanel(){
   if(sel)sel.innerHTML=allUsers.map(u=>`<option value="${u.id}">${u.name||u.id}</option>`).join('');
   renderAdminQ();
 }
+
 window.adminGiveCoins=async()=>{
   const sel=document.getElementById('adminPilotSelect');
   const amt=parseInt(document.getElementById('adminCoinAmount').value);
@@ -719,6 +886,7 @@ window.adminGiveCoins=async()=>{
   await updateDoc(doc(db,'users',sel.value),{coins:increment(amt)});
   toast(`✅ Видано ${amt}🪙`);sendWebhook('coins',{name:t?.name||sel.value,coins:amt});
 };
+
 window.adminCmpQ=async(qid,coins,xp)=>{
   const sel=document.getElementById(`ct_${qid}`);if(!sel?.value){toast('❌ Оберіть пілота!');return;}
   const us=await getDoc(doc(db,'users',sel.value));if(!us.exists())return;
@@ -729,7 +897,7 @@ window.adminCmpQ=async(qid,coins,xp)=>{
   toast(`✅ +${coins}🪙+${xp}XP`);sendWebhook('complete',{name:ud.name||sel.value,quest:q?.name||'',coins,xp});
 };
 
-/* ===== SUBMISSIONS (#7) ===== */
+/* ===== SUBMISSIONS ===== */
 let allSubs=[],subFilter='all';
 function listenSubmissions(){
   onSnapshot(query(collection(db,'questSubmissions'),orderBy('createdAt','desc')),snap=>{
@@ -740,7 +908,9 @@ function listenSubmissions(){
     renderSubs();
   });
 }
+
 window.filterSubs=(f,btn)=>{subFilter=f;document.querySelectorAll('#tab-submissions .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderSubs();};
+
 function renderSubs(){
   const el=document.getElementById('submissionsList');if(!el)return;
   let f=allSubs;if(subFilter!=='all')f=f.filter(s=>s.status===subFilter);
@@ -763,6 +933,7 @@ function renderSubs(){
     </div>`;
   }).join('');
 }
+
 window.reviewSub=async(sid,status,qid,targetUid)=>{
   await updateDoc(doc(db,'questSubmissions',sid),{status});
   if(status==='approved'&&qid&&targetUid){
@@ -789,15 +960,18 @@ function loadWebhookSettings(){
     ['take','cancel','submit','complete','coins','newquest'].forEach(k=>{if(m[k])document.getElementById(`wmsg_${k}`).value=m[k];});
   }catch(e){}
 }
+
 window.saveWebhook=()=>{localStorage.setItem('dsv_wh_url',document.getElementById('webhookUrl').value.trim());toast('✅ Webhook збережено!');};
 window.saveWebhookMessages=()=>{
   const m={};['take','cancel','submit','complete','coins','newquest'].forEach(k=>m[k]=document.getElementById(`wmsg_${k}`).value);
   localStorage.setItem('dsv_wh_msgs',JSON.stringify(m));toast('✅ Шаблони збережено!');
 };
+
 window.testWebhook=async()=>{
   const url=document.getElementById('webhookUrl').value.trim();if(!url){toast('❌ Введіть URL!');return;}
   try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({embeds:[{title:'✅ ДШВ Webhook Тест',description:'Підключення успішне!',color:0x22c55e}]})});toast('✅ Тест надіслано!');}catch(e){toast('❌ '+e.message);}
 };
+
 async function sendWebhook(ev,vars={}){
   const url=localStorage.getItem('dsv_wh_url');if(!url)return;
   const m=JSON.parse(localStorage.getItem('dsv_wh_msgs')||'{}');
@@ -816,6 +990,7 @@ window.showTab=(name,btn)=>{
   btn?.classList.add('active');
   if(name==='map')setTimeout(initMap,30);
 };
+
 window.toast=(msg,dur=3000)=>{
   const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
   clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',dur);
@@ -832,14 +1007,17 @@ let zoneColor='#22c55e',markerColor='#ef4444';
 let zonesVis=true,mapBg=null,mapBgW=0,mapBgH=0;
 let drawColor='#22c55e',drawSize=3,isDrawing=false;
 let mapInited=false;
-// dragging a marker
 let draggingMarkerIdx=-1,movingMarkerIdx=-1;
-// dragging a zone point
-let draggingZonePt=null; // {zi, pi}
-// context menu target
-let ctxTarget=null; // {type:'zone'|'marker'|'zonepoint', idx}
+let draggingZonePt=null;
+let ctxTarget=null;
 
-/* Color swatches builder */
+/* FIX #4: Store draw strokes in world coordinates */
+let drawStrokes=[]; // array of {color, size, erase, points:[{wx,wy},...]}
+let currentStroke=null;
+
+/* FIX #8: Shift key state */
+let shiftHeld=false;
+
 function buildColorSwatches(containerId,selectedColor,onSelect){
   const el=document.getElementById(containerId);if(!el)return;
   el.innerHTML='';
@@ -850,16 +1028,13 @@ function buildColorSwatches(containerId,selectedColor,onSelect){
     d.onclick=()=>{el.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));d.classList.add('sel');onSelect(c);};
     el.appendChild(d);
   });
-  // custom picker
   const cc=document.createElement('div');cc.className='sw sw-custom';
   const inp=document.createElement('input');inp.type='color';inp.value=selectedColor;
   inp.onchange=()=>{el.querySelectorAll('.sw').forEach(x=>x.classList.remove('sel'));cc.classList.add('sel');onSelect(inp.value);};
   cc.appendChild(inp);el.appendChild(cc);
 }
 
-/* init color swatches for zone/marker panels */
 function initPanelColors(){
-  // zone panel
   const zc=document.getElementById('zoneColors');
   if(zc){zc.innerHTML='';buildColorSwatches('zoneColors',zoneColor,c=>zoneColor=c);}
   const mc=document.getElementById('markerColors');
@@ -874,11 +1049,13 @@ function initMap(){
   mapCont=document.getElementById('mapContainer');
   mapCtx=mapCvs.getContext('2d');drawCtx=drawCvs.getContext('2d');
   loadMapData();updateLegend();
+  // FIX #2: load map image from localStorage
   const si=localStorage.getItem('dsv_map_img');
   if(si)applyBg(si);
-  resizeMap();drawMap();
+  // Load draw strokes
+  loadDrawStrokes();
+  resizeMap();drawMap();redrawAllStrokes();
   initPanelColors();
-  // show admin tools
   if(isAdmin){
     ['tool-zone','btnClearZones','adminMapSep','tool-erase','btnClearDraw'].forEach(id=>{
       const e=document.getElementById(id);if(e)e.style.display=id==='adminMapSep'?'block':'flex';
@@ -887,11 +1064,12 @@ function initMap(){
   drawCvs.addEventListener('mousedown',onMD);
   drawCvs.addEventListener('mousemove',onMM);
   drawCvs.addEventListener('mouseup',onMU);
-  drawCvs.addEventListener('mouseleave',()=>{isDrag=false;isDrawing=false;draggingMarkerIdx=-1;draggingZonePt=null;});
+  drawCvs.addEventListener('mouseleave',()=>{isDrag=false;isDrawing=false;draggingMarkerIdx=-1;draggingZonePt=null;if(currentStroke){drawStrokes.push(currentStroke);currentStroke=null;saveDrawStrokes();}});
   drawCvs.addEventListener('click',onClick);
   drawCvs.addEventListener('contextmenu',onRClick);
   drawCvs.addEventListener('wheel',onWheel,{passive:false});
   document.addEventListener('keydown',onKey);
+  document.addEventListener('keyup',onKeyUp);
   window.addEventListener('resize',resizeMap);
 }
 
@@ -899,26 +1077,41 @@ function initMap(){
 function onMD(e){
   hideCtx();
   const {wx,wy}=screenToWorld(e);
-  if(tool==='draw'||tool==='erase'){isDrawing=true;paintAt(e,true);return;}
-  // check marker drag
+
+  // FIX #8: If shift held in zone mode, start panning
+  if(shiftHeld && (tool==='zone')){
+    isDrag=true;lmx=e.clientX;lmy=e.clientY;return;
+  }
+
+  if(tool==='draw'||tool==='erase'){
+    isDrawing=true;
+    currentStroke={color:drawColor,size:drawSize,erase:tool==='erase',points:[{wx,wy}]};
+    return;
+  }
   if(tool==='cursor'||tool==='marker'){
     const mi=getMarkerAt(wx,wy);
     if(mi!==-1&&e.button===0){draggingMarkerIdx=mi;return;}
   }
-  // check zone point drag (admin)
   if(isAdmin&&tool==='cursor'){
     const zp=getZonePointAt(wx,wy);
     if(zp){draggingZonePt=zp;return;}
   }
   if(tool==='cursor'){isDrag=true;lmx=e.clientX;lmy=e.clientY;}
 }
+
 function onMM(e){
   const {cx,cy,wx,wy}=screenToWorld(e);
-  document.getElementById('mapX').textContent=wx;
-  document.getElementById('mapY').textContent=wy;
+  // FIX #6: show coordinates with zero point offset
+  document.getElementById('mapX').textContent=wx-zeroX;
+  document.getElementById('mapY').textContent=wy-zeroY;
   const z=getZoneAt(wx,wy);
   document.getElementById('curZone').textContent=z||'Відкрита місцевість';
-  if(isDrawing&&(tool==='draw'||tool==='erase')){paintAt(e,false);return;}
+
+  if(isDrawing&&(tool==='draw'||tool==='erase')){
+    if(currentStroke) currentStroke.points.push({wx,wy});
+    redrawAllStrokes();
+    return;
+  }
   if(draggingMarkerIdx!==-1){
     markers[draggingMarkerIdx].x=wx;markers[draggingMarkerIdx].y=wy;drawMap();return;
   }
@@ -926,43 +1119,58 @@ function onMM(e){
     zones[draggingZonePt.zi].points[draggingZonePt.pi]={x:wx,y:wy};drawMap();return;
   }
   if(isDrag){mapOffPan(e);}
-  // hover cursor
   const mi=getMarkerAt(wx,wy);
   drawCvs.style.cursor=mi!==-1?'grab':tool==='cursor'?'default':tool==='draw'||tool==='erase'?'crosshair':'crosshair';
 }
+
 function onMU(e){
-  isDrag=false;isDrawing=false;
+  isDrag=false;
+  if(isDrawing){
+    isDrawing=false;
+    if(currentStroke){drawStrokes.push(currentStroke);currentStroke=null;saveDrawStrokes();}
+  }
   if(draggingMarkerIdx!==-1){saveMapData();draggingMarkerIdx=-1;}
   if(draggingZonePt){saveMapData();draggingZonePt=null;}
 }
+
 function onClick(e){
   if(e.button!==0)return;
   const {wx,wy}=screenToWorld(e);
+
   if(tool==='marker'){
     const name=document.getElementById('markerNameInput').value.trim();
     markers.push({x:wx,y:wy,label:name||'Мітка',color:markerColor});
     saveMapData();drawMap();
     return;
   }
-  if(tool==='zone'&&drawingZone){
+
+  // FIX #8: Don't place zone points while shift is held
+  if(tool==='zone'&&drawingZone&&!shiftHeld){
     zonePoints.push({x:wx,y:wy});drawMap();return;
   }
-  // click on marker -> show edit
+
   if(tool==='cursor'){
     const mi=getMarkerAt(wx,wy);
     if(mi!==-1){openMarkerEdit(mi);return;}
   }
 }
+
 function onRClick(e){
   e.preventDefault();
   const {wx,wy}=screenToWorld(e);
-  // check marker
+
+  // FIX #1: In zone drawing mode, right click finishes zone (don't show context menu)
+  if(tool==='zone'&&drawingZone){
+    if(zonePoints.length>=3) saveZone();
+    return;
+  }
+
   const mi=getMarkerAt(wx,wy);
   if(mi!==-1){showCtxMenu(e.clientX,e.clientY,'marker',mi);return;}
-  // check zone
   const zi=getZoneIdxAt(wx,wy);
   if(zi!==-1){showCtxMenu(e.clientX,e.clientY,'zone',zi);return;}
 }
+
 function onWheel(e){
   e.preventDefault();
   const r=drawCvs.getBoundingClientRect();
@@ -970,29 +1178,36 @@ function onWheel(e){
   const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.1,Math.min(10,scale*d));
   offX=mx-(mx-offX)*(ns/scale);offY=my-(my-offY)*(ns/scale);
   scale=ns;
-  // #4 clamp to image bounds
   clampOffset();
   document.getElementById('zoomDisplay').textContent=Math.round(scale*100)+'%';
-  drawMap();
+  drawMap();redrawAllStrokes();
 }
+
 function onKey(e){
-  // Ctrl+Z for zone points
+  // FIX #1: Ctrl+Z for zone points
   if(e.ctrlKey&&e.key==='z'&&tool==='zone'&&drawingZone&&zonePoints.length>0){
+    e.preventDefault();
     zonePoints.pop();drawMap();
   }
+  // FIX #8: Track shift
+  if(e.key==='Shift') shiftHeld=true;
+}
+
+function onKeyUp(e){
+  if(e.key==='Shift') shiftHeld=false;
 }
 
 function mapOffPan(e){
   offX+=e.clientX-lmx;offY+=e.clientY-lmy;
   lmx=e.clientX;lmy=e.clientY;
-  clampOffset();drawMap();
+  clampOffset();drawMap();redrawAllStrokes();
 }
-/* #4 clamp pan to bg image */
+
+/* FIX #7: clamp pan to bg image */
 function clampOffset(){
   if(!mapBg||!mapCvs)return;
   const W=mapCvs.width,H=mapCvs.height;
   const imgW=mapBgW*scale,imgH=mapBgH*scale;
-  // Don't let user pan beyond image edges
   if(imgW>W){offX=Math.min(0,Math.max(W-imgW,offX));}else{offX=Math.max(0,Math.min(W-imgW,offX));}
   if(imgH>H){offY=Math.min(0,Math.max(H-imgH,offY));}else{offY=Math.max(0,Math.min(H-imgH,offY));}
 }
@@ -1001,7 +1216,6 @@ function clampOffset(){
 function showCtxMenu(cx,cy,type,idx){
   ctxTarget={type,idx};
   const m=document.getElementById('ctxMenu');
-  // show/hide items
   document.getElementById('ctxEditZone').style.display=type==='zone'?'flex':'none';
   document.getElementById('ctxDeleteZone').style.display=type==='zone'?'flex':'none';
   document.getElementById('ctxSep2').style.display=type==='marker'?'block':'none';
@@ -1010,16 +1224,19 @@ function showCtxMenu(cx,cy,type,idx){
   document.getElementById('ctxDelMarker').style.display=type==='marker'?'flex':'none';
   m.style.left=cx+'px';m.style.top=cy+'px';m.classList.add('vis');
 }
+
 function hideCtx(){document.getElementById('ctxMenu').classList.remove('vis');}
+
 window.ctxDo=action=>{
   hideCtx();if(!ctxTarget)return;
   const{type,idx}=ctxTarget;
   if(action==='editzone'&&type==='zone')openZoneEdit(idx);
   if(action==='delzone'&&type==='zone'){if(confirm('Видалити зону?')){zones.splice(idx,1);saveMapData();updateLegend();drawMap();}}
   if(action==='editmarker'&&type==='marker')openMarkerEdit(idx);
-  if(action==='movemarker'&&type==='marker'){toast('🖱️ Затисніть та перетягніть мітку',2000);}
+  if(action==='movemarker'&&type==='marker'){toast('🖱 Затисніть та перетягніть мітку',2000);}
   if(action==='delmarker'&&type==='marker'){markers.splice(idx,1);saveMapData();drawMap();}
 };
+
 document.addEventListener('click',e=>{if(!e.target.closest('.ctx'))hideCtx();});
 
 /* ===== MARKER EDIT MODAL ===== */
@@ -1040,7 +1257,7 @@ window.saveMarkerEdit=()=>{
 };
 window.deleteMarker=()=>{
   const idx=parseInt(document.getElementById('editMIdx').value);
-  markers.splice(idx,1);saveMapData();drawMap();closeMarkerEdit();toast('🗑️ Мітку видалено');
+  markers.splice(idx,1);saveMapData();drawMap();closeMarkerEdit();toast('🗑 Мітку видалено');
 };
 
 /* ===== ZONE EDIT MODAL ===== */
@@ -1061,7 +1278,7 @@ window.saveZoneEdit=()=>{
 };
 window.deleteZone=()=>{
   const idx=parseInt(document.getElementById('editZIdx').value);
-  zones.splice(idx,1);saveMapData();updateLegend();drawMap();closeZoneEdit();toast('🗑️ Зону видалено');
+  zones.splice(idx,1);saveMapData();updateLegend();drawMap();closeZoneEdit();toast('🗑 Зону видалено');
 };
 
 /* ===== ZONE DRAW ===== */
@@ -1075,11 +1292,13 @@ window.saveZone=()=>{
   setTool('cursor',document.getElementById('tool-cursor'));
   updateLegend();saveMapData();drawMap();toast(`✅ Зона "${n}" збережена!`);
 };
+
 window.cancelZone=()=>{
   zonePoints=[];drawingZone=false;
   document.getElementById('zonePanel').classList.remove('vis');
   setTool('cursor',document.getElementById('tool-cursor'));drawMap();
 };
+
 window.clearAllZones=()=>{if(!confirm('Видалити всі зони?'))return;zones=[];updateLegend();saveMapData();drawMap();};
 
 /* ===== MARKER TOOL ===== */
@@ -1093,11 +1312,13 @@ window.setTool=(t,btn)=>{
   tool=t;
   document.querySelectorAll('.mtb').forEach(b=>b.classList.remove('active'));
   btn?.classList.add('active');
-  const isDraw=t==='draw',isErase=t==='erase';
-  const dc=document.getElementById('drawColors'),ds=document.getElementById('drawSizes');
-  if(dc)dc.style.display=isDraw?'flex':'none';
-  if(ds)ds.style.display=(isDraw||isErase)?'flex':'none';
+
+  // FIX #9: Show/hide draw dropdown
+  const dd=document.getElementById('drawDropdown');
+  if(dd) dd.classList.toggle('vis', t==='draw');
+
   drawCvs.style.cursor=({cursor:'default',marker:'crosshair',draw:'crosshair',erase:'cell',zone:'crosshair'})[t]||'default';
+
   if(t==='zone'){
     document.getElementById('zonePanel').classList.add('vis');
     document.getElementById('markerPanel').classList.remove('vis');
@@ -1113,23 +1334,56 @@ window.setTool=(t,btn)=>{
   }
   drawMap();
 };
-window.setDC=el=>{document.querySelectorAll('.dcs').forEach(e=>e.classList.remove('active'));el.classList.add('active');drawColor=el.dataset.c;};
-window.setDCCustom=v=>{document.querySelectorAll('.dcs').forEach(e=>e.classList.remove('active'));drawColor=v;};
-window.setDS=btn=>{document.querySelectorAll('.dsb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');drawSize=parseInt(btn.dataset.s);};
-window.clearDraw=()=>{if(drawCtx)drawCtx.clearRect(0,0,drawCvs.width,drawCvs.height);};
-window.toggleZones=btn=>{zonesVis=!zonesVis;btn.textContent=zonesVis?'👁️ Зони':'👁️‍🗨️ Зони';btn.classList.toggle('active',zonesVis);drawMap();};
-window.resetView=()=>{scale=1;offX=0;offY=0;drawMap();document.getElementById('zoomDisplay').textContent='100%';};
 
-/* ===== DRAW ===== */
-function paintAt(e,start){
-  const r=drawCvs.getBoundingClientRect();
-  const cx=e.clientX-r.left,cy=e.clientY-r.top;
-  drawCtx.lineCap='round';drawCtx.lineJoin='round';
-  drawCtx.lineWidth=tool==='erase'?drawSize*5:drawSize;
-  if(tool==='erase'){drawCtx.globalCompositeOperation='destination-out';drawCtx.strokeStyle='rgba(0,0,0,1)';}
-  else{drawCtx.globalCompositeOperation='source-over';drawCtx.strokeStyle=drawColor;}
-  if(start){drawCtx.beginPath();drawCtx.moveTo(cx,cy);}
-  else{drawCtx.lineTo(cx,cy);drawCtx.stroke();}
+window.setDC=el=>{document.querySelectorAll('#drawDropdown .dcs').forEach(e=>e.classList.remove('active'));el.classList.add('active');drawColor=el.dataset.c;};
+window.setDCCustom=v=>{document.querySelectorAll('#drawDropdown .dcs').forEach(e=>e.classList.remove('active'));drawColor=v;};
+window.setDS=btn=>{document.querySelectorAll('.dsb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');drawSize=parseInt(btn.dataset.s);};
+
+window.clearDraw=()=>{
+  drawStrokes=[];currentStroke=null;saveDrawStrokes();
+  if(drawCtx)drawCtx.clearRect(0,0,drawCvs.width,drawCvs.height);
+};
+
+window.toggleZones=btn=>{zonesVis=!zonesVis;btn.textContent=zonesVis?'👁 Зони':'🚫 Зони';btn.classList.toggle('active',zonesVis);drawMap();};
+window.resetView=()=>{scale=1;offX=0;offY=0;clampOffset();drawMap();redrawAllStrokes();document.getElementById('zoomDisplay').textContent='100%';};
+
+/* ===== FIX #4: Draw strokes in world coordinates ===== */
+function redrawAllStrokes(){
+  if(!drawCtx||!drawCvs)return;
+  drawCtx.clearRect(0,0,drawCvs.width,drawCvs.height);
+  const allS=[...drawStrokes];
+  if(currentStroke) allS.push(currentStroke);
+  allS.forEach(s=>{
+    if(s.points.length<2 && !s.erase) return;
+    drawCtx.save();
+    drawCtx.lineCap='round';drawCtx.lineJoin='round';
+    if(s.erase){
+      drawCtx.globalCompositeOperation='destination-out';
+      drawCtx.strokeStyle='rgba(0,0,0,1)';
+      drawCtx.lineWidth=s.size*5*scale;
+    } else {
+      drawCtx.globalCompositeOperation='source-over';
+      drawCtx.strokeStyle=s.color;
+      drawCtx.lineWidth=s.size*scale;
+    }
+    drawCtx.beginPath();
+    const first=worldToScreen(s.points[0].wx,s.points[0].wy);
+    drawCtx.moveTo(first.sx,first.sy);
+    for(let i=1;i<s.points.length;i++){
+      const p=worldToScreen(s.points[i].wx,s.points[i].wy);
+      drawCtx.lineTo(p.sx,p.sy);
+    }
+    drawCtx.stroke();
+    drawCtx.restore();
+  });
+}
+
+function saveDrawStrokes(){
+  try{localStorage.setItem('dsv_draw_strokes',JSON.stringify(drawStrokes));}catch(e){}
+}
+
+function loadDrawStrokes(){
+  try{drawStrokes=JSON.parse(localStorage.getItem('dsv_draw_strokes')||'[]');}catch(e){drawStrokes=[];}
 }
 
 /* ===== MAP BACKGROUND ===== */
@@ -1144,10 +1398,12 @@ window.loadMapImage=input=>{
     toast('✅ Карту завантажено!');
   };rd.readAsDataURL(input.files[0]);
 };
-window.clearMapImage=()=>{localStorage.removeItem('dsv_map_img');mapBg=null;mapBgW=0;mapBgH=0;document.getElementById('mapImageStatus').textContent='Карту не завантажено';toast('🗑️ Карту скинуто');if(mapInited)drawMap();};
+
+window.clearMapImage=()=>{localStorage.removeItem('dsv_map_img');mapBg=null;mapBgW=0;mapBgH=0;document.getElementById('mapImageStatus').textContent='Карту не завантажено';toast('🗑 Карту скинуто');if(mapInited)drawMap();};
+
 function applyBg(src){
   mapBg=new Image();
-  mapBg.onload=()=>{mapBgW=mapBg.naturalWidth;mapBgH=mapBg.naturalHeight;if(mapInited)drawMap();};
+  mapBg.onload=()=>{mapBgW=mapBg.naturalWidth;mapBgH=mapBg.naturalHeight;if(mapInited){clampOffset();drawMap();}};
   mapBg.src=src;
   document.getElementById('mapImageStatus').textContent='✅ Карту завантажено!';
 }
@@ -1159,6 +1415,7 @@ function screenToWorld(e){
   return{cx,cy,wx:Math.round((cx-offX)/scale),wy:Math.round((cy-offY)/scale)};
 }
 function worldToScreen(wx,wy){return{sx:wx*scale+offX,sy:wy*scale+offY};}
+
 function getZoneAt(wx,wy){
   for(let i=zones.length-1;i>=0;i--)if(ptInPoly(wx,wy,zones[i].points))return zones[i].name;
   return null;
@@ -1189,10 +1446,12 @@ function ptInPoly(px,py,poly){
     if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi))inside=!inside;
   }return inside;
 }
+
 function updateLegend(){
   const el=document.getElementById('legendItems');
   el.innerHTML=zones.map(z=>`<div class="li"><div class="ld" style="background:${z.color}"></div><span>${z.name}</span></div>`).join('')||'<div style="font-size:11px;color:var(--tg)">Зон немає</div>';
 }
+
 function saveMapData(){
   try{localStorage.setItem('dsv_map_zones',JSON.stringify(zones));localStorage.setItem('dsv_map_markers',JSON.stringify(markers));}catch(e){}
 }
@@ -1208,21 +1467,19 @@ function drawMap(){
   mapCtx.clearRect(0,0,W,H);
   mapCtx.fillStyle='#06090d';mapCtx.fillRect(0,0,W,H);
   mapCtx.save();mapCtx.translate(offX,offY);mapCtx.scale(scale,scale);
-  // bg image
   if(mapBg?.complete&&mapBgW>0)mapCtx.drawImage(mapBg,0,0,mapBgW,mapBgH);
-  // grid
   const ga=mapBg?0.04:0.08,gs=50;
   mapCtx.strokeStyle=`rgba(34,197,94,${ga})`;mapCtx.lineWidth=1/scale;
   const sx=Math.floor(-offX/scale/gs)*gs,sy=Math.floor(-offY/scale/gs)*gs;
   const ex=sx+W/scale+gs,ey=sy+H/scale+gs;
   for(let x=sx;x<ex;x+=gs){mapCtx.beginPath();mapCtx.moveTo(x,sy);mapCtx.lineTo(x,ey);mapCtx.stroke();}
   for(let y=sy;y<ey;y+=gs){mapCtx.beginPath();mapCtx.moveTo(sx,y);mapCtx.lineTo(ex,y);mapCtx.stroke();}
-  // coord labels
+  // FIX #6: coord labels with zero point offset
   mapCtx.fillStyle=`rgba(34,197,94,${mapBg?0.5:0.3})`;mapCtx.font=`${Math.max(9,10/scale)}px Rajdhani`;
   mapCtx.textAlign='center';
-  for(let x=Math.ceil(sx/gs)*gs;x<ex;x+=gs)mapCtx.fillText(x,x,sy+13/scale);
+  for(let x=Math.ceil(sx/gs)*gs;x<ex;x+=gs)mapCtx.fillText(x-zeroX,x,sy+13/scale);
   mapCtx.textAlign='right';
-  for(let y=Math.ceil(sy/gs)*gs;y<ey;y+=gs)mapCtx.fillText(y,sx+28/scale,y+4/scale);
+  for(let y=Math.ceil(sy/gs)*gs;y<ey;y+=gs)mapCtx.fillText(y-zeroY,sx+28/scale,y+4/scale);
   // zones
   if(zonesVis){
     zones.forEach(z=>{
@@ -1231,11 +1488,10 @@ function drawMap(){
       z.points.forEach(p=>mapCtx.lineTo(p.x,p.y));mapCtx.closePath();
       mapCtx.fillStyle=z.color+'22';mapCtx.fill();
       mapCtx.strokeStyle=z.color+'bb';mapCtx.lineWidth=2/scale;mapCtx.stroke();
-      const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;
-      const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;
+      const cx2=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;
+      const cy2=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;
       mapCtx.fillStyle=z.color;mapCtx.font=`bold ${Math.max(11,12/scale)}px Exo 2`;
-      mapCtx.textAlign='center';mapCtx.fillText(z.name,cx,cy);
-      // show zone point handles for admin cursor tool
+      mapCtx.textAlign='center';mapCtx.fillText(z.name,cx2,cy2);
       if(isAdmin&&tool==='cursor'){
         z.points.forEach(p=>{
           mapCtx.beginPath();mapCtx.arc(p.x,p.y,5/scale,0,Math.PI*2);
@@ -1256,7 +1512,7 @@ function drawMap(){
       mapCtx.fillStyle=i===0?'#fff':zoneColor;mapCtx.fill();
     });
   }
-  // markers (no emoji, custom circles)
+  // markers
   markers.forEach(m=>{
     const mc=m.color||'#ef4444';
     mapCtx.beginPath();mapCtx.arc(m.x,m.y+1/scale,9/scale,0,Math.PI*2);
@@ -1280,10 +1536,10 @@ function resizeMap(){
   if(!mapCvs||!drawCvs||!mapCont)return;
   mapCvs.width=mapCont.clientWidth;mapCvs.height=mapCont.clientHeight;
   drawCvs.width=mapCont.clientWidth;drawCvs.height=mapCont.clientHeight;
-  drawMap();
+  drawMap();redrawAllStrokes();
 }
 
-/* ===== LOC PICKER (#6) ===== */
+/* ===== LOC PICKER ===== */
 let locCtx,locPickCtx,locCvs,locPickCvs,locPt=null;
 
 window.openLocPicker=()=>{
@@ -1300,10 +1556,8 @@ function initLocPicker(){
   locCvs.height=locPickCvs.height=wrap.clientHeight;
   locCtx=locCvs.getContext('2d');
   locPickCtx=locPickCvs.getContext('2d');
-  // copy current map state
   let locOffX=offX,locOffY=offY,locScale=scale;
   let locDrag=false,llmx,llmy;
-
   function drawLoc(){
     const W=locCvs.width,H=locCvs.height;
     locCtx.clearRect(0,0,W,H);locCtx.fillStyle='#06090d';locCtx.fillRect(0,0,W,H);
@@ -1331,13 +1585,10 @@ function initLocPicker(){
     locCtx.restore();
   }
   drawLoc();
-
-  // remove old listeners by replacing canvas
   const np=locPickCvs.cloneNode();
   locPickCvs.parentNode.replaceChild(np,locPickCvs);
   locPickCvs=np;locPickCtx=locPickCvs.getContext('2d');
   locPickCvs.style.cursor='crosshair';
-
   locPickCvs.addEventListener('mousedown',e=>{locDrag=true;llmx=e.clientX;llmy=e.clientY;});
   locPickCvs.addEventListener('mousemove',e=>{
     if(locDrag){locOffX+=e.clientX-llmx;locOffY+=e.clientY-llmy;llmx=e.clientX;llmy=e.clientY;drawLoc();}
@@ -1348,7 +1599,8 @@ function initLocPicker(){
     const r=locPickCvs.getBoundingClientRect();
     const mx=e.clientX-r.left,my=e.clientY-r.top;
     const d=e.deltaY>0?0.85:1.15,ns=Math.max(.1,Math.min(10,locScale*d));
-    locOffX=mx-(mx-locOffX)*(ns/locScale);locOffY=my-(my-locOffY)*(ns/locScale);locScale=ns;drawLoc();
+    locOffX=mx-(mx-locOffX)*(ns/locScale);locOffY=my-(my-locOffY)*(ns/locScale);locScale=ns;
+    drawLoc();
   },{passive:false});
   locPickCvs.addEventListener('click',e=>{
     if(locDrag)return;
@@ -1358,6 +1610,7 @@ function initLocPicker(){
     drawLoc();
   });
 }
+
 window.confirmLoc=()=>{
   if(!locPt){toast('❌ Клікніть на карті!');return;}
   document.getElementById('qLocX').value=locPt.x;
@@ -1372,12 +1625,12 @@ window.showQLocOnMap=(x,y)=>{
   setTimeout(()=>{
     initMap();
     offX=-x*scale+mapCvs.width/2;offY=-y*scale+mapCvs.height/2;
-    clampOffset();drawMap();
+    clampOffset();drawMap();redrawAllStrokes();
     toast(`📍 X:${x} Y:${y}`,2000);
   },100);
 };
-</script>
 
+</script>
 <script>
 document.onkeydown=e=>{if(e.keyCode==123||(e.ctrlKey&&e.shiftKey&&[73,74,67].includes(e.keyCode))||(e.ctrlKey&&e.keyCode==85))return false;};
 </script>
