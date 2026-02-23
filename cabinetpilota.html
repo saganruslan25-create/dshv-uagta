@@ -1647,6 +1647,7 @@ window.__mapState={
   get curMWY(){return curMWY;},
   get zeroX(){return zeroX;},
   get zeroY(){return zeroY;},
+  get curZone(){return gZA(curMWX,curMWY)||null;},
   setShift(v){shiftHeld=v;}
 };
 </script>
@@ -1676,8 +1677,10 @@ window.__mapState={
 
     // Only map shortcuts when map is active and not typing
     if(isMapActive()&&!isTyping(e)){
+      // e.code is physical key, layout-independent (KeyZ = з/я/z, KeyC = с/ц/c etc.)
+      var code=e.code;
       // Ctrl+Z = undo
-      if(ctrlKey&&(e.key==='z'||e.key==='Z')){
+      if(ctrlKey&&code==='KeyZ'){
         e.preventDefault();e.stopPropagation();
         var ms=window.__mapState;
         if(ms){
@@ -1686,13 +1689,14 @@ window.__mapState={
         }
         return;
       }
-      // Ctrl+C = copy coords
-      if(ctrlKey&&(e.key==='c'||e.key==='C')){
+      // Ctrl+C = copy coords + zone
+      if(ctrlKey&&code==='KeyC'){
         e.preventDefault();e.stopPropagation();
         var ms=window.__mapState;
         if(ms){
           var cx=ms.curMWX-ms.zeroX,cy=ms.curMWY-ms.zeroY;
-          var txt=cx+', '+cy;
+          var zone=ms.curZone;
+          var txt=cx+', '+cy+(zone?' | Місце: '+zone:'');
           if(navigator.clipboard&&navigator.clipboard.writeText){
             navigator.clipboard.writeText(txt).catch(function(){});
           }
@@ -1700,7 +1704,7 @@ window.__mapState={
           el2.className='coord-copy-toast';
           el2.textContent='📋 '+txt;
           document.body.appendChild(el2);
-          setTimeout(function(){if(el2.parentNode)el2.remove();},900);
+          setTimeout(function(){if(el2.parentNode)el2.remove();},1200);
         }
         return;
       }
