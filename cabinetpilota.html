@@ -50,17 +50,23 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
 .xp-bar-bg{background:rgba(255,255,255,.05);border-radius:20px;height:6px;overflow:hidden}
 .xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--pr),var(--bl));border-radius:20px;transition:width 1s ease;box-shadow:0 0 8px var(--pg)}
 /* FIX 4: Level progression strip */
-.level-progression{margin:8px 24px 0;padding:10px 14px;background:var(--cb);border:1px solid var(--gb);border-radius:12px;overflow:hidden}
-.level-strip{display:flex;align-items:center;width:100%}
-.lvl-node{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
-.lvl-dot{width:26px;height:26px;border-radius:50%;border:2px solid #333;background:#0a0d11;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;font-family:'Rajdhani',sans-serif;transition:.2s;flex-shrink:0}
+.level-progression{margin:8px 24px 0;background:var(--cb);border:1px solid var(--gb);border-radius:12px;overflow:hidden;position:relative}
+.lvl-track-header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 4px;font-size:9px;font-weight:800;color:var(--tg);letter-spacing:2px;text-transform:uppercase}
+.lvl-track-header span{color:var(--pb)}
+.lvl-viewport{overflow:hidden;padding:0 14px 10px;position:relative}
+.level-strip{display:flex;align-items:center;transition:transform .6s cubic-bezier(.4,0,.2,1);will-change:transform}
+.lvl-node{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;width:48px}
+.lvl-dot{width:28px;height:28px;border-radius:50%;border:2px solid #333;background:#0a0d11;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;font-family:'Rajdhani',sans-serif;transition:all .3s;flex-shrink:0;cursor:default}
 .lvl-dot.done{background:var(--pr);border-color:var(--pr);color:#000;box-shadow:0 0 6px rgba(34,197,94,.4)}
-.lvl-dot.current{background:rgba(34,197,94,.15);border-color:var(--pr);color:var(--pb);box-shadow:0 0 10px rgba(34,197,94,.4)}
-.lvl-dot.locked{border-color:#222;color:#333}
+.lvl-dot.current{background:rgba(34,197,94,.2);border-color:var(--pb);color:var(--pb);box-shadow:0 0 14px rgba(34,197,94,.6);animation:lvl-pulse 1.5s ease-in-out infinite}
+.lvl-dot.locked{border-color:#1e2830;color:#2a3540}
+.lvl-dot.unclaimed-dot{border-color:var(--gd)!important;box-shadow:0 0 10px rgba(245,158,11,.6)!important}
 .lvl-label{font-size:7px;color:var(--tg);font-weight:700;white-space:nowrap}
 .lvl-reward{font-size:7px;color:var(--gd);font-weight:700;white-space:nowrap}
-.lvl-connector{flex:1;height:2px;background:#1a2030;min-width:2px;margin-bottom:18px}
-.lvl-connector.done{background:var(--pr);opacity:.6}
+.lvl-connector{width:20px;height:2px;background:#1a2030;flex-shrink:0;margin-bottom:20px;transition:background .4s,box-shadow .4s}
+.lvl-connector.done{background:var(--pr);box-shadow:0 0 4px rgba(34,197,94,.3)}
+.lvl-progress-bar{height:3px;background:linear-gradient(90deg,var(--pr),var(--pb));transition:width .8s ease;border-radius:0 0 12px 12px}
+@keyframes lvl-pulse{0%,100%{box-shadow:0 0 8px rgba(34,197,94,.4)}50%{box-shadow:0 0 20px rgba(34,197,94,.8),0 0 40px rgba(34,197,94,.2)}}
 .dash-section{margin:14px 24px 0}
 .dash-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .dash-section-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;color:var(--pb);text-transform:uppercase}
@@ -326,7 +332,7 @@ select.form-input option{background:#0a0d11}
 <body>
 
 <nav>
-  <a href="index.html" class="logo-box">ДШВ</a>
+  <a href="https://saganruslan25-create.github.io/dshv-uagta/cabinet.html" class="logo-box">ДШВ</a>
   <span class="nav-page-title">✈ КАБІНЕТ ПІЛОТА</span>
   <div style="display:flex;align-items:center;gap:10px;">
     <a href="javascript:window.history.back()" class="nav-link" style="font-size:12px;padding:6px 10px">← НАЗАД</a>
@@ -367,9 +373,13 @@ select.form-input option{background:#0a0d11}
     <div class="xp-bar-top"><span>ДОСВІД</span><span id="xpText">0/1000 XP</span></div>
     <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill" style="width:0%"></div></div>
   </div>
-  <!-- FIX 4: Level progression strip -->
+  <!-- Level progression strip -->
   <div class="level-progression" id="levelProgressionWrap">
-    <div class="level-strip" id="levelStrip"></div>
+    <div class="lvl-track-header">ПРОГРЕС РІВНІВ &nbsp;<span id="lvlTrackInfo">ЛВЛ 1</span></div>
+    <div class="lvl-viewport" id="lvlViewport">
+      <div class="level-strip" id="levelStrip"></div>
+    </div>
+    <div class="lvl-progress-bar" id="lvlProgressBar" style="width:0%"></div>
   </div>
   <div class="dashboard-grid">
     <div class="dash-card"><span class="dash-card-icon"><span class="coin-icon coin-icon-lg"></span></span><div class="dash-card-num" id="dashBalance">0</div><div class="dash-card-label">Коїнів</div></div>
@@ -924,44 +934,47 @@ window.saveLvlRewardSettings=()=>{
 
 // FIX 3: Correct multiplier — level 1=base, level 2=base*mult, level 3=base*mult^2
 function calcLvlReward(level){
-  return Math.round(levelRewardBase*Math.pow(levelRewardMult,level-1));
+  return Math.min(5000000,Math.round(levelRewardBase*Math.pow(levelRewardMult,level-1)));
 }
 
-// Render level progression strip — all levels from 1 to max (reward <= 5,000,000), full width
+// Render level progression strip — all levels 1 to max (reward<=5M), animated sliding
 function renderLevelStrip(){
   const strip=document.getElementById('levelStrip');
+  const viewport=document.getElementById('lvlViewport');
+  const progressBar=document.getElementById('lvlProgressBar');
+  const trackInfo=document.getElementById('lvlTrackInfo');
   if(!strip||!myData)return;
   const totalXP=myData.xp||0;
-  const{level:curLvl}=calcLevel(totalXP);
+  const{level:curLvl,xpInLevel,xpNeeded}=calcLevel(totalXP);
   const claimedLevel=myData.claimedLevel||0;
   // Find max level where reward <= 5,000,000
   let maxLvl=1;
-  for(let lv=1;lv<=200;lv++){
-    if(calcLvlReward(lv)<=5000000)maxLvl=lv; else break;
-  }
-  const startLvl=1;
-  const endLvl=maxLvl;
+  for(let lv=1;lv<=200;lv++){if(calcLvlReward(lv)<=5000000)maxLvl=lv;else break;}
   let html='';
-  for(let lv=startLvl;lv<=endLvl;lv++){
+  for(let lv=1;lv<=maxLvl;lv++){
     const reward=calcLvlReward(lv);
     let cls='locked';
     if(lv<curLvl)cls='done';
     else if(lv===curLvl)cls='current';
-    const unclaimed=lv<=curLvl&&lv>claimedLevel;
-    const dotStyle=unclaimed&&lv<curLvl?' style="border-color:var(--gd);box-shadow:0 0 8px rgba(245,158,11,.5)"':'';
+    const unclaimed=lv<=curLvl&&lv>claimedLevel&&lv<curLvl;
+    const extraCls=unclaimed?' unclaimed-dot':'';
     const fmtReward=reward>=1000000?(reward/1000000).toFixed(1)+'M':reward>=1000?Math.round(reward/1000)+'K':reward;
-    html+=`<div class="lvl-node"><div class="lvl-dot ${cls}"${dotStyle}>${lv}</div><div class="lvl-label">${lv}</div><div class="lvl-reward">${CI()}${fmtReward}</div></div>`;
-    if(lv<endLvl){
-      const connDone=lv<curLvl;
-      html+=`<div class="lvl-connector${connDone?' done':''}"></div>`;
-    }
+    html+=`<div class="lvl-node" id="lvlNode_${lv}"><div class="lvl-dot ${cls}${extraCls}">${lv}</div><div class="lvl-label">ЛВЛ</div><div class="lvl-reward">${CI()}${fmtReward}</div></div>`;
+    if(lv<maxLvl)html+=`<div class="lvl-connector${lv<curLvl?' done':''}"></div>`;
   }
   strip.innerHTML=html;
-  // Scroll current level into view
+  // Update header info
+  if(trackInfo)trackInfo.textContent='ЛВЛ '+curLvl+' / '+maxLvl;
+  // Update progress bar (progress within current level)
+  if(progressBar)progressBar.style.width=Math.round(xpInLevel/xpNeeded*100)+'%';
+  // Animate strip: slide so current level is visible near left
   setTimeout(()=>{
-    const curNode=strip.querySelector('.lvl-dot.current');
-    if(curNode)curNode.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
-  },100);
+    const curNode=document.getElementById('lvlNode_'+curLvl);
+    if(!curNode||!viewport)return;
+    const nodeW=68; // lvl-node width + connector
+    const targetOffset=Math.max(0,(curLvl-1)*nodeW - (viewport.offsetWidth/2 - 24));
+    strip.style.transform=`translateX(-${targetOffset}px)`;
+  },80);
 }
 
 let pendingLevelUp=null;
