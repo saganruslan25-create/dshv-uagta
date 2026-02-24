@@ -49,7 +49,6 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
 .xp-bar-top{display:flex;justify-content:space-between;margin-bottom:6px;font-size:11px;color:var(--tg);font-weight:700}
 .xp-bar-bg{background:rgba(255,255,255,.05);border-radius:20px;height:6px;overflow:hidden}
 .xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--pr),var(--bl));border-radius:20px;transition:width 1s ease;box-shadow:0 0 8px var(--pg)}
-/* FIX 4: Level progression strip */
 .level-progression{margin:8px 24px 0;background:var(--cb);border:1px solid var(--gb);border-radius:12px;overflow:hidden;position:relative}
 .lvl-track-header{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 4px;font-size:9px;font-weight:800;color:var(--tg);letter-spacing:2px;text-transform:uppercase}
 .lvl-track-header span{color:var(--pb)}
@@ -328,7 +327,6 @@ select.form-input option{background:#0a0d11}
   .mob-more-drawer{display:none!important}
 }
 
-
 .map-link-btn{background:none;border:1px solid rgba(34,197,94,.25);color:var(--tg);border-radius:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;margin-left:auto;flex-shrink:0;transition:.2s;padding:0}
 .map-link-btn:hover{background:rgba(34,197,94,.15);border-color:var(--pr);color:var(--pb)}
 .mob-map-link-btn{position:absolute;top:2px;right:2px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--pb);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;padding:0;line-height:1}
@@ -342,7 +340,6 @@ select.form-input option{background:#0a0d11}
 .mvnav-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--pb);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;letter-spacing:1px}
 .mv-map-wrap{flex:1;position:relative;overflow:hidden;background:#05090e;touch-action:none;min-height:0}
 .mv-map-wrap canvas{position:absolute;top:0;left:0}
-/* Context menu for map button */
 #mapBtnCtxMenu{position:fixed;z-index:10000;background:#0a0d11;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none}
 #mapBtnCtxMenu.vis{display:block}
 .ctx-item{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:7px;font-size:13px;font-weight:600;color:#cdd;cursor:pointer;transition:.15s}
@@ -422,7 +419,6 @@ select.form-input option{background:#0a0d11}
     <div class="xp-bar-top"><span>ДОСВІД</span><span id="xpText">0/1000 XP</span></div>
     <div class="xp-bar-bg"><div class="xp-bar-fill" id="xpFill" style="width:0%"></div></div>
   </div>
-  <!-- Level progression strip -->
   <div class="level-progression" id="levelProgressionWrap">
     <div class="lvl-track-header">ПРОГРЕС РІВНІВ &nbsp;<span id="lvlTrackInfo">ЛВЛ 1</span></div>
     <div class="lvl-viewport" id="lvlViewport">
@@ -879,7 +875,6 @@ select.form-input option{background:#0a0d11}
   </div>
 </div>
 
-<!-- FIX 1: Level up modal - persists through refresh -->
 <div class="modal-overlay" id="levelUpModal" style="z-index:2000">
   <div class="modal-box" onclick="event.stopPropagation()" style="text-align:center;max-width:380px">
     <div style="font-size:48px;margin-bottom:10px">🎉</div>
@@ -910,7 +905,6 @@ const app=initializeApp({
 });
 const auth=getAuth(app),db=getFirestore(app);
 let uid=null,myData=null,isAdmin=false,allQuests=[],allUsers=[],qFilter='all',dashQFilter='all',adminQFilter='all',selDiffVal='easy',abandonQID=null,abandonPen=0;
-// FIX 2: Track pending submissions per quest
 let myPendingSubmissions=new Set();
 const DI={easy:'🟢',medium:'🟡',hard:'🔴',elite:'💜'};
 const DCl={easy:'qct-diff-easy',medium:'qct-diff-medium',hard:'qct-diff-hard',elite:'qct-diff-elite'};
@@ -984,12 +978,10 @@ window.saveLvlRewardSettings=()=>{
   toast('✅ Збережено');
 };
 
-// FIX 3: Correct multiplier — level 1=base, level 2=base*mult, level 3=base*mult^2
 function calcLvlReward(level){
   return Math.min(5000000,Math.round(levelRewardBase*Math.pow(levelRewardMult,level-1)));
 }
 
-// Render level progression strip — all levels 1 to max (reward<=5M), animated sliding
 function renderLevelStrip(){
   const strip=document.getElementById('levelStrip');
   const viewport=document.getElementById('lvlViewport');
@@ -999,7 +991,6 @@ function renderLevelStrip(){
   const totalXP=myData.xp||0;
   const{level:curLvl,xpInLevel,xpNeeded}=calcLevel(totalXP);
   const claimedLevel=myData.claimedLevel||0;
-  // Find max level where reward <= 5,000,000
   let maxLvl=1;
   for(let lv=1;lv<=200;lv++){if(calcLvlReward(lv)<=5000000)maxLvl=lv;else break;}
   let html='';
@@ -1015,15 +1006,12 @@ function renderLevelStrip(){
     if(lv<maxLvl)html+=`<div class="lvl-connector${lv<curLvl?' done':''}"></div>`;
   }
   strip.innerHTML=html;
-  // Update header info
   if(trackInfo)trackInfo.textContent='ЛВЛ '+curLvl+' / '+maxLvl;
-  // Update progress bar (progress within current level)
   if(progressBar)progressBar.style.width=Math.round(xpInLevel/xpNeeded*100)+'%';
-  // Animate strip: slide so current level is visible near left
   setTimeout(()=>{
     const curNode=document.getElementById('lvlNode_'+curLvl);
     if(!curNode||!viewport)return;
-    const nodeW=68; // lvl-node width + connector
+    const nodeW=68;
     const targetOffset=Math.max(0,(curLvl-1)*nodeW - (viewport.offsetWidth/2 - 24));
     strip.style.transform=`translateX(-${targetOffset}px)`;
   },80);
@@ -1031,13 +1019,12 @@ function renderLevelStrip(){
 
 let pendingLevelUp=null;
 
-// FIX 1: Check level reward on every loadUI call — survives page refresh
 function checkAndShowLevelReward(){
   if(!myData)return;
   const claimedLevel=myData.claimedLevel||0;
   const{level:curLvl}=calcLevel(myData.xp||0);
   if(curLvl>claimedLevel){
-    const rewardLevel=claimedLevel+1; // claim next unclaimed level
+    const rewardLevel=claimedLevel+1;
     const reward=calcLvlReward(rewardLevel);
     pendingLevelUp={level:rewardLevel,reward};
     document.getElementById('lvlUpTitle').textContent='🚀 РІВЕНЬ '+rewardLevel+'!';
@@ -1046,6 +1033,7 @@ function checkAndShowLevelReward(){
     document.getElementById('levelUpModal').style.display='flex';
   }
 }
+window.checkAndShowLevelReward=checkAndShowLevelReward;
 
 window.claimLevelReward=async()=>{
   if(!pendingLevelUp||!uid)return;
@@ -1055,7 +1043,6 @@ window.claimLevelReward=async()=>{
   pendingLevelUp=null;
   toast('🎁 +'+reward+' коїнів за рівень '+level+'!');
   sendWH('levelup',{name:myData?.name||'',level,coins:reward});
-  // Check if more levels to claim
   setTimeout(checkAndShowLevelReward, 500);
 };
 
@@ -1068,7 +1055,6 @@ function hasUnclaimedLevel(){
 
 window.toggleAdminQList=()=>{const w=document.getElementById('adminQuestListWrap'),i=document.getElementById('adminQListToggleIcon');if(!w)return;const open=w.style.display!=='none';w.style.display=open?'none':'flex';i.textContent=open?'☰':'✕';};
 
-// FIX 5: Reroll at the SAME position in the list
 window.rerollQuest=async(qid)=>{
   const c=rerollCounts[qid]||0;
   if(c>=3){toast('❌ Макс 3 рерола!');return;}
@@ -1080,7 +1066,6 @@ window.rerollQuest=async(qid)=>{
   const pool=allQuests.filter(q=>q.status!=='archived'&&!comp.includes(q.id)&&!active.includes(q.id)&&!cur.has(q.id)&&!abandonedQuestIds.includes(q.id));
   if(!pool.length){toast('❌ Немає квестів для рерола!');return;}
   const nq=pool[Math.floor(Math.random()*pool.length)];
-  // FIX 5: Replace at the EXACT same index position
   const idx=visibleQuestIds.indexOf(qid);
   if(idx!==-1){
     visibleQuestIds[idx]=nq.id;
@@ -1106,7 +1091,6 @@ function updateQT(){
 }
 setInterval(updateQT,1000);
 
-// ===== DEADLINE TICKER =====
 let expiryRunning=false;
 async function checkDeadlines(){
   if(!uid||!myData||expiryRunning)return;
@@ -1154,7 +1138,6 @@ async function checkDeadlines(){
 setInterval(checkDeadlines,1000);
 loadSettings();
 
-// ===== ZERO POINT =====
 let zeroX=0,zeroY=0;
 function loadZP(){
   try{zeroX=parseInt(localStorage.getItem('dsv_zx'))||0;zeroY=parseInt(localStorage.getItem('dsv_zy'))||0;}catch(e){}
@@ -1166,7 +1149,6 @@ window.resetZeroPoint=()=>{zeroX=0;zeroY=0;localStorage.removeItem('dsv_zx');loc
 
 let curMWX=0,curMWY=0;
 
-// ===== WITHDRAWAL =====
 window.openWithdrawModal=()=>{
   const bal=myData?.coins||0;
   document.getElementById('wdBalance').textContent=bal+' C';
@@ -1255,13 +1237,141 @@ window.reviewWithdrawal=async(wid,status,tuid,amt,name,total,req)=>{
   toast(status==='approved'?'✅ Виплату схвалено!':'❌ Заявку відхилено');
 };
 
-// ===== MOBILE =====
 window.mobShowTab=(name)=>{showTab(name,null);document.querySelectorAll('.mob-tab').forEach(b=>b.classList.remove('active'));const mt=document.getElementById('mtab-'+name);if(mt)mt.classList.add('active');else{const mm=document.getElementById('mtab-more');if(mm)mm.classList.add('active');}};
 window.toggleMobMore=()=>{const d=document.getElementById('mobMoreDrawer'),o=document.getElementById('mobMoreOverlay'),vis=d.classList.contains('vis');if(vis){d.classList.remove('vis');o.classList.remove('vis');}else{d.classList.add('vis');o.classList.add('vis');}};
 window.closeMobMore=()=>{document.getElementById('mobMoreDrawer').classList.remove('vis');document.getElementById('mobMoreOverlay').classList.remove('vis');};
 
+// ===== PUBLIC MAP VIEW — moved INSIDE module so it has access to onSnapshot, doc, db =====
+function initPublicMapView(){
+  const overlay=document.getElementById('mapViewOverlay');
+  if(!overlay){console.error('mapViewOverlay not found');return;}
+  overlay.classList.add('active');
+  const nav=document.querySelector('nav');if(nav)nav.style.display='none';
+  const pw=document.querySelector('.page-wrapper');if(pw)pw.style.display='none';
+  const tb=document.querySelector('.mob-tabbar');if(tb)tb.style.display='none';
+  const ctxm=document.getElementById('mapBtnCtxMenu');if(ctxm)ctxm.style.display='none';
+
+  const mvMapCvs=document.getElementById('mvMapCanvas');
+  const mvDrawCvs=document.getElementById('mvDrawCanvas');
+  const mvCont=document.getElementById('mvMapWrap');
+
+  if(!mvMapCvs||!mvDrawCvs||!mvCont){console.error('MV canvas elements missing');return;}
+
+  const mvMapCtx=mvMapCvs.getContext('2d');
+  const mvDrawCtx=mvDrawCvs.getContext('2d');
+
+  let mvScale=0.46,mvOffX=0,mvOffY=0,mvBg=null,mvBgW=0,mvBgH=0;
+  let mvIsDrag=false,mvLmx=0,mvLmy=0;
+  let mvZones=[],mvMarkers=[],mvDrawStrokes=[];
+
+  function mvClamp(){
+    if(!mvBg)return;
+    const w=mvCont.clientWidth,h=mvCont.clientHeight;
+    const iw=mvBgW*mvScale,ih=mvBgH*mvScale;
+    const minX=Math.min(0,w-iw),maxX=Math.max(0,w-iw);
+    const minY=Math.min(0,h-ih),maxY=Math.max(0,h-ih);
+    mvOffX=Math.max(minX,Math.min(maxX,mvOffX));
+    mvOffY=Math.max(minY,Math.min(maxY,mvOffY));
+  }
+
+  function mvResizeMap(){
+    if(!mvMapCvs||!mvDrawCvs||!mvCont)return;
+    const w=mvCont.clientWidth||window.innerWidth;
+    const h=mvCont.clientHeight||(window.innerHeight-53);
+    if(w===0||h===0)return;
+    mvMapCvs.width=w;mvMapCvs.height=h;
+    mvDrawCvs.width=w;mvDrawCvs.height=h;
+    mvDrawMap();
+  }
+
+  function mvGetZoneAt(wx,wy){
+    for(const z of mvZones){if(!z.points||z.points.length<3)continue;let inside=false;for(let i=0,j=z.points.length-1;i<z.points.length;j=i++){const xi=z.points[i].x,yi=z.points[i].y,xj=z.points[j].x,yj=z.points[j].y;if(((yi>wy)!==(yj>wy))&&(wx<(xj-xi)*(wy-yi)/(yj-yi)+xi))inside=!inside;}if(inside)return z.name||'Зона';}return null;
+  }
+
+  function mvUpdateLeg(){
+    const el=document.getElementById('mvLegend');if(!el)return;
+    el.innerHTML=mvZones.filter(z=>z.name).map(z=>`<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:#94a3b8;margin-bottom:6px"><div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${z.color||'#22c55e'}"></div><span>${z.name}</span></div>`).join('');
+  }
+
+  function mvDrawMap(){
+    if(!mvMapCtx)return;
+    const w=mvMapCvs.width,h=mvMapCvs.height;
+    mvMapCtx.clearRect(0,0,w,h);
+    mvMapCtx.fillStyle='#05090e';mvMapCtx.fillRect(0,0,w,h);
+    if(mvBg){mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.drawImage(mvBg,0,0,mvBgW,mvBgH);mvMapCtx.restore();}
+    mvZones.forEach(z=>{if(!z.points||z.points.length<2)return;mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.beginPath();mvMapCtx.moveTo(z.points[0].x,z.points[0].y);z.points.slice(1).forEach(p=>mvMapCtx.lineTo(p.x,p.y));mvMapCtx.closePath();mvMapCtx.fillStyle=(z.color||'#22c55e')+'33';mvMapCtx.strokeStyle=z.color||'#22c55e';mvMapCtx.lineWidth=2/mvScale;mvMapCtx.fill();mvMapCtx.stroke();if(z.name){const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;mvMapCtx.fillStyle='#fff';mvMapCtx.font=`bold ${12/mvScale}px 'Exo 2'`;mvMapCtx.textAlign='center';mvMapCtx.fillText(z.name,cx,cy);}mvMapCtx.restore();});
+    mvMarkers.forEach((m,i)=>{mvMapCtx.save();mvMapCtx.translate(mvOffX+m.x*mvScale,mvOffY+m.y*mvScale);mvMapCtx.beginPath();mvMapCtx.arc(0,-10,7,0,Math.PI*2);mvMapCtx.fillStyle=m.color||'#ef4444';mvMapCtx.fill();mvMapCtx.strokeStyle='#fff';mvMapCtx.lineWidth=1.5;mvMapCtx.stroke();mvMapCtx.fillStyle='#fff';mvMapCtx.font="bold 10px 'Exo 2'";mvMapCtx.textAlign='center';mvMapCtx.fillText(i+1,0,-7);if(m.label){mvMapCtx.fillStyle='rgba(3,5,7,.85)';const tw=mvMapCtx.measureText(m.label).width;mvMapCtx.fillRect(-tw/2-3,3,tw+6,14);mvMapCtx.fillStyle='#fff';mvMapCtx.fillText(m.label,0,14);}mvMapCtx.restore();});
+    mvDrawCtx.clearRect(0,0,w,h);
+    mvDrawStrokes.forEach(s=>{if(!s.points||s.points.length<1)return;mvDrawCtx.save();mvDrawCtx.translate(mvOffX,mvOffY);mvDrawCtx.scale(mvScale,mvScale);mvDrawCtx.globalCompositeOperation=s.erase?'destination-out':'source-over';mvDrawCtx.strokeStyle=s.color||'#22c55e';mvDrawCtx.lineWidth=s.size/mvScale;mvDrawCtx.lineCap='round';mvDrawCtx.lineJoin='round';mvDrawCtx.beginPath();mvDrawCtx.moveTo(s.points[0].wx,s.points[0].wy);s.points.slice(1).forEach(p=>mvDrawCtx.lineTo(p.wx,p.wy));mvDrawCtx.stroke();mvDrawCtx.restore();});
+  }
+
+  requestAnimationFrame(()=>{
+    mvResizeMap();
+    window.addEventListener('resize',mvResizeMap);
+    mvDrawMap();
+
+    // *** ЦЕ ВИПРАВЛЕННЯ: onSnapshot/doc/db доступні бо ми всередині module script ***
+    onSnapshot(doc(db,'appData','mapData'),snap=>{
+      if(snap.exists()){const d=snap.data();mvZones=d.zones||[];mvMarkers=d.markers||[];}
+      else{mvZones=[];mvMarkers=[];}
+      mvDrawMap();mvUpdateLeg();
+    });
+
+    onSnapshot(doc(db,'appData','mapMeta'),async snap=>{
+      if(!snap.exists())return;
+      const{url,version}=snap.data();
+      try{
+        const r=await fetch(url+(url.includes('?')?'&':'?')+'v='+version);
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        const blob=await r.blob();
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=new Image();
+          img.onload=()=>{
+            mvBg=img;mvBgW=img.width;mvBgH=img.height;
+            const w=mvCont.clientWidth,h=mvCont.clientHeight;
+            mvOffX=(w-mvBgW*mvScale)/2;
+            mvOffY=(h-mvBgH*mvScale)/2;
+            mvDrawMap();
+          };
+          img.src=e.target.result;
+        };
+        reader.readAsDataURL(blob);
+      }catch(e){console.warn('MV bg load fail:',e);}
+    });
+
+    mvDrawCvs.addEventListener('mousedown',e=>{mvIsDrag=true;mvLmx=e.clientX;mvLmy=e.clientY;mvDrawCvs.style.cursor='grabbing';});
+    mvDrawCvs.addEventListener('mousemove',e=>{
+      if(mvIsDrag){mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;mvLmx=e.clientX;mvLmy=e.clientY;mvClamp();mvDrawMap();}
+      const r=mvDrawCvs.getBoundingClientRect();
+      const wx=Math.round((e.clientX-r.left-mvOffX)/mvScale);
+      const wy=Math.round((e.clientY-r.top-mvOffY)/mvScale);
+      const zx=document.getElementById('mvMapX'),zy=document.getElementById('mvMapY'),zz=document.getElementById('mvCurZone');
+      if(zx)zx.textContent=wx;
+      if(zy)zy.textContent=wy;
+      if(zz)zz.textContent=mvGetZoneAt(wx,wy)||'—';
+    });
+    mvDrawCvs.addEventListener('mouseup',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
+    mvDrawCvs.addEventListener('mouseleave',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
+    mvDrawCvs.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const r=mvDrawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+      const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,mvScale*d));
+      mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);
+      mvScale=ns;mvClamp();mvDrawMap();
+    },{passive:false});
+
+    let mvTouchPanning=false,mvLastTX=0,mvLastTY=0,mvPinchDist=0;
+    mvDrawCvs.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1){mvTouchPanning=true;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;}else if(e.touches.length===2){mvTouchPanning=false;mvPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
+    mvDrawCvs.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&mvTouchPanning){mvOffX+=e.touches[0].clientX-mvLastTX;mvOffY+=e.touches[0].clientY-mvLastTY;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;mvClamp();mvDrawMap();}else if(e.touches.length===2){const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;const r=mvDrawCvs.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;const d=nd/mvPinchDist,ns=Math.max(0.05,Math.min(10,mvScale*d));mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);mvScale=ns;mvPinchDist=nd;mvClamp();mvDrawMap();}},{passive:false});
+    mvDrawCvs.addEventListener('touchend',e=>{if(e.touches.length===0)mvTouchPanning=false;},{passive:false});
+  });
+}
+// Expose to window so plain script context menu buttons can call toast
+window.toast=(msg,dur=3000)=>{const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',dur);};
+
 // ===== AUTH =====
-// Public map view — launch BEFORE auth, directly on DOM ready
+// Check if public map view mode BEFORE auth
 if(new URLSearchParams(location.search).get('view')==='map'){
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',initPublicMapView);
@@ -1271,7 +1381,7 @@ if(new URLSearchParams(location.search).get('view')==='map'){
 }
 
 onAuthStateChanged(auth,async user=>{
-  if(new URLSearchParams(location.search).get('view')==='map')return; // already handled
+  if(new URLSearchParams(location.search).get('view')==='map')return;
   if(!user){location.href='index.html';return;}
   uid=user.uid;
   const snap=await getDoc(doc(db,'users',user.uid));
@@ -1283,10 +1393,8 @@ onAuthStateChanged(auth,async user=>{
     myData=(await getDoc(doc(db,'users',uid))).data();
   }
   loadUI();
-  // FIX 1: Show level reward modal if not claimed after page refresh
   checkAndShowLevelReward();
   listenQ();
-  // FIX 2: Listen to user's own submissions to track pending ones
   listenMySubmissions();
   if(isAdmin){
     document.getElementById('btnAddQuest').style.display='block';
@@ -1303,19 +1411,16 @@ onAuthStateChanged(auth,async user=>{
   }
   onSnapshot(doc(db,'users',uid),s=>{
     if(s.exists()){
-      const oldXP=myData?.xp||0;
       myData=s.data();
       loadUI();
       renderDash();
       renderLevelStrip();
-      // FIX 1: Re-check level reward on any data update
       if(!pendingLevelUp) checkAndShowLevelReward();
     }
   });
   listenMapData();
 });
 
-// FIX 2: Listen to own pending submissions
 function listenMySubmissions(){
   if(!uid)return;
   onSnapshot(query(collection(db,'questSubmissions'),where('uid','==',uid)),snap=>{
@@ -1328,7 +1433,6 @@ function listenMySubmissions(){
   });
 }
 
-// XP needed for level lv = lv * 1000
 function xpForLevel(lv){return lv*1000;}
 function calcLevel(totalXP){
   let lv=1,spent=0;
@@ -1344,7 +1448,6 @@ function loadUI(){
   document.getElementById('pilotLevel').textContent='РІВЕНЬ '+level;
   const claimedLevel=myData.claimedLevel||0;
   const xpEl=document.getElementById('xpText');
-  // FIX 1: Show claim button if unclaimed level exists
   if(level>claimedLevel){
     const rewardLevel=claimedLevel+1;
     const reward=calcLvlReward(rewardLevel);
@@ -1379,7 +1482,6 @@ function fmtDeadline(ms){
   return pad2(h)+':'+pad2(m)+':'+pad2(s);
 }
 
-// FIX 2: qCard checks myPendingSubmissions to disable submit button
 function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
   const isAb=abandonedQuestIds.includes(q.id);
   const hasLoc=q.locationX!==undefined&&q.locationY!==undefined;
@@ -1410,7 +1512,6 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
   if(isComp)btns=`<span style="font-size:10px;color:var(--gd);font-weight:800">✔ ЗАВЕРШЕНО</span>`;
   else if(isAb)btns=`<span style="font-size:10px;color:#666;font-weight:800">⛔ ВІДМОВЛЕНО</span>`;
   else if(isTaken){
-    // FIX 2: disable submit if already has pending submission
     const hasPending=myPendingSubmissions.has(q.id);
     const submitBtn=hasPending
       ? `<button class="btn-submit" disabled title="Здачу вже відправлено, очікуйте перевірки">⏳ НА ПЕРЕВІРЦІ</button>`
@@ -1440,7 +1541,6 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
 
 function renderDash(){
   const a=myData?.activeQuestIds||[],c=myData?.completedQuestIds||[];
-
   const taken=allQuests.filter(q=>a.includes(q.id));
   const aqEl=document.getElementById('activeQuestsList');
   if(aqEl){
@@ -1448,7 +1548,6 @@ function renderDash(){
       '<div class="aqb-empty">Немає активних квестів — беріть завдання!</div>';
   }
   const cnt=document.getElementById('aqCount');if(cnt)cnt.textContent=taken.length;
-
   const dqEl=document.getElementById('dashQuestsList');
   if(dqEl){
     let vis=getVisQ().filter(q=>!a.includes(q.id)&&!c.includes(q.id));
@@ -1459,7 +1558,6 @@ function renderDash(){
 }
 
 function renderAQ(){
-  // same as renderDash active part — re-render active quests banner
   const a=myData?.activeQuestIds||[];
   const taken=allQuests.filter(q=>a.includes(q.id));
   const aqEl=document.getElementById('activeQuestsList');
@@ -1469,7 +1567,6 @@ function renderAQ(){
   }
 }
 
-// ===== ADMIN QUESTS FULL LIST =====
 function renderAdminQuestsFull(){
   const el=document.getElementById('adminQuestsListFull');if(!el)return;
   let f=allQuests;
@@ -1552,10 +1649,8 @@ window.openSubmit=qid=>{
   document.getElementById('submitModal').style.display='flex';
 };
 
-// FIX 2: Block double submission
 window.submitProof=async()=>{
   const qid=document.getElementById('submitQID').value;
-  // Check if already has pending submission for this quest
   if(myPendingSubmissions.has(qid)){toast('❌ Ви вже відправили здачу — очікуйте перевірки!');return;}
   const link=document.getElementById('submitLink').value.trim(),text=document.getElementById('submitText').value.trim(),q=allQuests.find(x=>x.id===qid);
   if(!text&&!link){toast('❌ Додайте посилання або коментар');return;}
@@ -1718,7 +1813,6 @@ window.reviewSub=async(sid,status,qid,tuid)=>{
   toast(status==='approved'?'✅ Схвалено!':'❌ Відхилено');
 };
 
-// ===== WEBHOOKS =====
 const WH_DOC='webhookSettings';
 const WH_KEYS=['take','cancel','submit','complete','coins','newquest','refresh','approved','rejected','withdraw_request','withdraw_approved','withdraw_rejected','levelup'];
 async function loadWH(){
@@ -1798,11 +1892,7 @@ window.showTab=(name,btn)=>{
   if(mt)mt.classList.add('active');
   else{const mm=document.getElementById('mtab-more');if(mm)mm.classList.add('active');}
 };
-window.toast=(msg,dur=3000)=>{const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',dur);};
 
-// ================================================================
-// MAP — unchanged from original
-// ================================================================
 const COLORS=['#22c55e','#ef4444','#38bdf8','#f59e0b','#a855f7','#f97316'];
 let mapCtx,drawCtx,mapCvs,drawCvs,mapCont;
 let scale=0.46,offX=0,offY=0,isDrag=false,lmx=0,lmy=0,tool='cursor';
@@ -1993,6 +2083,36 @@ window.showQLocOnMap=(x,y)=>{
 window.__mapState={get tool(){return tool;},get drawingZone(){return drawingZone;},get zonePoints(){return zonePoints;},popZonePoint(){if(zonePoints.length>0){zonePoints.pop();drawMap();}},get markers(){return markers;},popMarker(){if(markers.length>0){markers.pop();saveMD();drawMap();}},get curMWX(){return curMWX;},get curMWY(){return curMWY;},get zeroX(){return zeroX;},get zeroY(){return zeroY;},get curZone(){return gZA(curMWX,curMWY)||null;},setShift(v){shiftHeld=v;}};
 </script>
 <script>
+// ================================================================
+// CONTEXT MENU for map button (plain script — uses window.toast exposed by module)
+// ================================================================
+function showMapCtxMenu(e){
+  e.preventDefault();e.stopPropagation();
+  const menu=document.getElementById('mapBtnCtxMenu');
+  menu.classList.add('vis');
+  const x=Math.min(e.clientX,window.innerWidth-200);
+  const y=Math.min(e.clientY,window.innerHeight-100);
+  menu.style.left=x+'px';menu.style.top=y+'px';
+  setTimeout(()=>document.addEventListener('click',hideMapCtxMenu,{once:true}),10);
+}
+function hideMapCtxMenu(){document.getElementById('mapBtnCtxMenu').classList.remove('vis');}
+
+function copyMapViewLink(){
+  hideMapCtxMenu();
+  const url=location.origin
+  cat >> /home/claude/cabinet_fixed.html << 'EOF'
++location.pathname+'?view=map';
+  navigator.clipboard.writeText(url).then(()=>{if(window.toast)window.toast('🔗 Посилання скопійовано!');}).catch(()=>{
+    const inp=document.createElement('input');inp.value=url;document.body.appendChild(inp);inp.select();document.execCommand('copy');inp.remove();
+    if(window.toast)window.toast('🔗 Посилання скопійовано!');
+  });
+}
+function openMapViewInTab(){
+  hideMapCtxMenu();
+  const url=location.origin+location.pathname+'?view=map';
+  window.open(url,'_blank');
+}
+
 (function(){
   var isMacOS=/Mac/.test(navigator.platform);
   function isMapActive(){var el=document.getElementById('tab-map');return el&&el.classList.contains('active');}
@@ -2011,173 +2131,6 @@ window.__mapState={get tool(){return tool;},get drawingZone(){return drawingZone
   },true);
   document.addEventListener('keyup',function(e){if(e.key==='Shift'&&window.__mapState)window.__mapState.setShift(false);},true);
 })();
-
-// ================================================================
-// PUBLIC MAP VIEW — works without auth, read-only
-// ================================================================
-let mvInited=false,mvScale=0.46,mvOffX=0,mvOffY=0,mvBg=null,mvBgW=0,mvBgH=0;
-let mvIsDrag=false,mvLmx=0,mvLmy=0,mvMapCtx,mvDrawCtx,mvMapCvs,mvDrawCvs,mvCont;
-let mvZones=[],mvMarkers=[],mvDrawStrokes=[];
-
-function initPublicMapView(){
-  // Hide the whole normal app, show only our overlay
-  const overlay=document.getElementById('mapViewOverlay');
-  if(!overlay){console.error('mapViewOverlay not found');return;}
-  overlay.classList.add('active');
-  // Hide normal UI elements
-  const nav=document.querySelector('nav');if(nav)nav.style.display='none';
-  const pw=document.querySelector('.page-wrapper');if(pw)pw.style.display='none';
-  const tb=document.querySelector('.mob-tabbar');if(tb)tb.style.display='none';
-  const ctxm=document.getElementById('mapBtnCtxMenu');if(ctxm)ctxm.style.display='none';
-
-  // Get canvas refs
-  mvMapCvs=document.getElementById('mvMapCanvas');
-  mvDrawCvs=document.getElementById('mvDrawCanvas');
-  mvCont=document.getElementById('mvMapWrap');
-
-  if(!mvMapCvs||!mvDrawCvs||!mvCont){console.error('MV canvas elements missing');return;}
-
-  mvMapCtx=mvMapCvs.getContext('2d');
-  mvDrawCtx=mvDrawCvs.getContext('2d');
-
-  // Wait one frame so overlay has real dimensions before sizing canvas
-  requestAnimationFrame(()=>{
-    mvResizeMap();
-    window.addEventListener('resize',mvResizeMap);
-
-    // Draw background immediately (dark fill)
-    mvDrawMap();
-
-    // Load Firestore data (read-only, works without auth in public rules)
-    onSnapshot(doc(db,'appData','mapData'),snap=>{
-      if(snap.exists()){const d=snap.data();mvZones=d.zones||[];mvMarkers=d.markers||[];}
-      else{mvZones=[];mvMarkers=[];}
-      mvDrawMap();mvUpdateLeg();
-    });
-
-    onSnapshot(doc(db,'appData','mapMeta'),async snap=>{
-      if(!snap.exists())return;
-      const{url,version}=snap.data();
-      try{
-        const r=await fetch(url+(url.includes('?')?'&':'?')+'v='+version);
-        if(!r.ok)throw new Error('HTTP '+r.status);
-        const blob=await r.blob();
-        const reader=new FileReader();
-        reader.onload=e=>{
-          const img=new Image();
-          img.onload=()=>{
-            mvBg=img;mvBgW=img.width;mvBgH=img.height;
-            // Center the map on load
-            const w=mvCont.clientWidth,h=mvCont.clientHeight;
-            mvOffX=(w-mvBgW*mvScale)/2;
-            mvOffY=(h-mvBgH*mvScale)/2;
-            mvDrawMap();
-          };
-          img.src=e.target.result;
-        };
-        reader.readAsDataURL(blob);
-      }catch(e){console.warn('MV bg load fail:',e);}
-    });
-
-    // Mouse events
-    mvDrawCvs.addEventListener('mousedown',e=>{mvIsDrag=true;mvLmx=e.clientX;mvLmy=e.clientY;mvDrawCvs.style.cursor='grabbing';});
-    mvDrawCvs.addEventListener('mousemove',e=>{
-      if(mvIsDrag){mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;mvLmx=e.clientX;mvLmy=e.clientY;mvClamp();mvDrawMap();}
-      const r=mvDrawCvs.getBoundingClientRect();
-      const wx=Math.round((e.clientX-r.left-mvOffX)/mvScale);
-      const wy=Math.round((e.clientY-r.top-mvOffY)/mvScale);
-      const zx=document.getElementById('mvMapX'),zy=document.getElementById('mvMapY'),zz=document.getElementById('mvCurZone');
-      if(zx)zx.textContent=wx-mvZeroX();
-      if(zy)zy.textContent=wy-mvZeroY();
-      if(zz)zz.textContent=mvGetZoneAt(wx,wy)||'—';
-    });
-    mvDrawCvs.addEventListener('mouseup',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
-    mvDrawCvs.addEventListener('mouseleave',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
-    mvDrawCvs.addEventListener('wheel',e=>{
-      e.preventDefault();
-      const r=mvDrawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-      const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,mvScale*d));
-      mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);
-      mvScale=ns;mvClamp();mvDrawMap();
-    },{passive:false});
-
-    // Touch
-    let mvTouchPanning=false,mvLastTX=0,mvLastTY=0,mvPinchDist=0;
-    mvDrawCvs.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1){mvTouchPanning=true;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;}else if(e.touches.length===2){mvTouchPanning=false;mvPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
-    mvDrawCvs.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&mvTouchPanning){mvOffX+=e.touches[0].clientX-mvLastTX;mvOffY+=e.touches[0].clientY-mvLastTY;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;mvClamp();mvDrawMap();}else if(e.touches.length===2){const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;const r=mvDrawCvs.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;const d=nd/mvPinchDist,ns=Math.max(0.05,Math.min(10,mvScale*d));mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);mvScale=ns;mvPinchDist=nd;mvClamp();mvDrawMap();}},{passive:false});
-    mvDrawCvs.addEventListener('touchend',e=>{if(e.touches.length===0)mvTouchPanning=false;},{passive:false});
-  });
-}
-
-function mvZeroX(){return mvBg?mvBgW/2:0;}
-function mvZeroY(){return mvBg?mvBgH/2:0;}
-function mvClamp(){
-  if(!mvBg)return;
-  const w=mvCont.clientWidth,h=mvCont.clientHeight;
-  const iw=mvBgW*mvScale,ih=mvBgH*mvScale;
-  const minX=Math.min(0,w-iw),maxX=Math.max(0,w-iw);
-  const minY=Math.min(0,h-ih),maxY=Math.max(0,h-ih);
-  mvOffX=Math.max(minX,Math.min(maxX,mvOffX));
-  mvOffY=Math.max(minY,Math.min(maxY,mvOffY));
-}
-function mvResizeMap(){
-  if(!mvMapCvs||!mvDrawCvs||!mvCont)return;
-  const w=mvCont.clientWidth||window.innerWidth;
-  const h=mvCont.clientHeight||(window.innerHeight-53);
-  if(w===0||h===0)return;
-  mvMapCvs.width=w;mvMapCvs.height=h;
-  mvDrawCvs.width=w;mvDrawCvs.height=h;
-  mvDrawMap();
-}
-function mvDrawMap(){
-  if(!mvMapCtx)return;
-  const w=mvMapCvs.width,h=mvMapCvs.height;
-  mvMapCtx.clearRect(0,0,w,h);
-  mvMapCtx.fillStyle='#05090e';mvMapCtx.fillRect(0,0,w,h);
-  if(mvBg){mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.drawImage(mvBg,0,0,mvBgW,mvBgH);mvMapCtx.restore();}
-  // Draw zones
-  mvZones.forEach(z=>{if(!z.points||z.points.length<2)return;mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.beginPath();mvMapCtx.moveTo(z.points[0].x,z.points[0].y);z.points.slice(1).forEach(p=>mvMapCtx.lineTo(p.x,p.y));mvMapCtx.closePath();mvMapCtx.fillStyle=(z.color||'#22c55e')+'33';mvMapCtx.strokeStyle=z.color||'#22c55e';mvMapCtx.lineWidth=2/mvScale;mvMapCtx.fill();mvMapCtx.stroke();if(z.label){const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;mvMapCtx.fillStyle='#fff';mvMapCtx.font=`bold ${12/mvScale}px 'Exo 2'`;mvMapCtx.textAlign='center';mvMapCtx.fillText(z.label,cx,cy);}mvMapCtx.restore();});
-  // Draw markers
-  mvMarkers.forEach((m,i)=>{mvMapCtx.save();mvMapCtx.translate(mvOffX+m.x*mvScale,mvOffY+m.y*mvScale);mvMapCtx.beginPath();mvMapCtx.arc(0,-10,7,0,Math.PI*2);mvMapCtx.fillStyle=m.color||'#ef4444';mvMapCtx.fill();mvMapCtx.strokeStyle='#fff';mvMapCtx.lineWidth=1.5;mvMapCtx.stroke();mvMapCtx.fillStyle='#fff';mvMapCtx.font="bold 10px 'Exo 2'";mvMapCtx.textAlign='center';mvMapCtx.fillText(i+1,0,-7);if(m.label){mvMapCtx.fillStyle='rgba(3,5,7,.85)';const tw=mvMapCtx.measureText(m.label).width;mvMapCtx.fillRect(-tw/2-3,3,tw+6,14);mvMapCtx.fillStyle='#fff';mvMapCtx.fillText(m.label,0,14);}mvMapCtx.restore();});
-  // Redraw strokes
-  mvDrawCtx.clearRect(0,0,w,h);
-  mvDrawStrokes.forEach(s=>{if(!s.points||s.points.length<1)return;mvDrawCtx.save();mvDrawCtx.translate(mvOffX,mvOffY);mvDrawCtx.scale(mvScale,mvScale);mvDrawCtx.globalCompositeOperation=s.erase?'destination-out':'source-over';mvDrawCtx.strokeStyle=s.color||'#22c55e';mvDrawCtx.lineWidth=s.size/mvScale;mvDrawCtx.lineCap='round';mvDrawCtx.lineJoin='round';mvDrawCtx.beginPath();mvDrawCtx.moveTo(s.points[0].wx,s.points[0].wy);s.points.slice(1).forEach(p=>mvDrawCtx.lineTo(p.wx,p.wy));mvDrawCtx.stroke();mvDrawCtx.restore();});
-}
-function mvGetZoneAt(wx,wy){
-  for(const z of mvZones){if(!z.points||z.points.length<3)continue;let inside=false;for(let i=0,j=z.points.length-1;i<z.points.length;j=i++){const xi=z.points[i].x,yi=z.points[i].y,xj=z.points[j].x,yj=z.points[j].y;if(((yi>wy)!==(yj>wy))&&(wx<(xj-xi)*(wy-yi)/(yj-yi)+xi))inside=!inside;}if(inside)return z.label||'Зона';}return null;
-}
-function mvUpdateLeg(){
-  const el=document.getElementById('mvLegend');if(!el)return;
-  el.innerHTML=mvZones.filter(z=>z.label).map(z=>`<div class="mlr"><span class="mlc" style="background:${z.color||'#22c55e'}"></span><span>${z.label}</span></div>`).join('');
-}
-
-// ================================================================
-// CONTEXT MENU for map button
-// ================================================================
-function showMapCtxMenu(e){
-  e.preventDefault();
-  const menu=document.getElementById('mapBtnCtxMenu');
-  menu.classList.add('vis');
-  const x=Math.min(e.clientX,window.innerWidth-200);
-  const y=Math.min(e.clientY,window.innerHeight-100);
-  menu.style.left=x+'px';menu.style.top=y+'px';
-  setTimeout(()=>document.addEventListener('click',hideMapCtxMenu,{once:true}),10);
-}
-function hideMapCtxMenu(){document.getElementById('mapBtnCtxMenu').classList.remove('vis');}
-
-function copyMapViewLink(){
-  hideMapCtxMenu();
-  const url=location.origin+location.pathname+'?view=map';
-  navigator.clipboard.writeText(url).then(()=>toast('🔗 Посилання скопійовано!')).catch(()=>{
-    const inp=document.createElement('input');inp.value=url;document.body.appendChild(inp);inp.select();document.execCommand('copy');inp.remove();toast('🔗 Посилання скопійовано!');
-  });
-}
-function openMapViewInTab(){
-  hideMapCtxMenu();
-  const url=location.origin+location.pathname+'?view=map';
-  window.open(url,'_blank');
-}
-
 </script>
 </body>
 </html>
