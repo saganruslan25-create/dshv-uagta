@@ -334,13 +334,14 @@ select.form-input option{background:#0a0d11}
 .mob-map-link-btn{position:absolute;top:2px;right:2px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--pb);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;padding:0;line-height:1}
 
 /* === PUBLIC MAP VIEW MODE === */
-#mapViewOverlay{display:none;position:fixed;inset:0;z-index:9999;background:#030507;flex-direction:column}
-#mapViewOverlay.active{display:flex}
-.mvnav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(3,5,7,.97);border-bottom:1px solid rgba(34,197,94,.2);flex-shrink:0}
-.mvnav-logo{background:var(--pr);color:#000;padding:5px 12px;border-radius:8px;font-weight:900;font-family:'Rajdhani',sans-serif;font-size:15px;letter-spacing:2px}
+#mapViewOverlay{display:none;position:fixed;inset:0;z-index:9999;background:#030507;flex-direction:column;width:100vw;height:100vh}
+#mapViewOverlay.active{display:flex!important}
+.mvnav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(3,5,7,.97);border-bottom:1px solid rgba(34,197,94,.2);flex-shrink:0;height:53px;box-sizing:border-box}
+.mvnav-logo{background:var(--pr);color:#000;padding:5px 12px;border-radius:8px;font-weight:900;font-family:'Rajdhani',sans-serif;font-size:15px;letter-spacing:2px;text-decoration:none}
 .mvnav-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--pb);letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(34,197,94,.2);padding:5px 12px;border-radius:8px}
 .mvnav-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--pb);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;letter-spacing:1px}
-.mv-map-wrap{flex:1;position:relative;overflow:hidden;background:#05090e;touch-action:none}
+.mv-map-wrap{flex:1;position:relative;overflow:hidden;background:#05090e;touch-action:none;min-height:0}
+.mv-map-wrap canvas{position:absolute;top:0;left:0}
 /* Context menu for map button */
 #mapBtnCtxMenu{position:fixed;z-index:10000;background:#0a0d11;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none}
 #mapBtnCtxMenu.vis{display:block}
@@ -1260,9 +1261,17 @@ window.toggleMobMore=()=>{const d=document.getElementById('mobMoreDrawer'),o=doc
 window.closeMobMore=()=>{document.getElementById('mobMoreDrawer').classList.remove('vis');document.getElementById('mobMoreOverlay').classList.remove('vis');};
 
 // ===== AUTH =====
+// Public map view — launch BEFORE auth, directly on DOM ready
+if(new URLSearchParams(location.search).get('view')==='map'){
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',initPublicMapView);
+  } else {
+    initPublicMapView();
+  }
+}
+
 onAuthStateChanged(auth,async user=>{
-  // If public map view mode — skip auth entirely
-  if(new URLSearchParams(location.search).get('view')==='map'){initPublicMapView();return;}
+  if(new URLSearchParams(location.search).get('view')==='map')return; // already handled
   if(!user){location.href='index.html';return;}
   uid=user.uid;
   const snap=await getDoc(doc(db,'users',user.uid));
@@ -2011,64 +2020,93 @@ let mvIsDrag=false,mvLmx=0,mvLmy=0,mvMapCtx,mvDrawCtx,mvMapCvs,mvDrawCvs,mvCont;
 let mvZones=[],mvMarkers=[],mvDrawStrokes=[];
 
 function initPublicMapView(){
-  // Show overlay, hide normal app
-  document.getElementById('mapViewOverlay').classList.add('active');
-  document.querySelector('nav')?.remove();
-  document.querySelector('.page-wrapper')?.remove();
-  document.querySelector('.mob-tabbar')?.remove();
-  // Init canvas
+  // Hide the whole normal app, show only our overlay
+  const overlay=document.getElementById('mapViewOverlay');
+  if(!overlay){console.error('mapViewOverlay not found');return;}
+  overlay.classList.add('active');
+  // Hide normal UI elements
+  const nav=document.querySelector('nav');if(nav)nav.style.display='none';
+  const pw=document.querySelector('.page-wrapper');if(pw)pw.style.display='none';
+  const tb=document.querySelector('.mob-tabbar');if(tb)tb.style.display='none';
+  const ctxm=document.getElementById('mapBtnCtxMenu');if(ctxm)ctxm.style.display='none';
+
+  // Get canvas refs
   mvMapCvs=document.getElementById('mvMapCanvas');
   mvDrawCvs=document.getElementById('mvDrawCanvas');
   mvCont=document.getElementById('mvMapWrap');
+
+  if(!mvMapCvs||!mvDrawCvs||!mvCont){console.error('MV canvas elements missing');return;}
+
   mvMapCtx=mvMapCvs.getContext('2d');
   mvDrawCtx=mvDrawCvs.getContext('2d');
-  mvResizeMap();
-  window.addEventListener('resize',mvResizeMap);
-  // Load data from Firestore (read-only)
-  onSnapshot(doc(db,'appData','mapData'),snap=>{
-    if(snap.exists()){const d=snap.data();mvZones=d.zones||[];mvMarkers=d.markers||[];}
-    mvDrawMap();mvUpdateLeg();
+
+  // Wait one frame so overlay has real dimensions before sizing canvas
+  requestAnimationFrame(()=>{
+    mvResizeMap();
+    window.addEventListener('resize',mvResizeMap);
+
+    // Draw background immediately (dark fill)
+    mvDrawMap();
+
+    // Load Firestore data (read-only, works without auth in public rules)
+    onSnapshot(doc(db,'appData','mapData'),snap=>{
+      if(snap.exists()){const d=snap.data();mvZones=d.zones||[];mvMarkers=d.markers||[];}
+      else{mvZones=[];mvMarkers=[];}
+      mvDrawMap();mvUpdateLeg();
+    });
+
+    onSnapshot(doc(db,'appData','mapMeta'),async snap=>{
+      if(!snap.exists())return;
+      const{url,version}=snap.data();
+      try{
+        const r=await fetch(url+(url.includes('?')?'&':'?')+'v='+version);
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        const blob=await r.blob();
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=new Image();
+          img.onload=()=>{
+            mvBg=img;mvBgW=img.width;mvBgH=img.height;
+            // Center the map on load
+            const w=mvCont.clientWidth,h=mvCont.clientHeight;
+            mvOffX=(w-mvBgW*mvScale)/2;
+            mvOffY=(h-mvBgH*mvScale)/2;
+            mvDrawMap();
+          };
+          img.src=e.target.result;
+        };
+        reader.readAsDataURL(blob);
+      }catch(e){console.warn('MV bg load fail:',e);}
+    });
+
+    // Mouse events
+    mvDrawCvs.addEventListener('mousedown',e=>{mvIsDrag=true;mvLmx=e.clientX;mvLmy=e.clientY;mvDrawCvs.style.cursor='grabbing';});
+    mvDrawCvs.addEventListener('mousemove',e=>{
+      if(mvIsDrag){mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;mvLmx=e.clientX;mvLmy=e.clientY;mvClamp();mvDrawMap();}
+      const r=mvDrawCvs.getBoundingClientRect();
+      const wx=Math.round((e.clientX-r.left-mvOffX)/mvScale);
+      const wy=Math.round((e.clientY-r.top-mvOffY)/mvScale);
+      const zx=document.getElementById('mvMapX'),zy=document.getElementById('mvMapY'),zz=document.getElementById('mvCurZone');
+      if(zx)zx.textContent=wx-mvZeroX();
+      if(zy)zy.textContent=wy-mvZeroY();
+      if(zz)zz.textContent=mvGetZoneAt(wx,wy)||'—';
+    });
+    mvDrawCvs.addEventListener('mouseup',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
+    mvDrawCvs.addEventListener('mouseleave',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
+    mvDrawCvs.addEventListener('wheel',e=>{
+      e.preventDefault();
+      const r=mvDrawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+      const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,mvScale*d));
+      mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);
+      mvScale=ns;mvClamp();mvDrawMap();
+    },{passive:false});
+
+    // Touch
+    let mvTouchPanning=false,mvLastTX=0,mvLastTY=0,mvPinchDist=0;
+    mvDrawCvs.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1){mvTouchPanning=true;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;}else if(e.touches.length===2){mvTouchPanning=false;mvPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
+    mvDrawCvs.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&mvTouchPanning){mvOffX+=e.touches[0].clientX-mvLastTX;mvOffY+=e.touches[0].clientY-mvLastTY;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;mvClamp();mvDrawMap();}else if(e.touches.length===2){const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;const r=mvDrawCvs.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;const d=nd/mvPinchDist,ns=Math.max(0.05,Math.min(10,mvScale*d));mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);mvScale=ns;mvPinchDist=nd;mvClamp();mvDrawMap();}},{passive:false});
+    mvDrawCvs.addEventListener('touchend',e=>{if(e.touches.length===0)mvTouchPanning=false;},{passive:false});
   });
-  onSnapshot(doc(db,'appData','mapMeta'),async snap=>{
-    if(!snap.exists())return;
-    const{url,version}=snap.data();
-    try{
-      const r=await fetch(url+(url.includes('?')?'&':'?')+'v='+version);
-      const blob=await r.blob();
-      const reader=new FileReader();
-      reader.onload=e=>{
-        const img=new Image();
-        img.onload=()=>{mvBg=img;mvBgW=img.width;mvBgH=img.height;mvDrawMap();};
-        img.src=e.target.result;
-      };
-      reader.readAsDataURL(blob);
-    }catch(e){console.warn('MV bg load fail',e);}
-  });
-  // Mouse events
-  mvDrawCvs.addEventListener('mousedown',e=>{mvIsDrag=true;mvLmx=e.clientX;mvLmy=e.clientY;});
-  mvDrawCvs.addEventListener('mousemove',e=>{
-    if(mvIsDrag){mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;mvLmx=e.clientX;mvLmy=e.clientY;mvClamp();mvDrawMap();}
-    const r=mvDrawCvs.getBoundingClientRect();
-    const wx=Math.round((e.clientX-r.left-mvOffX)/mvScale);
-    const wy=Math.round((e.clientY-r.top-mvOffY)/mvScale);
-    document.getElementById('mvMapX').textContent=wx-mvZeroX();
-    document.getElementById('mvMapY').textContent=wy-mvZeroY();
-    document.getElementById('mvCurZone').textContent=mvGetZoneAt(wx,wy)||'—';
-  });
-  mvDrawCvs.addEventListener('mouseup',()=>mvIsDrag=false);
-  mvDrawCvs.addEventListener('mouseleave',()=>mvIsDrag=false);
-  mvDrawCvs.addEventListener('wheel',e=>{
-    e.preventDefault();
-    const r=mvDrawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-    const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,mvScale*d));
-    mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);
-    mvScale=ns;mvClamp();mvDrawMap();
-  },{passive:false});
-  // Touch
-  let mvTouchPanning=false,mvLastTX=0,mvLastTY=0,mvPinchDist=0;
-  mvDrawCvs.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1){mvTouchPanning=true;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;}else if(e.touches.length===2){mvTouchPanning=false;mvPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
-  mvDrawCvs.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&mvTouchPanning){mvOffX+=e.touches[0].clientX-mvLastTX;mvOffY+=e.touches[0].clientY-mvLastTY;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;mvClamp();mvDrawMap();}else if(e.touches.length===2){const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;const r=mvDrawCvs.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;const d=nd/mvPinchDist,ns=Math.max(0.05,Math.min(10,mvScale*d));mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);mvScale=ns;mvPinchDist=nd;mvClamp();mvDrawMap();}},{passive:false});
-  mvDrawCvs.addEventListener('touchend',e=>{if(e.touches.length===0)mvTouchPanning=false;},{passive:false});
 }
 
 function mvZeroX(){return mvBg?mvBgW/2:0;}
@@ -2083,8 +2121,10 @@ function mvClamp(){
   mvOffY=Math.max(minY,Math.min(maxY,mvOffY));
 }
 function mvResizeMap(){
-  if(!mvMapCvs||!mvCont)return;
-  const w=mvCont.clientWidth,h=mvCont.clientHeight;
+  if(!mvMapCvs||!mvDrawCvs||!mvCont)return;
+  const w=mvCont.clientWidth||window.innerWidth;
+  const h=mvCont.clientHeight||(window.innerHeight-53);
+  if(w===0||h===0)return;
   mvMapCvs.width=w;mvMapCvs.height=h;
   mvDrawCvs.width=w;mvDrawCvs.height=h;
   mvDrawMap();
