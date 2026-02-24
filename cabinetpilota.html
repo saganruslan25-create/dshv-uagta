@@ -50,18 +50,17 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
 .xp-bar-bg{background:rgba(255,255,255,.05);border-radius:20px;height:6px;overflow:hidden}
 .xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--pr),var(--bl));border-radius:20px;transition:width 1s ease;box-shadow:0 0 8px var(--pg)}
 /* FIX 4: Level progression strip */
-.level-progression{margin:8px 24px 0;padding:8px 14px;background:var(--cb);border:1px solid var(--gb);border-radius:12px;overflow-x:auto;scrollbar-width:none}
-.level-progression::-webkit-scrollbar{display:none}
-.level-strip{display:flex;align-items:center;gap:0;min-width:max-content}
-.lvl-node{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative}
-.lvl-dot{width:28px;height:28px;border-radius:50%;border:2px solid #333;background:#0a0d11;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;font-family:'Rajdhani',sans-serif;transition:.2s;flex-shrink:0}
-.lvl-dot.done{background:var(--pr);border-color:var(--pr);color:#000;box-shadow:0 0 8px rgba(34,197,94,.4)}
-.lvl-dot.current{background:rgba(34,197,94,.15);border-color:var(--pr);color:var(--pb);box-shadow:0 0 12px rgba(34,197,94,.3)}
-.lvl-dot.locked{border-color:#222;color:#444}
-.lvl-label{font-size:8px;color:var(--tg);font-weight:700;white-space:nowrap}
-.lvl-reward{font-size:8px;color:var(--gd);font-weight:700;white-space:nowrap}
-.lvl-connector{width:22px;height:2px;background:#1a2030;flex-shrink:0;margin-bottom:18px}
-.lvl-connector.done{background:var(--pr);opacity:.5}
+.level-progression{margin:8px 24px 0;padding:10px 14px;background:var(--cb);border:1px solid var(--gb);border-radius:12px;overflow:hidden}
+.level-strip{display:flex;align-items:center;width:100%}
+.lvl-node{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+.lvl-dot{width:26px;height:26px;border-radius:50%;border:2px solid #333;background:#0a0d11;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;font-family:'Rajdhani',sans-serif;transition:.2s;flex-shrink:0}
+.lvl-dot.done{background:var(--pr);border-color:var(--pr);color:#000;box-shadow:0 0 6px rgba(34,197,94,.4)}
+.lvl-dot.current{background:rgba(34,197,94,.15);border-color:var(--pr);color:var(--pb);box-shadow:0 0 10px rgba(34,197,94,.4)}
+.lvl-dot.locked{border-color:#222;color:#333}
+.lvl-label{font-size:7px;color:var(--tg);font-weight:700;white-space:nowrap}
+.lvl-reward{font-size:7px;color:var(--gd);font-weight:700;white-space:nowrap}
+.lvl-connector{flex:1;height:2px;background:#1a2030;min-width:2px;margin-bottom:18px}
+.lvl-connector.done{background:var(--pr);opacity:.6}
 .dash-section{margin:14px 24px 0}
 .dash-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .dash-section-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;color:var(--pb);text-transform:uppercase}
@@ -928,15 +927,20 @@ function calcLvlReward(level){
   return Math.round(levelRewardBase*Math.pow(levelRewardMult,level-1));
 }
 
-// FIX 4: Render level progression strip (shows levels 1 to currentLevel+4)
+// Render level progression strip — all levels from 1 to max (reward <= 5,000,000), full width
 function renderLevelStrip(){
   const strip=document.getElementById('levelStrip');
   if(!strip||!myData)return;
   const totalXP=myData.xp||0;
   const{level:curLvl}=calcLevel(totalXP);
   const claimedLevel=myData.claimedLevel||0;
-  const startLvl=Math.max(1,curLvl-2);
-  const endLvl=curLvl+5;
+  // Find max level where reward <= 5,000,000
+  let maxLvl=1;
+  for(let lv=1;lv<=200;lv++){
+    if(calcLvlReward(lv)<=5000000)maxLvl=lv; else break;
+  }
+  const startLvl=1;
+  const endLvl=maxLvl;
   let html='';
   for(let lv=startLvl;lv<=endLvl;lv++){
     const reward=calcLvlReward(lv);
@@ -944,16 +948,16 @@ function renderLevelStrip(){
     if(lv<curLvl)cls='done';
     else if(lv===curLvl)cls='current';
     const unclaimed=lv<=curLvl&&lv>claimedLevel;
-    const dot=unclaimed&&lv<curLvl?`<div class="lvl-dot ${cls}" style="border-color:var(--gd);box-shadow:0 0 8px rgba(245,158,11,.5)">${lv}</div>`
-      :`<div class="lvl-dot ${cls}">${lv}</div>`;
-    html+=`<div class="lvl-node">${dot}<div class="lvl-label">ЛВЛ ${lv}</div><div class="lvl-reward">${CI()}${reward}</div></div>`;
+    const dotStyle=unclaimed&&lv<curLvl?' style="border-color:var(--gd);box-shadow:0 0 8px rgba(245,158,11,.5)"':'';
+    const fmtReward=reward>=1000000?(reward/1000000).toFixed(1)+'M':reward>=1000?Math.round(reward/1000)+'K':reward;
+    html+=`<div class="lvl-node"><div class="lvl-dot ${cls}"${dotStyle}>${lv}</div><div class="lvl-label">${lv}</div><div class="lvl-reward">${CI()}${fmtReward}</div></div>`;
     if(lv<endLvl){
       const connDone=lv<curLvl;
       html+=`<div class="lvl-connector${connDone?' done':''}"></div>`;
     }
   }
   strip.innerHTML=html;
-  // Auto-scroll to current level
+  // Scroll current level into view
   setTimeout(()=>{
     const curNode=strip.querySelector('.lvl-dot.current');
     if(curNode)curNode.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
