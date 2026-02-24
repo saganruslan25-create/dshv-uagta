@@ -220,6 +220,11 @@ select.form-input option{background:#0a0d11}
 .sw-custom input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
 .quest-timer{font-size:11px;color:var(--tg);font-weight:700;display:flex;align-items:center;gap:5px}
 .quest-timer b{color:var(--pb)}
+.qc-deadline{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:800;margin-top:5px;padding:4px 8px;border-radius:6px;width:fit-content}
+.qc-deadline.ok{background:rgba(56,189,248,.1);color:var(--bl);border:1px solid rgba(56,189,248,.2)}
+.qc-deadline.warn{background:rgba(251,191,36,.1);color:var(--wn);border:1px solid rgba(251,191,36,.3)}
+.qc-deadline.crit{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3);animation:pulse-red .8s infinite alternate}
+@keyframes pulse-red{from{opacity:1}to{opacity:.6}}
 .coin-icon{display:inline-block;width:14px;height:14px;background:radial-gradient(circle at 35% 35%,#ffe066,#f59e0b,#b45309);border-radius:50%;border:1.5px solid #92400e;vertical-align:middle;margin-right:2px;box-shadow:0 0 4px rgba(245,158,11,.5)}
 .coin-icon-lg{width:20px;height:20px;border:2px solid #92400e}
 .coord-copy-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(34,197,94,.95);color:#000;padding:11px 22px;border-radius:12px;font-size:16px;font-weight:900;font-family:'Rajdhani',sans-serif;z-index:9999;pointer-events:none;animation:ctoast .8s ease forwards}
@@ -496,14 +501,6 @@ select.form-input option{background:#0a0d11}
       </div>
     </div>
     <div class="ablock">
-      <div class="ablock-t">💱 КУРС ВАЛЮТИ</div>
-      <div class="rflex">
-        <div style="min-width:130px"><label class="form-label">1 коїн = ? грн</label><input type="number" class="form-input" id="exchangeRateInput" placeholder="2.000" step="0.001" min="0"></div>
-        <button class="bsm" onclick="saveExchangeRate()">OK</button>
-      </div>
-      <div style="font-size:11px;color:var(--tg);margin-top:8px">Поточний курс: <b id="currentExchangeRate" style="color:var(--wn)">2.000 грн</b></div>
-    </div>
-    <div class="ablock">
       <div class="ablock-t">💰 КОЇНИ ПІЛОТУ</div>
       <div class="rflex">
         <div style="flex:1;min-width:130px"><label class="form-label">Пілот</label><select class="form-input" id="adminPilotSelect"></select></div>
@@ -768,9 +765,8 @@ select.form-input option{background:#0a0d11}
         <span class="wc-label">Ваш баланс:</span>
         <span class="wc-value" id="wdBalance">0 C</span>
       </div>
-      <div class="wc-row">
-        <span class="wc-label">Курс:</span>
-        <span class="wc-value" id="wdRate">1C = 2.000 грн</span>
+      <div class="wc-row" style="font-size:11px;color:var(--tg)">
+        <span>1 коїн = 1 грн</span>
       </div>
       <div class="form-group" style="margin-top:10px">
         <label class="form-label">Кількість коїнів</label>
@@ -810,7 +806,7 @@ const DL={easy:'Легко',medium:'Середня',hard:'Важко',elite:'Е�
 function CI(s){return'<span class="coin-icon'+(s==='lg'?' coin-icon-lg':'')+'"></span>';}
 
 // ===== SETTINGS =====
-let questRefreshHour=12,questRefreshMinute=0,visibleQuestIds=[],lastRefreshDate='',rerollCost=50,rerollCounts={},abandonedQuestIds=[],minZoom=0.46,exchangeRate=2.000;
+let questRefreshHour=12,questRefreshMinute=0,visibleQuestIds=[],lastRefreshDate='',rerollCost=50,rerollCounts={},abandonedQuestIds=[],minZoom=0.46;
 function pad2(n){return String(n).padStart(2,'0');}
 function getKD(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Kyiv'}));}
 function getKDS(){const d=getKD();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
@@ -825,15 +821,12 @@ function loadSettings(){
     rerollCounts=JSON.parse(localStorage.getItem('dsv_rrc')||'{}');
     abandonedQuestIds=JSON.parse(localStorage.getItem('dsv_ab')||'[]');
     minZoom=parseFloat(localStorage.getItem('dsv_mz2'))||0.46;
-    exchangeRate=parseFloat(localStorage.getItem('dsv_exr'))||2.000;
   }catch(e){}
   const el=document.getElementById('currentRefreshTime');if(el)el.textContent=pad2(questRefreshHour)+':'+pad2(questRefreshMinute);
   const ti=document.getElementById('questRefreshTime');if(ti)ti.value=pad2(questRefreshHour)+':'+pad2(questRefreshMinute);
   const ri=document.getElementById('rerollCostInput');if(ri)ri.value=rerollCost;
   const rc2=document.getElementById('currentRerollCost');if(rc2)rc2.textContent=rerollCost+' XP';
   const mzi=document.getElementById('minZoomInput');if(mzi)mzi.value=Math.round(minZoom*100);
-  const eri=document.getElementById('exchangeRateInput');if(eri)eri.value=exchangeRate.toFixed(3);
-  const cer=document.getElementById('currentExchangeRate');if(cer)cer.textContent=exchangeRate.toFixed(3)+' грн';
 }
 function shouldRefresh(){
   const now=getKD(),ts=getKDS(),nm=now.getHours()*60+now.getMinutes(),rm=questRefreshHour*60+questRefreshMinute;
@@ -862,7 +855,6 @@ window.saveQuestRefreshTime=()=>{const v=document.getElementById('questRefreshTi
 window.forceRefreshQuests=()=>{lastRefreshDate='';visibleQuestIds=[];doRefresh();renderDash();toast('🔄 Квести оновлено');};
 window.saveRerollCost=()=>{rerollCost=parseInt(document.getElementById('rerollCostInput').value)||50;localStorage.setItem('dsv_rc',rerollCost);document.getElementById('currentRerollCost').textContent=rerollCost+' XP';toast('✅');};
 window.saveMinZoom=()=>{const v=parseInt(document.getElementById('minZoomInput').value)||46;minZoom=Math.max(10,Math.min(100,v))/100;localStorage.setItem('dsv_mz2',minZoom);toast('✅ Зум: '+Math.round(minZoom*100)+'%');};
-window.saveExchangeRate=()=>{exchangeRate=parseFloat(document.getElementById('exchangeRateInput').value)||2.000;localStorage.setItem('dsv_exr',exchangeRate);document.getElementById('currentExchangeRate').textContent=exchangeRate.toFixed(3)+' грн';toast('✅ Курс оновлено');};
 window.rerollQuest=async(qid)=>{
   const c=rerollCounts[qid]||0;
   if(c>=3){toast('❌ Макс 3 рерола!');return;}
@@ -890,6 +882,53 @@ function updateQT(){
   if(shouldRefresh()){doRefresh();renderDash();}
 }
 setInterval(updateQT,1000);
+
+// ===== DEADLINE TICKER =====
+let expiryRunning=false;
+async function checkDeadlines(){
+  if(!uid||!myData||expiryRunning)return;
+  const deadlines=myData.questDeadlines||{};
+  const active=myData.activeQuestIds||[];
+  const now=Date.now();
+  for(const qid of active){
+    const dl=deadlines[qid];
+    if(!dl)continue;
+    const rem=dl-now;
+    const el=document.getElementById("dl_"+qid);
+    if(el){
+      if(rem>0){
+        const cls=rem<3600000?"crit":rem<7200000?"warn":"ok";
+        el.className="qc-deadline "+cls;
+        el.innerHTML="⏱ Залишилось: "+fmtDeadline(rem);
+      } else {
+        el.className="qc-deadline crit";
+        el.innerHTML="⏱ ЧАС ВИЙШОВ!";
+      }
+    }
+  }
+  if(!checkDeadlines._last||now-checkDeadlines._last>30000){
+    checkDeadlines._last=now;
+    expiryRunning=true;
+    for(const qid of [...active]){
+      const dl=deadlines[qid];
+      if(dl&&now>dl){
+        const q=allQuests.find(x=>x.id===qid);
+        const pen=q?.penalty||0;
+        const newDeadlines={...deadlines};
+        delete newDeadlines[qid];
+        const upd={activeQuestIds:active.filter(id=>id!==qid),questDeadlines:newDeadlines};
+        if(pen>0)upd.xp=increment(-pen);
+        await updateDoc(doc(db,"users",uid),upd);
+        abandonedQuestIds.push(qid);
+        localStorage.setItem("dsv_ab",JSON.stringify(abandonedQuestIds));
+        toast('⏰ Квест "'+(q?.name||qid)+'" анульовано!'+(pen>0?' -'+pen+' XP штраф':''));
+        sendWH("cancel",{name:myData.name,quest:q?.name||"",penalty:pen});
+      }
+    }
+    expiryRunning=false;
+  }
+}
+setInterval(checkDeadlines,1000);
 loadSettings();
 
 // ===== ZERO POINT =====
@@ -908,7 +947,6 @@ let curMWX=0,curMWY=0;
 window.openWithdrawModal=()=>{
   const bal=myData?.coins||0;
   document.getElementById('wdBalance').textContent=bal+' C';
-  document.getElementById('wdRate').textContent='1C = '+exchangeRate.toFixed(3)+' грн';
   document.getElementById('wdAmount').value='';
   document.getElementById('wdRequisites').value='';
   document.getElementById('wdComment').value='';
@@ -920,8 +958,7 @@ window.calculateWithdraw=()=>{
   const amt=parseInt(document.getElementById('wdAmount').value)||0;
   const bal=myData?.coins||0;
   if(amt>bal){document.getElementById('wdTotal').textContent='❌ Недостатньо';return;}
-  const total=(amt*exchangeRate).toFixed(2);
-  document.getElementById('wdTotal').textContent=total+' грн';
+  document.getElementById('wdTotal').textContent=amt+' грн';
 };
 window.submitWithdrawal=async()=>{
   const amt=parseInt(document.getElementById('wdAmount').value)||0;
@@ -930,15 +967,14 @@ window.submitWithdrawal=async()=>{
   const bal=myData?.coins||0;
   if(amt<=0||amt>bal){toast('❌ Невірна сума!');return;}
   if(!req){toast('❌ Вкажіть реквізити!');return;}
-  const total=(amt*exchangeRate).toFixed(2);
   await updateDoc(doc(db,'users',uid),{coins:increment(-amt)});
   await addDoc(collection(db,'withdrawals'),{
-    uid,pilotName:myData.name||'',amount:amt,totalUAH:total,requisites:req,comment:com,
+    uid,pilotName:myData.name||'',amount:amt,totalUAH:amt,requisites:req,comment:com,
     status:'pending',createdAt:serverTimestamp()
   });
   closeWithdrawModal();
   toast('💸 Заявку подано!');
-  sendWH('withdraw_request',{name:myData.name||'',coins:amt,amount:total+' грн',requisites:req});
+  sendWH('withdraw_request',{name:myData.name||'',coins:amt,amount:amt+' грн',requisites:req});
 };
 
 let allWithdrawals=[],withdrawFilter='all';
@@ -1031,13 +1067,21 @@ onAuthStateChanged(auth,async user=>{
   listenMapData();
 });
 
+// XP needed for level lv = lv * 1000 (рівень 1→1000, 2→2000, 3→3000...)
+function xpForLevel(lv){return lv*1000;}
+function calcLevel(totalXP){
+  let lv=1,spent=0;
+  while(true){const need=xpForLevel(lv);if(spent+need>totalXP)break;spent+=need;lv++;}
+  return{level:lv,xpInLevel:totalXP-[...Array(lv-1)].reduce((s,_,i)=>s+xpForLevel(i+1),0),xpNeeded:xpForLevel(lv)};
+}
 function loadUI(){
-  const c=myData.coins||0,x=myData.xp||0,lv=Math.floor(x/1000)+1,xi=x%1000,ac=(myData.activeQuestIds||[]).length;
+  const c=myData.coins||0,x=myData.xp||0,ac=(myData.activeQuestIds||[]).length;
+  const{level,xpInLevel,xpNeeded}=calcLevel(x);
   document.getElementById('pilotName').textContent=myData.name||'Пілот';
   document.getElementById('pilotRank').textContent=myData.rank?.split('|')[0]?.trim()||'Пілот';
-  document.getElementById('pilotLevel').textContent='РІВЕНЬ '+lv;
-  document.getElementById('xpText').textContent=xi+'/1000 XP';
-  document.getElementById('xpFill').style.width=(xi/10)+'%';
+  document.getElementById('pilotLevel').textContent='РІВЕНЬ '+level;
+  document.getElementById('xpText').textContent=xpInLevel+'/'+xpNeeded+' XP';
+  document.getElementById('xpFill').style.width=(xpInLevel/xpNeeded*100)+'%';
   document.getElementById('sideBalance').textContent=c;
   document.getElementById('dashBalance').textContent=c;
   document.getElementById('dashCompleted').textContent=myData.completedQuests||0;
@@ -1058,6 +1102,11 @@ window.filterQD=(f,btn)=>{dashQFilter=f;document.querySelectorAll('#tab-dashboar
 window.filterAdminQ=(f,btn)=>{adminQFilter=f;document.querySelectorAll('#tab-adminQuests .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAdminQuestsFull();};
 
 // ===== COMPACT QUEST CARD =====
+function fmtDeadline(ms){
+  if(ms<=0)return null;
+  const h=Math.floor(ms/36e5),m=Math.floor((ms%36e5)/6e4),s=Math.floor((ms%6e4)/1e3);
+  return pad2(h)+':'+pad2(m)+':'+pad2(s);
+}
 function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
   const isAb=abandonedQuestIds.includes(q.id);
   const hasLoc=q.locationX!==undefined&&q.locationY!==undefined;
@@ -1067,6 +1116,24 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
   const penTag=(q.penalty>0)?`<span class="qc-tag qct-pen">−${q.penalty} XP штраф</span>`:'';
   const locTag=(hasLoc)?`<span class="qc-tag qct-loc" onclick="event.stopPropagation();showQLocOnMap(${q.locationX},${q.locationY})">📍 X:${q.locationX} Y:${q.locationY}</span>`:(q.location?`<span class="qc-tag qct-loc">📍 ${q.location}</span>`:'');
   const metaRow=`<div class="qc-meta">${diffTag}${typeTag}${xpTag}${penTag}${locTag}</div>`;
+
+  // Deadline timer for taken quests
+  let deadlineHtml='';
+  if(isTaken){
+    const deadlines=myData?.questDeadlines||{};
+    const dl=deadlines[q.id];
+    if(dl){
+      const rem=dl-Date.now();
+      if(rem>0){
+        const cls=rem<3600000?'crit':rem<7200000?'warn':'ok';
+        const timeStr=fmtDeadline(rem);
+        deadlineHtml=`<div class="qc-deadline ${cls}" id="dl_${q.id}">⏱ Залишилось: ${timeStr}</div>`;
+      } else {
+        deadlineHtml=`<div class="qc-deadline crit">⏱ ЧАС ВИЙШОВ!</div>`;
+      }
+    }
+  }
+
   let btns='';
   if(isComp)btns=`<span style="font-size:10px;color:var(--gd);font-weight:800">✔ ЗАВЕРШЕНО</span>`;
   else if(isAb)btns=`<span style="font-size:10px;color:#666;font-weight:800">⛔ ВІДМОВЛЕНО</span>`;
@@ -1088,6 +1155,7 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
       <span class="qc-coins">${CI()}${q.coins||0}</span>
     </div>
     ${metaRow}
+    ${deadlineHtml}
     ${desc}
     <div class="qc-btns">${btns}${adminBtns}</div>
   </div>`;
@@ -1159,8 +1227,11 @@ window.unarchiveQuest=async id=>{await updateDoc(doc(db,'pilotQuests',id),{statu
 window.takeQ=async(qid,qname)=>{
   if(abandonedQuestIds.includes(qid)){toast('❌ Ви вже відмовились від цього квесту!');return;}
   const a=myData?.activeQuestIds||[];if(a.includes(qid))return;
-  await updateDoc(doc(db,'users',uid),{activeQuestIds:[...a,qid]});
-  toast('✅ Квест взято!');
+  const now=Date.now();
+  const deadlines=myData.questDeadlines||{};
+  deadlines[qid]=now+24*60*60*1000; // 24 годин
+  await updateDoc(doc(db,'users',uid),{activeQuestIds:[...a,qid],questDeadlines:deadlines});
+  toast('✅ Квест взято! У вас 24 години ⏱');
   sendWH('take',{name:myData.name,quest:qname});
 };
 window.openAbandon=(qid,qname,pen)=>{abandonQID=qid;abandonPen=pen||0;
@@ -1169,7 +1240,9 @@ window.openAbandon=(qid,qname,pen)=>{abandonQID=qid;abandonPen=pen||0;
 };
 window.confirmAbandon=async()=>{
   const q=allQuests.find(x=>x.id===abandonQID);
-  const upd={activeQuestIds:(myData?.activeQuestIds||[]).filter(id=>id!==abandonQID)};
+  const deadlines=myData.questDeadlines||{};
+  delete deadlines[abandonQID];
+  const upd={activeQuestIds:(myData?.activeQuestIds||[]).filter(id=>id!==abandonQID),questDeadlines:deadlines};
   if(abandonPen>0)upd.xp=increment(-abandonPen);
   await updateDoc(doc(db,'users',uid),upd);
   abandonedQuestIds.push(abandonQID);localStorage.setItem('dsv_ab',JSON.stringify(abandonedQuestIds));
@@ -1274,7 +1347,8 @@ window.adminCmpQ=async(qid,coins,xp)=>{
   const ud=us.data(),comp=ud.completedQuestIds||[];
   if(comp.includes(qid)){toast('❌ Цей пілот вже виконав цей квест!');return;}
   const q=allQuests.find(x=>x.id===qid);
-  await updateDoc(doc(db,'users',sel.value),{coins:increment(coins),xp:increment(xp),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid)});
+  const deadlines=ud.questDeadlines||{};delete deadlines[qid];
+  await updateDoc(doc(db,'users',sel.value),{coins:increment(coins),xp:increment(xp),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid),questDeadlines:deadlines});
   toast('✅ Квест завершено!');
   sendWH('complete',{name:ud.name||sel.value,quest:q?.name||'',coins,xp});
 };
@@ -1331,7 +1405,9 @@ window.reviewSub=async(sid,status,qid,tuid)=>{
       if(us.exists()){
         const ud=us.data(),comp=ud.completedQuestIds||[];
         if(!comp.includes(qid)){
-          await updateDoc(doc(db,'users',tuid),{coins:increment(q.coins||0),xp:increment(q.xp||0),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid)});
+          const deadlines=ud.questDeadlines||{};
+          delete deadlines[qid];
+          await updateDoc(doc(db,'users',tuid),{coins:increment(q.coins||0),xp:increment(q.xp||0),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid),questDeadlines:deadlines});
           sendWH('approved',{name:ud.name||tuid,quest:q.name||'',coins:q.coins||0,xp:q.xp||0});
         }
       }
