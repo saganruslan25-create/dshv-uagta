@@ -225,6 +225,7 @@ select.form-input option{background:#0a0d11}
 .qc-deadline.warn{background:rgba(251,191,36,.1);color:var(--wn);border:1px solid rgba(251,191,36,.3)}
 .qc-deadline.crit{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.3);animation:pulse-red .8s infinite alternate}
 @keyframes pulse-red{from{opacity:1}to{opacity:.6}}
+@keyframes pulse-reward{from{text-shadow:0 0 8px rgba(245,158,11,.6)}to{text-shadow:0 0 20px rgba(245,158,11,1),0 0 40px rgba(245,158,11,.4)}}
 .coin-icon{display:inline-block;width:14px;height:14px;background:radial-gradient(circle at 35% 35%,#ffe066,#f59e0b,#b45309);border-radius:50%;border:1.5px solid #92400e;vertical-align:middle;margin-right:2px;box-shadow:0 0 4px rgba(245,158,11,.5)}
 .coin-icon-lg{width:20px;height:20px;border:2px solid #92400e}
 .coord-copy-toast{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(34,197,94,.95);color:#000;padding:11px 22px;border-radius:12px;font-size:16px;font-weight:900;font-family:'Rajdhani',sans-serif;z-index:9999;pointer-events:none;animation:ctoast .8s ease forwards}
@@ -523,8 +524,23 @@ select.form-input option{background:#0a0d11}
       <div style="font-size:11px;color:var(--tg)">Час: <b id="currentRefreshTime" style="color:var(--pb)">12:00</b> · Рерол: <b id="currentRerollCost" style="color:#c084fc">50 XP</b></div>
     </div>
     <div class="ablock">
-      <div class="ablock-t">✅ ЗАВЕРШИТИ ВРУЧНУ</div>
-      <div id="adminQuestList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div class="ablock-t">🏆 ВИНАГОРОДА ЗА РІВЕНЬ</div>
+      <div class="ablock-d">Базова сума коїнів за 1 рівень та множник (X) для кожного наступного.</div>
+      <div class="rflex" style="margin-bottom:8px">
+        <div style="min-width:100px"><label class="form-label">Базові коїни</label><input type="number" class="form-input" id="lvlBaseCoins" placeholder="500" min="0"></div>
+        <div style="min-width:80px"><label class="form-label">Множник X</label><input type="number" class="form-input" id="lvlMultiplier" placeholder="2" step="0.1" min="0.1"></div>
+        <button class="bsm" onclick="saveLvlRewardSettings()">OK</button>
+      </div>
+      <div style="font-size:11px;color:var(--tg)">Поточне: <b id="currentLvlBase" style="color:var(--gd)">500 C</b> × <b id="currentLvlMult" style="color:#c084fc">X2</b></div>
+    </div>
+    <div class="ablock">
+      <div class="ablock-t" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleAdminQList()">
+        <span>✅ ЗАВЕРШИТИ ВРУЧНУ</span>
+        <span id="adminQListToggleIcon" style="font-size:18px;line-height:1;color:var(--pb)">☰</span>
+      </div>
+      <div id="adminQuestListWrap" style="display:none;margin-top:10px">
+        <div id="adminQuestList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
     </div>
     <div class="ablock">
       <div class="ablock-t">🔔 DISCORD WEBHOOK
@@ -777,9 +793,22 @@ select.form-input option{background:#0a0d11}
         <span class="wc-value" id="wdTotal">0 грн</span>
       </div>
     </div>
-    <div class="form-group"><label class="form-label">Реквізити (карта / крипто / PayPal)</label><input type="text" class="form-input" id="wdRequisites" placeholder="5168 7554 xxxx xxxx"></div>
+    <div class="form-group"><label class="form-label">Реквізити</label><input type="text" class="form-input" id="wdRequisites" placeholder="5168 7554 xxxx xxxx"></div>
     <div class="form-group"><label class="form-label">Коментар (опціонально)</label><textarea class="form-input" id="wdComment" rows="2" placeholder="Додаткова інформація..."></textarea></div>
     <button class="btn-fp" onclick="submitWithdrawal()">💸 ПОДАТИ ЗАЯВКУ</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="levelUpModal" style="z-index:2000">
+  <div class="modal-box" onclick="event.stopPropagation()" style="text-align:center;max-width:380px">
+    <div style="font-size:48px;margin-bottom:10px">🎉</div>
+    <div class="modal-title" style="font-size:22px;color:var(--gd)" id="lvlUpTitle">НОВИЙ РІВЕНЬ!</div>
+    <div style="font-size:14px;color:var(--tg);margin:8px 0 16px" id="lvlUpDesc"></div>
+    <div style="background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(34,197,94,.08));border:1px solid rgba(245,158,11,.3);border-radius:14px;padding:16px;margin-bottom:20px">
+      <div style="font-size:11px;color:var(--tg);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px">ВИНАГОРОДА</div>
+      <div class="balance-amount" style="justify-content:center;font-size:32px" id="lvlUpReward"></div>
+    </div>
+    <button class="btn-fp" id="lvlUpClaimBtn" onclick="claimLevelReward()">🎁 ОТРИМАТИ ВИНАГОРОДУ</button>
   </div>
 </div>
 
@@ -806,7 +835,7 @@ const DL={easy:'Легко',medium:'Середня',hard:'Важко',elite:'Е�
 function CI(s){return'<span class="coin-icon'+(s==='lg'?' coin-icon-lg':'')+'"></span>';}
 
 // ===== SETTINGS =====
-let questRefreshHour=12,questRefreshMinute=0,visibleQuestIds=[],lastRefreshDate='',rerollCost=50,rerollCounts={},abandonedQuestIds=[],minZoom=0.46;
+let questRefreshHour=12,questRefreshMinute=0,visibleQuestIds=[],lastRefreshDate='',rerollCost=50,rerollCounts={},abandonedQuestIds=[],minZoom=0.46,levelRewardBase=500,levelRewardMult=2;
 function pad2(n){return String(n).padStart(2,'0');}
 function getKD(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Kyiv'}));}
 function getKDS(){const d=getKD();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
@@ -821,12 +850,18 @@ function loadSettings(){
     rerollCounts=JSON.parse(localStorage.getItem('dsv_rrc')||'{}');
     abandonedQuestIds=JSON.parse(localStorage.getItem('dsv_ab')||'[]');
     minZoom=parseFloat(localStorage.getItem('dsv_mz2'))||0.46;
+    levelRewardBase=parseInt(localStorage.getItem('dsv_lrb'))||500;
+    levelRewardMult=parseFloat(localStorage.getItem('dsv_lrm'))||2;
   }catch(e){}
   const el=document.getElementById('currentRefreshTime');if(el)el.textContent=pad2(questRefreshHour)+':'+pad2(questRefreshMinute);
   const ti=document.getElementById('questRefreshTime');if(ti)ti.value=pad2(questRefreshHour)+':'+pad2(questRefreshMinute);
   const ri=document.getElementById('rerollCostInput');if(ri)ri.value=rerollCost;
   const rc2=document.getElementById('currentRerollCost');if(rc2)rc2.textContent=rerollCost+' XP';
   const mzi=document.getElementById('minZoomInput');if(mzi)mzi.value=Math.round(minZoom*100);
+  const lbi=document.getElementById('lvlBaseCoins');if(lbi)lbi.value=levelRewardBase;
+  const lmi=document.getElementById('lvlMultiplier');if(lmi)lmi.value=levelRewardMult;
+  const clb=document.getElementById('currentLvlBase');if(clb)clb.textContent=levelRewardBase+' C';
+  const clm=document.getElementById('currentLvlMult');if(clm)clm.textContent='X'+levelRewardMult;
 }
 function shouldRefresh(){
   const now=getKD(),ts=getKDS(),nm=now.getHours()*60+now.getMinutes(),rm=questRefreshHour*60+questRefreshMinute;
@@ -855,6 +890,50 @@ window.saveQuestRefreshTime=()=>{const v=document.getElementById('questRefreshTi
 window.forceRefreshQuests=()=>{lastRefreshDate='';visibleQuestIds=[];doRefresh();renderDash();toast('🔄 Квести оновлено');};
 window.saveRerollCost=()=>{rerollCost=parseInt(document.getElementById('rerollCostInput').value)||50;localStorage.setItem('dsv_rc',rerollCost);document.getElementById('currentRerollCost').textContent=rerollCost+' XP';toast('✅');};
 window.saveMinZoom=()=>{const v=parseInt(document.getElementById('minZoomInput').value)||46;minZoom=Math.max(10,Math.min(100,v))/100;localStorage.setItem('dsv_mz2',minZoom);toast('✅ Зум: '+Math.round(minZoom*100)+'%');};
+window.saveLvlRewardSettings=()=>{
+  levelRewardBase=parseInt(document.getElementById('lvlBaseCoins').value)||500;
+  levelRewardMult=parseFloat(document.getElementById('lvlMultiplier').value)||2;
+  localStorage.setItem('dsv_lrb',levelRewardBase);
+  localStorage.setItem('dsv_lrm',levelRewardMult);
+  const clb=document.getElementById('currentLvlBase');if(clb)clb.textContent=levelRewardBase+' C';
+  const clm=document.getElementById('currentLvlMult');if(clm)clm.textContent='X'+levelRewardMult;
+  toast('✅ Збережено');
+};
+function calcLvlReward(level){
+  // Level 1 = base, level 2 = base*mult, level 3 = base*mult^2 ...
+  return Math.round(levelRewardBase*Math.pow(levelRewardMult,level-1));
+}
+let pendingLevelUp=null;
+async function checkLevelUp(oldXP,newXP){
+  const oldLvl=calcLevel(oldXP).level;
+  const newLvl=calcLevel(newXP).level;
+  if(newLvl>oldLvl){
+    // New level reached — show reward modal
+    const reward=calcLvlReward(newLvl);
+    pendingLevelUp={level:newLvl,reward};
+    document.getElementById('lvlUpTitle').textContent='🚀 РІВЕНЬ '+newLvl+'!';
+    document.getElementById('lvlUpDesc').textContent='Вітаємо! Ви досягли нового рівня!';
+    document.getElementById('lvlUpReward').innerHTML='<span class="coin-icon coin-icon-lg"></span>'+reward+' КОЇНІВ';
+    document.getElementById('levelUpModal').style.display='flex';
+  }
+}
+window.claimLevelReward=async()=>{
+  if(!pendingLevelUp||!uid)return;
+  const{level,reward}=pendingLevelUp;
+  await updateDoc(doc(db,'users',uid),{coins:increment(reward),claimedLevel:level});
+  document.getElementById('levelUpModal').style.display='none';
+  pendingLevelUp=null;
+  toast('🎁 +'+reward+' коїнів за рівень '+level+'!');
+  sendWH('levelup',{name:myData.name||'',level,coins:reward});
+};
+// Block taking quests until level reward is claimed
+function hasUnclaimedLevel(){
+  if(!myData)return false;
+  const claimed=myData.claimedLevel||0;
+  const cur=calcLevel(myData.xp||0).level;
+  return cur>claimed;
+}
+window.toggleAdminQList=()=>{const w=document.getElementById('adminQuestListWrap'),i=document.getElementById('adminQListToggleIcon');if(!w)return;const open=w.style.display!=='none';w.style.display=open?'none':'flex';i.textContent=open?'☰':'✕';};
 window.rerollQuest=async(qid)=>{
   const c=rerollCounts[qid]||0;
   if(c>=3){toast('❌ Макс 3 рерола!');return;}
@@ -984,7 +1063,7 @@ function listenWithdrawals(){
     const p=allWithdrawals.filter(w=>w.status==='pending').length;
     const wb=document.getElementById('withdrawBadge');if(wb){wb.style.display=p>0?'inline-block':'none';wb.textContent=p;}
     const mb2=document.getElementById('mtabMoreBadge');
-    const sub=allSubs.filter(s=>s.status==='pending').length;
+    const sub=(typeof allSubs!=='undefined'?allSubs:[]).filter(s=>s.status==='pending').length;
     const total=p+sub;
     if(mb2){mb2.textContent=total;mb2.classList.toggle('vis',total>0);}
     const mb3=document.getElementById('mdrWithdrawBadge');if(mb3){mb3.textContent=p;mb3.style.display=p>0?'inline-block':'none';}
@@ -1001,7 +1080,7 @@ function renderWithdrawals(){
     const sl={pending:'🟡 Очікує',approved:'✅ Схвалено',rejected:'❌ Відхилено'}[w.status]||w.status;
     const wuid=w.uid?`'${w.uid}'`:'null';
     const wname=(w.pilotName||'').replace(/'/g,"\\'");
-    const wtotal=(w.totalUAH||'').replace(/'/g,"\\'");
+    const wtotal=String(w.totalUAH||'').replace(/'/g,"\\'");
     const wreq=(w.requisites||'').replace(/'/g,"\\'");
     const ab=isAdmin&&w.status==='pending'?`<div class="sub-acts">
       <button class="bsm" style="background:var(--pr);padding:6px 14px;font-size:11px" onclick="reviewWithdrawal('${w.id}','approved',${wuid},${w.amount||0},'${wname}','${wtotal}','${wreq}')">✅ СХВАЛИТИ</button>
@@ -1080,7 +1159,20 @@ function loadUI(){
   document.getElementById('pilotName').textContent=myData.name||'Пілот';
   document.getElementById('pilotRank').textContent=myData.rank?.split('|')[0]?.trim()||'Пілот';
   document.getElementById('pilotLevel').textContent='РІВЕНЬ '+level;
-  document.getElementById('xpText').textContent=xpInLevel+'/'+xpNeeded+' XP';
+  // Show level reward claim button instead of XP text if unclaimed
+  const claimedLevel=myData.claimedLevel||0;
+  const xpEl=document.getElementById('xpText');
+  if(level>claimedLevel&&!pendingLevelUp){
+    const reward=calcLvlReward(level);
+    xpEl.innerHTML='<span style="color:var(--gd);font-weight:900;cursor:pointer;animation:pulse-reward .6s infinite alternate" onclick="document.getElementById(\'levelUpModal\').style.display=\'flex\'">🎁 ОТРИМАТИ '+reward+' C!</span>';
+    pendingLevelUp={level,reward};
+    // Ensure modal is set up
+    document.getElementById('lvlUpTitle').textContent='🚀 РІВЕНЬ '+level+'!';
+    document.getElementById('lvlUpDesc').textContent='Вітаємо! Ви досягли нового рівня!';
+    document.getElementById('lvlUpReward').innerHTML='<span class="coin-icon coin-icon-lg"></span>'+reward+' КОЇНІВ';
+  } else {
+    xpEl.textContent=xpInLevel+'/'+xpNeeded+' XP';
+  }
   document.getElementById('xpFill').style.width=(xpInLevel/xpNeeded*100)+'%';
   document.getElementById('sideBalance').textContent=c;
   document.getElementById('dashBalance').textContent=c;
@@ -1225,11 +1317,16 @@ function renderAdminQuestsFull(){
 window.archiveQuest=async id=>{if(!confirm('Відправити квест в архів?'))return;await updateDoc(doc(db,'pilotQuests',id),{status:'archived'});toast('📦 В архів');};
 window.unarchiveQuest=async id=>{await updateDoc(doc(db,'pilotQuests',id),{status:'active'});toast('✅ Активовано');};
 window.takeQ=async(qid,qname)=>{
+  if(hasUnclaimedLevel()){
+    toast('🎁 Отримайте винагороду за новий рівень перш ніж брати квести!');
+    document.getElementById('levelUpModal').style.display='flex';
+    return;
+  }
   if(abandonedQuestIds.includes(qid)){toast('❌ Ви вже відмовились від цього квесту!');return;}
   const a=myData?.activeQuestIds||[];if(a.includes(qid))return;
   const now=Date.now();
   const deadlines=myData.questDeadlines||{};
-  deadlines[qid]=now+24*60*60*1000; // 24 годин
+  deadlines[qid]=now+24*60*60*1000;
   await updateDoc(doc(db,'users',uid),{activeQuestIds:[...a,qid],questDeadlines:deadlines});
   toast('✅ Квест взято! У вас 24 години ⏱');
   sendWH('take',{name:myData.name,quest:qname});
@@ -1420,7 +1517,7 @@ window.reviewSub=async(sid,status,qid,tuid)=>{
 };
 // ===== WEBHOOKS =====
 const WH_DOC='webhookSettings';
-const WH_KEYS=['take','cancel','submit','complete','coins','newquest','refresh','approved','rejected','withdraw_request','withdraw_approved','withdraw_rejected'];
+const WH_KEYS=['take','cancel','submit','complete','coins','newquest','refresh','approved','rejected','withdraw_request','withdraw_approved','withdraw_rejected','levelup'];
 async function loadWH(){
   try{
     const snap=await getDoc(doc(db,'appData',WH_DOC));
@@ -1475,12 +1572,21 @@ async function sendWH(ev,vars={}){
       rejected:'❌ Здача відхилена\n👤 {name} · 📋 «{quest}»\n🔄 Спробуйте ще раз',
       withdraw_request:'💸 Заявка на виведення\n👤 {name}\n💰 {coins} коїнів → {amount}\n📋 {requisites}',
       withdraw_approved:'✅ Виведення схвалено\n👤 {name}\n💰 {amount} виплачено\n📋 {requisites}',
-      withdraw_rejected:'❌ Виведення відхилено\n👤 {name}\n💰 {coins} коїнів повернуто'
+      withdraw_rejected:'❌ Виведення відхилено\n👤 {name}\n💰 {coins} коїнів повернуто',
+      levelup:'🚀 {name} досяг нового рівня!\n🏅 Рівень {level}\n🎁 +{coins} коїнів'
     };
     let msg=d['msg_'+ev]||defaults[ev]||ev;
     for(const[k,v]of Object.entries(vars))msg=msg.replaceAll('{'+k+'}',v);
-    const colors={take:0x22c55e,cancel:0xef4444,submit:0xf59e0b,complete:0x22c55e,coins:0xf59e0b,newquest:0x38bdf8,refresh:0x38bdf8,approved:0x22c55e,rejected:0xef4444,withdraw_request:0xfbbf24,withdraw_approved:0x22c55e,withdraw_rejected:0xef4444};
-    await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({embeds:[{description:msg,color:colors[ev]||0x22c55e,footer:{text:'ДШВ | КАБІНЕТ ПІЛОТА'}}]})});
+    const colors={take:0x22c55e,cancel:0xef4444,submit:0xf59e0b,complete:0x22c55e,coins:0xf59e0b,newquest:0x38bdf8,refresh:0x38bdf8,approved:0x22c55e,rejected:0xef4444,withdraw_request:0xfbbf24,withdraw_approved:0x22c55e,withdraw_rejected:0xef4444,levelup:0xf59e0b};
+    const titles={take:'✈️ Взяття квесту',cancel:'🚫 Відмова від квесту',submit:'📨 Здача на перевірку',complete:'🏆 Квест виконано',coins:'💰 Зміна балансу',newquest:'🆕 Новий квест',refresh:'🔄 Оновлення квестів',approved:'✅ Здача схвалена',rejected:'❌ Здача відхилена',withdraw_request:'💸 Заявка на виведення',withdraw_approved:'✅ Виведення схвалено',withdraw_rejected:'❌ Виведення відхилено',levelup:'🚀 Новий рівень!'};
+    const embed={
+      title:titles[ev]||ev,
+      description:msg,
+      color:colors[ev]||0x22c55e,
+      footer:{text:'ДШВ | КАБІНЕТ ПІЛОТА'},
+      timestamp:new Date().toISOString()
+    };
+    await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'ДШВ Кабінет',embeds:[embed]})});
   }catch(e){console.warn('WH send err:',e);}
 }
 window.showTab=(name,btn)=>{
