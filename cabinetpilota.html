@@ -327,9 +327,54 @@ select.form-input option{background:#0a0d11}
   .mob-tabbar{display:none!important}
   .mob-more-drawer{display:none!important}
 }
+
+
+.map-link-btn{background:none;border:1px solid rgba(34,197,94,.25);color:var(--tg);border-radius:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;margin-left:auto;flex-shrink:0;transition:.2s;padding:0}
+.map-link-btn:hover{background:rgba(34,197,94,.15);border-color:var(--pr);color:var(--pb)}
+.mob-map-link-btn{position:absolute;top:2px;right:2px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--pb);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;padding:0;line-height:1}
+
+/* === PUBLIC MAP VIEW MODE === */
+#mapViewOverlay{display:none;position:fixed;inset:0;z-index:9999;background:#030507;flex-direction:column}
+#mapViewOverlay.active{display:flex}
+.mvnav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(3,5,7,.97);border-bottom:1px solid rgba(34,197,94,.2);flex-shrink:0}
+.mvnav-logo{background:var(--pr);color:#000;padding:5px 12px;border-radius:8px;font-weight:900;font-family:'Rajdhani',sans-serif;font-size:15px;letter-spacing:2px}
+.mvnav-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--pb);letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(34,197,94,.2);padding:5px 12px;border-radius:8px}
+.mvnav-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--pb);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;letter-spacing:1px}
+.mv-map-wrap{flex:1;position:relative;overflow:hidden;background:#05090e;touch-action:none}
+/* Context menu for map button */
+#mapBtnCtxMenu{position:fixed;z-index:10000;background:#0a0d11;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none}
+#mapBtnCtxMenu.vis{display:block}
+.ctx-item{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:7px;font-size:13px;font-weight:600;color:#cdd;cursor:pointer;transition:.15s}
+.ctx-item:hover{background:rgba(34,197,94,.1);color:var(--pb)}
+.ctx-item .ctx-icon{font-size:15px;width:18px;text-align:center}
 </style>
 </head>
 <body>
+
+<!-- PUBLIC MAP VIEW OVERLAY -->
+<div id="mapViewOverlay">
+  <div class="mvnav">
+    <a href="https://saganruslan25-create.github.io/dshv-uagta/cabinet.html" class="mvnav-logo">ДШВ</a>
+    <span class="mvnav-title">🗺 КАРТА МІСЦЕВОСТІ</span>
+    <span class="mvnav-badge">👁 ПЕРЕГЛЯД</span>
+  </div>
+  <div class="mv-map-wrap" id="mvMapWrap">
+    <canvas id="mvMapCanvas"></canvas>
+    <canvas id="mvDrawCanvas"></canvas>
+    <div class="map-info" style="pointer-events:none">
+      <div class="mir"><span>ЗОНА:</span><span class="miv" id="mvCurZone">—</span></div>
+      <div class="mir"><span>X:</span><span class="miv" id="mvMapX">0</span></div>
+      <div class="mir"><span>Y:</span><span class="miv" id="mvMapY">0</span></div>
+    </div>
+    <div class="map-legend" id="mvLegend"></div>
+  </div>
+</div>
+
+<!-- Context menu for map button -->
+<div id="mapBtnCtxMenu">
+  <div class="ctx-item" onclick="copyMapViewLink()"><span class="ctx-icon">🔗</span>Скопіювати посилання</div>
+  <div class="ctx-item" onclick="openMapViewInTab()"><span class="ctx-icon">↗</span>Відкрити в новій вкладці</div>
+</div>
 
 <nav>
   <a href="https://saganruslan25-create.github.io/dshv-uagta/cabinet.html" class="logo-box">ДШВ</a>
@@ -349,7 +394,10 @@ select.form-input option{background:#0a0d11}
   </div>
   <div class="sidebar-label">НАВІГАЦІЯ</div>
   <button class="sidebar-btn active" onclick="showTab('dashboard',this)"><span class="icon">🏠</span><span>Панель</span></button>
-  <button class="sidebar-btn" id="sideMapBtn" onclick="showTab('map',this)"><span class="icon">🗺</span><span>Карта</span></button>
+  <div style="display:flex;align-items:center;gap:0;position:relative">
+    <button class="sidebar-btn" id="sideMapBtn" onclick="showTab('map',this)" style="flex:1"><span class="icon">🗺</span><span>Карта</span></button>
+    <button class="map-link-btn" onclick="showMapCtxMenu(event)" title="Поділитися картою">🔗</button>
+  </div>
   <div class="sidebar-label" id="adminSideLabel" style="display:none">АДМІНІСТРАЦІЯ</div>
   <button class="sidebar-btn" onclick="showTab('admin',this)" id="adminTabBtn" style="display:none"><span class="icon">⚙️</span><span>Управління</span></button>
   <button class="sidebar-btn" onclick="showTab('adminQuests',this)" id="adminQuestsBtn" style="display:none"><span class="icon">📋</span><span>Квести</span></button>
@@ -688,7 +736,10 @@ select.form-input option{background:#0a0d11}
 <div class="mob-tabbar">
   <div class="mob-tabbar-inner">
     <button class="mob-tab active" id="mtab-dashboard" onclick="mobShowTab('dashboard')"><span class="mtab-icon">🏠</span><span class="mtab-label">Панель</span></button>
-    <button class="mob-tab" id="mtab-map" onclick="mobShowTab('map')"><span class="mtab-icon">🗺️</span><span class="mtab-label">Карта</span></button>
+    <div style="position:relative;display:inline-flex">
+      <button class="mob-tab" id="mtab-map" onclick="mobShowTab('map')"><span class="mtab-icon">🗺️</span><span class="mtab-label">Карта</span></button>
+      <button class="mob-map-link-btn" onclick="showMapCtxMenu(event)" title="Поділитися">🔗</button>
+    </div>
     <button class="mob-tab" id="mtab-more" onclick="toggleMobMore()"><span class="mtab-icon">•••</span><span class="mtab-label">Ще</span><span class="mtab-badge" id="mtabMoreBadge"></span></button>
   </div>
 </div>
@@ -1210,6 +1261,8 @@ window.closeMobMore=()=>{document.getElementById('mobMoreDrawer').classList.remo
 
 // ===== AUTH =====
 onAuthStateChanged(auth,async user=>{
+  // If public map view mode — skip auth entirely
+  if(new URLSearchParams(location.search).get('view')==='map'){initPublicMapView();return;}
   if(!user){location.href='index.html';return;}
   uid=user.uid;
   const snap=await getDoc(doc(db,'users',user.uid));
@@ -1949,6 +2002,142 @@ window.__mapState={get tool(){return tool;},get drawingZone(){return drawingZone
   },true);
   document.addEventListener('keyup',function(e){if(e.key==='Shift'&&window.__mapState)window.__mapState.setShift(false);},true);
 })();
+
+// ================================================================
+// PUBLIC MAP VIEW — works without auth, read-only
+// ================================================================
+let mvInited=false,mvScale=0.46,mvOffX=0,mvOffY=0,mvBg=null,mvBgW=0,mvBgH=0;
+let mvIsDrag=false,mvLmx=0,mvLmy=0,mvMapCtx,mvDrawCtx,mvMapCvs,mvDrawCvs,mvCont;
+let mvZones=[],mvMarkers=[],mvDrawStrokes=[];
+
+function initPublicMapView(){
+  // Show overlay, hide normal app
+  document.getElementById('mapViewOverlay').classList.add('active');
+  document.querySelector('nav')?.remove();
+  document.querySelector('.page-wrapper')?.remove();
+  document.querySelector('.mob-tabbar')?.remove();
+  // Init canvas
+  mvMapCvs=document.getElementById('mvMapCanvas');
+  mvDrawCvs=document.getElementById('mvDrawCanvas');
+  mvCont=document.getElementById('mvMapWrap');
+  mvMapCtx=mvMapCvs.getContext('2d');
+  mvDrawCtx=mvDrawCvs.getContext('2d');
+  mvResizeMap();
+  window.addEventListener('resize',mvResizeMap);
+  // Load data from Firestore (read-only)
+  onSnapshot(doc(db,'appData','mapData'),snap=>{
+    if(snap.exists()){const d=snap.data();mvZones=d.zones||[];mvMarkers=d.markers||[];}
+    mvDrawMap();mvUpdateLeg();
+  });
+  onSnapshot(doc(db,'appData','mapMeta'),async snap=>{
+    if(!snap.exists())return;
+    const{url,version}=snap.data();
+    try{
+      const r=await fetch(url+(url.includes('?')?'&':'?')+'v='+version);
+      const blob=await r.blob();
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const img=new Image();
+        img.onload=()=>{mvBg=img;mvBgW=img.width;mvBgH=img.height;mvDrawMap();};
+        img.src=e.target.result;
+      };
+      reader.readAsDataURL(blob);
+    }catch(e){console.warn('MV bg load fail',e);}
+  });
+  // Mouse events
+  mvDrawCvs.addEventListener('mousedown',e=>{mvIsDrag=true;mvLmx=e.clientX;mvLmy=e.clientY;});
+  mvDrawCvs.addEventListener('mousemove',e=>{
+    if(mvIsDrag){mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;mvLmx=e.clientX;mvLmy=e.clientY;mvClamp();mvDrawMap();}
+    const r=mvDrawCvs.getBoundingClientRect();
+    const wx=Math.round((e.clientX-r.left-mvOffX)/mvScale);
+    const wy=Math.round((e.clientY-r.top-mvOffY)/mvScale);
+    document.getElementById('mvMapX').textContent=wx-mvZeroX();
+    document.getElementById('mvMapY').textContent=wy-mvZeroY();
+    document.getElementById('mvCurZone').textContent=mvGetZoneAt(wx,wy)||'—';
+  });
+  mvDrawCvs.addEventListener('mouseup',()=>mvIsDrag=false);
+  mvDrawCvs.addEventListener('mouseleave',()=>mvIsDrag=false);
+  mvDrawCvs.addEventListener('wheel',e=>{
+    e.preventDefault();
+    const r=mvDrawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+    const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,mvScale*d));
+    mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);
+    mvScale=ns;mvClamp();mvDrawMap();
+  },{passive:false});
+  // Touch
+  let mvTouchPanning=false,mvLastTX=0,mvLastTY=0,mvPinchDist=0;
+  mvDrawCvs.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1){mvTouchPanning=true;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;}else if(e.touches.length===2){mvTouchPanning=false;mvPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
+  mvDrawCvs.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&mvTouchPanning){mvOffX+=e.touches[0].clientX-mvLastTX;mvOffY+=e.touches[0].clientY-mvLastTY;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;mvClamp();mvDrawMap();}else if(e.touches.length===2){const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;const r=mvDrawCvs.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;const d=nd/mvPinchDist,ns=Math.max(0.05,Math.min(10,mvScale*d));mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);mvScale=ns;mvPinchDist=nd;mvClamp();mvDrawMap();}},{passive:false});
+  mvDrawCvs.addEventListener('touchend',e=>{if(e.touches.length===0)mvTouchPanning=false;},{passive:false});
+}
+
+function mvZeroX(){return mvBg?mvBgW/2:0;}
+function mvZeroY(){return mvBg?mvBgH/2:0;}
+function mvClamp(){
+  if(!mvBg)return;
+  const w=mvCont.clientWidth,h=mvCont.clientHeight;
+  const iw=mvBgW*mvScale,ih=mvBgH*mvScale;
+  const minX=Math.min(0,w-iw),maxX=Math.max(0,w-iw);
+  const minY=Math.min(0,h-ih),maxY=Math.max(0,h-ih);
+  mvOffX=Math.max(minX,Math.min(maxX,mvOffX));
+  mvOffY=Math.max(minY,Math.min(maxY,mvOffY));
+}
+function mvResizeMap(){
+  if(!mvMapCvs||!mvCont)return;
+  const w=mvCont.clientWidth,h=mvCont.clientHeight;
+  mvMapCvs.width=w;mvMapCvs.height=h;
+  mvDrawCvs.width=w;mvDrawCvs.height=h;
+  mvDrawMap();
+}
+function mvDrawMap(){
+  if(!mvMapCtx)return;
+  const w=mvMapCvs.width,h=mvMapCvs.height;
+  mvMapCtx.clearRect(0,0,w,h);
+  mvMapCtx.fillStyle='#05090e';mvMapCtx.fillRect(0,0,w,h);
+  if(mvBg){mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.drawImage(mvBg,0,0,mvBgW,mvBgH);mvMapCtx.restore();}
+  // Draw zones
+  mvZones.forEach(z=>{if(!z.points||z.points.length<2)return;mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.beginPath();mvMapCtx.moveTo(z.points[0].x,z.points[0].y);z.points.slice(1).forEach(p=>mvMapCtx.lineTo(p.x,p.y));mvMapCtx.closePath();mvMapCtx.fillStyle=(z.color||'#22c55e')+'33';mvMapCtx.strokeStyle=z.color||'#22c55e';mvMapCtx.lineWidth=2/mvScale;mvMapCtx.fill();mvMapCtx.stroke();if(z.label){const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;mvMapCtx.fillStyle='#fff';mvMapCtx.font=`bold ${12/mvScale}px 'Exo 2'`;mvMapCtx.textAlign='center';mvMapCtx.fillText(z.label,cx,cy);}mvMapCtx.restore();});
+  // Draw markers
+  mvMarkers.forEach((m,i)=>{mvMapCtx.save();mvMapCtx.translate(mvOffX+m.x*mvScale,mvOffY+m.y*mvScale);mvMapCtx.beginPath();mvMapCtx.arc(0,-10,7,0,Math.PI*2);mvMapCtx.fillStyle=m.color||'#ef4444';mvMapCtx.fill();mvMapCtx.strokeStyle='#fff';mvMapCtx.lineWidth=1.5;mvMapCtx.stroke();mvMapCtx.fillStyle='#fff';mvMapCtx.font="bold 10px 'Exo 2'";mvMapCtx.textAlign='center';mvMapCtx.fillText(i+1,0,-7);if(m.label){mvMapCtx.fillStyle='rgba(3,5,7,.85)';const tw=mvMapCtx.measureText(m.label).width;mvMapCtx.fillRect(-tw/2-3,3,tw+6,14);mvMapCtx.fillStyle='#fff';mvMapCtx.fillText(m.label,0,14);}mvMapCtx.restore();});
+  // Redraw strokes
+  mvDrawCtx.clearRect(0,0,w,h);
+  mvDrawStrokes.forEach(s=>{if(!s.points||s.points.length<1)return;mvDrawCtx.save();mvDrawCtx.translate(mvOffX,mvOffY);mvDrawCtx.scale(mvScale,mvScale);mvDrawCtx.globalCompositeOperation=s.erase?'destination-out':'source-over';mvDrawCtx.strokeStyle=s.color||'#22c55e';mvDrawCtx.lineWidth=s.size/mvScale;mvDrawCtx.lineCap='round';mvDrawCtx.lineJoin='round';mvDrawCtx.beginPath();mvDrawCtx.moveTo(s.points[0].wx,s.points[0].wy);s.points.slice(1).forEach(p=>mvDrawCtx.lineTo(p.wx,p.wy));mvDrawCtx.stroke();mvDrawCtx.restore();});
+}
+function mvGetZoneAt(wx,wy){
+  for(const z of mvZones){if(!z.points||z.points.length<3)continue;let inside=false;for(let i=0,j=z.points.length-1;i<z.points.length;j=i++){const xi=z.points[i].x,yi=z.points[i].y,xj=z.points[j].x,yj=z.points[j].y;if(((yi>wy)!==(yj>wy))&&(wx<(xj-xi)*(wy-yi)/(yj-yi)+xi))inside=!inside;}if(inside)return z.label||'Зона';}return null;
+}
+function mvUpdateLeg(){
+  const el=document.getElementById('mvLegend');if(!el)return;
+  el.innerHTML=mvZones.filter(z=>z.label).map(z=>`<div class="mlr"><span class="mlc" style="background:${z.color||'#22c55e'}"></span><span>${z.label}</span></div>`).join('');
+}
+
+// ================================================================
+// CONTEXT MENU for map button
+// ================================================================
+function showMapCtxMenu(e){
+  e.preventDefault();
+  const menu=document.getElementById('mapBtnCtxMenu');
+  menu.classList.add('vis');
+  const x=Math.min(e.clientX,window.innerWidth-200);
+  const y=Math.min(e.clientY,window.innerHeight-100);
+  menu.style.left=x+'px';menu.style.top=y+'px';
+  setTimeout(()=>document.addEventListener('click',hideMapCtxMenu,{once:true}),10);
+}
+function hideMapCtxMenu(){document.getElementById('mapBtnCtxMenu').classList.remove('vis');}
+
+function copyMapViewLink(){
+  hideMapCtxMenu();
+  const url=location.origin+location.pathname+'?view=map';
+  navigator.clipboard.writeText(url).then(()=>toast('🔗 Посилання скопійовано!')).catch(()=>{
+    const inp=document.createElement('input');inp.value=url;document.body.appendChild(inp);inp.select();document.execCommand('copy');inp.remove();toast('🔗 Посилання скопійовано!');
+  });
+}
+function openMapViewInTab(){
+  hideMapCtxMenu();
+  const url=location.origin+location.pathname+'?view=map';
+  window.open(url,'_blank');
+}
+
 </script>
 </body>
 </html>
