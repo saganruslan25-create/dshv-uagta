@@ -986,6 +986,7 @@ function loadSettings(){
   const clm=document.getElementById('currentLvlMult');if(clm)clm.textContent='X'+levelRewardMult;
 }
 function shouldRefresh(){
+  if(!uid||!myData)return false; // не авторизований — не оновлювати
   const now=getKD(),ts=getKDS(),nm=now.getHours()*60+now.getMinutes(),rm=questRefreshHour*60+questRefreshMinute;
   if(lastRefreshDate!==ts&&nm>=rm)return true;
   if(!lastRefreshDate||!visibleQuestIds.length)return true;
@@ -1061,9 +1062,12 @@ function renderLevelStrip(){
 }
 
 let pendingLevelUp=null;
+let _claimingLevel=false; // prevent double-claim race condition
 
 function checkAndShowLevelReward(){
   if(!myData)return;
+  if(_claimingLevel)return; // wait until claim finishes
+  if(pendingLevelUp)return; // already showing modal
   const claimedLevel=myData.claimedLevel||0;
   const{level:curLvl}=calcLevel(myData.xp||0);
   if(curLvl>claimedLevel){
@@ -1079,15 +1083,21 @@ function checkAndShowLevelReward(){
 window.checkAndShowLevelReward=checkAndShowLevelReward;
 
 window.claimLevelReward=async()=>{
-  if(!pendingLevelUp||!uid)return;
+  if(!pendingLevelUp||!uid||_claimingLevel)return;
+  _claimingLevel=true;
   const{level,reward}=pendingLevelUp;
   pendingLevelUp=null;
   document.getElementById('levelUpModal').style.display='none';
-  await updateDoc(doc(db,'users',uid),{coins:increment(reward),claimedLevel:level});
-  toast('🎁 +'+reward+' коїнів за рівень '+level+'!');
-  sendWH('levelup',{name:myData?.name||'',level,coins:reward});
-  // check if more levels to claim
-  setTimeout(checkAndShowLevelReward,600);
+  try{
+    await updateDoc(doc(db,'users',uid),{coins:increment(reward),claimedLevel:level});
+    toast('🎁 +'+reward+' коїнів за рівень '+level+'!');
+    sendWH('levelup',{name:myData?.name||'',level,coins:reward});
+  }finally{
+    _claimingLevel=false;
+    // onSnapshot сам оновить myData і викличе checkAndShowLevelReward
+    // setTimeout — резервний виклик якщо onSnapshot вже спрацював до скидання _claimingLevel
+    setTimeout(()=>{if(!pendingLevelUp&&!_claimingLevel)checkAndShowLevelReward();},900);
+  }
 };
 
 function hasUnclaimedLevel(){
@@ -1129,7 +1139,10 @@ function updateQT(){
   const el=document.getElementById('questTimerDisplay2');if(el)el.textContent=str;
   if(shouldRefresh()){doRefresh();renderDash();}
 }
-setInterval(updateQT,1000);
+// Only run timers if NOT in public map view
+if(!new URLSearchParams(location.search).get('view')){
+  setInterval(updateQT,1000);
+}
 
 let expiryRunning=false;
 async function checkDeadlines(){
@@ -1175,7 +1188,9 @@ async function checkDeadlines(){
     expiryRunning=false;
   }
 }
-setInterval(checkDeadlines,1000);
+if(!new URLSearchParams(location.search).get('view')){
+  setInterval(checkDeadlines,1000);
+}
 loadSettings();
 
 let zeroX=0,zeroY=0;
@@ -1642,10 +1657,10 @@ onAuthStateChanged(auth,async user=>{
       loadUI();
       renderDash();
       renderLevelStrip();
-      // Always check — even if modal is open, check after 300ms to let UI settle
-      setTimeout(()=>{
-        if(!pendingLevelUp)checkAndShowLevelReward();
-      },300);
+      // Check level reward — but only when NOT in the middle of claiming (prevents double-claim)
+      if(!_claimingLevel&&!pendingLevelUp){
+        setTimeout(checkAndShowLevelReward,300);
+      }
     }
   });
   listenMapData();
