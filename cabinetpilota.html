@@ -1067,8 +1067,13 @@ let _claimingLevel=false; // prevent double-claim race condition
 function checkAndShowLevelReward(){
   if(!myData||_claimingLevel||pendingLevelUp)return;
   const claimedLevel=myData.claimedLevel||0;
-  const{level:curLvl}=calcLevel(myData.xp||0);
-  console.log('[CHECK] claimedLevel=',claimedLevel,'curLvl=',curLvl,'condition=',curLvl>claimedLevel);
+  const xp=myData.xp||0;
+  const{level:curLvl}=calcLevel(xp);
+  // Если claimedLevel выше реального уровня — синхронизировать
+  if(claimedLevel>curLvl){
+    updateDoc(doc(db,'users',uid),{claimedLevel:curLvl});
+    return;
+  }
   if(curLvl>claimedLevel){
     const rewardLevel=claimedLevel+1;
     const reward=calcLvlReward(rewardLevel);
