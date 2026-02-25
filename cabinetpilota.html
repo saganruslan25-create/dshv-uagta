@@ -1065,17 +1065,13 @@ let pendingLevelUp=null;
 let _claimingLevel=false; // prevent double-claim race condition
 
 function checkAndShowLevelReward(){
-  if(!myData)return;
-  if(_claimingLevel){console.log('[LVL] checkAndShow skipped: _claimingLevel=true');return;}
-  if(pendingLevelUp){console.log('[LVL] checkAndShow skipped: pendingLevelUp already set');return;}
+  if(!myData||_claimingLevel||pendingLevelUp)return;
   const claimedLevel=myData.claimedLevel||0;
   const{level:curLvl}=calcLevel(myData.xp||0);
-  console.log('[LVL] checkAndShow: claimedLevel=',claimedLevel,'curLvl=',curLvl,'xp=',myData.xp);
   if(curLvl>claimedLevel){
     const rewardLevel=claimedLevel+1;
     const reward=calcLvlReward(rewardLevel);
     pendingLevelUp={level:rewardLevel,reward};
-    console.log('[LVL] Showing modal for level=',rewardLevel,'reward=',reward);
     document.getElementById('lvlUpTitle').textContent='🚀 РІВЕНЬ '+rewardLevel+'!';
     document.getElementById('lvlUpDesc').textContent='Вітаємо! Ви досягли нового рівня!';
     document.getElementById('lvlUpReward').innerHTML='<span class="coin-icon coin-icon-lg"></span>'+reward+' КОЇНІВ';
@@ -1085,31 +1081,31 @@ function checkAndShowLevelReward(){
 window.checkAndShowLevelReward=checkAndShowLevelReward;
 
 window.claimLevelReward=async()=>{
-  console.log('[LVL] claimLevelReward called. pendingLevelUp=',pendingLevelUp,'uid=',uid,'_claimingLevel=',_claimingLevel);
   if(!pendingLevelUp||!uid||_claimingLevel)return;
   _claimingLevel=true;
   const{level,reward}=pendingLevelUp;
   pendingLevelUp=null;
   document.getElementById('levelUpModal').style.display='none';
   try{
-    console.log('[LVL] Saving to Firestore: claimedLevel=',level,'coins+=',reward);
+    const freshSnap=await getDoc(doc(db,'users',uid));
+    if(!freshSnap.exists())throw new Error('not found');
+    const freshClaimedLevel=freshSnap.data().claimedLevel||0;
+    if(freshClaimedLevel>=level){
+      toast('ℹ️ Рівень '+level+' вже отримано!');
+      _claimingLevel=false;
+      setTimeout(()=>{if(!pendingLevelUp&&!_claimingLevel)checkAndShowLevelReward();},500);
+      return;
+    }
     await updateDoc(doc(db,'users',uid),{coins:increment(reward),claimedLevel:level});
-    console.log('[LVL] Firestore saved OK');
     toast('🎁 +'+reward+' коїнів за рівень '+level+'!');
     sendWH('levelup',{name:myData?.name||'',level,coins:reward});
   }catch(e){
-    console.error('[LVL] Firestore error:',e);
-    toast('❌ Помилка збереження нагороди! Спробуйте ще раз.');
-    // restore pendingLevelUp so user can retry
     pendingLevelUp={level,reward};
     document.getElementById('levelUpModal').style.display='flex';
+    toast('❌ Помилка! Спробуйте ще раз.');
   }finally{
     _claimingLevel=false;
-    console.log('[LVL] _claimingLevel reset. Will check for next level in 900ms');
-    setTimeout(()=>{
-      console.log('[LVL] setTimeout: myData.claimedLevel=',myData?.claimedLevel,'myData.xp=',myData?.xp);
-      if(!pendingLevelUp&&!_claimingLevel)checkAndShowLevelReward();
-    },900);
+    setTimeout(()=>{if(!pendingLevelUp&&!_claimingLevel)checkAndShowLevelReward();},1000);
   }
 };
 
@@ -1672,9 +1668,9 @@ onAuthStateChanged(auth,async user=>{
       renderLevelStrip();
       // Check level reward — but only when NOT in the middle of claiming (prevents double-claim)
       console.log('[LVL] onSnapshot: _claimingLevel=',_claimingLevel,'pendingLevelUp=',pendingLevelUp,'claimedLevel=',newData.claimedLevel,'xp=',newData.xp);
-      if(!_claimingLevel&&!pendingLevelUp){
-        setTimeout(checkAndShowLevelReward,300);
-      }
+if(!_claimingLevel&&!pendingLevelUp){
+  checkAndShowLevelReward();
+}
     }
   });
   listenMapData();
