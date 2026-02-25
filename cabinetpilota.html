@@ -280,6 +280,35 @@ select.form-input option{background:#0a0d11}
 .wc-value{color:var(--wn);font-weight:900;font-family:'Rajdhani',sans-serif;font-size:18px}
 .wc-total{border-top:1px solid rgba(251,191,36,.2);padding-top:10px;margin-top:10px}
 .wc-total .wc-value{font-size:24px;color:var(--pr)}
+
+/* === PUBLIC MAP VIEW MODE === */
+#mapViewOverlay{display:none;position:fixed;inset:0;z-index:9999;background:#030507;flex-direction:column;width:100vw;height:100vh}
+#mapViewOverlay.active{display:flex!important}
+.mvnav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(3,5,7,.97);border-bottom:1px solid rgba(34,197,94,.2);flex-shrink:0;height:53px;box-sizing:border-box}
+.mvnav-logo{background:var(--pr);color:#000;padding:5px 12px;border-radius:8px;font-weight:900;font-family:'Rajdhani',sans-serif;font-size:15px;letter-spacing:2px;text-decoration:none}
+.mvnav-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--pb);letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(34,197,94,.2);padding:5px 12px;border-radius:8px}
+.mvnav-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--pb);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;letter-spacing:1px}
+.mv-map-wrap{flex:1;position:relative;overflow:hidden;background:#05090e;touch-action:none;min-height:0}
+.mv-map-wrap canvas{position:absolute;top:0;left:0}
+/* PUBLIC MAP: touch crosshair */
+.mv-touch-crosshair{position:absolute;pointer-events:none;z-index:50;display:none;width:40px;height:40px}
+.mv-touch-crosshair.vis{display:block}
+.mv-touch-crosshair::before,.mv-touch-crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.7)}
+.mv-touch-crosshair::before{width:30px;height:1.5px;top:50%;left:50%;transform:translate(-50%,-50%)}
+.mv-touch-crosshair::after{width:1.5px;height:30px;top:50%;left:50%;transform:translate(-50%,-50%)}
+.mv-crosshair-dot{position:absolute;width:5px;height:5px;background:var(--pr);border-radius:50%;top:50%;left:50%;transform:translate(-50%,-50%)}
+/* PUBLIC MAP: copy coords button */
+.mv-copy-btn{position:absolute;bottom:16px;right:16px;z-index:30;background:rgba(10,12,16,.9);border:1px solid var(--gb);color:var(--pb);border-radius:12px;padding:10px 16px;font-family:'Exo 2',sans-serif;font-size:13px;font-weight:800;cursor:pointer;display:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;gap:6px;align-items:center}
+.mv-copy-btn.vis{display:flex}
+/* PUBLIC MAP: map info box safe positioning */
+#mvMapWrap .map-info{bottom:8px;left:8px;pointer-events:none;z-index:10;max-width:calc(100vw - 120px)}
+
+#mapBtnCtxMenu{position:fixed;z-index:10000;background:#0a0d11;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none}
+#mapBtnCtxMenu.vis{display:block}
+.ctx-item{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:7px;font-size:13px;font-weight:600;color:#cdd;cursor:pointer;transition:.15s}
+.ctx-item:hover{background:rgba(34,197,94,.1);color:var(--pb)}
+.ctx-item .ctx-icon{font-size:15px;width:18px;text-align:center}
+
 @media(max-width:700px){
   .sidebar{display:none!important}
   .mob-tabbar{display:block}
@@ -321,6 +350,10 @@ select.form-input option{background:#0a0d11}
   .draw-dropdown,.erase-dropdown{min-width:220px;max-width:90vw;overflow-x:auto}
   .admin-quest-item{flex-direction:column;align-items:flex-start}
   .aqi-actions{width:100%;justify-content:flex-end}
+  /* Public map mobile */
+  #mvMapWrap .map-info{bottom:80px;left:8px;max-width:calc(100vw - 100px)}
+  .mv-copy-btn{bottom:16px;right:16px}
+  .mv-touch-crosshair.vis{display:block}
 }
 @media(min-width:701px){
   .mob-tabbar{display:none!important}
@@ -330,21 +363,6 @@ select.form-input option{background:#0a0d11}
 .map-link-btn{background:none;border:1px solid rgba(34,197,94,.25);color:var(--tg);border-radius:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;margin-left:auto;flex-shrink:0;transition:.2s;padding:0}
 .map-link-btn:hover{background:rgba(34,197,94,.15);border-color:var(--pr);color:var(--pb)}
 .mob-map-link-btn{position:absolute;top:2px;right:2px;background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);color:var(--pb);border-radius:5px;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;padding:0;line-height:1}
-
-/* === PUBLIC MAP VIEW MODE === */
-#mapViewOverlay{display:none;position:fixed;inset:0;z-index:9999;background:#030507;flex-direction:column;width:100vw;height:100vh}
-#mapViewOverlay.active{display:flex!important}
-.mvnav{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(3,5,7,.97);border-bottom:1px solid rgba(34,197,94,.2);flex-shrink:0;height:53px;box-sizing:border-box}
-.mvnav-logo{background:var(--pr);color:#000;padding:5px 12px;border-radius:8px;font-weight:900;font-family:'Rajdhani',sans-serif;font-size:15px;letter-spacing:2px;text-decoration:none}
-.mvnav-title{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--pb);letter-spacing:3px;text-transform:uppercase;border:1px solid rgba(34,197,94,.2);padding:5px 12px;border-radius:8px}
-.mvnav-badge{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:var(--pb);font-size:11px;font-weight:700;padding:5px 12px;border-radius:8px;letter-spacing:1px}
-.mv-map-wrap{flex:1;position:relative;overflow:hidden;background:#05090e;touch-action:none;min-height:0}
-.mv-map-wrap canvas{position:absolute;top:0;left:0}
-#mapBtnCtxMenu{position:fixed;z-index:10000;background:#0a0d11;border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:4px;min-width:180px;box-shadow:0 8px 32px rgba(0,0,0,.8);display:none}
-#mapBtnCtxMenu.vis{display:block}
-.ctx-item{display:flex;align-items:center;gap:9px;padding:9px 14px;border-radius:7px;font-size:13px;font-weight:600;color:#cdd;cursor:pointer;transition:.15s}
-.ctx-item:hover{background:rgba(34,197,94,.1);color:var(--pb)}
-.ctx-item .ctx-icon{font-size:15px;width:18px;text-align:center}
 </style>
 </head>
 <body>
@@ -359,6 +377,10 @@ select.form-input option{background:#0a0d11}
   <div class="mv-map-wrap" id="mvMapWrap">
     <canvas id="mvMapCanvas"></canvas>
     <canvas id="mvDrawCanvas"></canvas>
+    <!-- Crosshair for mobile -->
+    <div class="mv-touch-crosshair" id="mvTouchCrosshair"><div class="mv-crosshair-dot"></div></div>
+    <!-- Copy coords button for mobile -->
+    <button class="mv-copy-btn" id="mvCopyBtn" onclick="mvCopyCoords()">📋 Координати</button>
     <div class="map-info" style="pointer-events:none">
       <div class="mir"><span>ЗОНА:</span><span class="miv" id="mvCurZone">—</span></div>
       <div class="mir"><span>X:</span><span class="miv" id="mvMapX">0</span></div>
@@ -889,7 +911,6 @@ select.form-input option{background:#0a0d11}
 </div>
 
 <div class="toast" id="toast"></div>
-
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
@@ -904,7 +925,7 @@ const app=initializeApp({
   appId:"1:661591588818:web:a8e8dca3d061447e24d20b"
 });
 const auth=getAuth(app),db=getFirestore(app);
-let uid=null,myData=null,isAdmin=false,allQuests=[],allUsers=[],qFilter='all',dashQFilter='all',adminQFilter='all',selDiffVal='easy',abandonQID=null,abandonPen=0;
+let uid=null,myData=null,isAdmin=false,allQuests=[],allUsers=[],dashQFilter='all',adminQFilter='all',selDiffVal='easy',abandonQID=null,abandonPen=0;
 let myPendingSubmissions=new Set();
 const DI={easy:'🟢',medium:'🟡',hard:'🔴',elite:'💜'};
 const DCl={easy:'qct-diff-easy',medium:'qct-diff-medium',hard:'qct-diff-hard',elite:'qct-diff-elite'};
@@ -1012,7 +1033,7 @@ function renderLevelStrip(){
     const curNode=document.getElementById('lvlNode_'+curLvl);
     if(!curNode||!viewport)return;
     const nodeW=68;
-    const targetOffset=Math.max(0,(curLvl-1)*nodeW - (viewport.offsetWidth/2 - 24));
+    const targetOffset=Math.max(0,(curLvl-1)*nodeW-(viewport.offsetWidth/2-24));
     strip.style.transform=`translateX(-${targetOffset}px)`;
   },80);
 }
@@ -1038,12 +1059,13 @@ window.checkAndShowLevelReward=checkAndShowLevelReward;
 window.claimLevelReward=async()=>{
   if(!pendingLevelUp||!uid)return;
   const{level,reward}=pendingLevelUp;
-  await updateDoc(doc(db,'users',uid),{coins:increment(reward),claimedLevel:level});
-  document.getElementById('levelUpModal').style.display='none';
   pendingLevelUp=null;
+  document.getElementById('levelUpModal').style.display='none';
+  await updateDoc(doc(db,'users',uid),{coins:increment(reward),claimedLevel:level});
   toast('🎁 +'+reward+' коїнів за рівень '+level+'!');
   sendWH('levelup',{name:myData?.name||'',level,coins:reward});
-  setTimeout(checkAndShowLevelReward, 500);
+  // check if more levels to claim
+  setTimeout(checkAndShowLevelReward,600);
 };
 
 function hasUnclaimedLevel(){
@@ -1067,11 +1089,8 @@ window.rerollQuest=async(qid)=>{
   if(!pool.length){toast('❌ Немає квестів для рерола!');return;}
   const nq=pool[Math.floor(Math.random()*pool.length)];
   const idx=visibleQuestIds.indexOf(qid);
-  if(idx!==-1){
-    visibleQuestIds[idx]=nq.id;
-  } else {
-    visibleQuestIds.push(nq.id);
-  }
+  if(idx!==-1){visibleQuestIds[idx]=nq.id;}
+  else{visibleQuestIds.push(nq.id);}
   rerollCounts[nq.id]=(c+1);
   delete rerollCounts[qid];
   localStorage.setItem('dsv_vq',JSON.stringify(visibleQuestIds));
@@ -1086,7 +1105,7 @@ function updateQT(){
   if(now>=t)t.setDate(t.getDate()+1);
   const d=t-now;
   const str=pad2(Math.floor(d/36e5))+':'+pad2(Math.floor((d%36e5)/6e4))+':'+pad2(Math.floor((d%6e4)/1e3));
-  ['questTimerDisplay2'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=str;});
+  const el=document.getElementById('questTimerDisplay2');if(el)el.textContent=str;
   if(shouldRefresh()){doRefresh();renderDash();}
 }
 setInterval(updateQT,1000);
@@ -1101,15 +1120,15 @@ async function checkDeadlines(){
     const dl=deadlines[qid];
     if(!dl)continue;
     const rem=dl-now;
-    const el=document.getElementById("dl_"+qid);
+    const el=document.getElementById('dl_'+qid);
     if(el){
       if(rem>0){
-        const cls=rem<3600000?"crit":rem<7200000?"warn":"ok";
-        el.className="qc-deadline "+cls;
-        el.innerHTML="⏱ Залишилось: "+fmtDeadline(rem);
-      } else {
-        el.className="qc-deadline crit";
-        el.innerHTML="⏱ ЧАС ВИЙШОВ!";
+        const cls=rem<3600000?'crit':rem<7200000?'warn':'ok';
+        el.className='qc-deadline '+cls;
+        el.innerHTML='⏱ Залишилось: '+fmtDeadline(rem);
+      }else{
+        el.className='qc-deadline crit';
+        el.innerHTML='⏱ ЧАС ВИЙШОВ!';
       }
     }
   }
@@ -1125,11 +1144,11 @@ async function checkDeadlines(){
         delete newDeadlines[qid];
         const upd={activeQuestIds:active.filter(id=>id!==qid),questDeadlines:newDeadlines};
         if(pen>0)upd.xp=increment(-pen);
-        await updateDoc(doc(db,"users",uid),upd);
+        await updateDoc(doc(db,'users',uid),upd);
         abandonedQuestIds.push(qid);
-        localStorage.setItem("dsv_ab",JSON.stringify(abandonedQuestIds));
+        localStorage.setItem('dsv_ab',JSON.stringify(abandonedQuestIds));
         toast('⏰ Квест "'+(q?.name||qid)+'" анульовано!'+(pen>0?' -'+pen+' XP штраф':''));
-        sendWH("cancel",{name:myData.name,quest:q?.name||"",penalty:pen});
+        sendWH('cancel',{name:myData.name,quest:q?.name||'',penalty:pen});
       }
     }
     expiryRunning=false;
@@ -1188,9 +1207,9 @@ function listenWithdrawals(){
     allWithdrawals=[];snap.forEach(d=>allWithdrawals.push({id:d.id,...d.data()}));
     const p=allWithdrawals.filter(w=>w.status==='pending').length;
     const wb=document.getElementById('withdrawBadge');if(wb){wb.style.display=p>0?'inline-block':'none';wb.textContent=p;}
-    const mb2=document.getElementById('mtabMoreBadge');
     const sub=(typeof allSubs!=='undefined'?allSubs:[]).filter(s=>s.status==='pending').length;
     const total=p+sub;
+    const mb2=document.getElementById('mtabMoreBadge');
     if(mb2){mb2.textContent=total;mb2.classList.toggle('vis',total>0);}
     const mb3=document.getElementById('mdrWithdrawBadge');if(mb3){mb3.textContent=p;mb3.style.display=p>0?'inline-block':'none';}
     renderWithdrawals();
@@ -1241,10 +1260,25 @@ window.mobShowTab=(name)=>{showTab(name,null);document.querySelectorAll('.mob-ta
 window.toggleMobMore=()=>{const d=document.getElementById('mobMoreDrawer'),o=document.getElementById('mobMoreOverlay'),vis=d.classList.contains('vis');if(vis){d.classList.remove('vis');o.classList.remove('vis');}else{d.classList.add('vis');o.classList.add('vis');}};
 window.closeMobMore=()=>{document.getElementById('mobMoreDrawer').classList.remove('vis');document.getElementById('mobMoreOverlay').classList.remove('vis');};
 
-// ===== PUBLIC MAP VIEW — moved INSIDE module so it has access to onSnapshot, doc, db =====
+// ===== PUBLIC MAP VIEW =====
+// Track current coords for copy button
+let mvCurrentX=0,mvCurrentY=0,mvCurrentZone='';
+
+window.mvCopyCoords=function(){
+  const txt=mvCurrentX+', '+mvCurrentY+(mvCurrentZone?' | '+mvCurrentZone:'');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).catch(()=>{});
+  }
+  const el=document.createElement('div');
+  el.className='coord-copy-toast';
+  el.textContent='📋 '+txt;
+  document.body.appendChild(el);
+  setTimeout(()=>{if(el.parentNode)el.remove();},1200);
+};
+
 function initPublicMapView(){
   const overlay=document.getElementById('mapViewOverlay');
-  if(!overlay){console.error('mapViewOverlay not found');return;}
+  if(!overlay)return;
   overlay.classList.add('active');
   const nav=document.querySelector('nav');if(nav)nav.style.display='none';
   const pw=document.querySelector('.page-wrapper');if(pw)pw.style.display='none';
@@ -1254,8 +1288,7 @@ function initPublicMapView(){
   const mvMapCvs=document.getElementById('mvMapCanvas');
   const mvDrawCvs=document.getElementById('mvDrawCanvas');
   const mvCont=document.getElementById('mvMapWrap');
-
-  if(!mvMapCvs||!mvDrawCvs||!mvCont){console.error('MV canvas elements missing');return;}
+  if(!mvMapCvs||!mvDrawCvs||!mvCont)return;
 
   const mvMapCtx=mvMapCvs.getContext('2d');
   const mvDrawCtx=mvDrawCvs.getContext('2d');
@@ -1263,54 +1296,158 @@ function initPublicMapView(){
   let mvScale=0.46,mvOffX=0,mvOffY=0,mvBg=null,mvBgW=0,mvBgH=0;
   let mvIsDrag=false,mvLmx=0,mvLmy=0;
   let mvZones=[],mvMarkers=[],mvDrawStrokes=[];
+  const isMob=('ontouchstart' in window)||window.innerWidth<=700;
+
+  // Show crosshair and copy button on mobile
+  const crosshair=document.getElementById('mvTouchCrosshair');
+  const copyBtn=document.getElementById('mvCopyBtn');
+  if(isMob){
+    if(crosshair)crosshair.classList.add('vis');
+    if(copyBtn)copyBtn.classList.add('vis');
+  }
 
   function mvClamp(){
-    if(!mvBg)return;
+    if(!mvBg||mvBgW===0)return;
     const w=mvCont.clientWidth,h=mvCont.clientHeight;
     const iw=mvBgW*mvScale,ih=mvBgH*mvScale;
-    const minX=Math.min(0,w-iw),maxX=Math.max(0,w-iw);
-    const minY=Math.min(0,h-ih),maxY=Math.max(0,h-ih);
-    mvOffX=Math.max(minX,Math.min(maxX,mvOffX));
-    mvOffY=Math.max(minY,Math.min(maxY,mvOffY));
+    // horizontal
+    if(iw>=w){if(mvOffX>0)mvOffX=0;if(mvOffX<w-iw)mvOffX=w-iw;}
+    else mvOffX=(w-iw)/2;
+    // vertical
+    if(ih>=h){if(mvOffY>0)mvOffY=0;if(mvOffY<h-ih)mvOffY=h-ih;}
+    else mvOffY=(h-ih)/2;
   }
 
   function mvResizeMap(){
-    if(!mvMapCvs||!mvDrawCvs||!mvCont)return;
     const w=mvCont.clientWidth||window.innerWidth;
     const h=mvCont.clientHeight||(window.innerHeight-53);
-    if(w===0||h===0)return;
+    if(!w||!h)return;
     mvMapCvs.width=w;mvMapCvs.height=h;
     mvDrawCvs.width=w;mvDrawCvs.height=h;
+    // center crosshair
+    if(crosshair){
+      crosshair.style.left=(w/2-20)+'px';
+      crosshair.style.top=(h/2-20)+'px';
+    }
+    mvClamp();
     mvDrawMap();
   }
 
   function mvGetZoneAt(wx,wy){
-    for(const z of mvZones){if(!z.points||z.points.length<3)continue;let inside=false;for(let i=0,j=z.points.length-1;i<z.points.length;j=i++){const xi=z.points[i].x,yi=z.points[i].y,xj=z.points[j].x,yj=z.points[j].y;if(((yi>wy)!==(yj>wy))&&(wx<(xj-xi)*(wy-yi)/(yj-yi)+xi))inside=!inside;}if(inside)return z.name||'Зона';}return null;
+    for(const z of mvZones){
+      if(!z.points||z.points.length<3)continue;
+      let inside=false;
+      for(let i=0,j=z.points.length-1;i<z.points.length;j=i++){
+        const xi=z.points[i].x,yi=z.points[i].y,xj=z.points[j].x,yj=z.points[j].y;
+        if(((yi>wy)!==(yj>wy))&&(wx<(xj-xi)*(wy-yi)/(yj-yi)+xi))inside=!inside;
+      }
+      if(inside)return z.name||'Зона';
+    }
+    return null;
+  }
+
+  function mvUpdateCoordUI(wx,wy){
+    const zone=mvGetZoneAt(wx,wy)||'—';
+    mvCurrentX=wx;mvCurrentY=wy;mvCurrentZone=zone==='—'?'':zone;
+    const ex=document.getElementById('mvMapX'),ey=document.getElementById('mvMapY'),ez=document.getElementById('mvCurZone');
+    if(ex)ex.textContent=wx;
+    if(ey)ey.textContent=wy;
+    if(ez)ez.textContent=zone;
+  }
+
+  function mvCenterCoords(){
+    // coords at crosshair (center of screen)
+    const wx=Math.round((mvMapCvs.width/2-mvOffX)/mvScale);
+    const wy=Math.round((mvMapCvs.height/2-mvOffY)/mvScale);
+    mvUpdateCoordUI(wx,wy);
   }
 
   function mvUpdateLeg(){
     const el=document.getElementById('mvLegend');if(!el)return;
-    el.innerHTML=mvZones.filter(z=>z.name).map(z=>`<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:#94a3b8;margin-bottom:6px"><div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${z.color||'#22c55e'}"></div><span>${z.name}</span></div>`).join('');
+    const mlt='<div style="font-size:9px;font-weight:800;color:#22c55e;letter-spacing:3px;text-transform:uppercase;margin-bottom:9px">📌 ЛЕГЕНДА</div>';
+    el.innerHTML=mlt+mvZones.filter(z=>z.name).map(z=>`<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:#94a3b8;margin-bottom:6px"><div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;background:${z.color||'#22c55e'}"></div><span>${z.name}</span></div>`).join('');
   }
 
   function mvDrawMap(){
-    if(!mvMapCtx)return;
     const w=mvMapCvs.width,h=mvMapCvs.height;
     mvMapCtx.clearRect(0,0,w,h);
     mvMapCtx.fillStyle='#05090e';mvMapCtx.fillRect(0,0,w,h);
-    if(mvBg){mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.drawImage(mvBg,0,0,mvBgW,mvBgH);mvMapCtx.restore();}
-    mvZones.forEach(z=>{if(!z.points||z.points.length<2)return;mvMapCtx.save();mvMapCtx.translate(mvOffX,mvOffY);mvMapCtx.scale(mvScale,mvScale);mvMapCtx.beginPath();mvMapCtx.moveTo(z.points[0].x,z.points[0].y);z.points.slice(1).forEach(p=>mvMapCtx.lineTo(p.x,p.y));mvMapCtx.closePath();mvMapCtx.fillStyle=(z.color||'#22c55e')+'33';mvMapCtx.strokeStyle=z.color||'#22c55e';mvMapCtx.lineWidth=2/mvScale;mvMapCtx.fill();mvMapCtx.stroke();if(z.name){const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;mvMapCtx.fillStyle='#fff';mvMapCtx.font=`bold ${12/mvScale}px 'Exo 2'`;mvMapCtx.textAlign='center';mvMapCtx.fillText(z.name,cx,cy);}mvMapCtx.restore();});
-    mvMarkers.forEach((m,i)=>{mvMapCtx.save();mvMapCtx.translate(mvOffX+m.x*mvScale,mvOffY+m.y*mvScale);mvMapCtx.beginPath();mvMapCtx.arc(0,-10,7,0,Math.PI*2);mvMapCtx.fillStyle=m.color||'#ef4444';mvMapCtx.fill();mvMapCtx.strokeStyle='#fff';mvMapCtx.lineWidth=1.5;mvMapCtx.stroke();mvMapCtx.fillStyle='#fff';mvMapCtx.font="bold 10px 'Exo 2'";mvMapCtx.textAlign='center';mvMapCtx.fillText(i+1,0,-7);if(m.label){mvMapCtx.fillStyle='rgba(3,5,7,.85)';const tw=mvMapCtx.measureText(m.label).width;mvMapCtx.fillRect(-tw/2-3,3,tw+6,14);mvMapCtx.fillStyle='#fff';mvMapCtx.fillText(m.label,0,14);}mvMapCtx.restore();});
+    if(mvBg){
+      mvMapCtx.save();
+      mvMapCtx.translate(mvOffX,mvOffY);
+      mvMapCtx.scale(mvScale,mvScale);
+      mvMapCtx.drawImage(mvBg,0,0,mvBgW,mvBgH);
+      mvMapCtx.restore();
+    }
+    // draw zones
+    mvZones.forEach(z=>{
+      if(!z.points||z.points.length<2)return;
+      mvMapCtx.save();
+      mvMapCtx.translate(mvOffX,mvOffY);
+      mvMapCtx.scale(mvScale,mvScale);
+      mvMapCtx.beginPath();
+      mvMapCtx.moveTo(z.points[0].x,z.points[0].y);
+      z.points.slice(1).forEach(p=>mvMapCtx.lineTo(p.x,p.y));
+      mvMapCtx.closePath();
+      mvMapCtx.fillStyle=(z.color||'#22c55e')+'33';
+      mvMapCtx.strokeStyle=z.color||'#22c55e';
+      mvMapCtx.lineWidth=2/mvScale;
+      mvMapCtx.fill();mvMapCtx.stroke();
+      if(z.name){
+        const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length;
+        const cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;
+        mvMapCtx.fillStyle='#fff';
+        mvMapCtx.font=`bold ${12/mvScale}px 'Exo 2'`;
+        mvMapCtx.textAlign='center';
+        mvMapCtx.fillText(z.name,cx,cy);
+      }
+      mvMapCtx.restore();
+    });
+    // draw markers
+    mvMarkers.forEach((m,i)=>{
+      mvMapCtx.save();
+      mvMapCtx.translate(mvOffX+m.x*mvScale,mvOffY+m.y*mvScale);
+      mvMapCtx.beginPath();mvMapCtx.arc(0,-10,7,0,Math.PI*2);
+      mvMapCtx.fillStyle=m.color||'#ef4444';
+      mvMapCtx.fill();
+      mvMapCtx.strokeStyle='#fff';mvMapCtx.lineWidth=1.5;mvMapCtx.stroke();
+      mvMapCtx.fillStyle='#fff';
+      mvMapCtx.font="bold 10px 'Exo 2'";
+      mvMapCtx.textAlign='center';
+      mvMapCtx.fillText(i+1,0,-7);
+      if(m.label){
+        mvMapCtx.fillStyle='rgba(3,5,7,.85)';
+        const tw=mvMapCtx.measureText(m.label).width;
+        mvMapCtx.fillRect(-tw/2-3,3,tw+6,14);
+        mvMapCtx.fillStyle='#fff';
+        mvMapCtx.fillText(m.label,0,14);
+      }
+      mvMapCtx.restore();
+    });
+    // draw strokes
     mvDrawCtx.clearRect(0,0,w,h);
-    mvDrawStrokes.forEach(s=>{if(!s.points||s.points.length<1)return;mvDrawCtx.save();mvDrawCtx.translate(mvOffX,mvOffY);mvDrawCtx.scale(mvScale,mvScale);mvDrawCtx.globalCompositeOperation=s.erase?'destination-out':'source-over';mvDrawCtx.strokeStyle=s.color||'#22c55e';mvDrawCtx.lineWidth=s.size/mvScale;mvDrawCtx.lineCap='round';mvDrawCtx.lineJoin='round';mvDrawCtx.beginPath();mvDrawCtx.moveTo(s.points[0].wx,s.points[0].wy);s.points.slice(1).forEach(p=>mvDrawCtx.lineTo(p.wx,p.wy));mvDrawCtx.stroke();mvDrawCtx.restore();});
+    mvDrawStrokes.forEach(s=>{
+      if(!s.points||s.points.length<1)return;
+      mvDrawCtx.save();
+      mvDrawCtx.translate(mvOffX,mvOffY);
+      mvDrawCtx.scale(mvScale,mvScale);
+      mvDrawCtx.globalCompositeOperation=s.erase?'destination-out':'source-over';
+      mvDrawCtx.strokeStyle=s.color||'#22c55e';
+      mvDrawCtx.lineWidth=s.size/mvScale;
+      mvDrawCtx.lineCap='round';mvDrawCtx.lineJoin='round';
+      mvDrawCtx.beginPath();
+      mvDrawCtx.moveTo(s.points[0].wx,s.points[0].wy);
+      s.points.slice(1).forEach(p=>mvDrawCtx.lineTo(p.wx,p.wy));
+      mvDrawCtx.stroke();
+      mvDrawCtx.restore();
+    });
   }
 
   requestAnimationFrame(()=>{
     mvResizeMap();
     window.addEventListener('resize',mvResizeMap);
-    mvDrawMap();
 
-    // *** ЦЕ ВИПРАВЛЕННЯ: onSnapshot/doc/db доступні бо ми всередині module script ***
+    // Listen to Firestore
     onSnapshot(doc(db,'appData','mapData'),snap=>{
       if(snap.exists()){const d=snap.data();mvZones=d.zones||[];mvMarkers=d.markers||[];}
       else{mvZones=[];mvMarkers=[];}
@@ -1332,7 +1469,9 @@ function initPublicMapView(){
             const w=mvCont.clientWidth,h=mvCont.clientHeight;
             mvOffX=(w-mvBgW*mvScale)/2;
             mvOffY=(h-mvBgH*mvScale)/2;
+            mvClamp();
             mvDrawMap();
+            if(isMob)mvCenterCoords();
           };
           img.src=e.target.result;
         };
@@ -1340,46 +1479,96 @@ function initPublicMapView(){
       }catch(e){console.warn('MV bg load fail:',e);}
     });
 
+    // Mouse events (desktop)
     mvDrawCvs.addEventListener('mousedown',e=>{mvIsDrag=true;mvLmx=e.clientX;mvLmy=e.clientY;mvDrawCvs.style.cursor='grabbing';});
     mvDrawCvs.addEventListener('mousemove',e=>{
-      if(mvIsDrag){mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;mvLmx=e.clientX;mvLmy=e.clientY;mvClamp();mvDrawMap();}
+      if(mvIsDrag){
+        mvOffX+=e.clientX-mvLmx;mvOffY+=e.clientY-mvLmy;
+        mvLmx=e.clientX;mvLmy=e.clientY;
+        mvClamp();mvDrawMap();
+      }
       const r=mvDrawCvs.getBoundingClientRect();
       const wx=Math.round((e.clientX-r.left-mvOffX)/mvScale);
       const wy=Math.round((e.clientY-r.top-mvOffY)/mvScale);
-      const zx=document.getElementById('mvMapX'),zy=document.getElementById('mvMapY'),zz=document.getElementById('mvCurZone');
-      if(zx)zx.textContent=wx;
-      if(zy)zy.textContent=wy;
-      if(zz)zz.textContent=mvGetZoneAt(wx,wy)||'—';
+      mvUpdateCoordUI(wx,wy);
     });
     mvDrawCvs.addEventListener('mouseup',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
     mvDrawCvs.addEventListener('mouseleave',()=>{mvIsDrag=false;mvDrawCvs.style.cursor='default';});
     mvDrawCvs.addEventListener('wheel',e=>{
       e.preventDefault();
-      const r=mvDrawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
-      const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,mvScale*d));
-      mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);
+      const r=mvDrawCvs.getBoundingClientRect();
+      const mx=e.clientX-r.left,my=e.clientY-r.top;
+      const d=e.deltaY>0?0.85:1.15;
+      const ns=Math.max(0.05,Math.min(10,mvScale*d));
+      mvOffX=mx-(mx-mvOffX)*(ns/mvScale);
+      mvOffY=my-(my-mvOffY)*(ns/mvScale);
       mvScale=ns;mvClamp();mvDrawMap();
     },{passive:false});
 
+    // Touch events (mobile)
     let mvTouchPanning=false,mvLastTX=0,mvLastTY=0,mvPinchDist=0;
-    mvDrawCvs.addEventListener('touchstart',e=>{e.preventDefault();if(e.touches.length===1){mvTouchPanning=true;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;}else if(e.touches.length===2){mvTouchPanning=false;mvPinchDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:false});
-    mvDrawCvs.addEventListener('touchmove',e=>{e.preventDefault();if(e.touches.length===1&&mvTouchPanning){mvOffX+=e.touches[0].clientX-mvLastTX;mvOffY+=e.touches[0].clientY-mvLastTY;mvLastTX=e.touches[0].clientX;mvLastTY=e.touches[0].clientY;mvClamp();mvDrawMap();}else if(e.touches.length===2){const nd=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);const cx=(e.touches[0].clientX+e.touches[1].clientX)/2,cy=(e.touches[0].clientY+e.touches[1].clientY)/2;const r=mvDrawCvs.getBoundingClientRect(),mx=cx-r.left,my=cy-r.top;const d=nd/mvPinchDist,ns=Math.max(0.05,Math.min(10,mvScale*d));mvOffX=mx-(mx-mvOffX)*(ns/mvScale);mvOffY=my-(my-mvOffY)*(ns/mvScale);mvScale=ns;mvPinchDist=nd;mvClamp();mvDrawMap();}},{passive:false});
-    mvDrawCvs.addEventListener('touchend',e=>{if(e.touches.length===0)mvTouchPanning=false;},{passive:false});
+    mvDrawCvs.addEventListener('touchstart',e=>{
+      e.preventDefault();
+      if(e.touches.length===1){
+        mvTouchPanning=true;
+        mvLastTX=e.touches[0].clientX;
+        mvLastTY=e.touches[0].clientY;
+      }else if(e.touches.length===2){
+        mvTouchPanning=false;
+        mvPinchDist=Math.hypot(
+          e.touches[0].clientX-e.touches[1].clientX,
+          e.touches[0].clientY-e.touches[1].clientY
+        );
+      }
+    },{passive:false});
+
+    mvDrawCvs.addEventListener('touchmove',e=>{
+      e.preventDefault();
+      if(e.touches.length===1&&mvTouchPanning){
+        mvOffX+=e.touches[0].clientX-mvLastTX;
+        mvOffY+=e.touches[0].clientY-mvLastTY;
+        mvLastTX=e.touches[0].clientX;
+        mvLastTY=e.touches[0].clientY;
+        mvClamp();mvDrawMap();
+        mvCenterCoords(); // update coords at crosshair center
+      }else if(e.touches.length===2){
+        const nd=Math.hypot(
+          e.touches[0].clientX-e.touches[1].clientX,
+          e.touches[0].clientY-e.touches[1].clientY
+        );
+        const cx=(e.touches[0].clientX+e.touches[1].clientX)/2;
+        const cy=(e.touches[0].clientY+e.touches[1].clientY)/2;
+        const r=mvDrawCvs.getBoundingClientRect();
+        const mx=cx-r.left,my=cy-r.top;
+        const d=nd/mvPinchDist;
+        const ns=Math.max(0.05,Math.min(10,mvScale*d));
+        mvOffX=mx-(mx-mvOffX)*(ns/mvScale);
+        mvOffY=my-(my-mvOffY)*(ns/mvScale);
+        mvScale=ns;mvPinchDist=nd;
+        mvClamp();mvDrawMap();
+        mvCenterCoords();
+      }
+    },{passive:false});
+
+    mvDrawCvs.addEventListener('touchend',e=>{
+      if(e.touches.length===0)mvTouchPanning=false;
+    },{passive:false});
   });
 }
-// Expose to window so plain script context menu buttons can call toast
+
+// Expose toast to window
 window.toast=(msg,dur=3000)=>{const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',dur);};
 
-// ===== AUTH =====
-// Check if public map view mode BEFORE auth
+// Check public map view mode BEFORE auth
 if(new URLSearchParams(location.search).get('view')==='map'){
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',initPublicMapView);
-  } else {
+  }else{
     initPublicMapView();
   }
 }
 
+// ===== AUTH =====
 onAuthStateChanged(auth,async user=>{
   if(new URLSearchParams(location.search).get('view')==='map')return;
   if(!user){location.href='index.html';return;}
@@ -1409,13 +1598,17 @@ onAuthStateChanged(auth,async user=>{
     const mdrW=document.getElementById('mdrWithdraw');if(mdrW)mdrW.style.display='flex';
     loadAdmin();loadWH();listenSub();listenWithdrawals();
   }
+  // FIX: onSnapshot always triggers level reward check
   onSnapshot(doc(db,'users',uid),s=>{
     if(s.exists()){
       myData=s.data();
       loadUI();
       renderDash();
       renderLevelStrip();
-      if(!pendingLevelUp) checkAndShowLevelReward();
+      // Always check — even if modal is open, check after 300ms to let UI settle
+      setTimeout(()=>{
+        if(!pendingLevelUp)checkAndShowLevelReward();
+      },300);
     }
   });
   listenMapData();
@@ -1436,7 +1629,11 @@ function listenMySubmissions(){
 function xpForLevel(lv){return lv*1000;}
 function calcLevel(totalXP){
   let lv=1,spent=0;
-  while(true){const need=xpForLevel(lv);if(spent+need>totalXP)break;spent+=need;lv++;}
+  while(true){
+    const need=xpForLevel(lv);
+    if(spent+need>totalXP)break;
+    spent+=need;lv++;
+  }
   return{level:lv,xpInLevel:totalXP-[...Array(lv-1)].reduce((s,_,i)=>s+xpForLevel(i+1),0),xpNeeded:xpForLevel(lv)};
 }
 
@@ -1452,7 +1649,7 @@ function loadUI(){
     const rewardLevel=claimedLevel+1;
     const reward=calcLvlReward(rewardLevel);
     xpEl.innerHTML='<span style="color:var(--gd);font-weight:900;cursor:pointer;animation:pulse-reward .6s infinite alternate" onclick="checkAndShowLevelReward()">🎁 ОТРИМАТИ '+reward+' C!</span>';
-  } else {
+  }else{
     xpEl.textContent=xpInLevel+'/'+xpNeeded+' XP';
   }
   document.getElementById('xpFill').style.width=(xpInLevel/xpNeeded*100)+'%';
@@ -1489,7 +1686,7 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
   const typeTag=`<span class="qc-tag qct-type">${q.type||'Місія'}</span>`;
   const xpTag=`<span class="qc-tag qct-xp">+${q.xp||0} XP</span>`;
   const penTag=(q.penalty>0)?`<span class="qc-tag qct-pen">−${q.penalty} XP штраф</span>`:'';
-  const locTag=(hasLoc)?`<span class="qc-tag qct-loc" onclick="event.stopPropagation();showQLocOnMap(${q.locationX},${q.locationY})">📍 X:${q.locationX} Y:${q.locationY}</span>`:(q.location?`<span class="qc-tag qct-loc">📍 ${q.location}</span>`:'');
+  const locTag=hasLoc?`<span class="qc-tag qct-loc" onclick="event.stopPropagation();showQLocOnMap(${q.locationX},${q.locationY})">📍 X:${q.locationX} Y:${q.locationY}</span>`:(q.location?`<span class="qc-tag qct-loc">📍 ${q.location}</span>`:'');
   const metaRow=`<div class="qc-meta">${diffTag}${typeTag}${xpTag}${penTag}${locTag}</div>`;
 
   let deadlineHtml='';
@@ -1500,10 +1697,9 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
       const rem=dl-Date.now();
       if(rem>0){
         const cls=rem<3600000?'crit':rem<7200000?'warn':'ok';
-        const timeStr=fmtDeadline(rem);
-        deadlineHtml=`<div class="qc-deadline ${cls}" id="dl_${q.id}">⏱ Залишилось: ${timeStr}</div>`;
-      } else {
-        deadlineHtml=`<div class="qc-deadline crit">⏱ ЧАС ВИЙШОВ!</div>`;
+        deadlineHtml=`<div class="qc-deadline ${cls}" id="dl_${q.id}">⏱ Залишилось: ${fmtDeadline(rem)}</div>`;
+      }else{
+        deadlineHtml=`<div class="qc-deadline crit" id="dl_${q.id}">⏱ ЧАС ВИЙШОВ!</div>`;
       }
     }
   }
@@ -1514,10 +1710,9 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
   else if(isTaken){
     const hasPending=myPendingSubmissions.has(q.id);
     const submitBtn=hasPending
-      ? `<button class="btn-submit" disabled title="Здачу вже відправлено, очікуйте перевірки">⏳ НА ПЕРЕВІРЦІ</button>`
-      : `<button class="btn-submit" onclick="event.stopPropagation();openSubmit('${q.id}')">📨 ЗДАТИ</button>`;
-    btns=submitBtn;
-    btns+=`<button class="btn-cancel" onclick="event.stopPropagation();openAbandon('${q.id}','${(q.name||'').replace(/'/g,"\\'")}',${q.penalty||0})">✖ ВІДМОВА</button>`;
+      ?`<button class="btn-submit" disabled>⏳ НА ПЕРЕВІРЦІ</button>`
+      :`<button class="btn-submit" onclick="event.stopPropagation();openSubmit('${q.id}')">📨 ЗДАТИ</button>`;
+    btns=submitBtn+`<button class="btn-cancel" onclick="event.stopPropagation();openAbandon('${q.id}','${(q.name||'').replace(/'/g,"\\'")}',${q.penalty||0})">✖ ВІДМОВА</button>`;
     if(hasLoc)btns+=`<button class="btn-showloc" onclick="event.stopPropagation();showQLocOnMap(${q.locationX},${q.locationY})">🗺 КАРТА</button>`;
   }else{
     btns=`<button class="btn-take" onclick="event.stopPropagation();takeQ('${q.id}','${(q.name||'').replace(/'/g,"\\'")}')">+ ВЗЯТИ</button>`;
@@ -1532,9 +1727,7 @@ function qCard(q,isTaken,isComp,admin,showReroll,showDesc=true){
       <span class="qc-name">${q.name}</span>
       <span class="qc-coins">${CI()}${q.coins||0}</span>
     </div>
-    ${metaRow}
-    ${deadlineHtml}
-    ${desc}
+    ${metaRow}${deadlineHtml}${desc}
     <div class="qc-btns">${btns}${adminBtns}</div>
   </div>`;
 }
@@ -1586,17 +1779,12 @@ function renderAdminQuestsFull(){
         <div class="aqi-name">${q.name}</div>
         <div class="aqi-meta">
           <span>${DI[q.difficulty]||'⬜'} ${DL[q.difficulty]||'?'}</span>
-          <span>·</span>
-          <span>${q.type||'Місія'}</span>
-          <span>·</span>
-          <span>${CI()}${q.coins||0}</span>
-          <span>·</span>
-          <span>+${q.xp||0} XP</span>
+          <span>·</span><span>${q.type||'Місія'}</span>
+          <span>·</span><span>${CI()}${q.coins||0}</span>
+          <span>·</span><span>+${q.xp||0} XP</span>
           ${penStr}
-          <span>·</span>
-          <span>📍 ${locStr}</span>
-          <span>·</span>
-          <span style="color:${q.status==='archived'?'#f87171':'var(--pb)'}">${q.status==='archived'?'📦 Архів':'✅ Активний'}</span>
+          <span>·</span><span>📍 ${locStr}</span>
+          <span>·</span><span style="color:${q.status==='archived'?'#f87171':'var(--pb)'}">${q.status==='archived'?'📦 Архів':'✅ Активний'}</span>
         </div>
       </div>
       <div class="aqi-actions">
@@ -1607,14 +1795,12 @@ function renderAdminQuestsFull(){
     </div>`;
   }).join('');
 }
+
 window.archiveQuest=async id=>{if(!confirm('Відправити квест в архів?'))return;await updateDoc(doc(db,'pilotQuests',id),{status:'archived'});toast('📦 В архів');};
 window.unarchiveQuest=async id=>{await updateDoc(doc(db,'pilotQuests',id),{status:'active'});toast('✅ Активовано');};
+
 window.takeQ=async(qid,qname)=>{
-  if(hasUnclaimedLevel()){
-    toast('🎁 Отримайте винагороду за новий рівень перш ніж брати квести!');
-    checkAndShowLevelReward();
-    return;
-  }
+  if(hasUnclaimedLevel()){toast('🎁 Отримайте винагороду за новий рівень перш ніж брати квести!');checkAndShowLevelReward();return;}
   if(abandonedQuestIds.includes(qid)){toast('❌ Ви вже відмовились від цього квесту!');return;}
   const a=myData?.activeQuestIds||[];if(a.includes(qid))return;
   const now=Date.now();
@@ -1624,10 +1810,13 @@ window.takeQ=async(qid,qname)=>{
   toast('✅ Квест взято! У вас 24 години ⏱');
   sendWH('take',{name:myData.name,quest:qname});
 };
-window.openAbandon=(qid,qname,pen)=>{abandonQID=qid;abandonPen=pen||0;
+
+window.openAbandon=(qid,qname,pen)=>{
+  abandonQID=qid;abandonPen=pen||0;
   document.getElementById('abandonText').innerHTML='Ви впевнені що хочете відмовитись від квесту <b>"'+qname+'"</b>?'+(abandonPen>0?'<br><br>⚠️ Штраф: <b style="color:var(--dn)">-'+abandonPen+' XP</b>':'')+'<br><br>⚠️ Цей квест буде недоступний до наступного оновлення!';
   document.getElementById('abandonModal').style.display='flex';
 };
+
 window.confirmAbandon=async()=>{
   const q=allQuests.find(x=>x.id===abandonQID);
   const deadlines=myData.questDeadlines||{};
@@ -1641,6 +1830,7 @@ window.confirmAbandon=async()=>{
   sendWH('cancel',{name:myData.name,quest:q?.name||'',penalty:abandonPen});
   abandonQID=null;
 };
+
 window.openSubmit=qid=>{
   document.getElementById('submitQID').value=qid;
   document.getElementById('submitName').value=myData.name||'';
@@ -1671,6 +1861,7 @@ window.openQuestModal=()=>{
   document.getElementById('questModal').style.display='flex';
 };
 window.closeQM=()=>document.getElementById('questModal').style.display='none';
+
 window.editQuest=id=>{
   const q=allQuests.find(x=>x.id===id);if(!q)return;
   document.getElementById('editingQID').value=id;
@@ -1688,6 +1879,7 @@ window.editQuest=id=>{
   document.querySelector('[data-d="'+selDiffVal+'"]').className='dfo sel-'+selDiffVal;
   document.getElementById('questModal').style.display='flex';
 };
+
 window.saveQuest=async()=>{
   const id=document.getElementById('editingQID').value,name=document.getElementById('qName').value.trim();
   if(!name){toast('❌ Введіть назву квесту');return;}
@@ -1698,8 +1890,10 @@ window.saveQuest=async()=>{
   else{data.createdAt=serverTimestamp();await addDoc(collection(db,'pilotQuests'),data);toast('✅ Квест створено');sendWH('newquest',{quest:name,difficulty:DL[selDiffVal]||selDiffVal,coins:data.coins,xp:data.xp});}
   closeQM();
 };
+
 window.delQuest=async id=>{if(!confirm('Видалити квест?'))return;await deleteDoc(doc(db,'pilotQuests',id));toast('🗑 Квест видалено');};
 window.selDiff=d=>{selDiffVal=d;document.querySelectorAll('.dfo').forEach(e=>e.className='dfo');document.querySelector('[data-d="'+d+'"]').className='dfo sel-'+d;};
+
 function renderAdminQList(){
   const el=document.getElementById('adminQuestList');if(!el)return;
   const active=allQuests.filter(q=>q.status!=='archived');
@@ -1718,12 +1912,14 @@ function renderAdminQList(){
     </div>`;
   }).join('');
 }
+
 async function loadAdmin(){
   const snap=await getDocs(collection(db,'users'));
   allUsers=[];snap.forEach(d=>allUsers.push({id:d.id,...d.data()}));
   document.getElementById('adminPilotSelect').innerHTML=allUsers.map(u=>`<option value="${u.id}">${u.name||u.id} [${u.coins||0}C]</option>`).join('');
   renderAdminQList();
 }
+
 window.adminGiveCoins=async(sign)=>{
   const sel=document.getElementById('adminPilotSelect'),amt=parseInt(document.getElementById('adminCoinAmount').value);
   if(!sel.value||isNaN(amt)||amt<=0){toast('❌ Вкажіть пілота та суму');return;}
@@ -1735,6 +1931,7 @@ window.adminGiveCoins=async(sign)=>{
   sendWH('coins',{name:dn,coins:(sign>0?'+':'-')+amt+'C'});
   loadAdmin();
 };
+
 window.adminCmpQ=async(qid,coins,xp)=>{
   const sel=document.getElementById('ct_'+qid);if(!sel?.value){toast('❌ Оберіть пілота');return;}
   const us=await getDoc(doc(db,'users',sel.value));if(!us.exists())return;
@@ -1746,20 +1943,22 @@ window.adminCmpQ=async(qid,coins,xp)=>{
   toast('✅ Квест завершено!');
   sendWH('complete',{name:ud.name||sel.value,quest:q?.name||'',coins,xp});
 };
+
 let allSubs=[],subFilter='all';
 function listenSub(){
   onSnapshot(query(collection(db,'questSubmissions'),orderBy('createdAt','desc')),snap=>{
     allSubs=[];snap.forEach(d=>allSubs.push({id:d.id,...d.data()}));
     const p=allSubs.filter(s=>s.status==='pending').length;
     const sb=document.getElementById('subBadge');if(sb){sb.style.display=p>0?'inline-block':'none';sb.textContent=p;}
-    const mb2=document.getElementById('mtabMoreBadge');
     const wp=allWithdrawals.filter(w=>w.status==='pending').length;
     const total=p+wp;
+    const mb2=document.getElementById('mtabMoreBadge');
     if(mb2){mb2.textContent=total;mb2.classList.toggle('vis',total>0);}
     const mb3=document.getElementById('mdrSubBadge');if(mb3){mb3.textContent=p;mb3.style.display=p>0?'inline-block':'none';}
     renderSubs();
   });
 }
+
 window.filterSubs=(f,btn)=>{subFilter=f;document.querySelectorAll('#tab-submissions .filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderSubs();};
 function renderSubs(){
   const el=document.getElementById('submissionsList');if(!el)return;
@@ -1790,6 +1989,7 @@ function renderSubs(){
     </div>`;
   }).join('');
 }
+
 window.reviewSub=async(sid,status,qid,tuid)=>{
   await updateDoc(doc(db,'questSubmissions',sid),{status});
   const q=allQuests.find(x=>x.id===qid);
@@ -1799,8 +1999,7 @@ window.reviewSub=async(sid,status,qid,tuid)=>{
       if(us.exists()){
         const ud=us.data(),comp=ud.completedQuestIds||[];
         if(!comp.includes(qid)){
-          const deadlines=ud.questDeadlines||{};
-          delete deadlines[qid];
+          const deadlines=ud.questDeadlines||{};delete deadlines[qid];
           await updateDoc(doc(db,'users',tuid),{coins:increment(q.coins||0),xp:increment(q.xp||0),completedQuests:increment(1),completedQuestIds:[...comp,qid],activeQuestIds:(ud.activeQuestIds||[]).filter(id=>id!==qid),questDeadlines:deadlines});
           sendWH('approved',{name:ud.name||tuid,quest:q.name||'',coins:q.coins||0,xp:q.xp||0});
         }
@@ -1839,10 +2038,8 @@ window.saveWebhook=async()=>{
 window.saveWebhookMessages=async()=>{
   const upd={updatedAt:serverTimestamp()};
   WH_KEYS.forEach(k=>{const el=document.getElementById('wmsg_'+k);if(el)upd['msg_'+k]=el.value;});
-  try{
-    await setDoc(doc(db,'appData',WH_DOC),upd,{merge:true});
-    toast('✅ Шаблони збережено');
-  }catch(e){toast('❌ '+e.message);}
+  try{await setDoc(doc(db,'appData',WH_DOC),upd,{merge:true});toast('✅ Шаблони збережено');}
+  catch(e){toast('❌ '+e.message);}
 };
 window.testWebhook=async()=>{
   const url=document.getElementById('webhookUrl').value.trim();if(!url){toast('❌ Вкажіть URL');return;}
@@ -1851,12 +2048,12 @@ window.testWebhook=async()=>{
     toast('✅ Тест надіслано!');
   }catch(e){toast('❌ Помилка: '+e.message);}
 };
+
 async function sendWH(ev,vars={}){
   try{
     const snap=await getDoc(doc(db,'appData',WH_DOC));
     if(!snap.exists())return;
-    const d=snap.data();
-    const url=d.url;if(!url)return;
+    const d=snap.data();const url=d.url;if(!url)return;
     const defaults={
       take:'✈️ {name} взяв квест\n📋 «{quest}»\nВиконує завдання!',
       cancel:'🚫 {name} відмовився від квесту\n📋 «{quest}»\n⚠️ Штраф: -{penalty} XP',
@@ -1880,6 +2077,7 @@ async function sendWH(ev,vars={}){
     await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:'ДШВ Кабінет',embeds:[embed]})});
   }catch(e){console.warn('WH send err:',e);}
 }
+
 window.showTab=(name,btn)=>{
   document.querySelectorAll('.tab-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.sidebar-btn').forEach(b=>b.classList.remove('active'));
@@ -1920,7 +2118,8 @@ let mapDataUnsub=null,mapMetaUnsub=null,currentMapVersion='';
 function listenMapData(){
   if(mapDataUnsub)mapDataUnsub();
   mapDataUnsub=onSnapshot(doc(db,'appData',MAP_DOC),snap=>{
-    if(snap.exists()){const d=snap.data();zones=d.zones||[];markers=d.markers||[];}else{zones=[];markers=[];}
+    if(snap.exists()){const d=snap.data();zones=d.zones||[];markers=d.markers||[];}
+    else{zones=[];markers=[];}
     if(mapInited){updateLeg();drawMap();}
   });
   if(mapMetaUnsub)mapMetaUnsub();
@@ -2012,17 +2211,10 @@ window.setDS=btn=>{document.querySelectorAll('.draw-dropdown .dsb').forEach(b=>b
 window.setES=btn=>{document.querySelectorAll('.erase-dropdown .dsb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');eraseSize=parseInt(btn.dataset.es);};
 window.clearDraw=()=>{drawStrokes=[];currentStroke=null;saveDS();if(drawCtx)drawCtx.clearRect(0,0,drawCvs.width,drawCvs.height);};
 window.toggleZones=btn=>{
-  zonesVis=!zonesVis;
-  btn.textContent=zonesVis?'👁 Зони':'🚫 Зони';
-  btn.classList.toggle('active',zonesVis);
-  const zt=document.getElementById('tool-zone');
-  const cz=document.getElementById('btnClearZones');
-  if(zt)zt.classList.toggle('disabled',!zonesVis);
-  if(cz)cz.classList.toggle('disabled',!zonesVis);
-  if(!zonesVis&&(tool==='zone')){
-    setTool('cursor',document.getElementById('tool-cursor'));
-    toast('⚠️ Увімкніть зони для редагування');
-  }
+  zonesVis=!zonesVis;btn.textContent=zonesVis?'👁 Зони':'🚫 Зони';btn.classList.toggle('active',zonesVis);
+  const zt=document.getElementById('tool-zone');const cz=document.getElementById('btnClearZones');
+  if(zt)zt.classList.toggle('disabled',!zonesVis);if(cz)cz.classList.toggle('disabled',!zonesVis);
+  if(!zonesVis&&tool==='zone'){setTool('cursor',document.getElementById('tool-cursor'));toast('⚠️ Увімкніть зони для редагування');}
   drawMap();
 };
 window.resetView=()=>{scale=minZoom;offX=0;offY=0;clamp();drawMap();redrawDS();document.getElementById('zoomDisplay').textContent=Math.round(scale*100)+'%';if(isMobile)updateCrosshairCoords();};
@@ -2083,9 +2275,6 @@ window.showQLocOnMap=(x,y)=>{
 window.__mapState={get tool(){return tool;},get drawingZone(){return drawingZone;},get zonePoints(){return zonePoints;},popZonePoint(){if(zonePoints.length>0){zonePoints.pop();drawMap();}},get markers(){return markers;},popMarker(){if(markers.length>0){markers.pop();saveMD();drawMap();}},get curMWX(){return curMWX;},get curMWY(){return curMWY;},get zeroX(){return zeroX;},get zeroY(){return zeroY;},get curZone(){return gZA(curMWX,curMWY)||null;},setShift(v){shiftHeld=v;}};
 </script>
 <script>
-// ================================================================
-// CONTEXT MENU for map button (plain script — uses window.toast exposed by module)
-// ================================================================
 function showMapCtxMenu(e){
   e.preventDefault();e.stopPropagation();
   const menu=document.getElementById('mapBtnCtxMenu');
@@ -2096,7 +2285,6 @@ function showMapCtxMenu(e){
   setTimeout(()=>document.addEventListener('click',hideMapCtxMenu,{once:true}),10);
 }
 function hideMapCtxMenu(){document.getElementById('mapBtnCtxMenu').classList.remove('vis');}
-
 function copyMapViewLink(){
   hideMapCtxMenu();
   const url=location.origin+location.pathname+'?view=map';
@@ -2107,10 +2295,8 @@ function copyMapViewLink(){
 }
 function openMapViewInTab(){
   hideMapCtxMenu();
-  const url=location.origin+location.pathname+'?view=map';
-  window.open(url,'_blank');
+  window.open(location.origin+location.pathname+'?view=map','_blank');
 }
-
 (function(){
   var isMacOS=/Mac/.test(navigator.platform);
   function isMapActive(){var el=document.getElementById('tab-map');return el&&el.classList.contains('active');}
@@ -2119,9 +2305,8 @@ function openMapViewInTab(){
     if(e.key==='Shift'){if(window.__mapState)window.__mapState.setShift(true);}
     var ctrlKey=isMacOS?e.metaKey:e.ctrlKey;
     if(isMapActive()&&!isTyping(e)){
-      var code=e.code;
-      if(ctrlKey&&code==='KeyZ'){e.preventDefault();e.stopPropagation();var ms=window.__mapState;if(ms){if(ms.tool==='zone'&&ms.drawingZone&&ms.zonePoints.length>0)ms.popZonePoint();else if(ms.tool==='marker'&&ms.markers.length>0)ms.popMarker();}return;}
-      if(ctrlKey&&code==='KeyC'){e.preventDefault();e.stopPropagation();var ms=window.__mapState;if(ms){var cx=ms.curMWX-ms.zeroX,cy=ms.curMWY-ms.zeroY;var zone=ms.curZone;var txt=cx+', '+cy+(zone?' | Місце: '+zone:'');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).catch(function(){});var el2=document.createElement('div');el2.className='coord-copy-toast';el2.textContent='📋 '+txt;document.body.appendChild(el2);setTimeout(function(){if(el2.parentNode)el2.remove();},1200);}return;}
+      if(ctrlKey&&e.code==='KeyZ'){e.preventDefault();e.stopPropagation();var ms=window.__mapState;if(ms){if(ms.tool==='zone'&&ms.drawingZone&&ms.zonePoints.length>0)ms.popZonePoint();else if(ms.tool==='marker'&&ms.markers.length>0)ms.popMarker();}return;}
+      if(ctrlKey&&e.code==='KeyC'){e.preventDefault();e.stopPropagation();var ms=window.__mapState;if(ms){var cx=ms.curMWX-ms.zeroX,cy=ms.curMWY-ms.zeroY;var zone=ms.curZone;var txt=cx+', '+cy+(zone?' | Місце: '+zone:'');if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).catch(function(){});var el2=document.createElement('div');el2.className='coord-copy-toast';el2.textContent='📋 '+txt;document.body.appendChild(el2);setTimeout(function(){if(el2.parentNode)el2.remove();},1200);}return;}
     }
     if(e.keyCode===123){e.preventDefault();return;}
     if(e.ctrlKey&&e.shiftKey&&[73,74,67].indexOf(e.keyCode)!==-1){e.preventDefault();return;}
