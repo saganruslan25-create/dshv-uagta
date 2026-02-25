@@ -934,6 +934,32 @@ function CI(s){return'<span class="coin-icon'+(s==='lg'?' coin-icon-lg':'')+'"><
 
 // ===== SETTINGS =====
 let questRefreshHour=12,questRefreshMinute=0,visibleQuestIds=[],lastRefreshDate='',rerollCost=50,rerollCounts={},abandonedQuestIds=[],minZoom=0.46,levelRewardBase=500,levelRewardMult=2;
+// Quest state is synced via Firestore (users/{uid}.questState) so all devices share same state
+let _questStateSaving=false;
+async function saveQuestState(){
+  if(!uid||_questStateSaving)return;
+  _questStateSaving=true;
+  try{
+    await updateDoc(doc(db,'users',uid),{
+      questState:{
+        visibleQuestIds,
+        lastRefreshDate,
+        rerollCounts,
+        abandonedQuestIds
+      }
+    });
+  }catch(e){console.warn('questState save err:',e);}
+  _questStateSaving=false;
+}
+function loadQuestStateFromData(data){
+  const qs=data?.questState;
+  if(!qs)return false;
+  visibleQuestIds=qs.visibleQuestIds||[];
+  lastRefreshDate=qs.lastRefreshDate||'';
+  rerollCounts=qs.rerollCounts||{};
+  abandonedQuestIds=qs.abandonedQuestIds||[];
+  return true;
+}
 function pad2(n){return String(n).padStart(2,'0');}
 function getKD(){return new Date(new Date().toLocaleString('en-US',{timeZone:'Europe/Kyiv'}));}
 function getKDS(){const d=getKD();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
@@ -942,11 +968,9 @@ function loadSettings(){
   try{
     const t=localStorage.getItem('dsv_qrt');
     if(t){const[h,m]=t.split(':');questRefreshHour=parseInt(h);questRefreshMinute=parseInt(m);}
-    visibleQuestIds=JSON.parse(localStorage.getItem('dsv_vq')||'[]');
-    lastRefreshDate=localStorage.getItem('dsv_lrd')||'';
+    // visibleQuestIds and lastRefreshDate are now loaded from Firestore (questState field)
     rerollCost=parseInt(localStorage.getItem('dsv_rc'))||50;
-    rerollCounts=JSON.parse(localStorage.getItem('dsv_rrc')||'{}');
-    abandonedQuestIds=JSON.parse(localStorage.getItem('dsv_ab')||'[]');
+    // rerollCounts and abandonedQuestIds are now loaded from Firestore (questState field)
     minZoom=parseFloat(localStorage.getItem('dsv_mz2'))||0.46;
     levelRewardBase=parseInt(localStorage.getItem('dsv_lrb'))||500;
     levelRewardMult=parseFloat(localStorage.getItem('dsv_lrm'))||2;
@@ -973,10 +997,9 @@ function doRefresh(){
   if(av.length<=5)visibleQuestIds=av.map(q=>q.id);
   else{const sh=[...av].sort(()=>Math.random()-.5);visibleQuestIds=sh.slice(0,5).map(q=>q.id);}
   lastRefreshDate=getKDS();
-  localStorage.setItem('dsv_vq',JSON.stringify(visibleQuestIds));
-  localStorage.setItem('dsv_lrd',lastRefreshDate);
-  rerollCounts={};localStorage.setItem('dsv_rrc','{}');
-  abandonedQuestIds=[];localStorage.setItem('dsv_ab','[]');
+  rerollCounts={};
+  abandonedQuestIds=[];
+  saveQuestState(); // sync to Firestore so all devices get same quests
   sendWH('refresh',{});
 }
 function getVisQ(){
@@ -985,8 +1008,7 @@ function getVisQ(){
   return allQuests.filter(q=>visibleQuestIds.includes(q.id)&&q.status!=='archived'&&!comp.includes(q.id));
 }
 window.saveQuestRefreshTime=()=>{const v=document.getElementById('questRefreshTime').value;if(!v)return;localStorage.setItem('dsv_qrt',v);const[h,m]=v.split(':');questRefreshHour=parseInt(h);questRefreshMinute=parseInt(m);document.getElementById('currentRefreshTime').textContent=v;toast('✅ Час збережено');};
-window.forceRefreshQuests=()=>{lastRefreshDate='';visibleQuestIds=[];doRefresh();renderDash();toast('🔄 Квести оновлено');};
-window.saveRerollCost=()=>{rerollCost=parseInt(document.getElementById('rerollCostInput').value)||50;localStorage.setItem('dsv_rc',rerollCost);document.getElementById('currentRerollCost').textContent=rerollCost+' XP';toast('✅');};
+window.forceRefreshQuests=()=>{lastRefreshDate='';visibleQuestIds=[];doRefresh();renderDash();toast('🔄 Квести оновлено');};window.saveRerollCost=()=>{rerollCost=parseInt(document.getElementById('rerollCostInput').value)||50;localStorage.setItem('dsv_rc',rerollCost);document.getElementById('currentRerollCost').textContent=rerollCost+' XP';toast('✅');};
 window.saveMinZoom=()=>{const v=parseInt(document.getElementById('minZoomInput').value)||46;minZoom=Math.max(10,Math.min(100,v))/100;localStorage.setItem('dsv_mz2',minZoom);toast('✅ Зум: '+Math.round(minZoom*100)+'%');};
 window.saveLvlRewardSettings=()=>{
   levelRewardBase=parseInt(document.getElementById('lvlBaseCoins').value)||500;
@@ -1093,8 +1115,7 @@ window.rerollQuest=async(qid)=>{
   else{visibleQuestIds.push(nq.id);}
   rerollCounts[nq.id]=(c+1);
   delete rerollCounts[qid];
-  localStorage.setItem('dsv_vq',JSON.stringify(visibleQuestIds));
-  localStorage.setItem('dsv_rrc',JSON.stringify(rerollCounts));
+  saveQuestState(); // sync reroll state to Firestore
   renderDash();
   toast('🎲 -'+rerollCost+' XP — новий квест!');
 };
@@ -1146,7 +1167,7 @@ async function checkDeadlines(){
         if(pen>0)upd.xp=increment(-pen);
         await updateDoc(doc(db,'users',uid),upd);
         abandonedQuestIds.push(qid);
-        localStorage.setItem('dsv_ab',JSON.stringify(abandonedQuestIds));
+        saveQuestState();
         toast('⏰ Квест "'+(q?.name||qid)+'" анульовано!'+(pen>0?' -'+pen+' XP штраф':''));
         sendWH('cancel',{name:myData.name,quest:q?.name||'',penalty:pen});
       }
@@ -1566,6 +1587,15 @@ if(new URLSearchParams(location.search).get('view')==='map'){
   }else{
     initPublicMapView();
   }
+  // Hotkey Ctrl+C / Cmd+C for copying coords in public map view
+  const isMacOS2=/Mac/.test(navigator.platform);
+  document.addEventListener('keydown',function(e){
+    const ctrlKey=isMacOS2?e.metaKey:e.ctrlKey;
+    if(ctrlKey&&e.code==='KeyC'){
+      e.preventDefault();e.stopPropagation();
+      window.mvCopyCoords&&window.mvCopyCoords();
+    }
+  },true);
 }
 
 // ===== AUTH =====
@@ -1577,6 +1607,8 @@ onAuthStateChanged(auth,async user=>{
   if(!snap.exists()){location.href='index.html';return;}
   myData=snap.data();
   isAdmin=myData.role==='admin';
+  // Load quest state from Firestore (cross-device sync)
+  loadQuestStateFromData(myData);
   if(myData.coins===undefined){
     await updateDoc(doc(db,'users',uid),{coins:0,xp:0,completedQuests:0,activeQuestIds:[],completedQuestIds:[]});
     myData=(await getDoc(doc(db,'users',uid))).data();
@@ -1601,7 +1633,12 @@ onAuthStateChanged(auth,async user=>{
   // FIX: onSnapshot always triggers level reward check
   onSnapshot(doc(db,'users',uid),s=>{
     if(s.exists()){
-      myData=s.data();
+      const newData=s.data();
+      // Sync quest state from Firestore (cross-device sync) — but only if not currently saving
+      if(!_questStateSaving){
+        loadQuestStateFromData(newData);
+      }
+      myData=newData;
       loadUI();
       renderDash();
       renderLevelStrip();
@@ -1665,7 +1702,13 @@ function loadUI(){
 function listenQ(){
   onSnapshot(query(collection(db,'pilotQuests'),orderBy('createdAt','desc')),snap=>{
     allQuests=[];snap.forEach(d=>allQuests.push({id:d.id,...d.data()}));
-    if(!visibleQuestIds.length||shouldRefresh())doRefresh();
+    // If visibleQuestIds contains quests that no longer exist or got archived — refresh
+    const validIds=new Set(allQuests.filter(q=>q.status!=='archived').map(q=>q.id));
+    const staleVisible=visibleQuestIds.filter(id=>!validIds.has(id));
+    if(staleVisible.length>0||!visibleQuestIds.length||shouldRefresh()){
+      doRefresh();
+    }
+    // Always re-render immediately — so new/changed quests appear without tab switch
     renderDash();renderAQ();renderAdminQuestsFull();
   });
 }
@@ -1824,7 +1867,7 @@ window.confirmAbandon=async()=>{
   const upd={activeQuestIds:(myData?.activeQuestIds||[]).filter(id=>id!==abandonQID),questDeadlines:deadlines};
   if(abandonPen>0)upd.xp=increment(-abandonPen);
   await updateDoc(doc(db,'users',uid),upd);
-  abandonedQuestIds.push(abandonQID);localStorage.setItem('dsv_ab',JSON.stringify(abandonedQuestIds));
+  abandonedQuestIds.push(abandonQID);saveQuestState();
   document.getElementById('abandonModal').style.display='none';
   toast(abandonPen>0?'❌ Відмова. -'+abandonPen+' XP':'❌ Відмовились від квесту');
   sendWH('cancel',{name:myData.name,quest:q?.name||'',penalty:abandonPen});
