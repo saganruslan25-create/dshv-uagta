@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Операція: Дніпро — Стратегія</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Oswald:wght@400;700&display=swap');
+
+  :root {
+    --bg: #0a0e14;
+    --panel: #111820;
+    --border: #1e3a2f;
+    --green: #2aff7e;
+    --red: #ff3a3a;
+    --blue: #3af0ff;
+    --gold: #ffd84d;
+    --text: #c8e6c9;
+    --dim: #4a7a5a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── TOP BAR ─────────────────────────────────── */
+  #topbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 8px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #topbar h1 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 18px;
+    color: var(--green);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .stat {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px;
+  }
+  .stat .icon { font-size: 16px; }
+  .stat .val { color: var(--gold); font-weight: bold; }
+  #turn-info { margin-left: auto; color: var(--dim); font-size: 12px; }
+  #btn-endturn {
+    background: var(--green);
+    color: #000;
+    border: none;
+    padding: 6px 14px;
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  #btn-endturn:hover { opacity: .8; }
+
+  /* ── MAIN LAYOUT ─────────────────────────────── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── MAP ─────────────────────────────────────── */
+  #map-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #0d1a2a;
+  }
+  #map-canvas {
+    display: block;
+    cursor: crosshair;
+  }
+
+  /* ── RIGHT PANEL ─────────────────────────────── */
+  #side {
+    width: 230px;
+    background: var(--panel);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .side-section {
+    border-bottom: 1px solid var(--border);
+    padding: 10px;
+  }
+  .side-section h3 {
+    font-family: 'Oswald', sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  /* Selection info */
+  #sel-name { color: var(--green); font-size: 14px; margin-bottom: 4px; }
+  #sel-stats { font-size: 12px; line-height: 1.8; color: var(--text); }
+  #sel-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .act-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    padding: 5px 8px;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color .2s, color .2s;
+  }
+  .act-btn:hover { border-color: var(--green); color: var(--green); }
+  .act-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* Shop */
+  .shop-item {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px; font-size: 12px;
+  }
+  .shop-item .cost { color: var(--gold); }
+  .buy-btn {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    padding: 2px 7px;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .buy-btn:hover { background: rgba(255,216,77,.15); }
+
+  /* Log */
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    font-size: 11px;
+    line-height: 1.7;
+  }
+  #log p { border-bottom: 1px solid #1a2a1a; padding: 2px 0; }
+  #log p.enemy { color: var(--red); }
+  #log p.good  { color: var(--green); }
+  #log p.info  { color: var(--blue); }
+
+  /* ── TOOLTIP ─────────────────────────────────── */
+  #tooltip {
+    position: fixed;
+    background: rgba(10,14,20,.95);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    font-size: 11px;
+    pointer-events: none;
+    display: none;
+    z-index: 100;
+    line-height: 1.6;
+    min-width: 130px;
+  }
+
+  /* ── MODAL ───────────────────────────────────── */
+  #modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  #modal-overlay.show { display: flex; }
+  #modal {
+    background: var(--panel);
+    border: 1px solid var(--green);
+    padding: 24px 32px;
+    text-align: center;
+    max-width: 360px;
+  }
+  #modal h2 { font-family: 'Oswald', sans-serif; font-size: 28px; margin-bottom: 12px; }
+  #modal p  { font-size: 13px; color: var(--dim); margin-bottom: 20px; }
+  #modal button {
+    background: var(--green); color: #000;
+    border: none; padding: 8px 24px;
+    font-family: 'Oswald', sans-serif; font-size: 16px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <h1>⚔ Операція: Дніпро</h1>
+  <div class="stat"><span class="icon">💰</span><span>Бюджет:</span><span class="val" id="ui-gold">1200</span></div>
+  <div class="stat"><span class="icon">🏭</span><span>Дохід/хід:</span><span class="val" id="ui-income">+150</span></div>
+  <div class="stat"><span class="icon">🪖</span><span>Юніти:</span><span class="val" id="ui-units">0</span></div>
+  <div class="stat"><span class="icon">🏴</span><span>Бази:</span><span class="val" id="ui-bases">0</span></div>
+  <div id="turn-info">ХІД <span id="ui-turn">1</span></div>
+  <button id="btn-endturn" onclick="endTurn()">⏭ ЗАВЕРШИТИ ХІД</button>
+</div>
+
+<div id="main">
+  <!-- MAP -->
+  <div id="map-wrap">
+    <canvas id="map-canvas"></canvas>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div id="side">
+    <div class="side-section">
+      <h3>🎯 Вибрано</h3>
+      <div id="sel-name">— нічого —</div>
+      <div id="sel-stats"></div>
+      <div id="sel-actions"></div>
+    </div>
+
+    <div class="side-section">
+      <h3>🛒 Магазин</h3>
+      <div class="shop-item">
+        <span>🚛 Піхота</span>
+        <span class="cost">150₴</span>
+        <button class="buy-btn" onclick="buyUnit('infantry')">КУП</button>
+      </div>
+      <div class="shop-item">
+        <span>🚗 БТР</span>
+        <span class="cost">300₴</span>
+        <button class="buy-btn" onclick="buyUnit('apc')">КУП</button>
+      </div>
+      <div class="shop-item">
+        <span>🛡 Танк</span>
+        <span class="cost">600₴</span>
+        <button class="buy-btn" onclick="buyUnit('tank')">КУП</button>
+      </div>
+      <div class="shop-item">
+        <span>🚁 Вертоліт</span>
+        <span class="cost">800₴</span>
+        <button class="buy-btn" onclick="buyUnit('heli')">КУП</button>
+      </div>
+    </div>
+
+    <div class="side-section" style="flex:1;overflow:hidden;display:flex;flex-direction:column;">
+      <h3>📡 Журнал подій</h3>
+      <div id="log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip"></div>
+
+<!-- WIN/LOSE MODAL -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">ПЕРЕМОГА!</h2>
+    <p id="modal-msg">Ви захопили всі вороже бази.</p>
+    <button onclick="restartGame()">🔄 НОВА ГРА</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+//  CONSTANTS & CONFIG
+// ══════════════════════════════════════════════════
+const TILE = 32;
+const COLS = 36;
+const ROWS = 30;
+
+const UNIT_DEFS = {
+  infantry: { name:'Піхота',    emoji:'🚶', hp:30, maxHp:30, atk:8,  def:2, move:3, cost:150, range:2, income:0 },
+  apc:      { name:'БТР',       emoji:'🚗', hp:50, maxHp:50, atk:14, def:5, move:4, cost:300, range:2, income:0 },
+  tank:     { name:'Танк',      emoji:'🛡', hp:80, maxHp:80, atk:25, def:10,move:3, cost:600, range:2, income:0 },
+  heli:     { name:'Вертоліт',  emoji:'🚁', hp:40, maxHp:40, atk:20, def:3, move:6, cost:800, range:3, income:0 },
+};
+
+const BASE_INCOME = 150;
+const CAPTURE_INCOME = 80; // per captured base per turn
+
+// ══════════════════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════════════════
+let G = {};
+
+function initState() {
+  G = {
+    turn: 1,
+    gold: 1200,
+    income: BASE_INCOME,
+    selected: null,     // { type:'unit'|'base', id }
+    moveMode: false,
+    attackMode: false,
+    units: [],          // { id, owner:'player'|'enemy', type, x, y, hp, maxHp, atk, def, move, range, moved, attacked, emoji }
+    bases: [],          // { id, owner:'player'|'enemy'|'neutral', x, y, name }
+    nextId: 1,
+    log: [],
+    over: false,
+  };
+
+  // ── BASES (grid coords) ──
+  const baseDefs = [
+    { owner:'player',  x:5,  y:22, name:'Михайлівка' },
+    { owner:'player',  x:8,  y:15, name:'Конча-Заспа' },
+    { owner:'neutral', x:16, y:5,  name:'Правий берег Києва' },
+    { owner:'neutral', x:24, y:5,  name:'Лівий берег Києва' },
+    { owner:'neutral', x:10, y:2,  name:"Прип'ять" },
+    { owner:'neutral', x:28, y:9,  name:'Бориспіль' },
+    { owner:'neutral', x:28, y:15, name:'Форест-Хаус' },
+    { owner:'neutral', x:20, y:22, name:'Лівий берег Дніпра' },
+    { owner:'enemy',   x:32, y:10, name:'Харків' },
+    { owner:'enemy',   x:30, y:3,  name:'ЧАЕС' },
+    { owner:'enemy',   x:33, y:22, name:'Схід-1' },
+  ];
+  baseDefs.forEach(b => {
+    G.bases.push({ id: G.nextId++, ...b });
+  });
+
+  // ── PLAYER STARTING UNITS ──
+  spawnUnit('player','infantry',5,23);
+  spawnUnit('player','apc',6,22);
+
+  // ── ENEMY UNITS ──
+  spawnUnit('enemy','tank',31,10);
+  spawnUnit('enemy','infantry',29,4);
+  spawnUnit('enemy','infantry',32,11);
+  spawnUnit('enemy','apc',33,23);
+
+  recalcIncome();
+}
+
+function spawnUnit(owner, type, x, y) {
+  const d = UNIT_DEFS[type];
+  G.units.push({
+    id: G.nextId++,
+    owner, type, x, y,
+    hp: d.hp, maxHp: d.maxHp,
+    atk: d.atk, def: d.def,
+    move: d.move, range: d.range,
+    moved: false, attacked: false,
+    emoji: d.emoji,
+    name: d.name,
+  });
+}
+
+function recalcIncome() {
+  const cap = G.bases.filter(b => b.owner === 'player').length;
+  G.income = BASE_INCOME + cap * CAPTURE_INCOME;
+  document.getElementById('ui-income').textContent = '+' + G.income;
+}
+
+// ══════════════════════════════════════════════════
+//  CANVAS
+// ══════════════════════════════════════════════════
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+function resizeCanvas() {
+  const wrap = document.getElementById('map-wrap');
+  canvas.width  = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+}
+
+// Map-scroll offset
+let camX = 0, camY = 0;
+let dragging = false, dragStart = null, camStart = null;
+
+// Terrain noise map (simple deterministic)
+const terrainMap = [];
+for(let r=0;r<ROWS;r++){
+  terrainMap[r]=[];
+  for(let c=0;c<COLS;c++){
+    // pseudo-random but stable
+    const v = Math.sin(c*17.3+r*31.7)*10000;
+    terrainMap[r][c] = v - Math.floor(v);
+  }
+}
+
+function getTerrain(c,r){
+  if(c<0||r<0||c>=COLS||r>=ROWS) return 'water';
+  const v = terrainMap[r][c];
+  // Dnipro river column band
+  if(c>=15&&c<=17) return 'river';
+  if(v<.18) return 'forest';
+  if(v<.28) return 'mountain';
+  return 'plain';
+}
+
+const TERRAIN_COLOR = {
+  plain:    '#1c2e1c',
+  forest:   '#143020',
+  mountain: '#2a2a2a',
+  river:    '#0a1e3a',
+  water:    '#060e1a',
+};
+const TERRAIN_MOVE_COST = {
+  plain:1, forest:2, mountain:3, river:4, water:99,
+};
+
+function draw() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const c0 = Math.max(0, Math.floor(-camX/TILE));
+  const r0 = Math.max(0, Math.floor(-camY/TILE));
+  const c1 = Math.min(COLS-1, c0 + Math.ceil(canvas.width/TILE)+1);
+  const r1 = Math.min(ROWS-1, r0 + Math.ceil(canvas.height/TILE)+1);
+
+  // ── TILES ──
+  for(let r=r0;r<=r1;r++){
+    for(let c=c0;c<=c1;c++){
+      const sx = c*TILE+camX;
+      const sy = r*TILE+camY;
+      const t = getTerrain(c,r);
+      ctx.fillStyle = TERRAIN_COLOR[t];
+      ctx.fillRect(sx,sy,TILE,TILE);
+      // grid
+      ctx.strokeStyle = 'rgba(255,255,255,.04)';
+      ctx.strokeRect(sx,sy,TILE,TILE);
+      // forest dots
+      if(t==='forest'){
+        ctx.fillStyle='rgba(20,60,20,.6)';
+        ctx.beginPath(); ctx.arc(sx+8,sy+8,3,0,Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx+22,sy+18,4,0,Math.PI*2); ctx.fill();
+      }
+      // mountain triangles
+      if(t==='mountain'){
+        ctx.fillStyle='rgba(80,80,80,.4)';
+        ctx.beginPath(); ctx.moveTo(sx+16,sy+4); ctx.lineTo(sx+4,sy+28); ctx.lineTo(sx+28,sy+28); ctx.closePath(); ctx.fill();
+      }
+      // river sheen
+      if(t==='river'){
+        ctx.fillStyle='rgba(30,120,200,.15)';
+        ctx.fillRect(sx,sy,TILE,TILE);
+      }
+    }
+  }
+
+  // ── MOVE RANGE HIGHLIGHT ──
+  if(G.selected && G.moveMode) {
+    const u = G.units.find(u=>u.id===G.selected.id);
+    if(u) {
+      const cells = getReachable(u);
+      cells.forEach(([c,r])=>{
+        ctx.fillStyle='rgba(42,255,126,.18)';
+        ctx.fillRect(c*TILE+camX, r*TILE+camY, TILE, TILE);
+        ctx.strokeStyle='rgba(42,255,126,.5)';
+        ctx.strokeRect(c*TILE+camX+1, r*TILE+camY+1, TILE-2, TILE-2);
+      });
+    }
+  }
+
+  // ── ATTACK RANGE HIGHLIGHT ──
+  if(G.selected && G.attackMode) {
+    const u = G.units.find(u=>u.id===G.selected.id);
+    if(u) {
+      const cells = getAttackable(u);
+      cells.forEach(([c,r])=>{
+        ctx.fillStyle='rgba(255,58,58,.2)';
+        ctx.fillRect(c*TILE+camX, r*TILE+camY, TILE, TILE);
+      });
+    }
+  }
+
+  // ── BASES ──
+  G.bases.forEach(b => {
+    const sx = b.x*TILE+camX;
+    const sy = b.y*TILE+camY;
+    const col = b.owner==='player'?'#2aff7e':b.owner==='enemy'?'#ff3a3a':'#888';
+    ctx.fillStyle = col+'33';
+    ctx.fillRect(sx,sy,TILE,TILE);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(sx+1,sy+1,TILE-2,TILE-2);
+    ctx.lineWidth = 1;
+    ctx.fillStyle = col;
+    ctx.font = `${TILE*.5}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🏠', sx+TILE/2, sy+TILE/2);
+
+    // name label
+    ctx.fillStyle = col;
+    ctx.font = '8px Share Tech Mono';
+    ctx.fillText(b.name, sx+TILE/2, sy+TILE+7);
+  });
+
+  // ── UNITS ──
+  G.units.forEach(u => {
+    const sx = u.x*TILE+camX;
+    const sy = u.y*TILE+camY;
+    const isSelected = G.selected && G.selected.id === u.id;
+    const dim = u.moved && u.attacked;
+
+    // shadow circle
+    ctx.beginPath();
+    ctx.arc(sx+TILE/2, sy+TILE/2, TILE/2-2, 0, Math.PI*2);
+    ctx.fillStyle = u.owner==='player' ? 'rgba(42,255,126,.25)' : 'rgba(255,58,58,.25)';
+    ctx.fill();
+
+    // selection ring
+    if(isSelected){
+      ctx.beginPath();
+      ctx.arc(sx+TILE/2, sy+TILE/2, TILE/2-1, 0, Math.PI*2);
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.lineWidth = 1;
+    }
+
+    // emoji
+    ctx.globalAlpha = dim ? .45 : 1;
+    ctx.font = `${TILE*.6}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(u.emoji, sx+TILE/2, sy+TILE/2);
+    ctx.globalAlpha = 1;
+
+    // HP bar
+    const hpPct = u.hp/u.maxHp;
+    ctx.fillStyle = '#000a';
+    ctx.fillRect(sx+2, sy+TILE-6, TILE-4, 4);
+    ctx.fillStyle = hpPct>.5?'#2aff7e':hpPct>.25?'#ffd84d':'#ff3a3a';
+    ctx.fillRect(sx+2, sy+TILE-6, (TILE-4)*hpPct, 4);
+  });
+
+  // ── SELECTED BASE HIGHLIGHT ──
+  if(G.selected && G.selected.type==='base'){
+    const b = G.bases.find(b=>b.id===G.selected.id);
+    if(b){
+      ctx.strokeStyle='#fff';
+      ctx.lineWidth=2;
+      ctx.strokeRect(b.x*TILE+camX+1,b.y*TILE+camY+1,TILE-2,TILE-2);
+      ctx.lineWidth=1;
+    }
+  }
+}
+
+// ══════════════════════════════════════════════════
+//  PATHFINDING / RANGE
+// ══════════════════════════════════════════════════
+function getReachable(unit) {
+  const visited = {};
+  const queue = [[unit.x, unit.y, unit.move]];
+  const result = [];
+  visited[`${unit.x},${unit.y}`] = true;
+
+  while(queue.length) {
+    const [cx,cy,rem] = queue.shift();
+    if(cx!==unit.x||cy!==unit.y) {
+      // check no friendly unit there
+      const blocked = G.units.some(u=>u.x===cx&&u.y===cy&&u.owner===unit.owner&&u.id!==unit.id);
+      if(!blocked) result.push([cx,cy]);
+    }
+    if(rem<=0) continue;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(([dx,dy])=>{
+      const nx=cx+dx, ny=cy+dy;
+      const key=`${nx},${ny}`;
+      if(visited[key]) return;
+      const t = getTerrain(nx,ny);
+      if(t==='water') return;
+      const cost = TERRAIN_MOVE_COST[t]||1;
+      const newRem = rem-cost;
+      if(newRem<0) return;
+      visited[key]=true;
+      queue.push([nx,ny,newRem]);
+    });
+  }
+  return result;
+}
+
+function getAttackable(unit) {
+  const result = [];
+  for(let r=unit.y-unit.range; r<=unit.y+unit.range; r++){
+    for(let c=unit.x-unit.range; c<=unit.x+unit.range; c++){
+      if(Math.abs(c-unit.x)+Math.abs(r-unit.y)<=unit.range){
+        if(c===unit.x&&r===unit.y) continue;
+        result.push([c,r]);
+      }
+    }
+  }
+  return result;
+}
+
+// ══════════════════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════════════════
+canvas.addEventListener('mousedown', e => {
+  if(e.button===2) { // right click = cancel
+    G.moveMode=false; G.attackMode=false; G.selected=null;
+    updateSidePanel(); draw(); return;
+  }
+  dragging=true;
+  dragStart={x:e.clientX,y:e.clientY};
+  camStart={x:camX,y:camY};
+});
+
+canvas.addEventListener('mousemove', e => {
+  if(dragging) {
+    camX = camStart.x + e.clientX - dragStart.x;
+    camY = camStart.y + e.clientY - dragStart.y;
+    clampCam();
+    draw();
+  }
+  // tooltip
+  const rect = canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const gc=Math.floor((mx-camX)/TILE), gr=Math.floor((my-camY)/TILE);
+  showTooltip(e.clientX,e.clientY,gc,gr);
+});
+
+canvas.addEventListener('mouseup', e => {
+  const moved = Math.abs(e.clientX-dragStart.x)+Math.abs(e.clientY-dragStart.y);
+  dragging=false;
+  if(moved>6) return; // was drag, not click
+
+  if(G.over) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const gc=Math.floor((mx-camX)/TILE), gr=Math.floor((my-camY)/TILE);
+  handleClick(gc,gr);
+});
+
+canvas.addEventListener('contextmenu', e=>e.preventDefault());
+canvas.addEventListener('mouseleave', ()=>{
+  dragging=false;
+  document.getElementById('tooltip').style.display='none';
+});
+
+function clampCam(){
+  const maxX = 0;
+  const minX = -(COLS*TILE - canvas.width);
+  const maxY = 0;
+  const minY = -(ROWS*TILE - canvas.height);
+  camX = Math.min(maxX, Math.max(minX, camX));
+  camY = Math.min(maxY, Math.max(minY, camY));
+}
+
+function handleClick(gc, gr) {
+  if(gc<0||gr<0||gc>=COLS||gr>=ROWS) return;
+
+  const clickedUnit = G.units.find(u=>u.x===gc&&u.y===gr);
+  const clickedBase = G.bases.find(b=>b.x===gc&&b.y===gr);
+
+  // ── MOVE MODE ──
+  if(G.moveMode && G.selected) {
+    const unit = G.units.find(u=>u.id===G.selected.id);
+    if(unit) {
+      const reachable = getReachable(unit);
+      if(reachable.some(([c,r])=>c===gc&&r===gr)){
+        unit.x=gc; unit.y=gr; unit.moved=true;
+        addLog(`${unit.name} переміщено → (${gc},${gr})`,'info');
+        // auto-capture base?
+        const base = G.bases.find(b=>b.x===gc&&b.y===gr);
+        if(base && base.owner!=='player') {
+          base.owner='player';
+          addLog(`🏴 Захоплено базу «${base.name}»!`,'good');
+          recalcIncome();
+        }
+        G.moveMode=false;
+        updateSidePanel();
+        draw();
+        checkWin();
+        return;
+      }
+    }
+    G.moveMode=false;
+  }
+
+  // ── ATTACK MODE ──
+  if(G.attackMode && G.selected) {
+    const attacker = G.units.find(u=>u.id===G.selected.id);
+    if(attacker && clickedUnit && clickedUnit.owner==='enemy') {
+      const attackable = getAttackable(attacker);
+      if(attackable.some(([c,r])=>c===gc&&r===gr)){
+        doAttack(attacker,clickedUnit);
+        attacker.attacked=true;
+        G.attackMode=false;
+        updateSidePanel();
+        draw();
+        checkWin();
+        return;
+      }
+    }
+    G.attackMode=false;
+  }
+
+  // ── SELECT ──
+  if(clickedUnit) {
+    G.selected={ type:'unit', id:clickedUnit.id };
+  } else if(clickedBase) {
+    G.selected={ type:'base', id:clickedBase.id };
+  } else {
+    G.selected=null;
+  }
+  G.moveMode=false; G.attackMode=false;
+  updateSidePanel();
+  draw();
+}
+
+// ══════════════════════════════════════════════════
+//  COMBAT
+// ══════════════════════════════════════════════════
+function doAttack(attacker, defender) {
+  const dmg = Math.max(1, attacker.atk - Math.floor(defender.def/2) + randInt(-3,3));
+  defender.hp -= dmg;
+  addLog(`💥 ${attacker.name} → ${defender.name}: -${dmg} HP (залишилось ${Math.max(0,defender.hp)})`, attacker.owner==='player'?'good':'enemy');
+  if(defender.hp<=0) {
+    G.units = G.units.filter(u=>u.id!==defender.id);
+    addLog(`💀 ${defender.name} знищено!`, attacker.owner==='player'?'good':'enemy');
+    // if enemy base had this unit on it, maybe recapture
+  }
+}
+
+function randInt(a,b){ return a+Math.floor(Math.random()*(b-a+1)); }
+
+// ══════════════════════════════════════════════════
+//  ENEMY AI (simple)
+// ══════════════════════════════════════════════════
+function enemyTurn() {
+  addLog('── Хід ворога ──','enemy');
+  const enemies = G.units.filter(u=>u.owner==='enemy');
+
+  enemies.forEach(enemy => {
+    // Find nearest player unit or player base
+    let target = null;
+    let bestDist = 9999;
+
+    G.units.filter(u=>u.owner==='player').forEach(pu=>{
+      const d = Math.abs(pu.x-enemy.x)+Math.abs(pu.y-enemy.y);
+      if(d<bestDist){ bestDist=d; target={x:pu.x,y:pu.y,unit:pu}; }
+    });
+    G.bases.filter(b=>b.owner==='player').forEach(pb=>{
+      const d = Math.abs(pb.x-enemy.x)+Math.abs(pb.y-enemy.y);
+      if(d<bestDist){ bestDist=d; target={x:pb.x,y:pb.y,unit:null}; }
+    });
+
+    if(!target) return;
+
+    // Can attack?
+    const dist = Math.abs(target.x-enemy.x)+Math.abs(target.y-enemy.y);
+    if(dist<=enemy.range && target.unit) {
+      doAttack(enemy, target.unit);
+    } else {
+      // Move towards target
+      const reachable = getReachable(enemy);
+      if(reachable.length>0){
+        let best=null, bestD=9999;
+        reachable.forEach(([c,r])=>{
+          const d=Math.abs(c-target.x)+Math.abs(r-target.y);
+          if(d<bestD){bestD=d;best=[c,r];}
+        });
+        if(best){ enemy.x=best[0]; enemy.y=best[1]; }
+        // capture neutral/player base
+        const base=G.bases.find(b=>b.x===enemy.x&&b.y===enemy.y);
+        if(base&&base.owner!=='enemy'){
+          base.owner='enemy';
+          addLog(`⚠ Ворог захопив «${base.name}»!`,'enemy');
+          recalcIncome();
+        }
+        // attack after move?
+        if(target.unit){
+          const d2=Math.abs(target.unit.x-enemy.x)+Math.abs(target.unit.y-enemy.y);
+          if(d2<=enemy.range) doAttack(enemy,target.unit);
+        }
+      }
+    }
+  });
+
+  // Enemy spawns a unit every 4 turns if it has bases
+  if(G.turn%4===0){
+    const enemyBases=G.bases.filter(b=>b.owner==='enemy');
+    if(enemyBases.length>0){
+      const b=enemyBases[Math.floor(Math.random()*enemyBases.length)];
+      const types=['infantry','apc','tank'];
+      const t=types[Math.floor(Math.random()*types.length)];
+      spawnUnit('enemy',t,b.x,b.y+1);
+      addLog(`⚠ Ворог розгорнув ${UNIT_DEFS[t].name} біля «${b.name}»!`,'enemy');
+    }
+  }
+
+  checkLose();
+}
+
+// ══════════════════════════════════════════════════
+//  TURN MANAGEMENT
+// ══════════════════════════════════════════════════
+function endTurn() {
+  if(G.over) return;
+  // reset player unit flags
+  G.units.filter(u=>u.owner==='player').forEach(u=>{ u.moved=false; u.attacked=false; });
+  G.gold += G.income;
+  G.turn++;
+  G.selected=null; G.moveMode=false; G.attackMode=false;
+  addLog(`═══ Початок ходу ${G.turn} | +${G.income}₴ ═══`,'info');
+  updateUI();
+  updateSidePanel();
+  enemyTurn();
+  draw();
+}
+
+// ══════════════════════════════════════════════════
+//  SHOP
+// ══════════════════════════════════════════════════
+function buyUnit(type) {
+  if(G.over) return;
+  const def = UNIT_DEFS[type];
+  if(G.gold < def.cost){ addLog('⚠ Недостатньо коштів!','enemy'); return; }
+  // place near first player base
+  const base = G.bases.find(b=>b.owner==='player');
+  if(!base){ addLog('⚠ Немає вашої бази для розгортання!','enemy'); return; }
+  // find free spot
+  let placed=false;
+  for(let dx=-2;dx<=2&&!placed;dx++){
+    for(let dy=-2;dy<=2&&!placed;dy++){
+      const nx=base.x+dx, ny=base.y+dy;
+      if(getTerrain(nx,ny)==='water') continue;
+      if(G.units.some(u=>u.x===nx&&u.y===ny)) continue;
+      spawnUnit('player',type,nx,ny);
+      placed=true;
+    }
+  }
+  if(!placed){ addLog('⚠ Немає місця для розгортання!','enemy'); return; }
+  G.gold -= def.cost;
+  addLog(`🛒 Придбано: ${def.name} (-${def.cost}₴)`,'good');
+  updateUI();
+  draw();
+}
+
+// ══════════════════════════════════════════════════
+//  WIN / LOSE
+// ══════════════════════════════════════════════════
+function checkWin() {
+  const enemyBases = G.bases.filter(b=>b.owner==='enemy').length;
+  const enemyUnits = G.units.filter(u=>u.owner==='enemy').length;
+  if(enemyBases===0 && enemyUnits===0){
+    G.over=true;
+    showModal('🏆 ПЕРЕМОГА!','Ви знищили всі сили ворога і захопили їхні бази!');
+  }
+}
+function checkLose() {
+  const playerBases = G.bases.filter(b=>b.owner==='player').length;
+  const playerUnits = G.units.filter(u=>u.owner==='player').length;
+  if(playerBases===0 && playerUnits===0){
+    G.over=true;
+    showModal('💀 ПОРАЗКА','Ворог знищив всі ваші сили...','red');
+  }
+}
+function showModal(title,msg,color){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-title').style.color=color==='red'?'#ff3a3a':'#2aff7e';
+  document.getElementById('modal-msg').textContent=msg;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function restartGame(){
+  document.getElementById('modal-overlay').classList.remove('show');
+  document.getElementById('log').innerHTML='';
+  initState();
+  updateUI();
+  updateSidePanel();
+  draw();
+}
+
+// ══════════════════════════════════════════════════
+//  UI UPDATES
+// ══════════════════════════════════════════════════
+function updateUI(){
+  document.getElementById('ui-gold').textContent=G.gold;
+  document.getElementById('ui-income').textContent='+'+G.income;
+  document.getElementById('ui-units').textContent=G.units.filter(u=>u.owner==='player').length;
+  document.getElementById('ui-bases').textContent=G.bases.filter(b=>b.owner==='player').length;
+  document.getElementById('ui-turn').textContent=G.turn;
+}
+
+function updateSidePanel(){
+  const nameEl=document.getElementById('sel-name');
+  const statsEl=document.getElementById('sel-stats');
+  const actEl=document.getElementById('sel-actions');
+  actEl.innerHTML='';
+
+  if(!G.selected){ nameEl.textContent='— нічого —'; statsEl.innerHTML=''; return; }
+
+  if(G.selected.type==='unit'){
+    const u=G.units.find(u=>u.id===G.selected.id);
+    if(!u){ G.selected=null; updateSidePanel(); return; }
+    nameEl.textContent=`${u.emoji} ${u.name}`;
+    statsEl.innerHTML=`Власник: ${u.owner==='player'?'<span style="color:var(--green)">ВАШ</span>':'<span style="color:var(--red)">ВОРОГ</span>'}
+HP: ${u.hp}/${u.maxHp}
+Атака: ${u.atk} | Захист: ${u.def}
+Рух: ${u.move} | Дальність: ${u.range}
+Переміщено: ${u.moved?'✔':'—'} | Атакував: ${u.attacked?'✔':'—'}`.replace(/\n/g,'<br>');
+
+    if(u.owner==='player'){
+      const btnMove=document.createElement('button');
+      btnMove.className='act-btn';
+      btnMove.textContent='🚶 Переміститись';
+      btnMove.disabled=u.moved;
+      btnMove.onclick=()=>{ G.moveMode=true; G.attackMode=false; draw(); };
+      actEl.appendChild(btnMove);
+
+      const btnAtk=document.createElement('button');
+      btnAtk.className='act-btn';
+      btnAtk.textContent='⚔ Атакувати';
+      btnAtk.disabled=u.attacked;
+      btnAtk.onclick=()=>{ G.attackMode=true; G.moveMode=false; draw(); };
+      actEl.appendChild(btnAtk);
+
+      const btnWait=document.createElement('button');
+      btnWait.className='act-btn';
+      btnWait.textContent='⏸ Очікувати';
+      btnWait.onclick=()=>{ u.moved=true; u.attacked=true; G.selected=null; updateSidePanel(); draw(); };
+      actEl.appendChild(btnWait);
+    }
+  } else {
+    const b=G.bases.find(b=>b.id===G.selected.id);
+    if(!b){ G.selected=null; updateSidePanel(); return; }
+    const ownerLabel = b.owner==='player'?'<span style="color:var(--green)">ВАШ</span>':b.owner==='enemy'?'<span style="color:var(--red)">ВОРОГ</span>':'<span style="color:#888">НЕЙТРАЛЬНА</span>';
+    nameEl.textContent='🏠 '+b.name;
+    statsEl.innerHTML=`Власник: ${ownerLabel}<br>Дохід: ${b.owner==='player'?'+'+CAPTURE_INCOME:'0'}₴/хід`;
+  }
+}
+
+function addLog(msg, cls=''){
+  G.log.unshift({msg,cls});
+  if(G.log.length>60) G.log.pop();
+  const logEl=document.getElementById('log');
+  logEl.innerHTML=G.log.map(l=>`<p class="${l.cls}">${l.msg}</p>`).join('');
+}
+
+// ══════════════════════════════════════════════════
+//  TOOLTIP
+// ══════════════════════════════════════════════════
+function showTooltip(mx,my,gc,gr){
+  const tip=document.getElementById('tooltip');
+  const u=G.units.find(u=>u.x===gc&&u.y===gr);
+  const b=G.bases.find(b=>b.x===gc&&b.y===gr);
+  const t=getTerrain(gc,gr);
+  const TNAME={plain:'Рівнина',forest:'Ліс',mountain:'Гори',river:'Річка',water:'Вода'};
+  let html='';
+  if(u) html=`${u.emoji} ${u.name}<br>HP: ${u.hp}/${u.maxHp} | ATK:${u.atk}`;
+  else if(b) html=`🏠 ${b.name}<br>${b.owner==='player'?'Ваша':b.owner==='enemy'?'Ворожа':'Нейтральна'}`;
+  else html=TNAME[t]||t;
+  tip.innerHTML=html;
+  tip.style.display='block';
+  tip.style.left=(mx+14)+'px';
+  tip.style.top=(my-10)+'px';
+}
+
+// ══════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════
+window.addEventListener('resize', ()=>{ resizeCanvas(); clampCam(); draw(); });
+resizeCanvas();
+initState();
+// Center camera roughly on player start
+camX = -( 5*TILE - canvas.width/2 );
+camY = -( 20*TILE - canvas.height/2 );
+clampCam();
+updateUI();
+updateSidePanel();
+addLog('🎮 Гра розпочата! Захопіть ворожі бази!','good');
+draw();
+
+// Gameloop for subtle animation
+setInterval(draw, 100);
+</script>
+</body>
+</html>
