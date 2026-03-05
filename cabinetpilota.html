@@ -2086,14 +2086,82 @@ function onMM(e){const{wx,wy}=s2w(e);curMWX=wx;curMWY=wy;document.getElementById
 function onMU(e){const totalDrag=Math.abs(e.clientX-dragStartX)+Math.abs(e.clientY-dragStartY);isDrag=false;if(isDrawing){isDrawing=false;if(currentStroke){drawStrokes.push(currentStroke);currentStroke=null;saveDS();}return;}if(draggingMarkerIdx!==-1){const moved=mdd>8;saveMD();const idx=draggingMarkerIdx;draggingMarkerIdx=-1;mdd=0;if(!moved&&tool==='cursor')openMarkerEdit(idx);return;}if(draggingZonePt){saveMD();draggingZonePt=null;return;}if(e.button!==0||totalDrag>6)return;const{wx,wy}=s2w(e);if(tool==='marker'){markers.push({x:wx,y:wy,label:document.getElementById('markerNameInput').value.trim()||'Мітка',color:markerColor});saveMD();drawMap();return;}if(tool==='zone'&&drawingZone&&!shiftHeld){zonePoints.push({x:wx,y:wy});drawMap();}}
 function onMLeave(){isDrag=false;isDrawing=false;if(draggingMarkerIdx!==-1){saveMD();draggingMarkerIdx=-1;}draggingZonePt=null;if(currentStroke){drawStrokes.push(currentStroke);currentStroke=null;saveDS();}}
 function onRC(e){e.preventDefault();const{wx,wy}=s2w(e);if(tool==='zone'&&drawingZone){if(zonePoints.length>=3)saveZone();return;}const mi=gMA(wx,wy);if(mi!==-1){showCM(e.clientX,e.clientY,'marker',mi);return;}const zi=gZIA(wx,wy);if(zi!==-1)showCM(e.clientX,e.clientY,'zone',zi);}
-function onWHL(e){e.preventDefault();const r=drawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,scale*d));offX=mx-(mx-offX)*(ns/scale);offY=my-(my-offY)*(ns/scale);scale=ns;clamp();document.getElementById('zoomDisplay').textContent=Math.round(scale*100)+'%';drawMap();redrawDS();drawGridLabels();updateCrosshairCoords();
+function onWHL(e){
+  e.preventDefault();
+  const r=drawCvs.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+  const d=e.deltaY>0?0.85:1.15,ns=Math.max(0.05,Math.min(10,scale*d));
+  offX=mx-(mx-offX)*(ns/scale);
+  offY=my-(my-offY)*(ns/scale);
+  scale=ns;
+  clamp();
+  document.getElementById('zoomDisplay').textContent=Math.round(scale*100)+'%';
+  drawMap();
+  redrawDS();
+  drawGridLabels();
+  updateCrosshairCoords();
+}
 let lastTouchX=0,lastTouchY=0;
-function onTStart(e){e.preventDefault();if(e.touches.length===1){touchPanning=true;lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;updateCrosshairCoords();}else if(e.touches.length===2){touchPanning=false;touchPinchDist=getTouchDist(e.touches);}}
-function onTMove(e){e.preventDefault();if(e.touches.length===1&&touchPanning){const dx=e.touches[0].clientX-lastTouchX,dy=e.touches[0].clientY-lastTouchY;offX+=dx;offY+=dy;lastTouchX=e.touches[0].clientX;lastTouchY=e.touches[0].clientY;clamp();drawMap();redrawDS();drawGridLabels();updateCrosshairCoords();
-function onTEnd(e){e.preventDefault();if(e.touches.length===0)touchPanning=false;}
+function onTStart(e){
+  e.preventDefault();
+  if(e.touches.length===1){
+    touchPanning=true;
+    lastTouchX=e.touches[0].clientX;
+    lastTouchY=e.touches[0].clientY;
+    updateCrosshairCoords();
+  }else if(e.touches.length===2){
+    touchPanning=false;
+    touchPinchDist=getTouchDist(e.touches);
+  }
+}
+function onTMove(e){
+  e.preventDefault();
+  if(e.touches.length===1&&touchPanning){
+    const dx=e.touches[0].clientX-lastTouchX;
+    const dy=e.touches[0].clientY-lastTouchY;
+    offX+=dx;
+    offY+=dy;
+    lastTouchX=e.touches[0].clientX;
+    lastTouchY=e.touches[0].clientY;
+    clamp();
+    drawMap();
+    redrawDS();
+    drawGridLabels();
+    updateCrosshairCoords();
+  }else if(e.touches.length===2){
+    const nd=getTouchDist(e.touches);
+    const {x:cx,y:cy}=getTouchCenter(e.touches);
+    const r2=drawCvs.getBoundingClientRect();
+    const mx=cx-r2.left;
+    const my=cy-r2.top;
+    const d=nd/touchPinchDist;
+    const ns=Math.max(.05,Math.min(10,scale*d));
+    offX=mx-(mx-offX)*(ns/scale);
+    offY=my-(my-offY)*(ns/scale);
+    scale=ns;
+    touchPinchDist=nd;
+    clamp();
+    drawMap();
+    updateCrosshairCoords();
+  }
+}
+function onTEnd(e){
+  e.preventDefault();
+  if(e.touches.length===0)touchPanning=false;
+}
 function getTouchCenter(t){return{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2};}
 function getTouchDist(t){return Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);}
-function updateCrosshairCoords(){if(!mapCvs)return;const cx=mapCvs.width/2,cy=mapCvs.height/2,wx=Math.round((cx-offX)/scale),wy=Math.round((cy-offY)/scale);curMWX=wx;curMWY=wy;document.getElementById('mapX').textContent=wx-zeroX;document.getElementById('mapY').textContent=wy-zeroY;document.getElementById('curZone').textContent=gZA(wx,wy)||'—';}
+function updateCrosshairCoords(){
+  if(!mapCvs)return;
+  const cx=mapCvs.width/2;
+  const cy=mapCvs.height/2;
+  const wx=Math.round((cx-offX)/scale);
+  const wy=Math.round((cy-offY)/scale);
+  curMWX=wx;
+  curMWY=wy;
+  document.getElementById('mapX').textContent=wx-zeroX;
+  document.getElementById('mapY').textContent=wy-zeroY;
+  document.getElementById('curZone').textContent=gZA(wx,wy)||'—';
+}
 function pan(e){offX+=e.clientX-lmx;offY+=e.clientY-lmy;lmx=e.clientX;lmy=e.clientY;clamp();drawMap();redrawDS();drawGridLabels();}
 function clamp(){if(!mapCvs)return;if(scale<minZoom)scale=minZoom;if(scale>10)scale=10;const W=mapCvs.width,H=mapCvs.height;if(mapBg&&mapBgW>0&&mapBgH>0){const iW=mapBgW*scale,iH=mapBgH*scale;if(iW>=W){if(offX>0)offX=0;if(offX<W-iW)offX=W-iW;}else offX=(W-iW)/2;if(iH>=H){if(offY>0)offY=0;if(offY<H-iH)offY=H-iH;}else offY=(H-iH)/2;}}
 function showCM(cx,cy,type,idx){ctxTarget={type,idx};const m=document.getElementById('ctxMenu');document.getElementById('ctxEditZone').style.display=type==='zone'?'flex':'none';document.getElementById('ctxDeleteZone').style.display=type==='zone'?'flex':'none';document.getElementById('ctxSep2').style.display=type==='marker'?'block':'none';document.getElementById('ctxEditMarker').style.display=type==='marker'?'flex':'none';document.getElementById('ctxMoveMarker').style.display=type==='marker'?'flex':'none';document.getElementById('ctxDelMarker').style.display=type==='marker'?'flex':'none';m.style.left=cx+'px';m.style.top=cy+'px';m.classList.add('vis');}
