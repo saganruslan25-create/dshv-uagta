@@ -2220,6 +2220,10 @@ mapCtx.textAlign='center';
 for(let x=Math.ceil(sx/gs)*gs;x<ex;x+=gs)mapCtx.fillText(x-zeroX,x,sy+13/scale);
 mapCtx.textAlign='right';
 for(let y=Math.ceil(sy/gs)*gs;y<ey;y+=gs)mapCtx.fillText(y-zeroY,sx+28/scale,y+4/scale);
+zones.forEach(z=>{if(!z.points||z.points.length<2)return;mapCtx.save();mapCtx.translate(offX,offY);mapCtx.scale(scale,scale);mapCtx.beginPath();mapCtx.moveTo(z.points[0].x,z.points[0].y);z.points.slice(1).forEach(p=>mapCtx.lineTo(p.x,p.y));mapCtx.closePath();mapCtx.fillStyle=(z.color||'#22c55e')+'33';mapCtx.strokeStyle=z.color||'#22c55e';mapCtx.lineWidth=2/scale;mapCtx.fill();mapCtx.stroke();if(z.name){const cx=z.points.reduce((s,p)=>s+p.x,0)/z.points.length,cy=z.points.reduce((s,p)=>s+p.y,0)/z.points.length;mapCtx.fillStyle='#fff';mapCtx.font=`bold ${12/scale}px 'Exo 2'`;mapCtx.textAlign='center';mapCtx.fillText(z.name,cx,cy);}mapCtx.restore();});
+  markers.forEach((m,i)=>{mapCtx.save();mapCtx.translate(offX+m.x*scale,offY+m.y*scale);mapCtx.beginPath();mapCtx.arc(0,-10,7,0,Math.PI*2);mapCtx.fillStyle=m.color||'#ef4444';mapCtx.fill();mapCtx.strokeStyle='#fff';mapCtx.lineWidth=1.5;mapCtx.stroke();mapCtx.fillStyle='#fff';mapCtx.font="bold 10px 'Exo 2'";mapCtx.textAlign='center';mapCtx.fillText(i+1,0,-7);if(m.label){mapCtx.fillStyle='rgba(3,5,7,.85)';const tw=mapCtx.measureText(m.label).width;mapCtx.fillRect(-tw/2-3,3,tw+6,14);mapCtx.fillStyle='#fff';mapCtx.fillText(m.label,0,14);}mapCtx.restore();});
+  mapCtx.restore();
+}
 function resizeMap(){if(!mapCvs||!drawCvs||!mapCont)return;mapCvs.width=mapCont.clientWidth;mapCvs.height=mapCont.clientHeight;drawCvs.width=mapCont.clientWidth;drawCvs.height=mapCont.clientHeight;clamp();drawMap();drawGridLabels();if(isMobile){updateCrosshairPos();updateCrosshairCoords();}}function drawGridLabels(){
   if(!mapCont||!gridVisible)return;
   // Видаляємо старі мітки
