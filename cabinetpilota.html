@@ -643,7 +643,7 @@ select.form-input option{background:#0a0d11}
     <div class="ablock">
       <div class="ablock-t">🔍 МАСШТАБ КАРТИ</div>
       <div class="rflex">
-        <div style="min-width:90px"><label class="form-label">Мін. зум %</label><input type="number" class="form-input" id="minZoomInput" placeholder="46" min="10" max="100"></div>
+        <div style="min-width:90px"><label class="form-label">Мін. зум %</label><input type="number" class="form-input" id="minZoomInput" placeholder="46" min="10">
         <button class="bsm" onclick="saveMinZoom()">OK</button>
       </div>
     </div>
@@ -1372,7 +1372,8 @@ window.saveQuestRefreshTime=()=>{const v=document.getElementById('questRefreshTi
 window.forceRefreshQuests=()=>{lastRefreshDate='';visibleQuestIds=[];doRefresh();renderDash();toast('🔄 Квести оновлено');};
 window.saveRerollCost=()=>{rerollCost=parseInt(document.getElementById('rerollCostInput').value)||50;localStorage.setItem('dsv_rc',rerollCost);document.getElementById('currentRerollCost').textContent=rerollCost+' XP';toast('✅');};
 minZoom=parseFloat(localStorage.getItem('dsv_mz2'))||0.46;
-window.saveLvlRewardSettings=()=>{
+window.saveMinZoom=()=>{const v=parseInt(document.getElementById('minZoomInput').value)||46;minZoom=Math.max(10,Math.min(5000,v))/100;localStorage.setItem('dsv_mz2',minZoom);scale=minZoom;if(mapInited){offX=0;offY=0;clamp();drawMap();redrawDS();document.getElementById('zoomDisplay').textContent=Math.round(scale*100)+'%';}toast('✅ Зум: '+Math.round(minZoom*100)+'%');};
+window.saveLvlRewardSettings
   levelRewardBase=parseInt(document.getElementById('lvlBaseCoins').value)||500;
   levelRewardMult=parseFloat(document.getElementById('lvlMultiplier').value)||2;
   localStorage.setItem('dsv_lrb',levelRewardBase);localStorage.setItem('dsv_lrm',levelRewardMult);
@@ -2081,7 +2082,7 @@ function getTouchCenter(t){return{x:(t[0].clientX+t[1].clientX)/2,y:(t[0].client
 function getTouchDist(t){return Math.hypot(t[1].clientX-t[0].clientX,t[1].clientY-t[0].clientY);}
 function updateCrosshairCoords(){if(!mapCvs)return;const cx=mapCvs.width/2,cy=mapCvs.height/2,wx=Math.round((cx-offX)/scale),wy=Math.round((cy-offY)/scale);curMWX=wx;curMWY=wy;document.getElementById('mapX').textContent=wx-zeroX;document.getElementById('mapY').textContent=wy-zeroY;document.getElementById('curZone').textContent=gZA(wx,wy)||'—';}
 function pan(e){offX+=e.clientX-lmx;offY+=e.clientY-lmy;lmx=e.clientX;lmy=e.clientY;clamp();drawMap();redrawDS();}
-function clamp(){if(!mapCvs)return;if(scale<minZoom)scale=minZoom;if(scale>50)scale=50;const W=mapCvs.width,H=mapCvs.height;if(mapBg&&mapBgW>0&&mapBgH>0){const iW=mapBgW*scale,iH=mapBgH*scale;if(iW>=W){if(offX>0)offX=0;if(offX<W-iW)offX=W-iW;}else offX=(W-iW)/2;if(iH>=H){if(offY>0)offY=0;if(offY<H-iH)offY=H-iH;}else offY=(H-iH)/2;}}
+function clamp(){if(!mapCvs)return;if(scale<minZoom)scale=minZoom;if(scale>5000)scale=5000;const W=mapCvs.width,H=mapCvs.height;if(mapBg&&mapBgW>0&&mapBgH>0){const iW=mapBgW*scale,iH=mapBgH*scale;if(iW>=W){if(offX>0)offX=0;if(offX<W-iW)offX=W-iW;}else offX=(W-iW)/2;if(iH>=H){if(offY>0)offY=0;if(offY<H-iH)offY=H-iH;}else offY=(H-iH)/2;}}
 function showCM(cx,cy,type,idx){ctxTarget={type,idx};const m=document.getElementById('ctxMenu');document.getElementById('ctxEditZone').style.display=type==='zone'?'flex':'none';document.getElementById('ctxDeleteZone').style.display=type==='zone'?'flex':'none';document.getElementById('ctxSep2').style.display=type==='marker'?'block':'none';document.getElementById('ctxEditMarker').style.display=type==='marker'?'flex':'none';document.getElementById('ctxMoveMarker').style.display=type==='marker'?'flex':'none';document.getElementById('ctxDelMarker').style.display=type==='marker'?'flex':'none';m.style.left=cx+'px';m.style.top=cy+'px';m.classList.add('vis');}
 function hideCtx(){document.getElementById('ctxMenu').classList.remove('vis');}
 window.ctxDo=a=>{hideCtx();if(!ctxTarget)return;const{type,idx}=ctxTarget;if(a==='editzone')openZoneEdit(idx);if(a==='delzone'&&confirm('Видалити зону?')){zones.splice(idx,1);saveMD();updateLeg();drawMap();}if(a==='editmarker')openMarkerEdit(idx);if(a==='movemarker')toast('🖱 Перетягніть мітку',2000);if(a==='delmarker'){markers.splice(idx,1);saveMD();drawMap();}};
