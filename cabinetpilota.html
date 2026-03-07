@@ -1510,10 +1510,38 @@ let zeroX=0,zeroY=0;
 function loadZP(){
   try{zeroX=parseInt(localStorage.getItem('dsv_zx'))||0;zeroY=parseInt(localStorage.getItem('dsv_zy'))||0;}catch(e){}
   const ex=document.getElementById('zeroPointX'),ey=document.getElementById('zeroPointY');
-  if(ex)ex.value=zeroX||'';if(ey)ey.value=zeroY||'';
+  if(ex)ex.value=zeroX!==0?zeroX:'';if(ey)ey.value=zeroY!==0?zeroY:'';
 }loadZP();
-window.setZeroPoint=()=>{zeroX=parseInt(document.getElementById('zeroPointX').value)||0;zeroY=parseInt(document.getElementById('zeroPointY').value)||0;localStorage.setItem('dsv_zx',zeroX);localStorage.setItem('dsv_zy',zeroY);if(mapInited)drawMap();toast('✅');};
-window.resetZeroPoint=()=>{zeroX=0;zeroY=0;localStorage.removeItem('dsv_zx');localStorage.removeItem('dsv_zy');document.getElementById('zeroPointX').value='';document.getElementById('zeroPointY').value='';if(mapInited)drawMap();toast('✅');};
+window.setZeroPoint=()=>{
+  const xVal=document.getElementById('zeroPointX').value;
+  const yVal=document.getElementById('zeroPointY').value;
+  zeroX=xVal===''?0:parseInt(xVal)||0;
+  zeroY=yVal===''?0:parseInt(yVal)||0;
+  localStorage.setItem('dsv_zx',zeroX);
+  localStorage.setItem('dsv_zy',zeroY);
+  if(mapInited){
+    drawMap();
+    const mx=document.getElementById('mapX'),my=document.getElementById('mapY');
+    if(mx)mx.textContent=curMWX-zeroX;
+    if(my)my.textContent=curMWY-zeroY;
+    if(isMobile)updateCrosshairCoords();
+  }
+  toast('✅ Нульова точка: X='+zeroX+' Y='+zeroY);
+};
+window.resetZeroPoint=()=>{
+  zeroX=0;zeroY=0;
+  localStorage.removeItem('dsv_zx');localStorage.removeItem('dsv_zy');
+  document.getElementById('zeroPointX').value='';
+  document.getElementById('zeroPointY').value='';
+  if(mapInited){
+    drawMap();
+    const mx=document.getElementById('mapX'),my=document.getElementById('mapY');
+    if(mx)mx.textContent=curMWX-zeroX;
+    if(my)my.textContent=curMWY-zeroY;
+    if(isMobile)updateCrosshairCoords();
+  }
+  toast('✅ Нульова точка скинута');
+};
 
 let curMWX=0,curMWY=0;
 
