@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ЗСУ | Форум — Збройні Сили України</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #00ff44;
+            --primary-bright: #e0ffe8;
+            --primary-glow: rgba(0, 255, 68, 0.7);
+            --primary-dim: rgba(0, 255, 68, 0.15);
+            --bg: #030507;
+            --card-bg: rgba(10, 12, 16, 0.6);
+            --card-bg-solid: #0a0c10;
+            --glass-border: rgba(0, 255, 68, 0.25);
+            --danger: #ef4444;
+            --danger-glow: rgba(239, 68, 68, 0.6);
+            --warning: #fbbf24;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --text-gray: #94a3b8;
+            --text-dim: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg);
+            background-image:
+                radial-gradient(circle at 15% 50%, rgba(0, 255, 68, 0.12), transparent 50%),
+                radial-gradient(circle at 85% 20%, rgba(0, 255, 68, 0.08), transparent 40%);
+            background-attachment: fixed;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #05070a; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; box-shadow: 0 0 8px var(--primary); }
+
+        /* HEADER */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 14px 5%; background: rgba(3, 5, 7, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 1000;
+            box-shadow: 0 0 30px rgba(0,255,102,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .logo-box {
+            background: var(--primary); color: black; padding: 7px 16px;
+            border-radius: 8px; font-weight: 900; text-decoration: none; font-size: 15px;
+            text-transform: uppercase; box-shadow: 0 0 20px var(--primary);
+            font-family: 'Rajdhani', sans-serif; letter-spacing: 1px;
+        }
+        .header-center {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 13px; color: var(--text-gray);
+        }
+        .header-center span { color: var(--text-dim); }
+        .header-center .current { color: var(--primary-bright); font-weight: 700; }
+        .header-center .sep { color: var(--text-dim); margin: 0 4px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .btn-header {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            color: var(--primary-bright); padding: 8px 16px; border-radius: 10px;
+            font-weight: 700; cursor: pointer; font-size: 12px; transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-header:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); border-color: var(--primary); }
+        .btn-header.danger { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.07); }
+        .btn-header.danger:hover { background: var(--danger); color: white; box-shadow: 0 0 15px var(--danger); }
+        .btn-header.admin-btn { border-color: var(--warning); color: var(--warning); background: rgba(251,191,36,0.07); }
+        .btn-header.admin-btn:hover { background: var(--warning); color: black; box-shadow: 0 0 15px var(--warning); }
+
+        /* MAIN LAYOUT */
+        .page-wrapper { display: flex; justify-content: center; padding: 28px 5% 60px; }
+        .page-container { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* BANNER */
+        .forum-banner {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 18px; padding: 26px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            backdrop-filter: blur(10px); position: relative; overflow: hidden;
+        }
+        .forum-banner::before {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+            background: linear-gradient(to bottom, var(--primary), transparent);
+        }
+        .forum-banner-left h1 {
+            font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700;
+            color: var(--primary-bright); letter-spacing: 1px;
+        }
+        .forum-banner-left p { font-size: 13px; color: var(--text-gray); margin-top: 4px; }
+        .forum-stats { display: flex; gap: 24px; }
+        .stat-box { text-align: right; }
+        .stat-box .num { font-size: 24px; font-weight: 900; color: var(--primary); font-family: 'Rajdhani', sans-serif; }
+        .stat-box .lbl { font-size: 11px; color: var(--text-gray); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* FILTERS BAR */
+        .filters-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 14px 20px; backdrop-filter: blur(10px);
+        }
+        .filter-tabs { display: flex; gap: 6px; }
+        .filter-tab {
+            padding: 7px 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            cursor: pointer; border: 1px solid transparent; transition: all 0.2s;
+            color: var(--text-gray); background: transparent;
+        }
+        .filter-tab.active, .filter-tab:hover { background: var(--primary-dim); border-color: var(--glass-border); color: var(--primary-bright); }
+        .filter-tab.active { color: var(--primary); border-color: var(--primary); }
+        .btn-new-topic {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--primary); color: black; padding: 9px 20px;
+            border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;
+            border: none; transition: all 0.2s; font-family: 'Inter', sans-serif;
+            box-shadow: 0 0 20px rgba(0,255,68,0.4);
+        }
+        .btn-new-topic:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(0,255,68,0.6); }
+
+        /* TOPIC LIST */
+        .topics-list { display: flex; flex-direction: column; gap: 6px; }
+
+        .topic-row {
+            display: grid; grid-template-columns: 42px 1fr auto auto;
+            align-items: center; gap: 16px;
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 14px; padding: 16px 20px; cursor: pointer;
+            transition: all 0.2s; backdrop-filter: blur(6px); position: relative;
+            overflow: hidden;
+        }
+        .topic-row:hover { border-color: var(--glass-border); background: rgba(10,15,25,0.8); transform: translateX(2px); }
+        .topic-row.pinned { border-color: rgba(59,130,246,0.3); }
+        .topic-row.pinned::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--blue); }
+        .topic-row.important { border-color: rgba(239,68,68,0.3); }
+        .topic-row.important::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--danger); }
+        .topic-row.locked { opacity: 0.75; }
+        .topic-row.knowledge { border-color: rgba(168,85,247,0.3); }
+        .topic-row.knowledge::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--purple); }
+
+        .topic-avatar {
+            width: 42px; height: 42px; border-radius: 10px; object-fit: cover;
+            border: 2px solid var(--glass-border); background: #1a1f2e;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; flex-shrink: 0;
+        }
+        .topic-main { min-width: 0; }
+        .topic-tags { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; flex-wrap: wrap; }
+        .tag {
+            padding: 3px 10px; border-radius: 5px; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.5px; white-space: nowrap;
+        }
+        .tag.important { background: var(--danger); color: white; }
+        .tag.pinned { background: var(--blue); color: white; }
+        .tag.knowledge { background: var(--purple); color: white; }
+        .tag.rules { background: #10b981; color: white; }
+        .tag.new { background: var(--primary); color: black; }
+        .tag.reports { background: var(--warning); color: black; }
+        .tag.locked-tag { background: rgba(255,255,255,0.1); color: var(--text-gray); }
+
+        .topic-title {
+            font-size: 15px; font-weight: 700; color: white; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .topic-row:hover .topic-title { color: var(--primary-bright); }
+        .topic-meta { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+        .topic-meta span { color: var(--text-gray); }
+
+        .topic-counts { text-align: right; white-space: nowrap; }
+        .topic-counts .count-item { font-size: 11px; color: var(--text-gray); }
+        .topic-counts .count-num { font-weight: 700; color: var(--primary-bright); }
+
+        .topic-last { text-align: right; white-space: nowrap; min-width: 130px; }
+        .topic-last .time { font-size: 11px; color: var(--text-dim); }
+        .topic-last .user { font-size: 12px; font-weight: 700; color: var(--primary); margin-top: 2px; }
+        .topic-icons { display: flex; gap: 6px; justify-content: flex-end; margin-top: 4px; }
+        .topic-icon { font-size: 14px; opacity: 0.6; }
+
+        .section-divider {
+            display: flex; align-items: center; gap: 12px; padding: 8px 0;
+            color: var(--text-dim); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .section-divider::before, .section-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.06); }
+
+        /* TOPIC DETAIL VIEW */
+        #topicDetail { display: none; }
+
+        .topic-header-bar {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 18px; padding: 24px 28px; backdrop-filter: blur(10px);
+        }
+        .topic-header-bar h2 { font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: var(--primary-bright); }
+        .topic-header-bar .meta { font-size: 12px; color: var(--text-gray); margin-top: 6px; display: flex; align-items: center; gap: 14px; }
+        .topic-header-bar .meta span { display: flex; align-items: center; gap: 5px; }
+
+        .locked-notice {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 12px 18px; font-size: 13px; color: var(--text-gray);
+        }
+
+        .posts-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .post-card {
+            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; overflow: hidden; backdrop-filter: blur(6px);
+            display: grid; grid-template-columns: 180px 1fr;
+        }
+        .post-author {
+            background: rgba(0,0,0,0.3); border-right: 1px solid rgba(255,255,255,0.06);
+            padding: 20px 16px; text-align: center; display: flex; flex-direction: column;
+            align-items: center; gap: 8px;
+        }
+        .post-avatar {
+            width: 70px; height: 70px; border-radius: 14px; object-fit: cover;
+            border: 2px solid var(--glass-border); background: #1a1f2e;
+            display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto;
+        }
+        .post-author-name { font-weight: 800; font-size: 14px; color: var(--primary); }
+        .post-author-rank { font-size: 11px; color: var(--text-gray); margin-top: 2px; }
+        .post-author-badge {
+            background: var(--warning); color: black; padding: 3px 10px; border-radius: 5px;
+            font-size: 10px; font-weight: 900; text-transform: uppercase;
+        }
+        .post-author-badge.leader { background: var(--warning); }
+
+        .post-body { padding: 20px 24px; }
+        .post-body-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .post-date { font-size: 12px; color: var(--text-dim); }
+        .post-num { font-size: 12px; color: var(--text-dim); font-weight: 700; }
+        .post-actions-row { display: flex; gap: 8px; }
+        .post-action-btn {
+            font-size: 12px; color: var(--text-gray); cursor: pointer; padding: 4px 10px;
+            border-radius: 6px; border: 1px solid transparent; transition: all 0.15s; background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+        .post-action-btn:hover { border-color: var(--glass-border); color: var(--primary-bright); background: var(--primary-dim); }
+        .post-action-btn.danger:hover { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.1); }
+
+        .post-content { font-size: 14px; line-height: 1.7; color: #cbd5e1; }
+        .post-content h3 { color: var(--primary-bright); font-family: 'Rajdhani', sans-serif; font-size: 18px; margin: 16px 0 8px; }
+        .post-content p { margin-bottom: 10px; }
+        .post-content a { color: var(--primary); text-decoration: underline; }
+        .post-content ul { padding-left: 20px; margin-bottom: 10px; }
+        .post-content li { margin-bottom: 4px; }
+        .post-content .highlight { color: var(--warning); font-weight: 700; }
+        .post-content .important-text { color: var(--danger); font-weight: 700; }
+        .post-content img { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+
+        /* REPLY FORM */
+        .reply-form-wrap {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 20px 24px; backdrop-filter: blur(10px);
+        }
+        .reply-form-wrap h4 { font-size: 14px; font-weight: 700; margin-bottom: 14px; color: var(--primary-bright); }
+        .reply-textarea {
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px; color: white; font-size: 14px; font-family: 'Inter', sans-serif;
+            padding: 14px 16px; resize: vertical; min-height: 100px; outline: none; transition: border-color 0.2s;
+        }
+        .reply-textarea:focus { border-color: var(--primary); box-shadow: 0 0 10px rgba(0,255,68,0.2); }
+        .reply-form-bottom { display: flex; justify-content: flex-end; gap: 10px; margin-top: 12px; }
+        .btn-reply {
+            background: var(--primary); color: black; padding: 10px 24px;
+            border-radius: 10px; font-weight: 900; font-size: 13px; cursor: pointer;
+            border: none; transition: all 0.2s; font-family: 'Inter', sans-serif;
+            box-shadow: 0 0 15px rgba(0,255,68,0.4);
+        }
+        .btn-reply:hover { transform: translateY(-1px); box-shadow: 0 0 25px rgba(0,255,68,0.6); }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 2000; display: none;
+            align-items: center; justify-content: center; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show { display: flex; }
+
+        .modal-box {
+            background: #0d1117; border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 30px; width: 90%; max-width: 620px;
+            max-height: 90vh; overflow-y: auto; position: relative;
+            box-shadow: 0 0 60px rgba(0,255,68,0.2);
+        }
+        .modal-box h3 {
+            font-family: 'Rajdhani', sans-serif; font-size: 22px; font-weight: 700;
+            color: var(--primary-bright); margin-bottom: 20px; padding-bottom: 14px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .modal-close {
+            position: absolute; top: 18px; right: 20px; font-size: 22px;
+            color: var(--text-gray); cursor: pointer; transition: color 0.2s; background: none; border: none;
+        }
+        .modal-close:hover { color: white; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-gray); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .form-input, .form-select, .form-textarea {
+            width: 100%; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 10px; color: white; font-size: 14px; font-family: 'Inter', sans-serif;
+            padding: 12px 14px; outline: none; transition: border-color 0.2s;
+        }
+        .form-select { cursor: pointer; }
+        .form-select option { background: #0d1117; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--primary); }
+        .form-textarea { resize: vertical; min-height: 160px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .checkbox-label {
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            padding: 7px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.1); transition: all 0.2s; color: var(--text-gray);
+        }
+        .checkbox-label:has(input:checked) { border-color: var(--primary); color: var(--primary-bright); background: var(--primary-dim); }
+        .checkbox-label input { display: none; }
+
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07); }
+        .btn-submit { background: var(--primary); color: black; padding: 11px 28px; border-radius: 10px; font-weight: 900; font-size: 14px; cursor: pointer; border: none; font-family: 'Inter', sans-serif; box-shadow: 0 0 20px rgba(0,255,68,0.4); transition: all 0.2s; }
+        .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 0 30px rgba(0,255,68,0.6); }
+        .btn-cancel { background: rgba(255,255,255,0.05); color: var(--text-gray); padding: 11px 22px; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); font-family: 'Inter', sans-serif; transition: all 0.2s; }
+        .btn-cancel:hover { color: white; border-color: rgba(255,255,255,0.2); }
+
+        /* ADMIN PANEL */
+        .admin-panel {
+            background: rgba(251,191,36,0.05); border: 1px solid rgba(251,191,36,0.2);
+            border-radius: 14px; padding: 16px 20px; display: none;
+        }
+        .admin-panel.visible { display: block; }
+        .admin-panel-title { font-size: 12px; font-weight: 900; color: var(--warning); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+        .admin-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .admin-action-btn {
+            display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px;
+            font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; border: 1px solid; font-family: 'Inter', sans-serif;
+        }
+        .admin-action-btn.green { border-color: var(--primary); color: var(--primary); background: var(--primary-dim); }
+        .admin-action-btn.green:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary-glow); }
+        .admin-action-btn.yellow { border-color: var(--warning); color: var(--warning); background: rgba(251,191,36,0.07); }
+        .admin-action-btn.yellow:hover { background: var(--warning); color: black; }
+        .admin-action-btn.red { border-color: var(--danger); color: var(--danger); background: rgba(239,68,68,0.07); }
+        .admin-action-btn.red:hover { background: var(--danger); color: white; box-shadow: 0 0 15px var(--danger-glow); }
+        .admin-action-btn.blue { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.07); }
+        .admin-action-btn.blue:hover { background: var(--blue); color: white; }
+
+        /* TOAST */
+        #toast {
+            position: fixed; bottom: 30px; right: 30px;
+            background: #0d1117; border: 1px solid var(--primary); border-radius: 12px;
+            padding: 14px 20px; font-size: 13px; font-weight: 600; color: var(--primary-bright);
+            display: none; z-index: 9999; box-shadow: 0 0 30px rgba(0,255,68,0.4);
+            animation: slideIn 0.3s ease;
+        }
+        #toast.show { display: block; }
+        #toast.error { border-color: var(--danger); color: var(--danger); box-shadow: 0 0 30px var(--danger-glow); }
+        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        /* BACK BUTTON */
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: var(--text-gray); font-size: 13px; font-weight: 600; cursor: pointer;
+            padding: 8px 14px; border-radius: 8px; border: 1px solid transparent;
+            transition: all 0.2s; background: none;
+        }
+        .back-btn:hover { border-color: var(--glass-border); color: var(--primary-bright); background: var(--primary-dim); }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+        .empty-state .emoji { font-size: 48px; margin-bottom: 16px; }
+        .empty-state h3 { color: var(--text-gray); font-size: 18px; margin-bottom: 8px; }
+
+        /* LOADING */
+        .loading-bar {
+            height: 2px; background: linear-gradient(to right, transparent, var(--primary), transparent);
+            position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .forum-banner { flex-direction: column; gap: 16px; align-items: flex-start; }
+            .topic-row { grid-template-columns: 42px 1fr; }
+            .topic-counts, .topic-last { display: none; }
+            .post-card { grid-template-columns: 1fr; }
+            .post-author { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); flex-direction: row; justify-content: flex-start; }
+            .header-center { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingBar" class="loading-bar" style="display:none;"></div>
+
+<!-- HEADER -->
+<header>
+    <a href="cabinet.html" class="logo-box">ЗСУ</a>
+    <div class="header-center" id="breadcrumb">
+        <span>Форуми</span><span class="sep">›</span>
+        <span>Сервери</span><span class="sep">›</span>
+        <span>Державні організації</span><span class="sep">›</span>
+        <span class="current">Збройні Сили України</span>
+    </div>
+    <div class="header-right">
+        <button class="btn-header admin-btn" id="adminToggleBtn" style="display:none;" onclick="toggleAdminMode()">⚡ АДМІН</button>
+        <button class="btn-header" onclick="showForumList()">← Назад</button>
+    </div>
+</header>
+
+<!-- FORUM LIST VIEW -->
+<div id="forumListView">
+    <div class="page-wrapper">
+        <div class="page-container">
+
+            <!-- BANNER -->
+            <div class="forum-banner">
+                <div class="forum-banner-left">
+                    <h1>🪖 Збройні Сили України</h1>
+                    <p>Державна організація · Сервер №1 [Центральна Україна]</p>
+                </div>
+                <div class="forum-stats">
+                    <div class="stat-box">
+                        <div class="num" id="totalTopics">0</div>
+                        <div class="lbl">Тем</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="num" id="totalReplies">0</div>
+                        <div class="lbl">Відповідей</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ADMIN PANEL (VISIBLE ONLY FOR ADMINS) -->
+            <div class="admin-panel" id="adminPanel">
+                <div class="admin-panel-title">⚡ Панель адміністратора</div>
+                <div class="admin-actions">
+                    <button class="admin-action-btn green" onclick="openCreateTopicModal()">＋ Створити тему</button>
+                    <button class="admin-action-btn yellow" id="lockAllBtn" onclick="toggleForumLock()">🔒 Закрити форум</button>
+                </div>
+            </div>
+
+            <!-- FILTERS -->
+            <div class="filters-bar">
+                <div class="filter-tabs">
+                    <div class="filter-tab active" onclick="filterTopics('all', this)">Всі теми</div>
+                    <div class="filter-tab" onclick="filterTopics('important', this)">Важливо</div>
+                    <div class="filter-tab" onclick="filterTopics('knowledge', this)">База знань</div>
+                    <div class="filter-tab" onclick="filterTopics('pinned', this)">Закріплені</div>
+                </div>
+                <button class="btn-new-topic" id="newTopicBtn" onclick="openCreateTopicModal()" style="display:none;">＋ Нова тема</button>
+            </div>
+
+            <!-- TOPICS -->
+            <div class="topics-list" id="topicsList">
+                <div class="empty-state">
+                    <div class="loading-bar" style="position:static; height:2px; border-radius:2px;"></div>
+                    <p style="color:var(--text-dim); margin-top:16px; font-size:13px;">Завантаження тем...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- TOPIC DETAIL VIEW -->
+<div id="topicDetail">
+    <div class="page-wrapper">
+        <div class="page-container">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="back-btn" onclick="showForumList()">← Повернутись до списку</button>
+            </div>
+
+            <!-- TOPIC HEADER -->
+            <div class="topic-header-bar" id="detailHeader"></div>
+
+            <!-- ADMIN TOPIC ACTIONS -->
+            <div class="admin-panel" id="adminTopicPanel">
+                <div class="admin-panel-title">⚡ Управління темою</div>
+                <div class="admin-actions">
+                    <button class="admin-action-btn green" id="editTopicBtn" onclick="openEditTopicModal()">✏️ Редагувати тему</button>
+                    <button class="admin-action-btn yellow" id="lockTopicBtn" onclick="toggleTopicLock()">🔒 Закрити тему</button>
+                    <button class="admin-action-btn blue" id="pinTopicBtn" onclick="toggleTopicPin()">📌 Закріпити</button>
+                    <button class="admin-action-btn red" onclick="deleteTopic()">🗑 Видалити тему</button>
+                </div>
+            </div>
+
+            <!-- LOCKED NOTICE -->
+            <div id="lockedNotice" class="locked-notice" style="display:none;">
+                🔒 <span>В цій темі не можна розміщувати нові відповіді.</span>
+            </div>
+
+            <!-- POSTS -->
+            <div class="posts-list" id="postsList"></div>
+
+            <!-- REPLY FORM -->
+            <div class="reply-form-wrap" id="replyFormWrap">
+                <h4>💬 Написати відповідь</h4>
+                <textarea class="reply-textarea" id="replyText" placeholder="Напишіть свою відповідь..."></textarea>
+                <div class="reply-form-bottom">
+                    <button class="btn-cancel" onclick="document.getElementById('replyText').value=''">Очистити</button>
+                    <button class="btn-reply" onclick="submitReply()">Відповісти →</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- CREATE / EDIT TOPIC MODAL -->
+<div class="modal-overlay" id="topicModal">
+    <div class="modal-box">
+        <h3 id="topicModalTitle">📝 Створити нову тему</h3>
+        <button class="modal-close" onclick="closeModal('topicModal')">✕</button>
+
+        <div class="form-group">
+            <label class="form-label">Назва теми</label>
+            <input class="form-input" id="topicTitleInput" placeholder="ЗСУ | Назва теми..." type="text">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Тег / Категорія</label>
+                <select class="form-select" id="topicTagInput">
+                    <option value="important">🔴 Важливо</option>
+                    <option value="pinned">🔵 Закріплено</option>
+                    <option value="knowledge">🟣 База знань</option>
+                    <option value="rules">🟢 Правила</option>
+                    <option value="reports">🟡 Звіти</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Статус</label>
+                <select class="form-select" id="topicStatusInput">
+                    <option value="open">Відкрита</option>
+                    <option value="locked">🔒 Закрита (без відповідей)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Додаткові параметри</label>
+            <div class="checkbox-group">
+                <label class="checkbox-label"><input type="checkbox" id="chkPinned"> 📌 Закріпити тему</label>
+                <label class="checkbox-label"><input type="checkbox" id="chkNew"> 🆕 Позначити як нове</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Зміст / Текст теми (HTML підтримується)</label>
+            <textarea class="form-textarea" id="topicContentInput" placeholder="Введіть текст теми...&#10;&#10;Підтримується HTML: &lt;b&gt;, &lt;br&gt;, &lt;ul&gt;&lt;li&gt;, &lt;a href=''&gt;..."></textarea>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('topicModal')">Скасувати</button>
+            <button class="btn-submit" onclick="saveTopic()">Зберегти тему</button>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT POST MODAL -->
+<div class="modal-overlay" id="editPostModal">
+    <div class="modal-box">
+        <h3>✏️ Редагувати відповідь</h3>
+        <button class="modal-close" onclick="closeModal('editPostModal')">✕</button>
+        <div class="form-group">
+            <label class="form-label">Текст відповіді</label>
+            <textarea class="form-textarea" id="editPostText"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('editPostModal')">Скасувати</button>
+            <button class="btn-submit" onclick="saveEditPost()">Зберегти</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import {
+        getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc,
+        deleteDoc, onSnapshot, query, orderBy, serverTimestamp, where
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
+        authDomain: "dsv-gta.firebaseapp.com",
+        projectId: "dsv-gta",
+        storageBucket: "dsv-gta.firebasestorage.app",
+        messagingSenderId: "661591588818",
+        appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let myData = null;
+    let isAdmin = false;
+    let isAdminMode = false;
+    let currentTopicId = null;
+    let editingTopicId = null;
+    let editingPostId = null;
+    let allTopics = [];
+    let currentFilter = 'all';
+    let unsubPosts = null;
+
+    // ======= AUTH =======
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = 'index.html'; return; }
+        currentUser = user;
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (!snap.exists()) { window.location.href = 'index.html'; return; }
+        myData = snap.data();
+        isAdmin = myData.role === 'admin' || myData.role === 'instructor';
+        if (isAdmin) {
+            document.getElementById('adminToggleBtn').style.display = 'block';
+            document.getElementById('newTopicBtn').style.display = 'flex';
+        }
+        loadTopics();
+    });
+
+    // ======= LOAD TOPICS =======
+    function loadTopics() {
+        showLoading();
+        const q = query(collection(db, "forum_topics"), orderBy("createdAt", "desc"));
+        onSnapshot(q, (snap) => {
+            allTopics = [];
+            let totalReplies = 0;
+            snap.forEach(d => {
+                const t = { id: d.id, ...d.data() };
+                allTopics.push(t);
+                totalReplies += t.replyCount || 0;
+            });
+            document.getElementById('totalTopics').textContent = allTopics.length;
+            document.getElementById('totalReplies').textContent = totalReplies;
+            renderTopics();
+            hideLoading();
+        });
+    }
+
+    function renderTopics() {
+        const container = document.getElementById('topicsList');
+        let filtered = allTopics;
+        if (currentFilter !== 'all') {
+            filtered = allTopics.filter(t => t.tag === currentFilter || (currentFilter === 'pinned' && t.pinned));
+        }
+
+        if (filtered.length === 0) {
+            container.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><h3>Тем не знайдено</h3><p style="color:var(--text-dim); font-size:13px;">Поки що тут нічого немає</p></div>`;
+            return;
+        }
+
+        // Sort: pinned first, then by date
+        const pinned = filtered.filter(t => t.pinned);
+        const normal = filtered.filter(t => !t.pinned);
+        const sorted = [...pinned, ...normal];
+
+        let html = '';
+        if (pinned.length && normal.length && currentFilter === 'all') {
+            html += renderTopicGroup(pinned, '📌 Закріплені теми');
+            html += renderTopicGroup(normal, '📋 Загальні теми');
+        } else {
+            sorted.forEach(t => { html += renderTopicRow(t); });
+        }
+        container.innerHTML = html;
+
+        // click handlers
+        container.querySelectorAll('.topic-row').forEach(row => {
+            row.addEventListener('click', () => openTopic(row.dataset.id));
+        });
+    }
+
+    function renderTopicGroup(topics, label) {
+        let html = `<div class="section-divider">${label}</div>`;
+        topics.forEach(t => { html += renderTopicRow(t); });
+        return html;
+    }
+
+    function renderTopicRow(t) {
+        const tagMap = {
+            important: '<span class="tag important">Важливо</span>',
+            pinned: '<span class="tag pinned">Закріплено</span>',
+            knowledge: '<span class="tag knowledge">База знань</span>',
+            rules: '<span class="tag rules">Правила</span>',
+            reports: '<span class="tag reports">Звіти</span>'
+        };
+        const tagHtml = tagMap[t.tag] || '';
+        const newTag = t.isNew ? '<span class="tag new">Нове</span>' : '';
+        const lockedTag = t.locked ? '<span class="tag locked-tag">🔒</span>' : '';
+        const dateStr = t.createdAt ? new Date(t.createdAt.seconds * 1000).toLocaleDateString('uk-UA') : '';
+        const lastDate = t.lastReplyAt ? formatRelative(t.lastReplyAt.seconds * 1000) : dateStr;
+        const rowClass = t.tag === 'important' ? 'important' : t.pinned ? 'pinned' : t.tag === 'knowledge' ? 'knowledge' : '';
+
+        return `
+        <div class="topic-row ${rowClass}" data-id="${t.id}">
+            <div class="topic-avatar">${t.tag === 'important' ? '❗' : t.pinned ? '📌' : t.tag === 'knowledge' ? '📖' : t.tag === 'rules' ? '📜' : '📋'}</div>
+            <div class="topic-main">
+                <div class="topic-tags">${tagHtml}${newTag}${lockedTag}</div>
+                <div class="topic-title">${escHtml(t.title)}</div>
+                <div class="topic-meta">${escHtml(t.authorName || 'Автор')} · <span>${dateStr}</span></div>
+            </div>
+            <div class="topic-counts">
+                <div class="count-item">Відповіді: <span class="count-num">${t.replyCount || 0}</span></div>
+                <div class="count-item">Перегляди: <span class="count-num">${formatViews(t.views || 0)}</span></div>
+            </div>
+            <div class="topic-last">
+                <div class="time">${lastDate}</div>
+                <div class="user">${escHtml(t.lastReplyAuthor || t.authorName || '')}</div>
+            </div>
+        </div>`;
+    }
+
+    // ======= OPEN TOPIC =======
+    async function openTopic(id) {
+        currentTopicId = id;
+        const topic = allTopics.find(t => t.id === id);
+        if (!topic) return;
+
+        // Increment views
+        updateDoc(doc(db, "forum_topics", id), { views: (topic.views || 0) + 1 }).catch(() => {});
+
+        // Render header
+        const tagMap = {
+            important: '<span class="tag important">Важливо</span>',
+            pinned: '<span class="tag pinned">Закріплено</span>',
+            knowledge: '<span class="tag knowledge">База знань</span>',
+            rules: '<span class="tag rules">Правила</span>',
+            reports: '<span class="tag reports">Звіти</span>'
+        };
+        document.getElementById('detailHeader').innerHTML = `
+            <div style="display:flex; gap:8px; align-items:center; margin-bottom:10px;">
+                ${tagMap[topic.tag] || ''}
+                ${topic.isNew ? '<span class="tag new">Нове</span>' : ''}
+                ${topic.locked ? '<span class="tag locked-tag">🔒 Закрито</span>' : ''}
+            </div>
+            <h2>${escHtml(topic.title)}</h2>
+            <div class="meta">
+                <span>👤 ${escHtml(topic.authorName || 'Автор')}</span>
+                <span>📅 ${topic.createdAt ? new Date(topic.createdAt.seconds * 1000).toLocaleDateString('uk-UA') : ''}</span>
+                <span>💬 ${topic.replyCount || 0} відповідей</span>
+                <span>👁 ${topic.views || 0} переглядів</span>
+            </div>`;
+
+        // Locked notice
+        document.getElementById('lockedNotice').style.display = topic.locked ? 'flex' : 'none';
+        document.getElementById('replyFormWrap').style.display = topic.locked ? 'none' : 'block';
+
+        // Admin panel
+        if (isAdmin && isAdminMode) {
+            document.getElementById('adminTopicPanel').classList.add('visible');
+            document.getElementById('lockTopicBtn').textContent = topic.locked ? '🔓 Відкрити тему' : '🔒 Закрити тему';
+            document.getElementById('pinTopicBtn').textContent = topic.pinned ? '📌 Відкріпити' : '📌 Закріпити';
+        }
+
+        // Show detail
+        document.getElementById('forumListView').style.display = 'none';
+        document.getElementById('topicDetail').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        loadPosts(id, topic);
+    }
+
+    function loadPosts(topicId, topic) {
+        if (unsubPosts) unsubPosts();
+        const postsList = document.getElementById('postsList');
+        postsList.innerHTML = '<p style="color:var(--text-dim); font-size:13px; padding:20px;">Завантаження...</p>';
+
+        // First post = topic content
+        let html = '';
+        if (topic.content) {
+            html += buildPostCard({
+                id: 'main',
+                authorName: topic.authorName || 'Автор',
+                authorRank: topic.authorRank || '',
+                authorBadge: topic.authorBadge || '',
+                content: topic.content,
+                createdAt: topic.createdAt,
+                num: 1,
+                isMain: true
+            });
+        }
+        postsList.innerHTML = html;
+
+        // Listen replies
+        const q = query(collection(db, "forum_topics", topicId, "replies"), orderBy("createdAt", "asc"));
+        unsubPosts = onSnapshot(q, (snap) => {
+            let replyHtml = '';
+            let num = topic.content ? 2 : 1;
+            snap.forEach(d => {
+                replyHtml += buildPostCard({ id: d.id, num, ...d.data() });
+                num++;
+            });
+            // Re-render keeping main post
+            postsList.innerHTML = html + replyHtml;
+        });
+    }
+
+    function buildPostCard(post) {
+        const dateStr = post.createdAt ? new Date(post.createdAt.seconds * 1000).toLocaleString('uk-UA') : '—';
+        const adminActions = (isAdmin && isAdminMode && !post.isMain) ? `
+            <button class="post-action-btn" onclick="openEditPost('${post.id}', \`${escAttr(post.content)}\`)">✏️ Ред.</button>
+            <button class="post-action-btn danger" onclick="deleteReply('${post.id}')">🗑 Вид.</button>
+        ` : '';
+        const badge = post.authorBadge ? `<div class="post-author-badge leader">${escHtml(post.authorBadge)}</div>` : '';
+
+        return `
+        <div class="post-card" id="post-${post.id}">
+            <div class="post-author">
+                <div class="post-avatar">${post.authorAvatar ? `<img src="${escHtml(post.authorAvatar)}" style="width:100%;height:100%;border-radius:12px;object-fit:cover;">` : '🪖'}</div>
+                <div class="post-author-name">${escHtml(post.authorName || 'Гравець')}</div>
+                <div class="post-author-rank">${escHtml(post.authorRank || '')}</div>
+                ${badge}
+            </div>
+            <div class="post-body">
+                <div class="post-body-header">
+                    <span class="post-date">📅 ${dateStr}</span>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        ${adminActions}
+                        <span class="post-num">#${post.num}</span>
+                    </div>
+                </div>
+                <div class="post-content">${post.content || ''}</div>
+            </div>
+        </div>`;
+    }
+
+    // ======= REPLY =======
+    window.submitReply = async function () {
+        const text = document.getElementById('replyText').value.trim();
+        if (!text) { showToast('Введіть текст відповіді', true); return; }
+        const topic = allTopics.find(t => t.id === currentTopicId);
+        if (topic && topic.locked) { showToast('Ця тема закрита', true); return; }
+
+        try {
+            const replyData = {
+                content: text,
+                authorName: myData.name || 'Гравець',
+                authorRank: myData.rank || '',
+                authorBadge: myData.role === 'admin' ? 'Лідер' : myData.role === 'instructor' ? 'Інструктор' : '',
+                createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, "forum_topics", currentTopicId, "replies"), replyData);
+            await updateDoc(doc(db, "forum_topics", currentTopicId), {
+                replyCount: (topic?.replyCount || 0) + 1,
+                lastReplyAt: serverTimestamp(),
+                lastReplyAuthor: myData.name || 'Гравець'
+            });
+            document.getElementById('replyText').value = '';
+            showToast('Відповідь опублікована!');
+        } catch (e) {
+            showToast('Помилка: ' + e.message, true);
+        }
+    };
+
+    // ======= ADMIN TOPIC ACTIONS =======
+    window.toggleAdminMode = function () {
+        isAdminMode = !isAdminMode;
+        const btn = document.getElementById('adminToggleBtn');
+        btn.style.background = isAdminMode ? 'rgba(251,191,36,0.2)' : '';
+        btn.style.borderColor = isAdminMode ? 'var(--warning)' : '';
+        document.getElementById('adminPanel').classList.toggle('visible', isAdminMode);
+        if (currentTopicId) document.getElementById('adminTopicPanel').classList.toggle('visible', isAdminMode);
+        document.getElementById('newTopicBtn').style.display = isAdminMode ? 'flex' : isAdmin ? 'flex' : 'none';
+    };
+
+    window.toggleTopicLock = async function () {
+        const topic = allTopics.find(t => t.id === currentTopicId);
+        if (!topic) return;
+        const newLocked = !topic.locked;
+        await updateDoc(doc(db, "forum_topics", currentTopicId), { locked: newLocked });
+        showToast(newLocked ? '🔒 Тему закрито' : '🔓 Тему відкрито');
+        document.getElementById('lockTopicBtn').textContent = newLocked ? '🔓 Відкрити тему' : '🔒 Закрити тему';
+        document.getElementById('lockedNotice').style.display = newLocked ? 'flex' : 'none';
+        document.getElementById('replyFormWrap').style.display = newLocked ? 'none' : 'block';
+        topic.locked = newLocked;
+    };
+
+    window.toggleTopicPin = async function () {
+        const topic = allTopics.find(t => t.id === currentTopicId);
+        if (!topic) return;
+        const newPinned = !topic.pinned;
+        await updateDoc(doc(db, "forum_topics", currentTopicId), { pinned: newPinned });
+        showToast(newPinned ? '📌 Тему закріплено' : '📌 Тему відкріплено');
+        document.getElementById('pinTopicBtn').textContent = newPinned ? '📌 Відкріпити' : '📌 Закріпити';
+        topic.pinned = newPinned;
+    };
+
+    window.deleteTopic = async function () {
+        if (!confirm('Видалити тему? Це незворотно!')) return;
+        await deleteDoc(doc(db, "forum_topics", currentTopicId));
+        showForumList();
+        showToast('🗑 Тему видалено');
+    };
+
+    window.deleteReply = async function (replyId) {
+        if (!confirm('Видалити відповідь?')) return;
+        const topic = allTopics.find(t => t.id === currentTopicId);
+        await deleteDoc(doc(db, "forum_topics", currentTopicId, "replies", replyId));
+        await updateDoc(doc(db, "forum_topics", currentTopicId), { replyCount: Math.max(0, (topic?.replyCount || 1) - 1) });
+        showToast('Відповідь видалено');
+    };
+
+    window.openEditPost = function (id, content) {
+        editingPostId = id;
+        document.getElementById('editPostText').value = content;
+        openModal('editPostModal');
+    };
+
+    window.saveEditPost = async function () {
+        const text = document.getElementById('editPostText').value.trim();
+        if (!text) return;
+        await updateDoc(doc(db, "forum_topics", currentTopicId, "replies", editingPostId), { content: text });
+        closeModal('editPostModal');
+        showToast('Відповідь оновлено');
+    };
+
+    window.toggleForumLock = async function () {
+        const btn = document.getElementById('lockAllBtn');
+        const isLocked = btn.textContent.includes('Закрити');
+        // Toggle all topics lock
+        for (const t of allTopics) {
+            await updateDoc(doc(db, "forum_topics", t.id), { locked: isLocked });
+        }
+        btn.textContent = isLocked ? '🔓 Відкрити форум' : '🔒 Закрити форум';
+        showToast(isLocked ? '🔒 Форум закрито' : '🔓 Форум відкрито');
+    };
+
+    // ======= CREATE / EDIT TOPIC MODAL =======
+    window.openCreateTopicModal = function () {
+        editingTopicId = null;
+        document.getElementById('topicModalTitle').textContent = '📝 Створити нову тему';
+        document.getElementById('topicTitleInput').value = '';
+        document.getElementById('topicTagInput').value = 'important';
+        document.getElementById('topicStatusInput').value = 'open';
+        document.getElementById('topicContentInput').value = '';
+        document.getElementById('chkPinned').checked = false;
+        document.getElementById('chkNew').checked = false;
+        openModal('topicModal');
+    };
+
+    window.openEditTopicModal = function () {
+        const topic = allTopics.find(t => t.id === currentTopicId);
+        if (!topic) return;
+        editingTopicId = currentTopicId;
+        document.getElementById('topicModalTitle').textContent = '✏️ Редагувати тему';
+        document.getElementById('topicTitleInput').value = topic.title || '';
+        document.getElementById('topicTagInput').value = topic.tag || 'important';
+        document.getElementById('topicStatusInput').value = topic.locked ? 'locked' : 'open';
+        document.getElementById('topicContentInput').value = topic.content || '';
+        document.getElementById('chkPinned').checked = !!topic.pinned;
+        document.getElementById('chkNew').checked = !!topic.isNew;
+        openModal('topicModal');
+    };
+
+    window.saveTopic = async function () {
+        const title = document.getElementById('topicTitleInput').value.trim();
+        if (!title) { showToast('Введіть назву теми', true); return; }
+
+        const data = {
+            title,
+            tag: document.getElementById('topicTagInput').value,
+            locked: document.getElementById('topicStatusInput').value === 'locked',
+            pinned: document.getElementById('chkPinned').checked,
+            isNew: document.getElementById('chkNew').checked,
+            content: document.getElementById('topicContentInput').value.trim(),
+        };
+
+        try {
+            if (editingTopicId) {
+                await updateDoc(doc(db, "forum_topics", editingTopicId), data);
+                showToast('✅ Тему оновлено');
+            } else {
+                data.authorName = myData.name || 'Адмін';
+                data.authorRank = myData.rank || '';
+                data.authorBadge = 'Лідер';
+                data.createdAt = serverTimestamp();
+                data.replyCount = 0;
+                data.views = 0;
+                await addDoc(collection(db, "forum_topics"), data);
+                showToast('✅ Тему створено');
+            }
+            closeModal('topicModal');
+        } catch (e) {
+            showToast('Помилка: ' + e.message, true);
+        }
+    };
+
+    // ======= FILTER =======
+    window.filterTopics = function (filter, el) {
+        currentFilter = filter;
+        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        renderTopics();
+    };
+
+    // ======= NAVIGATION =======
+    window.showForumList = function () {
+        if (unsubPosts) { unsubPosts(); unsubPosts = null; }
+        currentTopicId = null;
+        document.getElementById('forumListView').style.display = 'block';
+        document.getElementById('topicDetail').style.display = 'none';
+        document.getElementById('adminTopicPanel').classList.remove('visible');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // ======= MODALS =======
+    window.openModal = function (id) { document.getElementById(id).classList.add('show'); };
+    window.closeModal = function (id) { document.getElementById(id).classList.remove('show'); };
+
+    // Close modal on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.classList.remove('show');
+        });
+    });
+
+    // ======= UTILS =======
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escAttr(str) {
+        if (!str) return '';
+        return String(str).replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    }
+    function formatViews(n) { return n >= 1000 ? Math.floor(n / 1000) + 'K' : n; }
+    function formatRelative(ms) {
+        const diff = Date.now() - ms;
+        if (diff < 60000) return 'Щойно';
+        if (diff < 3600000) return Math.floor(diff / 60000) + ' хв. тому';
+        if (diff < 86400000) return Math.floor(diff / 3600000) + ' год. тому';
+        return new Date(ms).toLocaleDateString('uk-UA');
+    }
+
+    function showToast(msg, isError = false) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'show' + (isError ? ' error' : '');
+        setTimeout(() => t.className = '', 3000);
+    }
+    function showLoading() { document.getElementById('loadingBar').style.display = 'block'; }
+    function hideLoading() { document.getElementById('loadingBar').style.display = 'none'; }
+</script>
+
+</body>
+</html>
