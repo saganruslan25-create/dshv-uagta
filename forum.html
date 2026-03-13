@@ -393,6 +393,8 @@ let me = null, myData = null, isAdmin = false, adminMode = false;
 let sections = [], topics = [], currentTopicId = null, editingTopicId = null, editingPostId = null, editingSectionId = null;
 let unsubPosts = null;
 let dragSrcSection = null, dragSrcTopic = null;
+let sectionsReady = false, topicsReady = false;
+function tryRender() { if (sectionsReady && topicsReady) renderSections(); }
 
 // ====== AUTH ======
 onAuthStateChanged(auth, async u => {
@@ -409,25 +411,37 @@ onAuthStateChanged(auth, async u => {
 
 // ====== LOAD ======
 function loadSections() {
+  const applySnap = snap => {
+    sections = snap.docs.map((d,i) => { const data = d.data(); if(data.order===undefined) data.order=i; return {id:d.id,...data}; });
+    sectionsReady = true; tryRender();
+  };
   const q = query(collection(db,'forum_sections'), orderBy('order','asc'));
-  onSnapshot(q, snap => {
-    sections = snap.docs.map(d => ({id:d.id,...d.data()}));
-    // Ensure default section
-    if (sections.length === 0 && isAdmin) {
-      addDoc(collection(db,'forum_sections'), {name:'Загальні теми', icon:'📋', order:0, createdAt:serverTimestamp()});
-    }
-    renderSections();
+  onSnapshot(q, applySnap, err => {
+    console.warn('sections order query failed, fallback');
+    getDocs(collection(db,'forum_sections')).then(applySnap);
   });
 }
 
 function loadTopics() {
-  const q = query(collection(db,'forum_topics'), orderBy('order','asc'));
-  onSnapshot(q, snap => {
-    topics = snap.docs.map(d => ({id:d.id,...d.data()}));
-    let replies = topics.reduce((a,t) => a+(t.replyCount||0),0);
+  // orderBy createdAt works even for old docs without 'order' field
+  const q = query(collection(db,'forum_topics'), orderBy('createdAt','desc'));
+  const normalize = (data, i) => {
+    const tagMap = {'important':'imp','pinned':'pin','knowledge':'know','reports':'rep'};
+    if (data.tag && tagMap[data.tag]) data.tag = tagMap[data.tag];
+    if (!data.lastAt && data.lastReplyAt) data.lastAt = data.lastReplyAt;
+    if (!data.lastAuthor && data.lastReplyAuthor) data.lastAuthor = data.lastReplyAuthor;
+    if (data.order === undefined) data.order = i;
+    return data;
+  };
+  const applySnap = snap => {
+    topics = snap.docs.map((d,i) => { const data = d.data(); normalize(data,i); return {id:d.id,...data}; });
     document.getElementById('statTopics').textContent = topics.length;
-    document.getElementById('statReplies').textContent = replies;
-    renderSections();
+    document.getElementById('statReplies').textContent = topics.reduce((a,t)=>a+(t.replyCount||0),0);
+    topicsReady = true; tryRender();
+  };
+  onSnapshot(q, applySnap, err => {
+    console.warn('ordered query failed, fallback:', err.message);
+    getDocs(collection(db,'forum_topics')).then(applySnap);
   });
 }
 
