@@ -434,11 +434,39 @@ function loadTopics() {
 // ====== RENDER FORUM ======
 function renderSections() {
   const wrap = document.getElementById('sectionsWrap');
-  if (!sections.length) {
-    wrap.innerHTML = '<div class="empty"><div class="ei">📭</div><h3>Немає розділів</h3></div>';
+
+  // Topics with no sectionId or sectionId not matching any section
+  const sectionIds = new Set(sections.map(s => s.id));
+  const orphans = topics.filter(t => !t.sectionId || !sectionIds.has(t.sectionId));
+
+  if (!sections.length && !orphans.length) {
+    wrap.innerHTML = '<div class="empty"><div class="ei">📭</div><h3>Немає тем</h3><p style="font-size:13px;color:var(--td);margin-top:6px">Натисніть "Додати розділ" та "Створити тему"</p></div>';
     return;
   }
-  wrap.innerHTML = sections.map(sec => renderSectionBlock(sec)).join('');
+
+  let html = sections.map(sec => renderSectionBlock(sec)).join('');
+
+  // Render orphan topics (old topics without sectionId) as a virtual section
+  if (orphans.length) {
+    const pinned = orphans.filter(t => t.pinned);
+    const normal = orphans.filter(t => !t.pinned);
+    const sorted = [...pinned, ...normal];
+    html += `
+    <div class="section-block" data-sid="__orphan">
+      <div class="section-header" data-sid="__orphan">
+        <span class="section-drag-handle" style="opacity:.3">⠿</span>
+        <span class="section-name">📋 Загальні теми</span>
+        <span class="section-count">${sorted.length} тем</span>
+        ${isAdmin ? `<span style="font-size:10px;color:var(--warn);font-weight:700;padding:3px 8px;border:1px solid rgba(251,191,36,.3);border-radius:5px;cursor:pointer" onclick="migrateOrphans()">↗ Перенести у розділ</span>` : ''}
+        <button class="section-collapse">▾</button>
+      </div>
+      <div class="section-topics" data-sid="__orphan">
+        ${sorted.map((t,i) => renderTopicRow(t,i)).join('')}
+      </div>
+    </div>`;
+  }
+
+  wrap.innerHTML = html;
   bindSectionDrag();
   bindTopicDrag();
   bindContextMenus();
@@ -813,6 +841,23 @@ window.saveSection = async function() {
   closeModal('sectionModal');
 };
 
+
+// ====== MIGRATE OLD TOPICS (без sectionId) ======
+window.migrateOrphans = async function() {
+  if (!sections.length) { toast('Спочатку створіть хоча б один розділ!', true); return; }
+  const sectionIds = new Set(sections.map(s => s.id));
+  const orphans = topics.filter(t => !t.sectionId || !sectionIds.has(t.sectionId));
+  if (!orphans.length) { toast('Немає тем для міграції'); return; }
+  const choice = prompt('Оберіть розділ (введіть номер):\n' + sections.map((s,i)=>i+1+'. '+s.icon+' '+s.name).join('\n'));
+  if (!choice) return;
+  const idx = parseInt(choice)-1;
+  if (isNaN(idx)||idx<0||idx>=sections.length) { toast('Невірний номер', true); return; }
+  const target = sections[idx];
+  const batch = writeBatch(db);
+  orphans.forEach(t => batch.update(doc(db,'forum_topics',t.id),{sectionId:target.id}));
+  await batch.commit();
+  toast('Перенесено ' + orphans.length + ' тем у ' + target.name);
+};
 // ====== TOPIC MODAL ======
 window.openTopicModal = function(tid=null) {
   editingTopicId = tid;
