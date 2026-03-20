@@ -1920,6 +1920,7 @@ let results = [];
 let reviewers = [];
 let adminList = [];
 let webhookUrl = '';
+let webhookApprovedUrl = '';
 let currentTest = null;
 let currentQ = 0;
 let answers = {};
@@ -2239,7 +2240,9 @@ embed = { title: '👑 Додано нового адміністратора!',
 default: return;
 }
 try {
-const response = await fetch(webhookUrl, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({embeds: [embed]}) });
+const targetUrl = (type === 'RESULT_APPROVED' && webhookApprovedUrl) ? webhookApprovedUrl : webhookUrl;
+if (!targetUrl) return;
+const response = await fetch(targetUrl, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({embeds: [embed]}) });
 if (!response.ok) console.error('❌ Discord webhook помилка:', response.status);
 } catch (e) { console.error('❌ Exception при відправці в Discord:', e); }
 }
@@ -2350,6 +2353,7 @@ const data = settingsDoc.data();
 reviewers = data.reviewers || [];
 adminList = data.adminList || [];
 webhookUrl = data.webhookUrl || '';
+webhookApprovedUrl = data.webhookApprovedUrl || '';
 } else {
 await setDoc(doc(db, 'settings', 'config'), { reviewers: [], adminList: [], webhookUrl: '' });
 }
@@ -2358,7 +2362,7 @@ await setDoc(doc(db, 'settings', 'config'), { reviewers: [], adminList: [], webh
 
 async function saveSettingsToFirebase() {
 try {
-await setDoc(doc(db, 'settings', 'config'), { reviewers, adminList, webhookUrl }, { merge: true });
+await setDoc(doc(db, 'settings', 'config'), { reviewers, adminList, webhookUrl, webhookApprovedUrl }, { merge: true });
 } catch (e) { console.error('❌ Помилка збереження налаштувань:', e); }
 }
 
@@ -3346,6 +3350,10 @@ document.getElementById('settingsContent').innerHTML =
 '<div class="btn-group" style="justify-content:flex-start">' +
 '<button class="btn btn-primary" onclick="saveWebhook()" style="padding:10px 20px;font-size:12px">💾 Зберегти</button>' +
 '<button class="btn btn-info" onclick="sendTestWebhook()" style="padding:10px 20px;font-size:12px">🧪 Тестове повідомлення</button></div></div>' +
+'<div class="setting-block"><h4>✅ Webhook для схвалених результатів</h4><div class="form-row">' +
+'<input class="form-input" id="webhookApprovedInput" value="' + (webhookApprovedUrl || '') + '" placeholder="https://discord.com/api/webhooks/... (тільки для схвалень)"></div>' +
+'<div class="btn-group" style="justify-content:flex-start">' +
+'<button class="btn btn-primary" onclick="saveWebhookApproved()" style="padding:10px 20px;font-size:12px">💾 Зберегти</button></div></div>' +
 '<div class="setting-block"><h4>🔍 Перевірювачі іспитів</h4>' +
 '<div id="reviewersList" style="margin-bottom:12px">' + reviewersHtml + '</div>' +
 '<div class="people-dropdown">' +
@@ -3354,7 +3362,8 @@ document.getElementById('settingsContent').innerHTML =
 }
 
 window.saveWebhook = async () => { webhookUrl = document.getElementById('webhookInput').value.trim(); await save(); alert('✅ Webhook збережено!'); };
-
+window.saveWebhookApproved = async () => { webhookApprovedUrl = document.getElementById('webhookApprovedInput').value.trim(); await save(); alert('✅ Webhook для схвалень збережено!');
+                                  
 window.sendTestWebhook = async () => {
 const url = document.getElementById('webhookInput').value.trim();
 if (!url) { alert('❌ Введіть Webhook URL спочатку!'); return; }
