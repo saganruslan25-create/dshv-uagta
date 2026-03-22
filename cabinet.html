@@ -1028,7 +1028,21 @@
         };
 
         window.verifyUser = async (id) => {
-            if (confirm("Надати доступ?")) await updateDoc(doc(db, "users", id), { verified: true });
+            if (confirm("Надати доступ?")) {
+                await updateDoc(doc(db, "users", id), { verified: true });
+                // Відправляємо webhook при верифікації
+                const snap = await getDoc(doc(db, "users", id));
+                const u = snap.data();
+                sendDiscordWebhook({
+                    embeds: [{
+                        title: "✅ Акаунт верифіковано",
+                        description: `**Ім'я:** ${u.name || "Невідомий"}\n**ID:** ${u.gameID || "---"}\n**Статус:** ✅ Доступ надано`,
+                        color: 3066993,
+                        timestamp: new Date().toISOString(),
+                        footer: { text: "ДШВ | COMMAND CENTER" }
+                    }]
+                });
+            }
         };
 
         window.deleteUser = async (id) => {
@@ -1126,33 +1140,39 @@
             `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
         };
 
+        // ===== DISCORD WEBHOOK =====
+        const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467185135853109382/kL3eATlCs-DcxVl9oxorz8rV-9vVJgw1tpfrjgr2dtTemaNM1HRZf75-krtm9A2CVm8e";
+
+        async function sendDiscordWebhook(payload) {
+            try {
+                await fetch(DISCORD_WEBHOOK, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                    mode: "no-cors"
+                });
+            } catch(e) {
+                console.warn("Discord webhook:", e);
+            }
+        }
+
         function listenForNewVerifications() {
-            if (myData.role !== 'admin') return;
-            const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467185135853109382/kL3eATlCs-DcxVl9oxorz8rV-9vVJgw1tpfrjgr2dtTemaNM1HRZf75-krtm9A2CVm8e";
+            // Слідкуємо за новими документами в колекції users
             let isInitial = true;
             onSnapshot(collection(db, "users"), (snap) => {
                 if (isInitial) { isInitial = false; return; }
-                snap.docChanges().forEach(async (change) => {
+                snap.docChanges().forEach((change) => {
                     if (change.type === "added") {
                         const u = change.doc.data();
-                        // Новий аккаунт — відправляємо webhook
-                        try {
-                            await fetch(DISCORD_WEBHOOK, {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({
-                                    embeds: [{
-                                        title: "🆕 Новий акаунт з верифікацією",
-                                        description: `**Ім'я:** ${u.name || "Невідомий"}\n**ID:** ${u.gameID || "---"}\n**Роль:** ${u.role || "---"}\n**Верифікований:** ${u.verified ? "✅ Так" : "⏳ Очікує верифікації"}`,
-                                        color: u.verified ? 3066993 : 16776960,
-                                        timestamp: new Date().toISOString(),
-                                        footer: { text: "ДШВ | COMMAND CENTER" }
-                                    }]
-                                })
-                            });
-                        } catch(e) {
-                            console.error("Discord webhook error:", e);
-                        }
+                        sendDiscordWebhook({
+                            embeds: [{
+                                title: "🆕 Новий акаунт зареєстровано",
+                                description: `**Ім'я:** ${u.name || "Невідомий"}\n**ID:** ${u.gameID || "---"}\n**Статус:** ⏳ Очікує верифікації`,
+                                color: 16776960,
+                                timestamp: new Date().toISOString(),
+                                footer: { text: "ДШВ | COMMAND CENTER" }
+                            }]
+                        });
                     }
                 });
             });
