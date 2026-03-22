@@ -99,6 +99,22 @@
             box-shadow: 0 0 15px var(--primary); 
         }
         
+        .btn-square-header {
+            background: rgba(255,255,255, 0.05); border: 1px solid var(--primary);
+            color: var(--primary-bright); width: 38px; height: 38px; border-radius: 10px;
+            font-weight: 900; cursor: pointer; font-size: 18px;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none; flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(0,255,68,0.15);
+        }
+        .btn-square-header:hover { 
+            background: var(--primary); 
+            color: black; 
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary);
+            transform: translateY(-1px);
+        }
+        
         .btn-logout-custom {
             background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger);
             color: var(--danger); padding: 10px 20px; border-radius: 10px;
@@ -415,6 +431,9 @@
         <a href="index.html" class="logo-box">ДШВ</a>
         <div class="header-right">
             <button class="btn-small-header" onclick="openCreditsModal()">🏆 ПОЧАТОК</button>
+            <a href="gallery.html" class="btn-small-header" style="text-decoration: none;">📸 ГАЛЕРЕЯ</a>
+            <a href="applications.html" id="headerAppBtn" class="btn-square-header" style="display:none;" title="Перевірка рапортів">📝</a>
+            <a href="ryletka.html" id="headerRyletkaBtn" class="btn-square-header" style="display:none;" title="Рулетка Удачі">🎲</a>
             <div class="notif-wrapper" onclick="toggleNotifs(event)">
                 <span class="bell-icon">🔔</span>
                 <div id="bellBadge" class="bell-badge">0</div>
@@ -443,7 +462,6 @@
                 <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
                 <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
                 <a href="chats.html" class="menu-item">💬 Чати / Інформація <div id="dot-chats" class="fire-dot"></div></a>
-                <a href="gallery.html" class="menu-item">📸 Галерея</a>
                 <a href="isput.html" class="menu-item">💼 Іспити</a>
                 <a href="cabinetpilota.html" class="menu-item">✈️ Кабінет Пілота</a>
                 <a href="applications.html" class="menu-item" id="adminAppBtn" style="display: none;">📝 Перегляд рапортів <div id="dot-apps" class="fire-dot"></div></a>
@@ -535,7 +553,6 @@
         <div class="modal-content">
             <button class="close-modal-btn" onclick="closeCreditsModal()">&times;</button>
             <div class="credits-title">🏆 ПОЧАТОК</div>
-            <a href="gallery.html" class="btn-small-header">📸 Галерея</a>
             <p style="text-align: center; color: var(--primary); font-weight: 700; margin-bottom: 20px; padding: 0 10px; background: rgba(0, 255, 68, 0.05); border-radius: 10px;">Шановний Бієць дякую що ти користуєшся нашим продуктом</p>
             
             <ul class="credits-list">
@@ -773,12 +790,17 @@
             // Доступ до Ролетки (для Адмінів та Інструкторів)
             if (myData.role === 'admin' || myData.role === 'instructor') {
                 document.getElementById('ryletkaLink').style.display = 'flex';
+                document.getElementById('headerRyletkaBtn').style.display = 'flex';
+                document.getElementById('headerAppBtn').style.display = 'flex';
             } else {
                 document.getElementById('ryletkaLink').style.display = 'none';
+                document.getElementById('headerRyletkaBtn').style.display = 'none';
+                document.getElementById('headerAppBtn').style.display = 'none';
             }
 
             initNotifications();
             listenForMentions();
+            listenForNewVerifications();
         });
 
         let userListenerUnsubscribe = null;
@@ -1103,6 +1125,38 @@
                 </div>
             `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
         };
+
+        function listenForNewVerifications() {
+            if (myData.role !== 'admin') return;
+            const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467185135853109382/kL3eATlCs-DcxVl9oxorz8rV-9vVJgw1tpfrjgr2dtTemaNM1HRZf75-krtm9A2CVm8e";
+            let isInitial = true;
+            onSnapshot(collection(db, "users"), (snap) => {
+                if (isInitial) { isInitial = false; return; }
+                snap.docChanges().forEach(async (change) => {
+                    if (change.type === "added") {
+                        const u = change.doc.data();
+                        // Новий аккаунт — відправляємо webhook
+                        try {
+                            await fetch(DISCORD_WEBHOOK, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                    embeds: [{
+                                        title: "🆕 Новий акаунт з верифікацією",
+                                        description: `**Ім'я:** ${u.name || "Невідомий"}\n**ID:** ${u.gameID || "---"}\n**Роль:** ${u.role || "---"}\n**Верифікований:** ${u.verified ? "✅ Так" : "⏳ Очікує верифікації"}`,
+                                        color: u.verified ? 3066993 : 16776960,
+                                        timestamp: new Date().toISOString(),
+                                        footer: { text: "ДШВ | COMMAND CENTER" }
+                                    }]
+                                })
+                            });
+                        } catch(e) {
+                            console.error("Discord webhook error:", e);
+                        }
+                    }
+                });
+            });
+        }
 
         window.onclick = function(event) {
             if (!event.target.closest('.notif-wrapper') && !event.target.closest('#notifDropdown')) {
