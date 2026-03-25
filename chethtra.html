@@ -289,7 +289,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
     <div class="hero-icon">🚁</div>
     <div class="hero-info">
       <h2>РЕЄСТРАЦІЯ СПЕЦТРАНСПОРТУ</h2>
-      <p>Офіційна система ДШВ. Кожна одиниця проходить 3 кроки: заявка → Адмін видає Тех.Паспорт + Дозвіл одразу → Повна реєстрація.</p>
+      <p>Офіційна система ДШВ. Кожна одиниця проходить 3 кроки: заявка → Тех.Паспорт → Дозвіл → Реєстрація.</p>
       <div class="hero-stats">
         <div><div class="hero-stat-num" id="ov-total">0</div><div class="hero-stat-lbl">Всього</div></div>
         <div><div class="hero-stat-num" id="ov-active" style="color:var(--pr)">0</div><div class="hero-stat-lbl">Активних</div></div>
@@ -302,14 +302,15 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
   <!-- Pipeline -->
   <div class="pipeline">
     <div class="pipeline-step done"><div class="ps-num">①</div><div class="ps-lbl">Заявка</div></div>
-    <div class="pipeline-step current"><div class="ps-num">②</div><div class="ps-lbl">Адмін видає обидва документи</div></div>
-    <div class="pipeline-step"><div class="ps-num">③</div><div class="ps-lbl">Повна реєстрація ✓</div></div>
+    <div class="pipeline-step current"><div class="ps-num">②</div><div class="ps-lbl">Тех.Паспорт</div></div>
+    <div class="pipeline-step"><div class="ps-num">③</div><div class="ps-lbl">Дозвіл</div></div>
+    <div class="pipeline-step"><div class="ps-num">④</div><div class="ps-lbl">Реєстрація ✓</div></div>
   </div>
 
   <div class="stats-row">
     <div class="stat-card"><div class="stat-card-icon">📋</div><div class="stat-card-num" id="s-applied">0</div><div class="stat-card-lbl">Нові заявки</div></div>
-    <div class="stat-card"><div class="stat-card-icon">📄✅</div><div class="stat-card-num" id="s-passport">0</div><div class="stat-card-lbl">Документи видано</div></div>
-    <div class="stat-card"><div class="stat-card-icon">⏳</div><div class="stat-card-num" id="s-permit">0</div><div class="stat-card-lbl">Очікують реєстрації</div></div>
+    <div class="stat-card"><div class="stat-card-icon">📄</div><div class="stat-card-num" id="s-passport">0</div><div class="stat-card-lbl">Отримали паспорт</div></div>
+    <div class="stat-card"><div class="stat-card-icon">✅</div><div class="stat-card-num" id="s-permit">0</div><div class="stat-card-lbl">Отримали дозвіл</div></div>
     <div class="stat-card"><div class="stat-card-icon">🏁</div><div class="stat-card-num" id="s-registered">0</div><div class="stat-card-lbl">Зареєстровано</div></div>
   </div>
 
@@ -392,11 +393,14 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
   <div class="section-wrap" style="margin-top:20px;margin-bottom:24px">
     <div class="section-head"><span class="section-title">⚙️ Панель адміністратора</span><div class="section-line"></div></div>
     <div class="admin-panel">
-      <div class="admin-section-title">📋 Нові заявки → Видати Тех.Паспорт + Дозвіл одразу</div>
+      <div class="admin-section-title">📋 Нові заявки (Крок 1 → 2: видати Тех.Паспорт)</div>
       <div id="admin-step1"></div>
       <br>
-      <div class="admin-section-title">🏁 Мають обидва документи → Завершити реєстрацію</div>
+      <div class="admin-section-title">📄 Мають Тех.Паспорт (Крок 2 → 3: видати Дозвіл)</div>
       <div id="admin-step2"></div>
+      <br>
+      <div class="admin-section-title">✅ Мають Дозвіл (Крок 3 → 4: Реєстрація)</div>
+      <div id="admin-step3"></div>
     </div>
   </div>
 </div>
@@ -408,8 +412,7 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
     <div class="admin-panel">
       <p style="color:var(--tg);font-size:13px;line-height:1.7">
         Редактор шаблонів дозволяє налаштувати вигляд документів.<br>
-        Поточні шаблони: <strong style="color:var(--pb)">Тех.Паспорт ДШВ</strong> та <strong style="color:var(--pb)">Документ про Дозвіл</strong> вже вбудовані та відповідають офіційним зразкам.<br>
-        <strong style="color:var(--wn)">Обидва документи обов'язкові</strong> — адмін видає їх одночасно при обробці заявки.<br><br>
+        Поточні шаблони: <strong style="color:var(--pb)">Тех.Паспорт ДШВ</strong> та <strong style="color:var(--pb)">Документ про Дозвіл</strong> вже вбудовані та відповідають офіційним зразкам.<br><br>
         Якщо потрібно завантажити власне фото шаблону — ця функція буде в наступній версії системи.
       </p>
       <br>
@@ -503,7 +506,8 @@ function today(){ return new Date().toISOString().split('T')[0]; }
 function statusBadge(s){
   const map={
     pending:['s-pending','📋 ЗАЯВКА'],
-    issued:['s-passport','📄✅ ДОКУМЕНТИ ВИДАНО'],
+    passport:['s-passport','📄 ТЕХ.ПАСПОРТ'],
+    permit:['s-permit','✅ ДОЗВІЛ'],
     active:['s-active','🏁 ЗАРЕЄСТРОВАНО'],
     archived:['s-archived','📦 АРХІВ'],
   };
@@ -641,8 +645,8 @@ function showDocs(id){
   if(!r) return;
   document.getElementById('doc-modal-title').textContent = `📋 ${genSerial(r.id)} — ${r.nick}`;
   const body = document.getElementById('doc-modal-body');
-  const hasPassport = r.status === 'issued' || r.status === 'active';
-  const hasPermit = r.status === 'issued' || r.status === 'active';
+  const hasPassport = r.status === 'passport' || r.status === 'permit' || r.status === 'active';
+  const hasPermit = r.status === 'permit' || r.status === 'active';
   body.innerHTML = `
     <div class="doc-preview-panel">
       <div class="doc-preview-title">📄 ТЕХ.ПАСПОРТ ${hasPassport?'':'(ще не видано)'}</div>
@@ -706,7 +710,7 @@ function submitApply(){
   document.getElementById('a-brand').value='';
   rmFile('a-pass','ap-pp');rmFile('a-photo','ap-ph');
   livePreview();
-  toast('✅ Заявку подано! Очікуйте видачі обох документів від адміна.');
+  toast('✅ Заявку подано! Очікуйте Тех.Паспорту від адміна.');
   showTab('database');
 }
 
@@ -727,16 +731,31 @@ function openConfirm(title,text,extra,fn){
 }
 
 // ─── ADMIN ACTIONS ───────────────────────────────────────────
-function adminIssueBoth(id){
+function adminIssuePassport(id){
   const r=db.find(x=>x.id===id);
   if(!r) return;
   const html=`
     <div style="display:flex;flex-direction:column;gap:8px">
-      <div style="font-size:11px;font-weight:800;color:var(--bl);letter-spacing:1px;margin-bottom:4px">ТЕХ.ПАСПОРТ</div>
-      <div><label class="form-label" style="display:block;margin-bottom:4px">Підтверджено керівником</label>
+      <div><label class="form-label" style="display:block;margin-bottom:4px">Підтверджено керівником (ім'я)</label>
       <input id="cf-passBy" class="form-input" placeholder="Командир / Керівник" value="${esc(r.passportBy||'')}"></div>
-      <hr style="border-color:var(--gb);margin:4px 0">
-      <div style="font-size:11px;font-weight:800;color:var(--wn);letter-spacing:1px;margin-bottom:4px">ДОКУМЕНТ ДОЗВОЛУ</div>
+    </div>`;
+  openConfirm('📄 Видати Тех.Паспорт',
+    `Видати Технічний Паспорт для "${r.nick}" (${r.brand})?`,
+    html,
+    ()=>{
+      const by=document.getElementById('cf-passBy')?.value.trim()||'Адмін';
+      r.status='passport'; r.passportBy=by;
+      save(); renderAdmin(); renderOverview();
+      toast(`✅ Тех.Паспорт видано для ${r.nick}`);
+    }
+  );
+}
+
+function adminIssuePermit(id){
+  const r=db.find(x=>x.id===id);
+  if(!r) return;
+  const html=`
+    <div style="display:flex;flex-direction:column;gap:8px">
       <div><label class="form-label" style="display:block;margin-bottom:4px">Орган що видав</label>
       <input id="cf-auth" class="form-input" placeholder="ДШВ ЗСУ" value="${esc(r.permitAuthority||'ДШВ ЗСУ')}"></div>
       <div><label class="form-label" style="display:block;margin-bottom:4px">Висновок</label>
@@ -746,20 +765,18 @@ function adminIssueBoth(id){
       <div><label class="form-label" style="display:block;margin-bottom:4px">Перевіряючий</label>
       <input id="cf-insp" class="form-input" placeholder="ПІБ перевіряючого" value="${esc(r.permitInspector||'')}"></div>
     </div>`;
-  openConfirm('📄✅ Видати обидва документи',
-    `Видати Тех.Паспорт + Дозвіл для "${r.nick}" (${r.brand})?`,
+  openConfirm('✅ Видати Дозвіл',
+    `Видати Документ Дозволу для "${r.nick}" (${r.brand})?`,
     html,
     ()=>{
-      const by=document.getElementById('cf-passBy')?.value.trim()||'Адмін';
-      r.passportBy=by;
+      r.status='permit';
       r.permitAuthority=document.getElementById('cf-auth')?.value||'ДШВ ЗСУ';
       r.permitConclusion=document.getElementById('cf-conc')?.value||'Дозволено';
       r.permitValidUntil=document.getElementById('cf-valid')?.value||'';
       r.permitInspector=document.getElementById('cf-insp')?.value||'';
       r.permitDate=today();
-      r.status='issued';
       save(); renderAdmin(); renderOverview();
-      toast(`✅ Обидва документи видано для ${r.nick}`);
+      toast(`✅ Дозвіл видано для ${r.nick}`);
     }
   );
 }
@@ -796,11 +813,11 @@ function renderOverview(){
   document.getElementById('ov-pend').textContent=db.filter(x=>x.status!=='active').length;
   document.getElementById('ov-arch').textContent=archive.length;
   document.getElementById('s-applied').textContent=db.filter(x=>x.status==='pending').length;
-  document.getElementById('s-passport').textContent=db.filter(x=>x.status==='issued').length;
-  document.getElementById('s-permit').textContent=db.filter(x=>x.status==='issued').length;
+  document.getElementById('s-passport').textContent=db.filter(x=>x.status==='passport').length;
+  document.getElementById('s-permit').textContent=db.filter(x=>x.status==='permit').length;
   document.getElementById('s-registered').textContent=db.filter(x=>x.status==='active').length;
   document.getElementById('db-badge').textContent=db.length;
-  document.getElementById('req-badge').textContent=db.filter(x=>x.status!=='active'&&x.status!=='archived').length;
+  document.getElementById('req-badge').textContent=db.filter(x=>x.status!=='active').length;
   const tbody=document.getElementById('ov-tbody');
   const items=[...db].slice(-6).reverse();
   if(!items.length){tbody.innerHTML='<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">🚁</div><p>Записів немає</p></div></td></tr>';return;}
@@ -855,7 +872,8 @@ function renderArchive(){
 // ─── RENDER ADMIN ────────────────────────────────────────────
 function renderAdmin(){
   renderAdminStep('admin-step1', db.filter(x=>x.status==='pending'), 'pending');
-  renderAdminStep('admin-step2', db.filter(x=>x.status==='issued'), 'issued');
+  renderAdminStep('admin-step2', db.filter(x=>x.status==='passport'), 'passport');
+  renderAdminStep('admin-step3', db.filter(x=>x.status==='permit'), 'permit');
 }
 
 function renderAdminStep(elId, items, stage){
@@ -871,15 +889,24 @@ function renderAdminStep(elId, items, stage){
       </div>
       <div class="rc-actions">
         <button class="btn-sm btn-blue" onclick="showDocs(${r.id})">📋 Документи</button>
-        ${stage==='pending'?`<button class="btn-sm btn-green" onclick="adminIssueBoth(${r.id})">📄✅ Видати обидва документи</button>`:''}
-        ${stage==='issued'?`<button class="btn-sm" style="background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.1));border:1px solid var(--pr);color:var(--pr)" onclick="adminRegister(${r.id})">🏁 Зареєструвати</button>`:''}
+        ${stage==='pending'?`<button class="btn-sm btn-green" onclick="adminIssuePassport(${r.id})">📄 Видати Паспорт</button>`:''}
+        ${stage==='passport'?`<button class="btn-sm btn-gold" onclick="adminIssuePermit(${r.id})">✅ Видати Дозвіл</button>`:''}
+        ${stage==='permit'?`<button class="btn-sm" style="background:linear-gradient(135deg,rgba(34,197,94,.2),rgba(34,197,94,.1));border:1px solid var(--pr);color:var(--pr)" onclick="adminRegister(${r.id})">🏁 Зареєструвати</button>`:''}
         <button class="btn-sm btn-red" onclick="adminArchive(${r.id})">📦 Архів</button>
       </div>
     </div>`).join('');
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
-// База порожня при першому запуску
+if(!db.length){
+  db=[
+    {id:1,nick:'Тимофій Носенко',date:'2026-01-01',brand:'Airbus Helicopters H135',status:'active',serial:'ДШВ-СТ-0001',createdAt:'2026-01-01',passportBy:'Полковник Іванов',permitAuthority:'ДШВ ЗСУ',permitConclusion:'Дозволено',permitValidUntil:'2027-01-01',permitInspector:'Майор Петров',permitDate:'2026-01-05'},
+    {id:2,nick:'Олексій Шевченко',date:'2026-02-14',brand:'UH-60 Black Hawk',status:'permit',serial:'ДШВ-СТ-0002',createdAt:'2026-02-14',passportBy:'Полковник Іванов',permitAuthority:'ДШВ ЗСУ',permitConclusion:'Дозволено',permitValidUntil:'2027-02-14',permitInspector:'Майор Петров',permitDate:'2026-02-18'},
+    {id:3,nick:'Dmytro_PRO',date:'2026-03-10',brand:'BTR-80',status:'passport',serial:'ДШВ-СТ-0003',createdAt:'2026-03-10',passportBy:'Полковник Іванов',permitAuthority:'',permitConclusion:'',permitValidUntil:'',permitInspector:'',permitDate:''},
+    {id:4,nick:'Vasyl_Pilot',date:'2026-03-20',brand:'Mi-24 Hind',status:'pending',serial:'ДШВ-СТ-0004',createdAt:'2026-03-20',passportBy:'',permitAuthority:'',permitConclusion:'',permitValidUntil:'',permitInspector:'',permitDate:''},
+  ];
+  save();
+}
 renderOverview();
 livePreview();
 </script>
