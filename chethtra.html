@@ -111,6 +111,40 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
 .empty-state{text-align:center;padding:40px 24px;color:var(--tg)}
 .empty-icon{font-size:40px;opacity:.35;margin-bottom:10px}
 
+/* =========================================================
+   FULLSCREEN IMAGE VIEWER
+   ========================================================= */
+.fs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.97);z-index:9000;display:none;align-items:center;justify-content:center;cursor:zoom-out}
+.fs-overlay.vis{display:flex}
+.fs-overlay img{max-width:95vw;max-height:95vh;object-fit:contain;border-radius:8px;box-shadow:0 0 60px rgba(34,197,94,.2)}
+.fs-close{position:absolute;top:16px;right:16px;background:rgba(239,68,68,.2);border:1px solid var(--dn);color:var(--dn);width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.fs-close:hover{background:var(--dn);color:#fff}
+
+/* Doc photo thumbnails in modal */
+.doc-photo-thumb{width:100%;border-radius:8px;object-fit:cover;border:1px solid var(--gb);cursor:zoom-in;transition:.2s;max-height:160px}
+.doc-photo-thumb:hover{border-color:var(--pr);box-shadow:0 0 12px var(--pg);transform:scale(1.01)}
+.doc-photo-label{font-size:10px;font-weight:800;color:var(--tg);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;margin-top:12px}
+
+/* =========================================================
+   DB PROFILE CARDS (замість таблиці)
+   ========================================================= */
+.profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding-bottom:24px}
+.profile-card{background:var(--cb);border:1px solid var(--gb);border-radius:14px;padding:0;overflow:hidden;transition:.2s;position:relative}
+.profile-card:hover{border-color:rgba(34,197,94,.4);box-shadow:0 0 20px rgba(34,197,94,.08)}
+.profile-card-header{background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,197,94,.03));border-bottom:1px solid var(--gb);padding:12px 14px;display:flex;align-items:center;gap:12px}
+.profile-card-num{font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;color:var(--pb);background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;padding:2px 8px;white-space:nowrap}
+.profile-card-name{font-size:14px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-card-body{padding:12px 14px}
+.profile-card-transport{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.profile-card-transport-icon{font-size:20px;flex-shrink:0}
+.profile-card-transport-name{font-size:13px;font-weight:600;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.profile-card-plates{font-size:11px;color:var(--tg);margin-bottom:8px;font-family:'Rajdhani',sans-serif;font-weight:700}
+.profile-card-date{font-size:10px;color:#3a4a5a;margin-bottom:10px}
+.profile-card-photo{width:100%;height:100px;object-fit:cover;border-radius:6px;border:1px solid var(--gb);cursor:zoom-in;transition:.15s;display:block;margin-bottom:10px}
+.profile-card-photo:hover{border-color:var(--pr)}
+.profile-card-no-photo{width:100%;height:70px;background:rgba(255,255,255,.02);border:1px dashed rgba(34,197,94,.15);border-radius:6px;display:flex;align-items:center;justify-content:center;color:#2a3a4a;font-size:11px;margin-bottom:10px}
+.profile-card-footer{padding:10px 14px;border-top:1px solid var(--gb);display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;right:24px;background:#0d1117;border:1px solid var(--pr);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:#fff;z-index:9999;box-shadow:0 0 20px var(--pg);opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -329,13 +363,8 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
 <div class="tab-section" id="tab-database">
   <div class="section-wrap" style="margin-top:20px;margin-bottom:24px">
     <div class="section-head"><span class="section-title">🗄️ База даних</span><div class="section-line"></div></div>
-    <div style="margin-bottom:10px"><input class="form-input" id="db-search" placeholder="🔍 Пошук..." oninput="renderDB()" style="max-width:360px"></div>
-    <div class="table-wrap">
-      <table class="db-table">
-        <thead><tr><th>Серійний №</th><th>Власник</th><th>Транспорт</th><th>Дата</th><th>Статус</th><th>Документи</th></tr></thead>
-        <tbody id="db-tbody"></tbody>
-      </table>
-    </div>
+    <div style="margin-bottom:14px"><input class="form-input" id="db-search" placeholder="🔍 Пошук за ім'ям або транспортом..." oninput="renderDB()" style="max-width:400px"></div>
+    <div class="profile-grid" id="db-profile-grid"></div>
   </div>
 </div>
 
@@ -356,21 +385,34 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
       <div class="formdoc-form-side">
         <div class="form-wrap">
           <div class="form-grid">
-            <div class="form-group"><label class="form-label">1. Ваш нік</label>
-              <input class="form-input" id="a-nick" placeholder="Тимофій Носенко" oninput="livePreview()" maxlength="60"></div>
-            <div class="form-group"><label class="form-label">2. Дата</label>
-              <input class="form-input" id="a-date" type="date" oninput="livePreview()"></div>
+            <div class="form-group"><label class="form-label">1. Прізвище та ім'я</label>
+              <input class="form-input" id="a-nick" placeholder="Тимофій Носенко" oninput="livePreview()" maxlength="17" style="max-width:100%">
+              <span style="font-size:10px;color:var(--tg)" id="nick-cnt">0/17</span></div>
+            <div class="form-group"><label class="form-label">2. Дата (ДД.ММ.РРРР)</label>
+              <div style="display:flex;gap:6px;align-items:center">
+                <input class="form-input" id="a-day" placeholder="ДД" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2);buildDate();livePreview()" style="width:60px;text-align:center">
+                <span style="color:var(--tg)">.</span>
+                <input class="form-input" id="a-month" placeholder="ММ" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2);buildDate();livePreview()" style="width:60px;text-align:center">
+                <span style="color:var(--tg)">.</span>
+                <input class="form-input" id="a-year" placeholder="РРРР" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);buildDate();livePreview()" style="width:80px;text-align:center">
+              </div>
+              <input type="hidden" id="a-date">
+            </div>
             <div class="form-group full"><label class="form-label">3. Марка спецтранспорту</label>
-              <input class="form-input" id="a-brand" placeholder="Airbus Helicopters H135" oninput="livePreview()" maxlength="80"></div>
+              <input class="form-input" id="a-brand" placeholder="Airbus Helicopters H135" oninput="livePreview();updateBrandCnt()" maxlength="17">
+              <span style="font-size:10px;color:var(--tg)" id="brand-cnt">0/17</span></div>
+            <div class="form-group full"><label class="form-label">6. Номерний знак транспорту</label>
+              <input class="form-input" id="a-plates" placeholder="Залиште поле пустим якщо на транспорті немає номерів" oninput="livePreview()" maxlength="20">
+              <span style="font-size:10px;color:var(--tg)">Починайте писати з 0 або залиште пустим</span></div>
             <div class="form-group"><label class="form-label">4. Тех паспорт (фото)</label>
               <div class="upload-zone" onclick="document.getElementById('a-pass').click()"><div class="upload-icon">📄</div><div class="upload-text">Завантажити</div><div class="upload-hint">PNG, JPG</div></div>
               <input type="file" id="a-pass" accept="image/*" style="display:none" onchange="previewFile(this,'ap-pp')">
-              <div class="upload-preview" id="ap-pp"><img id="ap-pp-img" src=""><button class="rm-btn" onclick="rmFile('a-pass','ap-pp')">✕</button></div>
+              <div class="upload-preview" id="ap-pp"><img id="ap-pp-img" src="" style="cursor:zoom-in" onclick="openFsOverlay(this.src)"><button class="rm-btn" onclick="rmFile('a-pass','ap-pp')">✕</button></div>
             </div>
             <div class="form-group"><label class="form-label">5. Фото транспорту</label>
               <div class="upload-zone" onclick="document.getElementById('a-photo').click()"><div class="upload-icon">🚁</div><div class="upload-text">Завантажити</div><div class="upload-hint">PNG, JPG</div></div>
               <input type="file" id="a-photo" accept="image/*" style="display:none" onchange="previewFile(this,'ap-ph')">
-              <div class="upload-preview" id="ap-ph"><img id="ap-ph-img" src=""><button class="rm-btn" onclick="rmFile('a-photo','ap-ph')">✕</button></div>
+              <div class="upload-preview" id="ap-ph"><img id="ap-ph-img" src="" style="cursor:zoom-in" onclick="openFsOverlay(this.src)"><button class="rm-btn" onclick="rmFile('a-photo','ap-ph')">✕</button></div>
             </div>
             <div class="form-group full"><button class="btn-submit" onclick="submitApply()">🚁 ПОДАТИ ЗАЯВКУ</button></div>
           </div>
@@ -482,19 +524,84 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
   </div>
 </div>
 
+<div class="fs-overlay" id="fsOverlay" onclick="closeFsOverlay()">
+  <button class="fs-close" onclick="closeFsOverlay()">✕</button>
+  <img id="fs-img" src="" alt="">
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
 // ─── STATE ──────────────────────────────────────────────────
 let isAdmin = false;
-let db = JSON.parse(localStorage.getItem('st_db2') || '[]');
-let archive = JSON.parse(localStorage.getItem('st_arch2') || '[]');
+let db = [];
+let archive = [];
 let pendingAction = null;
-let adminPass = 'admin123'; // простий пароль для демо
+let adminPass = 'admin123';
 
-function save(){
-  localStorage.setItem('st_db2', JSON.stringify(db));
-  localStorage.setItem('st_arch2', JSON.stringify(archive));
+// ─── INDEXEDDB STORAGE (замість localStorage) ─────────────────
+let idbReady = false;
+let idbDB = null;
+
+function openIDB(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open('dshv_transport', 2);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if(!d.objectStoreNames.contains('store')) d.createObjectStore('store');
+    };
+    req.onsuccess = e => { idbDB = e.target.result; res(idbDB); };
+    req.onerror = e => rej(e);
+  });
+}
+
+function idbGet(key){
+  return new Promise((res,rej)=>{
+    const tx = idbDB.transaction('store','readonly');
+    const req = tx.objectStore('store').get(key);
+    req.onsuccess = e => res(e.target.result);
+    req.onerror = e => rej(e);
+  });
+}
+
+function idbSet(key, val){
+  return new Promise((res,rej)=>{
+    const tx = idbDB.transaction('store','readwrite');
+    const req = tx.objectStore('store').put(val, key);
+    req.onsuccess = () => res();
+    req.onerror = e => rej(e);
+  });
+}
+
+async function save(){
+  try {
+    await idbSet('st_db2', db);
+    await idbSet('st_arch2', archive);
+  } catch(e){
+    console.error('Помилка збереження:', e);
+    toast('❌ Помилка збереження даних');
+  }
+}
+
+async function initStorage(){
+  await openIDB();
+  const savedDb = await idbGet('st_db2');
+  const savedArch = await idbGet('st_arch2');
+  db = savedDb || [];
+  archive = savedArch || [];
+  idbReady = true;
+
+  if(!db.length){
+    db=[
+      {id:1,nick:'Тимофій Носенко',date:'2026-01-01',brand:'Airbus Helicopters H135',plates:'AB1234CD',status:'active',serial:'ДШВ-СТ-0001',createdAt:'2026-01-01',passportBy:'Полковник Іванов',permitAuthority:'ДШВ ЗСУ',permitConclusion:'Дозволено',permitValidUntil:'2027-01-01',permitInspector:'Майор Петров',permitDate:'2026-01-05'},
+      {id:2,nick:'Олексій Шевченко',date:'2026-02-14',brand:'UH-60 Black Hawk',plates:'',status:'permit',serial:'ДШВ-СТ-0002',createdAt:'2026-02-14',passportBy:'Полковник Іванов',permitAuthority:'ДШВ ЗСУ',permitConclusion:'Дозволено',permitValidUntil:'2027-02-14',permitInspector:'Майор Петров',permitDate:'2026-02-18'},
+      {id:3,nick:'Dmytro_PRO',date:'2026-03-10',brand:'BTR-80',plates:'BC5678EF',status:'passport',serial:'ДШВ-СТ-0003',createdAt:'2026-03-10',passportBy:'Полковник Іванов',permitAuthority:'',permitConclusion:'',permitValidUntil:'',permitInspector:'',permitDate:''},
+      {id:4,nick:'Vasyl_Pilot',date:'2026-03-20',brand:'Mi-24 Hind',plates:'',status:'pending',serial:'ДШВ-СТ-0004',createdAt:'2026-03-20',passportBy:'',permitAuthority:'',permitConclusion:'',permitValidUntil:'',permitInspector:'',permitDate:''},
+    ];
+    await save();
+  }
+  renderOverview();
+  livePreview();
 }
 
 // ─── HELPERS ─────────────────────────────────────────────────
@@ -576,7 +683,7 @@ function renderTechPassport(r){
     </div>
     <div class="doc-tp-plate">
       <div class="doc-tp-plate-ua"><div>🇺🇦</div><div>UA</div></div>
-      <div class="doc-tp-plate-num">${esc(serial)}</div>
+      <div class="doc-tp-plate-num">${r.plates ? esc(r.plates) : esc(serial)}</div>
     </div>
     <div class="doc-tp-fields">
       <div class="doc-tp-field"><div class="doc-tp-field-lbl">Ім'я власника</div><div class="doc-tp-field-val">${esc(fname)}</div></div>
@@ -625,9 +732,10 @@ function renderPermitDoc(r){
 function livePreview(){
   const mock={
     id:0,
-    nick: document.getElementById('a-nick')?.value || 'Ім\'я Прізвище',
+    nick: document.getElementById('a-nick')?.value || 'Прізвище Ім\'я',
     date: document.getElementById('a-date')?.value || today(),
     brand: document.getElementById('a-brand')?.value || 'Марка транспорту',
+    plates: document.getElementById('a-plates')?.value || '',
     serial:'ДШВ-СТ-????',
     status:'pending',
     passportBy:'—', permitAuthority:'ДШВ ЗСУ', permitConclusion:'Дозволено',
@@ -647,17 +755,59 @@ function showDocs(id){
   const body = document.getElementById('doc-modal-body');
   const hasPassport = r.status === 'passport' || r.status === 'permit' || r.status === 'active';
   const hasPermit = r.status === 'permit' || r.status === 'active';
+
+  const passPhotoHtml = r.passportImg && r.passportImg.startsWith('data:')
+    ? `<div class="doc-photo-label">📄 Фото тех.паспорту</div>
+       <img class="doc-photo-thumb" src="${r.passportImg}" alt="Тех паспорт" onclick="openFsOverlay(this.src)">`
+    : '';
+  const transPhotoHtml = r.transportImg && r.transportImg.startsWith('data:')
+    ? `<div class="doc-photo-label">🚁 Фото транспорту</div>
+       <img class="doc-photo-thumb" src="${r.transportImg}" alt="Транспорт" onclick="openFsOverlay(this.src)">`
+    : '';
+
   body.innerHTML = `
     <div class="doc-preview-panel">
       <div class="doc-preview-title">📄 ТЕХ.ПАСПОРТ ${hasPassport?'':'(ще не видано)'}</div>
-      ${hasPassport ? renderTechPassport(r) : '<div style="background:rgba(255,255,255,.03);border:1px dashed var(--gb);border-radius:8px;padding:30px;text-align:center;color:var(--tg)">📄 Паспорт ще не видано адміністратором</div>'}
+      ${hasPassport
+        ? `<div style="cursor:zoom-in" onclick="fullscreenDoc(${r.id},'passport')">
+             ${renderTechPassport(r)}
+             <div style="font-size:10px;color:var(--tg);text-align:center;margin-top:6px">🔍 Натисніть для повного екрану</div>
+           </div>`
+        : '<div style="background:rgba(255,255,255,.03);border:1px dashed var(--gb);border-radius:8px;padding:30px;text-align:center;color:var(--tg)">📄 Паспорт ще не видано адміністратором</div>'}
+      ${passPhotoHtml}
+      ${transPhotoHtml}
     </div>
     <div class="doc-preview-panel">
       <div class="doc-preview-title">✅ ДОКУМЕНТ ДОЗВОЛУ ${hasPermit?'':'(ще не видано)'}</div>
-      ${hasPermit ? renderPermitDoc(r) : '<div style="background:rgba(255,255,255,.03);border:1px dashed var(--gb);border-radius:8px;padding:30px;text-align:center;color:var(--tg)">✅ Дозвіл ще не видано адміністратором</div>'}
+      ${hasPermit
+        ? `<div style="cursor:zoom-in" onclick="fullscreenDoc(${r.id},'permit')">
+             ${renderPermitDoc(r)}
+             <div style="font-size:10px;color:var(--tg);text-align:center;margin-top:6px">🔍 Натисніть для повного екрану</div>
+           </div>`
+        : '<div style="background:rgba(255,255,255,.03);border:1px dashed var(--gb);border-radius:8px;padding:30px;text-align:center;color:var(--tg)">✅ Дозвіл ще не видано адміністратором</div>'}
     </div>
   `;
   document.getElementById('docModal').classList.add('vis');
+}
+
+function fullscreenDoc(id, type){
+  const r = db.find(x=>x.id===id) || archive.find(x=>x.id===id);
+  if(!r) return;
+  // render doc into a temporary div, capture as visible overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:9500;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;cursor:zoom-out';
+  const inner = document.createElement('div');
+  inner.style.cssText = 'max-width:700px;width:100%;position:relative';
+  inner.innerHTML = (type==='permit' ? renderPermitDoc(r) : renderTechPassport(r));
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML='✕';
+  closeBtn.style.cssText='position:fixed;top:16px;right:16px;background:rgba(239,68,68,.2);border:1px solid #ef4444;color:#ef4444;width:36px;height:36px;border-radius:10px;cursor:pointer;font-size:18px;z-index:9600';
+  closeBtn.onclick = e => { e.stopPropagation(); document.body.removeChild(overlay); };
+  overlay.onclick = () => document.body.removeChild(overlay);
+  inner.onclick = e => e.stopPropagation();
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(inner);
+  document.body.appendChild(overlay);
 }
 
 // ─── FILE UPLOAD ─────────────────────────────────────────────
@@ -684,30 +834,73 @@ function getImg(id){
   return img&&img.src.startsWith('data:')?img.src:null;
 }
 
+// ─── DATE BUILD ──────────────────────────────────────────────
+function buildDate(){
+  const d=document.getElementById('a-day')?.value||'';
+  const m=document.getElementById('a-month')?.value||'';
+  const y=document.getElementById('a-year')?.value||'';
+  if(d&&m&&y&&y.length===4){
+    document.getElementById('a-date').value=`${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  } else {
+    document.getElementById('a-date').value='';
+  }
+}
+function updateBrandCnt(){
+  const v=document.getElementById('a-brand').value.length;
+  document.getElementById('brand-cnt').textContent=v+'/17';
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const ni=document.getElementById('a-nick');
+  if(ni) ni.addEventListener('input',()=>{
+    document.getElementById('nick-cnt').textContent=ni.value.length+'/17';
+  });
+});
+
+// ─── FULLSCREEN IMAGE ─────────────────────────────────────────
+function openFsOverlay(src){
+  if(!src) return;
+  document.getElementById('fs-img').src=src;
+  document.getElementById('fsOverlay').classList.add('vis');
+  document.body.style.overflow='hidden';
+}
+function closeFsOverlay(){
+  document.getElementById('fsOverlay').classList.remove('vis');
+  document.body.style.overflow='';
+}
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeFsOverlay();});
+
 // ─── SUBMIT APPLY ────────────────────────────────────────────
 function submitApply(){
   const nick=document.getElementById('a-nick').value.trim();
   const date=document.getElementById('a-date').value;
   const brand=document.getElementById('a-brand').value.trim();
-  if(!nick){toast('❌ Введіть нік');return;}
-  if(!date){toast('❌ Вкажіть дату');return;}
+  const plates=document.getElementById('a-plates')?.value.trim()||'';
+  if(!nick){toast('❌ Введіть прізвище та ім\'я');return;}
+  if(!date){toast('❌ Вкажіть повну дату (ДД.ММ.РРРР)');return;}
   if(!brand){toast('❌ Введіть марку транспорту');return;}
+  const newId = db.length ? Math.max(...db.map(x=>x.id))+1 : 1;
   const entry={
-    id: db.length+1,
-    nick,date,brand,
-    passportImg:getImg('ap-pp'),
-    transportImg:getImg('ap-ph'),
+    id: newId,
+    nick, date, brand, plates,
+    passportImg: getImg('ap-pp'),
+    transportImg: getImg('ap-ph'),
     status:'pending',
-    serial: genSerial(db.length+1),
+    serial: genSerial(newId),
     createdAt: today(),
     passportBy:'', permitAuthority:'ДШВ ЗСУ', permitConclusion:'Дозволено',
-    permitValidUntil:'', permitInspector:'', permitDate:'', permitDate:''
+    permitValidUntil:'', permitInspector:'', permitDate:''
   };
   db.push(entry);
   save();
   document.getElementById('a-nick').value='';
+  document.getElementById('a-day').value='';
+  document.getElementById('a-month').value='';
+  document.getElementById('a-year').value='';
   document.getElementById('a-date').value='';
   document.getElementById('a-brand').value='';
+  document.getElementById('a-plates').value='';
+  document.getElementById('nick-cnt').textContent='0/17';
+  document.getElementById('brand-cnt').textContent='0/17';
   rmFile('a-pass','ap-pp');rmFile('a-photo','ap-ph');
   livePreview();
   toast('✅ Заявку подано! Очікуйте Тех.Паспорту від адміна.');
@@ -832,25 +1025,53 @@ function renderOverview(){
 }
 
 // ─── RENDER DB ───────────────────────────────────────────────
+function getTransportIcon(brand){
+  const b=(brand||'').toLowerCase();
+  if(b.includes('вертол')||b.includes('heli')||b.includes('mi-')||b.includes('uh-')||b.includes('black hawk')||b.includes('h135')||b.includes('hind')) return '🚁';
+  if(b.includes('tank')||b.includes('танк')||b.includes('t-64')||b.includes('t-72')||b.includes('t-80')) return '🪖';
+  if(b.includes('btr')||b.includes('бтр')) return '🛡️';
+  if(b.includes('дрон')||b.includes('drone')||b.includes('uav')||b.includes('бпла')) return '🛸';
+  if(b.includes('літак')||b.includes('plane')||b.includes('su-')||b.includes('mig')||b.includes('f-')) return '✈️';
+  return '🚗';
+}
+
 function renderDB(){
   const q=(document.getElementById('db-search')?.value||'').toLowerCase();
   const items=db.filter(r=>r.nick.toLowerCase().includes(q)||r.brand.toLowerCase().includes(q)).slice().reverse();
-  const tbody=document.getElementById('db-tbody');
-  if(!items.length){tbody.innerHTML='<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">🗄️</div><p>Нічого</p></div></td></tr>';return;}
-  tbody.innerHTML=items.map(r=>`
-    <tr>
-      <td><div class="db-num">${esc(r.serial)}</div></td>
-      <td><div class="db-nick">${esc(r.nick)}</div><div class="db-sub">${fmtDate(r.date)}</div></td>
-      <td><div class="db-sub">${esc(r.brand)}</div></td>
-      <td><div class="db-sub">${fmtDate(r.date)}</div></td>
-      <td>${statusBadge(r.status)}</td>
-      <td>
-        <div class="btn-actions">
-          <button class="btn-sm btn-blue" onclick="showDocs(${r.id})">📋 Документи</button>
-          ${isAdmin?`<button class="btn-sm btn-red" onclick="adminArchive(${r.id})">📦</button>`:''}
+  const grid=document.getElementById('db-profile-grid');
+  if(!grid) return;
+  if(!items.length){
+    grid.innerHTML='<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🗄️</div><p>Нічого не знайдено</p></div>';
+    return;
+  }
+  grid.innerHTML=items.map(r=>{
+    const hasPhoto = r.transportImg && r.transportImg.startsWith('data:');
+    const plates = r.plates ? `<div class="profile-card-plates">🔢 ${esc(r.plates)}</div>` : `<div class="profile-card-plates" style="color:#2a3a4a">🔢 Без номерів</div>`;
+    const photoEl = hasPhoto
+      ? `<img class="profile-card-photo" src="${r.transportImg}" alt="фото" onclick="openFsOverlay(this.src)">`
+      : `<div class="profile-card-no-photo">📷 Фото не додано</div>`;
+    return `
+    <div class="profile-card">
+      <div class="profile-card-header">
+        <span class="profile-card-num">${esc(r.serial)}</span>
+        <span class="profile-card-name">${esc(r.nick)}</span>
+        ${statusBadge(r.status)}
+      </div>
+      <div class="profile-card-body">
+        ${photoEl}
+        <div class="profile-card-transport">
+          <span class="profile-card-transport-icon">${getTransportIcon(r.brand)}</span>
+          <span class="profile-card-transport-name">${esc(r.brand)}</span>
         </div>
-      </td>
-    </tr>`).join('');
+        ${plates}
+        <div class="profile-card-date">📅 Подано: ${fmtDate(r.createdAt||r.date)}</div>
+      </div>
+      <div class="profile-card-footer">
+        <button class="btn-sm btn-blue" onclick="showDocs(${r.id})">📋 Документи</button>
+        ${isAdmin?`<button class="btn-sm btn-red" onclick="adminArchive(${r.id})">📦 Архів</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── RENDER ARCHIVE ──────────────────────────────────────────
@@ -898,17 +1119,7 @@ function renderAdminStep(elId, items, stage){
 }
 
 // ─── INIT ─────────────────────────────────────────────────────
-if(!db.length){
-  db=[
-    {id:1,nick:'Тимофій Носенко',date:'2026-01-01',brand:'Airbus Helicopters H135',status:'active',serial:'ДШВ-СТ-0001',createdAt:'2026-01-01',passportBy:'Полковник Іванов',permitAuthority:'ДШВ ЗСУ',permitConclusion:'Дозволено',permitValidUntil:'2027-01-01',permitInspector:'Майор Петров',permitDate:'2026-01-05'},
-    {id:2,nick:'Олексій Шевченко',date:'2026-02-14',brand:'UH-60 Black Hawk',status:'permit',serial:'ДШВ-СТ-0002',createdAt:'2026-02-14',passportBy:'Полковник Іванов',permitAuthority:'ДШВ ЗСУ',permitConclusion:'Дозволено',permitValidUntil:'2027-02-14',permitInspector:'Майор Петров',permitDate:'2026-02-18'},
-    {id:3,nick:'Dmytro_PRO',date:'2026-03-10',brand:'BTR-80',status:'passport',serial:'ДШВ-СТ-0003',createdAt:'2026-03-10',passportBy:'Полковник Іванов',permitAuthority:'',permitConclusion:'',permitValidUntil:'',permitInspector:'',permitDate:''},
-    {id:4,nick:'Vasyl_Pilot',date:'2026-03-20',brand:'Mi-24 Hind',status:'pending',serial:'ДШВ-СТ-0004',createdAt:'2026-03-20',passportBy:'',permitAuthority:'',permitConclusion:'',permitValidUntil:'',permitInspector:'',permitDate:''},
-  ];
-  save();
-}
-renderOverview();
-livePreview();
+initStorage();
 </script>
 </body>
 </html>
