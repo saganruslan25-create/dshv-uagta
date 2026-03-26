@@ -245,9 +245,8 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
 .stat-card-lbl{font-size:9px;font-weight:700;color:var(--tg);letter-spacing:1px;text-transform:uppercase;margin-top:3px}
 .stat-card-icon{font-size:18px;margin-bottom:5px}
 
-/* UPLOAD PROGRESS */
-.upload-progress{height:4px;background:rgba(34,197,94,.15);border-radius:2px;overflow:hidden;margin-top:6px;display:none}
-.upload-progress-bar{height:100%;background:var(--pr);border-radius:2px;transition:width .3s;width:0%}
+/* UPLOAD READY INDICATOR */
+.upload-ready{font-size:10px;color:var(--pr);font-weight:700;margin-top:4px;display:none}
 
 /* ======================================================
    MOBILE RESPONSIVE
@@ -442,15 +441,15 @@ nav{display:flex;justify-content:space-between;align-items:center;padding:10px 4
               <span style="font-size:10px;color:var(--tg)">Починайте з 0 або залиште пустим</span></div>
             <div class="form-group"><label class="form-label">4. Тех паспорт (фото)</label>
               <div class="upload-zone" onclick="document.getElementById('a-pass').click()"><div class="upload-icon">📄</div><div class="upload-text">Завантажити</div><div class="upload-hint">PNG, JPG</div></div>
-              <input type="file" id="a-pass" accept="image/*" style="display:none" onchange="previewFile(this,'ap-pp')">
-              <div class="upload-preview" id="ap-pp"><img id="ap-pp-img" src="" style="cursor:zoom-in" onclick="openFsOverlay(this.src)"><button class="rm-btn" onclick="rmFile('a-pass','ap-pp')">✕</button></div>
-              <div class="upload-progress" id="prog-pass"><div class="upload-progress-bar" id="prog-pass-bar"></div></div>
+              <input type="file" id="a-pass" accept="image/*" style="display:none" onchange="processImageFile(this,'ap-pp-img','ap-pp','ready-pass')">
+              <div class="upload-preview" id="ap-pp"><img id="ap-pp-img" src="" style="cursor:zoom-in" onclick="openFsOverlay(this.src)"><button class="rm-btn" onclick="rmFile('a-pass','ap-pp','ready-pass')">✕</button></div>
+              <div class="upload-ready" id="ready-pass">✅ Фото готове</div>
             </div>
             <div class="form-group"><label class="form-label">5. Фото транспорту</label>
-              <div class="upload-zone" onclick="document.getElementById('a-photo').click()"><div class="upload-icon">🚁</div><div class="upload-text">Завантажити</div><div class="upload-hint">PNG, JPG</div></div>
-              <input type="file" id="a-photo" accept="image/*" style="display:none" onchange="previewFile(this,'ap-ph')">
-              <div class="upload-preview" id="ap-ph"><img id="ap-ph-img" src="" style="cursor:zoom-in" onclick="openFsOverlay(this.src)"><button class="rm-btn" onclick="rmFile('a-photo','ap-ph')">✕</button></div>
-              <div class="upload-progress" id="prog-photo"><div class="upload-progress-bar" id="prog-photo-bar"></div></div>
+              <div class="upload-zone" onclick="document.getElementById('a-photo').click()"><div class="upload-icon">🚁</div><div class="upload-text">Завантажити</div><div class="upload-hint">PNG, JPG до 10MB</div></div>
+              <input type="file" id="a-photo" accept="image/*" style="display:none" onchange="processImageFile(this,'ap-ph-img','ap-ph','ready-photo')">
+              <div class="upload-preview" id="ap-ph"><img id="ap-ph-img" src="" style="cursor:zoom-in" onclick="openFsOverlay(this.src)"><button class="rm-btn" onclick="rmFile('a-photo','ap-ph','ready-photo')">✕</button></div>
+              <div class="upload-ready" id="ready-photo">✅ Фото готове</div>
             </div>
             <div class="form-group full"><button class="btn-submit" id="btn-submit-apply" onclick="submitApply()">🚁 ПОДАТИ ЗАЯВКУ</button></div>
           </div>
@@ -533,9 +532,7 @@ import {
   getFirestore, collection, doc, getDoc, getDocs, addDoc,
   updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import {
-  getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+// Firebase Storage не використовується — фото зберігаються як base64 в Firestore
 
 const firebaseConfig = {
   apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
@@ -549,7 +546,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
+// storage не потрібен
 
 // ─── STATE ──────────────────────────────────────────────────
 let isAdmin = false;
@@ -714,7 +711,7 @@ window.renderDB = function(){
     return;
   }
   grid.innerHTML=items.map(r=>{
-    const hasPhoto = r.transportImg && r.transportImg.startsWith('http');
+    const hasPhoto = r.transportImg && r.transportImg.length > 10;
     const plates = r.plates ? `<div class="profile-card-plates">🔢 ${esc(r.plates)}</div>` : `<div class="profile-card-plates" style="color:#2a3a4a">🔢 Без номерів</div>`;
     const photoEl = hasPhoto
       ? `<img class="profile-card-photo" src="${r.transportImg}" alt="фото" onclick="openFsOverlay('${r.transportImg}')" loading="lazy">`
@@ -887,11 +884,11 @@ window.showDocs = function(id, fromArchive){
   const hasPassport = ['passport','permit','active','archived'].includes(r.status);
   const hasPermit = ['permit','active','archived'].includes(r.status);
 
-  const passPhotoHtml = r.passportImg
+  const passPhotoHtml = (r.passportImg && r.passportImg.length > 10)
     ? `<div class="doc-photo-label">📄 Фото тех.паспорту</div>
        <img class="doc-photo-thumb" src="${r.passportImg}" alt="Тех паспорт" onclick="openFsOverlay('${r.passportImg}')" loading="lazy">`
     : '';
-  const transPhotoHtml = r.transportImg
+  const transPhotoHtml = (r.transportImg && r.transportImg.length > 10)
     ? `<div class="doc-photo-label">🚁 Фото транспорту</div>
        <img class="doc-photo-thumb" src="${r.transportImg}" alt="Транспорт" onclick="openFsOverlay('${r.transportImg}')" loading="lazy">`
     : '';
@@ -935,48 +932,44 @@ window.fullscreenDoc = function(id, type, fromArchive){
   document.body.appendChild(overlay);
 }
 
-// ─── FILE UPLOAD ─────────────────────────────────────────────
-window.previewFile = function(input, pid){
+// ─── FILE UPLOAD (base64, як у галереї — без Storage) ────────
+// Зберігаємо base64 в словнику, щоб не читати DOM двічі
+const _imgBase64 = {};
+
+window.processImageFile = function(input, imgId, previewId, readyId){
   const file = input.files[0];
   if(!file) return;
   if(file.size > 10*1024*1024){ toast('❌ Файл >10MB'); input.value=''; return; }
-  const r = new FileReader();
-  r.onload = e => {
-    const pv = document.getElementById(pid);
-    document.getElementById(pid+'-img').src = e.target.result;
-    pv.style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height, max = 900;
+      if(w > h){ if(w > max){ h = Math.round(h*max/w); w = max; } }
+      else { if(h > max){ w = Math.round(w*max/h); h = max; } }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const b64 = canvas.toDataURL('image/jpeg', 0.75);
+      _imgBase64[previewId] = b64;
+      document.getElementById(imgId).src = b64;
+      document.getElementById(previewId).style.display = 'block';
+      const rd = document.getElementById(readyId);
+      if(rd) rd.style.display = 'block';
+    };
+    img.src = e.target.result;
   };
-  r.readAsDataURL(file);
+  reader.readAsDataURL(file);
 }
-window.rmFile = function(inp, pid){
+window.rmFile = function(inp, pid, readyId){
   document.getElementById(inp).value='';
-  const pv = document.getElementById(pid);
-  pv.style.display='none';
+  document.getElementById(pid).style.display='none';
   document.getElementById(pid+'-img').src='';
+  delete _imgBase64[pid];
+  const rd = readyId ? document.getElementById(readyId) : null;
+  if(rd) rd.style.display='none';
 }
-
-// Upload file to Firebase Storage, returns download URL
-async function uploadToStorage(file, path, progressBarId){
-  return new Promise((resolve, reject) => {
-    const ref = storageRef(storage, path);
-    const task = uploadBytesResumable(ref, file);
-    const progressWrap = progressBarId ? document.getElementById('prog-'+progressBarId) : null;
-    const progressBar = progressBarId ? document.getElementById('prog-'+progressBarId+'-bar') : null;
-    if(progressWrap) progressWrap.style.display = 'block';
-    task.on('state_changed',
-      snap => {
-        const pct = Math.round(snap.bytesTransferred / snap.totalBytes * 100);
-        if(progressBar) progressBar.style.width = pct + '%';
-      },
-      err => { reject(err); },
-      async () => {
-        const url = await getDownloadURL(task.snapshot.ref);
-        if(progressWrap) progressWrap.style.display = 'none';
-        resolve(url);
-      }
-    );
-  });
-}
+function getImgBase64(pid){ return _imgBase64[pid] || null; }
 
 // ─── DATE BUILD ──────────────────────────────────────────────
 window.buildDate = function(){
@@ -1035,21 +1028,9 @@ window.submitApply = async function(){
     const nextNum = allDocs.size + archDocs.size + 1;
     const serial = genSerial(nextNum);
 
-    let passportImgUrl = null;
-    let transportImgUrl = null;
-
-    // Завантаження фото паспорту
-    const passFile = document.getElementById('a-pass').files[0];
-    if(passFile){
-      toast('📤 Завантаження фото паспорту...');
-      passportImgUrl = await uploadToStorage(passFile, `transport/${serial}/passport_${Date.now()}`, 'pass');
-    }
-    // Завантаження фото транспорту
-    const photoFile = document.getElementById('a-photo').files[0];
-    if(photoFile){
-      toast('📤 Завантаження фото транспорту...');
-      transportImgUrl = await uploadToStorage(photoFile, `transport/${serial}/transport_${Date.now()}`, 'photo');
-    }
+    // Фото зберігаються як base64 прямо в Firestore (як у галереї)
+    const passportImgUrl = getImgBase64('ap-pp');
+    const transportImgUrl = getImgBase64('ap-ph');
 
     const entry = {
       nick, date, brand, plates,
@@ -1072,8 +1053,8 @@ window.submitApply = async function(){
     });
     document.getElementById('nick-cnt').textContent='0/17';
     document.getElementById('brand-cnt').textContent='0/17';
-    rmFile('a-pass','ap-pp');
-    rmFile('a-photo','ap-ph');
+    rmFile('a-pass','ap-pp','ready-pass');
+    rmFile('a-photo','ap-ph','ready-photo');
     livePreview();
     toast('✅ Заявку подано! Очікуйте Тех.Паспорту від адміна.');
     showTab('database');
@@ -1212,15 +1193,6 @@ window.adminDeleteFromArchive = function(id){
   openConfirm('🗑️ Повне видалення',
     `УВАГА! Видалити "${r.nick}" (${r.brand}) назавжди? Це незворотня дія!`, '',
     async () => {
-      // Видаляємо фото зі Storage якщо є
-      const deleteImg = async (url) => {
-        if(!url) return;
-        try {
-          const ref = storageRef(storage, url);
-          await deleteObject(ref);
-        } catch(e){ /* файл вже видалений або не існує */ }
-      };
-      // Для Storage краще зберігати paths, але якщо є URL — спробуємо видалити
       await deleteDoc(doc(db, 'transport_archive', id));
       toast(`🗑️ Запис "${r.nick}" повністю видалено`);
     }
