@@ -4,19 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ДШВ | СИСТЕМА ЗВІТІВ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #22c55e;
             --primary-bright: #4ade80;
-            --primary-dim: rgba(34,197,94,0.15);
             --bg: #030507;
             --card-bg: rgba(255,255,255,0.03);
             --glass-border: rgba(34,197,94,0.2);
             --red: #ef4444;
             --yellow: #eab308;
+            --font: 'Exo 2', sans-serif;
         }
         * { box-sizing: border-box; }
+
         body {
             margin: 0; padding: 0;
             background: var(--bg);
@@ -25,12 +26,14 @@
                 radial-gradient(circle at 10% 90%, rgba(34,197,94,0.08) 0%, transparent 30%);
             background-attachment: fixed;
             color: white;
-            font-family: 'Exo 2', sans-serif;
+            font-family: var(--font);
             user-select: none;
             -webkit-user-select: none;
         }
-        .f-input, .f-input:focus, .f-input:hover, textarea, input,
-        .work-content, .work-content *, .copy-output, .copy-output * {
+
+        input, textarea, select,
+        .work-content, .work-content *,
+        .copy-output, .copy-output * {
             user-select: text !important;
             -webkit-user-select: text !important;
         }
@@ -43,279 +46,249 @@
         }
         .logo-box {
             background: var(--primary); color: black; padding: 4px 10px; border-radius: 6px;
-            font-weight: 800; font-family: 'Share Tech Mono', monospace;
-            box-shadow: 0 0 15px var(--primary); text-decoration: none; font-size: 15px;
+            font-weight: 900; font-family: var(--font);
+            box-shadow: 0 0 15px var(--primary); text-decoration: none; font-size: 15px; letter-spacing: 1px;
         }
-        .nav-right { display: flex; align-items: center; gap: 18px; }
-        .admin-badge {
-            display: none; background: rgba(234,179,8,0.15); border: 1px solid var(--yellow);
-            color: var(--yellow); padding: 4px 12px; border-radius: 8px;
-            font-size: 10px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+        .nav-right { display: flex; align-items: center; gap: 14px; }
+        .btn-admin-nav {
+            display: none;
+            background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.45);
+            color: var(--yellow); padding: 7px 16px; border-radius: 10px;
+            font-size: 11px; font-weight: 800; cursor: pointer;
+            text-transform: uppercase; letter-spacing: 2px; font-family: var(--font); transition: 0.2s;
         }
-        .admin-badge.show { display: inline-block; }
+        .btn-admin-nav:hover { background: rgba(234,179,8,0.25); }
+        .btn-admin-nav.show { display: inline-block; }
+        .nav-back { color: white; text-decoration: none; font-size: 12px; font-weight: 800; opacity: 0.6; font-family: var(--font); }
 
-        .container { max-width: 1100px; margin: 40px auto; padding: 0 20px; }
+        .container { max-width: 1050px; margin: 40px auto; padding: 0 20px; }
 
         /* HEADER */
         .section-header { text-align: center; margin-bottom: 40px; }
-        .section-title {
-            font-size: 34px; font-weight: 900; margin-bottom: 8px;
-            text-transform: uppercase; letter-spacing: 4px;
-            font-family: 'Rajdhani', sans-serif;
-        }
-        .section-sub { color: var(--primary-bright); font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; }
-
-        .btn-example {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--primary);
-            color: var(--primary-bright); padding: 8px 20px; border-radius: 10px;
-            font-size: 11px; font-weight: 800; cursor: pointer; margin-top: 15px;
-            transition: 0.3s; text-transform: uppercase; font-family: inherit;
-        }
-        .btn-example:hover { background: var(--primary); color: black; }
+        .section-title { font-size: 34px; font-weight: 900; margin: 0 0 8px; text-transform: uppercase; letter-spacing: 4px; font-family: var(--font); }
+        .section-sub { color: var(--primary-bright); font-size: 11px; font-weight: 700; letter-spacing: 4px; text-transform: uppercase; margin: 0; font-family: var(--font); }
 
         /* MODAL */
         .modal {
-            display: none; position: fixed; z-index: 3000; left: 0; top: 0;
-            width: 100%; height: 100%; background: rgba(0,0,0,0.92);
-            backdrop-filter: blur(12px); align-items: center; justify-content: center;
+            display: none; position: fixed; z-index: 3000; inset: 0;
+            background: rgba(0,0,0,0.92); backdrop-filter: blur(12px);
+            align-items: center; justify-content: center;
         }
-        .modal-content {
+        .modal-inner {
             background: #0c0f13; border: 1px solid var(--glass-border);
-            padding: 35px; border-radius: 25px; max-width: 560px; width: 92%;
-            position: relative; box-shadow: 0 0 60px rgba(34,197,94,0.15);
+            padding: 35px; border-radius: 25px; max-width: 580px; width: 92%;
+            position: relative; box-shadow: 0 0 60px rgba(34,197,94,0.12);
+            max-height: 90vh; overflow-y: auto;
         }
+        .modal-inner.yellow-border { border-color: rgba(234,179,8,0.3); box-shadow: 0 0 60px rgba(234,179,8,0.08); }
+        .modal-inner.wide { max-width: 720px; }
         .modal-close {
-            position: absolute; top: 18px; right: 22px; cursor: pointer;
-            font-size: 20px; opacity: 0.4; transition: 0.2s; background: none; border: none; color: white;
+            position: absolute; top: 18px; right: 20px; cursor: pointer;
+            font-size: 18px; opacity: 0.35; transition: 0.2s;
+            background: none; border: none; color: white; font-family: var(--font);
         }
         .modal-close:hover { opacity: 1; }
-        .example-text { font-size: 13px; line-height: 1.8; color: #bbb; white-space: pre-wrap; font-family: 'Share Tech Mono', monospace; }
-        .example-text b { color: var(--primary-bright); }
+        .modal-title {
+            font-size: 13px; font-weight: 900; letter-spacing: 3px;
+            text-transform: uppercase; margin-bottom: 22px; font-family: var(--font);
+        }
+        .modal-title.green { color: var(--primary-bright); }
+        .modal-title.yellow { color: var(--yellow); }
 
-        /* FORM CARD */
+        /* FORM */
         .report-form {
             background: var(--card-bg); border: 1px solid var(--glass-border);
-            padding: 40px; border-radius: 30px; backdrop-filter: blur(20px);
+            padding: 38px; border-radius: 28px; backdrop-filter: blur(20px);
             margin-bottom: 50px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
         .input-group { margin-bottom: 22px; }
         .input-group label {
             display: block; font-size: 10px; font-weight: 800; color: var(--primary-bright);
-            text-transform: uppercase; margin-bottom: 8px; letter-spacing: 2px;
+            text-transform: uppercase; margin-bottom: 8px; letter-spacing: 2px; font-family: var(--font);
         }
         .f-input {
-            width: 100%; padding: 16px 18px; background: rgba(0,0,0,0.45);
+            width: 100%; padding: 15px 16px; background: rgba(0,0,0,0.45);
             border: 1px solid rgba(255,255,255,0.08); color: white;
-            border-radius: 14px; font-family: 'Exo 2', sans-serif; font-size: 14px;
-            transition: border-color 0.2s;
-            -webkit-appearance: none; appearance: none;
+            border-radius: 13px; font-family: var(--font); font-size: 14px;
+            transition: border-color 0.2s; -webkit-appearance: none; appearance: none;
         }
         .f-input:focus { outline: none; border-color: var(--primary); }
-        select.f-input option { background: #0c0f13; color: white; }
+        select.f-input option { background: #0c0f13; color: white; font-family: var(--font); }
 
         /* WORK ROWS */
         .works-section { margin-bottom: 22px; }
-        .works-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 12px;
-        }
-        .works-header label { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; letter-spacing: 2px; }
+        .works-label { font-size: 10px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px; display: block; font-family: var(--font); }
 
         .work-row {
-            display: grid; grid-template-columns: 110px 1fr 1fr auto; gap: 10px;
-            align-items: start; margin-bottom: 10px;
+            display: grid; grid-template-columns: 100px 1fr 180px 36px;
+            gap: 8px; align-items: start; margin-bottom: 4px;
             animation: fadeIn 0.2s ease;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:translateY(0);} }
+
+        .work-custom-wrap { display: none; margin-bottom: 4px; }
+        .work-custom-wrap input { width: 100%; }
 
         .points-hint {
-            font-size: 10px; color: #555; margin-top: 4px; text-align: right;
-            font-family: 'Share Tech Mono', monospace;
+            font-size: 10px; color: #555; text-align: right; margin-bottom: 10px;
+            font-family: var(--font);
         }
-        .points-hint span { color: var(--primary-bright); font-weight: 700; }
+        .points-hint span { color: var(--primary-bright); font-weight: 800; }
 
         .btn-add-row {
-            background: rgba(34,197,94,0.08); border: 1px dashed rgba(34,197,94,0.35);
+            background: rgba(34,197,94,0.07); border: 1px dashed rgba(34,197,94,0.3);
             color: var(--primary); padding: 12px; border-radius: 12px;
             font-size: 12px; font-weight: 800; cursor: pointer; width: 100%;
-            transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-family: inherit;
+            transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-family: var(--font);
         }
-        .btn-add-row:hover { background: rgba(34,197,94,0.15); border-color: var(--primary); }
+        .btn-add-row:hover { background: rgba(34,197,94,0.14); border-color: var(--primary); }
 
         .btn-remove-row {
-            background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
-            color: var(--red); padding: 8px 10px; border-radius: 10px;
-            font-size: 14px; cursor: pointer; transition: 0.2s; height: 50px; align-self: start; margin-top: 0;
+            background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+            color: var(--red); border-radius: 10px; font-size: 13px; cursor: pointer;
+            transition: 0.2s; height: 48px; width: 36px; display: flex; align-items: center; justify-content: center;
         }
-        .btn-remove-row:hover { background: rgba(239,68,68,0.25); }
+        .btn-remove-row:hover { background: rgba(239,68,68,0.22); }
 
         .btn-submit {
             width: 100%; background: var(--primary); color: black;
-            padding: 18px; border: none; border-radius: 14px;
+            padding: 17px; border: none; border-radius: 13px;
             font-weight: 900; cursor: pointer; text-transform: uppercase;
-            font-size: 14px; letter-spacing: 2px;
+            font-size: 14px; letter-spacing: 2px; font-family: var(--font);
             box-shadow: 0 0 20px rgba(34,197,94,0.3); transition: 0.3s;
-            font-family: 'Rajdhani', sans-serif;
         }
         .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 0 35px rgba(34,197,94,0.5); }
 
-        /* ADMIN PANEL */
-        .admin-panel {
-            display: none; background: rgba(234,179,8,0.03); border: 1px solid rgba(234,179,8,0.25);
-            padding: 35px; border-radius: 30px; margin-bottom: 50px;
-        }
-        .admin-panel.show { display: block; }
-        .admin-title {
-            font-size: 13px; font-weight: 900; color: var(--yellow); letter-spacing: 3px;
-            text-transform: uppercase; margin-bottom: 25px; display: flex; align-items: center; gap: 10px;
-        }
-
-        .scoring-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        /* SCORING TABLE */
+        .scoring-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
         .scoring-table th {
-            text-align: left; font-size: 10px; color: #666; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 2px; padding: 0 10px 10px;
+            text-align: left; font-size: 10px; color: #555; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 2px; padding: 0 8px 10px; font-family: var(--font);
         }
-        .scoring-table td { padding: 5px 10px; }
-        .scoring-table tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
-        .scoring-table tr:last-child { border-bottom: none; }
+        .scoring-table td { padding: 5px 8px; }
+        .scoring-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .scoring-table tbody tr:last-child { border-bottom: none; }
+        .work-type-name { font-size: 13px; font-weight: 700; color: #ddd; font-family: var(--font); }
 
         .score-input {
-            width: 80px; padding: 10px 12px; background: rgba(0,0,0,0.45);
+            width: 75px; padding: 9px 10px; background: rgba(0,0,0,0.45);
             border: 1px solid rgba(234,179,8,0.2); color: white;
-            border-radius: 10px; font-family: 'Share Tech Mono', monospace; font-size: 13px;
-            text-align: center;
+            border-radius: 9px; font-family: var(--font); font-size: 13px; text-align: center;
         }
         .score-input:focus { outline: none; border-color: var(--yellow); }
-        .work-type-name { font-size: 13px; font-weight: 700; color: #ddd; }
-        .work-type-desc { font-size: 11px; color: #555; margin-top: 2px; }
-        .score-badge {
-            background: rgba(34,197,94,0.1); color: var(--primary-bright);
-            padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;
-            font-family: 'Share Tech Mono', monospace;
-        }
 
-        .btn-save-scores {
-            background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.4);
-            color: var(--yellow); padding: 12px 25px; border-radius: 12px;
-            font-size: 12px; font-weight: 800; cursor: pointer; transition: 0.2s;
-            text-transform: uppercase; letter-spacing: 1px; font-family: inherit;
+        .btn-del-type {
+            background: none; border: 1px solid rgba(239,68,68,0.25); color: var(--red);
+            padding: 7px 10px; border-radius: 8px; font-size: 11px; cursor: pointer;
+            font-family: var(--font); font-weight: 800; transition: 0.2s;
         }
-        .btn-save-scores:hover { background: rgba(234,179,8,0.2); }
+        .btn-del-type:hover { background: rgba(239,68,68,0.12); }
 
-        /* GENERATE BUTTON */
-        .btn-generate {
-            width: 100%; background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.4);
-            color: var(--yellow); padding: 16px; border-radius: 14px;
-            font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 13px;
-            letter-spacing: 2px; transition: 0.3s; font-family: 'Rajdhani', sans-serif;
-            margin-top: 15px;
-        }
-        .btn-generate:hover { background: rgba(234,179,8,0.2); box-shadow: 0 0 25px rgba(234,179,8,0.2); }
-
-        /* GENERATE MODAL */
-        .gen-modal-content {
-            background: #0a0d10; border: 1px solid rgba(234,179,8,0.3);
-            padding: 35px; border-radius: 25px; max-width: 700px; width: 95%;
-            position: relative; box-shadow: 0 0 60px rgba(234,179,8,0.1);
-            max-height: 85vh; overflow-y: auto;
-        }
-        .gen-title { font-size: 13px; color: var(--yellow); font-weight: 800; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 20px; }
-
-        /* FILTER ROW */
-        .filter-row {
-            display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 20px; align-items: end;
-        }
-        .filter-label { font-size: 10px; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; }
-        .filter-input {
-            width: 100%; padding: 12px 14px; background: rgba(0,0,0,0.5);
+        .add-type-row { display: grid; grid-template-columns: 1fr 80px auto; gap: 8px; margin-top: 14px; }
+        .add-type-row input {
+            padding: 10px 12px; background: rgba(0,0,0,0.4);
             border: 1px solid rgba(255,255,255,0.08); color: white;
-            border-radius: 12px; font-family: 'Exo 2', sans-serif; font-size: 13px;
+            border-radius: 10px; font-family: var(--font); font-size: 13px; width: 100%;
+        }
+        .add-type-row input:focus { outline: none; border-color: rgba(34,197,94,0.5); }
+        .btn-add-type {
+            background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.35);
+            color: var(--primary-bright); padding: 10px 14px; border-radius: 10px;
+            font-size: 12px; font-weight: 800; cursor: pointer; white-space: nowrap;
+            font-family: var(--font); transition: 0.2s;
+        }
+        .btn-add-type:hover { background: rgba(34,197,94,0.2); }
+
+        .btn-admin-action {
+            padding: 12px 22px; border-radius: 12px; font-size: 12px; font-weight: 800;
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px; font-family: var(--font);
+        }
+        .btn-yellow { background: rgba(234,179,8,0.1); border: 1px solid rgba(234,179,8,0.4); color: var(--yellow); }
+        .btn-yellow:hover { background: rgba(234,179,8,0.2); }
+        .btn-green { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.35); color: var(--primary-bright); }
+        .btn-green:hover { background: rgba(34,197,94,0.18); }
+
+        /* GENERATE */
+        .filter-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; margin-bottom: 18px; align-items: end; }
+        .filter-label { font-size: 10px; font-weight: 800; color: #666; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px; font-family: var(--font); }
+        .filter-input {
+            width: 100%; padding: 11px 14px; background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.08); color: white;
+            border-radius: 11px; font-family: var(--font); font-size: 13px;
         }
         .filter-input:focus { outline: none; border-color: rgba(234,179,8,0.4); }
-        .btn-do-generate {
-            background: var(--yellow); color: black; padding: 12px 22px;
-            border: none; border-radius: 12px; font-weight: 900; cursor: pointer;
-            font-size: 12px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
-            font-family: inherit;
+        .btn-do-gen {
+            background: var(--yellow); color: black; padding: 11px 20px;
+            border: none; border-radius: 11px; font-weight: 900; cursor: pointer;
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px; white-space: nowrap; font-family: var(--font);
         }
-        .btn-do-generate:hover { filter: brightness(1.1); }
-
+        .btn-do-gen:hover { filter: brightness(1.1); }
         .copy-output {
-            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 14px; padding: 20px; font-family: 'Share Tech Mono', monospace;
+            background: rgba(0,0,0,0.38); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 13px; padding: 18px; font-family: var(--font);
             font-size: 13px; line-height: 1.7; color: #ccc; white-space: pre-wrap;
-            min-height: 80px; margin-bottom: 15px; word-break: break-word;
+            min-height: 80px; margin-bottom: 14px; word-break: break-word;
         }
-        .btn-copy {
-            background: var(--primary); color: black; padding: 12px 25px;
-            border: none; border-radius: 12px; font-weight: 900; cursor: pointer;
-            font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-family: inherit;
-            transition: 0.2s;
+        .btn-copy-out {
+            background: var(--primary); color: black; padding: 12px 24px;
+            border: none; border-radius: 11px; font-weight: 900; cursor: pointer;
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px; font-family: var(--font); transition: 0.2s;
         }
-        .btn-copy:hover { filter: brightness(1.1); }
-        .btn-copy.copied { background: #3b82f6; }
+        .btn-copy-out.copied { background: #3b82f6; color: white; }
 
         /* FEED */
-        .feed-header {
-            font-size: 11px; font-weight: 900; margin-bottom: 25px;
-            letter-spacing: 3px; text-transform: uppercase; color: #888;
-        }
+        .feed-header { font-size: 11px; font-weight: 900; margin-bottom: 22px; letter-spacing: 3px; text-transform: uppercase; color: #666; font-family: var(--font); }
         .report-card {
             background: rgba(255,255,255,0.02); border: 1px solid var(--glass-border);
-            padding: 28px; border-radius: 22px; margin-bottom: 20px;
-            position: relative; transition: border-color 0.2s;
+            padding: 26px; border-radius: 20px; margin-bottom: 18px; transition: border-color 0.2s;
         }
         .report-card:hover { border-color: rgba(34,197,94,0.35); }
-        .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
-        .user-name { font-weight: 900; font-size: 17px; display: flex; align-items: center; gap: 10px; }
-        .rank-tag { font-size: 9px; background: var(--primary); color: black; padding: 3px 8px; border-radius: 6px; font-weight: 900; letter-spacing: 1px; }
-        .report-time { font-size: 11px; color: #444; font-weight: 700; font-family: 'Share Tech Mono', monospace; }
+        .report-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+        .user-name { font-weight: 900; font-size: 16px; display: flex; align-items: center; gap: 10px; font-family: var(--font); }
+        .rank-tag { font-size: 9px; background: var(--primary); color: black; padding: 3px 8px; border-radius: 5px; font-weight: 900; letter-spacing: 1px; font-family: var(--font); }
+        .report-time { font-size: 11px; color: #444; font-weight: 700; font-family: var(--font); }
         .date-badge {
-            background: rgba(34,197,94,0.08); padding: 7px 14px; border-radius: 10px;
-            color: var(--primary-bright); font-weight: 800; font-size: 12px; margin-bottom: 14px;
-            display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(34,197,94,0.18);
-            font-family: 'Share Tech Mono', monospace;
+            background: rgba(34,197,94,0.07); padding: 6px 13px; border-radius: 10px;
+            color: var(--primary-bright); font-weight: 800; font-size: 12px; margin-bottom: 13px;
+            display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(34,197,94,0.18); font-family: var(--font);
         }
         .work-content {
-            background: rgba(0,0,0,0.2); padding: 18px; border-radius: 14px;
+            background: rgba(0,0,0,0.2); padding: 16px; border-radius: 13px;
             font-size: 13px; line-height: 1.7; white-space: pre-wrap;
-            border: 1px solid rgba(255,255,255,0.04); word-break: break-word;
-            font-family: 'Share Tech Mono', monospace;
+            border: 1px solid rgba(255,255,255,0.04); word-break: break-word; font-family: var(--font);
         }
         .work-content a { color: #3b82f6; text-decoration: underline; font-weight: 600; }
-
         .total-score {
             margin-top: 10px; display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);
-            padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 800;
-            color: var(--primary-bright); font-family: 'Share Tech Mono', monospace;
+            background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.2);
+            padding: 5px 13px; border-radius: 10px; font-size: 12px; font-weight: 800;
+            color: var(--primary-bright); font-family: var(--font);
         }
-
-        .controls { display: flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+        .controls { display: flex; gap: 8px; margin-top: 13px; justify-content: flex-end; }
         .ctrl-btn {
             background: none; border: 1px solid rgba(255,255,255,0.1); color: #666;
             padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800;
-            cursor: pointer; transition: 0.2s; text-transform: uppercase; font-family: inherit;
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; font-family: var(--font);
         }
         .ctrl-btn:hover { background: rgba(255,255,255,0.05); color: white; border-color: white; }
         .btn-del:hover { color: var(--red); border-color: var(--red); background: rgba(239,68,68,0.05); }
 
         /* TOAST */
         .toast {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
-            background: var(--primary); color: black; padding: 12px 25px; border-radius: 14px;
+            position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: var(--primary); color: black; padding: 11px 24px; border-radius: 13px;
             font-weight: 900; font-size: 13px; letter-spacing: 1px; z-index: 9999;
-            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none;
+            transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events: none; font-family: var(--font);
         }
         .toast.show { transform: translateX(-50%) translateY(0); }
 
-        @media (max-width: 768px) {
+        @media (max-width: 700px) {
             .container { padding: 10px; }
-            .report-form, .admin-panel { padding: 22px; }
-            .work-row { grid-template-columns: 90px 1fr; gap: 8px; }
-            .work-row .f-input:nth-child(2) { grid-column: 1 / -1; }
-            .work-row .btn-remove-row { grid-column: 2; width: fit-content; }
+            .report-form { padding: 20px; }
+            .work-row { grid-template-columns: 80px 1fr 36px; }
+            .work-row > select { grid-column: 1 / span 2; }
             .filter-row { grid-template-columns: 1fr; }
+            .add-type-row { grid-template-columns: 1fr auto; }
         }
     </style>
 </head>
@@ -324,8 +297,8 @@
 <nav>
     <a href="index.html" class="logo-box">ДШВ</a>
     <div class="nav-right">
-        <span class="admin-badge" id="adminBadge">⚡ АДМІН</span>
-        <a href="cabinet.html" style="color:white; text-decoration:none; font-size:12px; font-weight:800; opacity:0.6;">← НАЗАД В КАБІНЕТ</a>
+        <button class="btn-admin-nav" id="btnAdminNav" onclick="document.getElementById('modalAdmin').style.display='flex'">⚙️ АДМІН</button>
+        <a href="cabinet.html" class="nav-back">← НАЗАД В КАБІНЕТ</a>
     </div>
 </nav>
 
@@ -333,38 +306,41 @@
     <div class="section-header">
         <h1 class="section-title">Система звітів</h1>
         <p class="section-sub">ЦЕНТРАЛІЗОВАНИЙ АРХІВ ДОКАЗІВ</p>
-        <button class="btn-example" onclick="document.getElementById('modalEx').style.display='flex'">Зразок заповнення</button>
     </div>
 
-    <!-- MODAL: EXAMPLE -->
-    <div id="modalEx" class="modal" onclick="if(event.target==this)this.style.display='none'">
-        <div class="modal-content">
-            <button class="modal-close" onclick="document.getElementById('modalEx').style.display='none'">✕</button>
-            <h3 style="color:var(--primary);margin-top:0;font-family:'Rajdhani',sans-serif;letter-spacing:2px;">ЯК ПРАВИЛЬНО ЗАПОВНЮВАТИ:</h3>
-            <div class="example-text">
-<b>Форма заповнення:</b>
-1. Ваш нік: (автоматично з профілю)
-2. Ваше звання: (автоматично з профілю)
-3. Дата звітності: наприклад 19.12 - 25.12
-4. Вид роботи: обираєте зі списку
-5. Кількість: скільки разів виконали
-6. Силка: посилання на докази
+    <!-- MODAL: ADMIN SETTINGS -->
+    <div id="modalAdmin" class="modal" onclick="if(event.target==this)this.style.display='none'">
+        <div class="modal-inner yellow-border">
+            <button class="modal-close" onclick="document.getElementById('modalAdmin').style.display='none'">✕</button>
+            <div class="modal-title yellow">⚙️ АДМІН — НАЛАШТУВАННЯ БАЛІВ</div>
 
-<b>Приклад роботи:</b>
-Перевезення палива — 2 рази
-Очищення зброї — 3 рази
+            <table class="scoring-table">
+                <thead><tr>
+                    <th>Вид роботи</th>
+                    <th style="text-align:center;">Балів / шт.</th>
+                    <th></th>
+                </tr></thead>
+                <tbody id="scoringBody"></tbody>
+            </table>
 
-Натисніть "+ ДОДАТИ РОБОТУ" щоб додати
-ще один вид роботи до звіту.
+            <div class="add-type-row">
+                <input type="text" id="newTypeName" placeholder="Назва нового виду роботи...">
+                <input type="number" id="newTypePoints" placeholder="Бали" min="0" max="999">
+                <button class="btn-add-type" onclick="window.addWorkType()">+ ДОДАТИ</button>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+                <button class="btn-admin-action btn-yellow" onclick="window.saveScores()">💾 ЗБЕРЕГТИ БАЛИ</button>
+                <button class="btn-admin-action btn-green" onclick="window.openGenModal()">📋 ГЕНЕРУВАТИ ЗВІТ</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL: GENERATE -->
     <div id="modalGen" class="modal" onclick="if(event.target==this)this.style.display='none'">
-        <div class="gen-modal-content">
+        <div class="modal-inner yellow-border wide">
             <button class="modal-close" onclick="document.getElementById('modalGen').style.display='none'">✕</button>
-            <div class="gen-title">📋 ГЕНЕРАЦІЯ ЗВІТУ</div>
+            <div class="modal-title yellow">📋 ГЕНЕРАЦІЯ ЗАГАЛЬНОГО ЗВІТУ</div>
             <div class="filter-row">
                 <div>
                     <div class="filter-label">Нік (необов'язково)</div>
@@ -374,14 +350,14 @@
                     <div class="filter-label">Період (необов'язково)</div>
                     <input type="text" id="genPeriod" class="filter-input" placeholder="Наприклад: 19.12 - 25.12">
                 </div>
-                <button class="btn-do-generate" onclick="window.generateText()">ГЕНЕРУВАТИ</button>
+                <button class="btn-do-gen" onclick="window.generateText()">ГЕНЕРУВАТИ</button>
             </div>
-            <div id="genOutput" class="copy-output">— Тут з'явиться згенерований текст —</div>
-            <button class="btn-copy" id="btnCopy" onclick="window.copyGenerated()">📋 СКОПІЮВАТИ</button>
+            <div id="genOutput" class="copy-output">— Оберіть фільтри та натисніть ГЕНЕРУВАТИ —</div>
+            <button class="btn-copy-out" id="btnCopy" onclick="window.copyGenerated()">📋 СКОПІЮВАТИ</button>
         </div>
     </div>
 
-    <!-- SUBMISSION FORM -->
+    <!-- SUBMIT FORM -->
     <div class="report-form">
         <div class="input-group">
             <label>Дата звітності</label>
@@ -389,32 +365,12 @@
         </div>
 
         <div class="works-section">
-            <div class="works-header">
-                <label>Виконана робота та посилання на докази</label>
-            </div>
+            <span class="works-label">Виконана робота та посилання на докази</span>
             <div id="workRows"></div>
             <button class="btn-add-row" onclick="window.addWorkRow()">+ ДОДАТИ РОБОТУ</button>
         </div>
 
         <button class="btn-submit" id="mainBtn" onclick="window.submitReport()">Опублікувати звіт</button>
-    </div>
-
-    <!-- ADMIN PANEL -->
-    <div class="admin-panel" id="adminPanel">
-        <div class="admin-title">⚙️ АДМІН — НАЛАШТУВАННЯ БАЛІВ</div>
-        <table class="scoring-table" id="scoringTable">
-            <thead>
-                <tr>
-                    <th>Вид роботи</th>
-                    <th style="text-align:right;">Балів за 1 шт.</th>
-                </tr>
-            </thead>
-            <tbody id="scoringBody"></tbody>
-        </table>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button class="btn-save-scores" onclick="window.saveScores()">💾 ЗБЕРЕГТИ БАЛИ</button>
-            <button class="btn-generate" onclick="window.openGenerateModal()">📋 ГЕНЕРУВАТИ ЗАГАЛЬНИЙ ЗВІТ</button>
-        </div>
     </div>
 
     <div class="feed-header">Архів щотижневих звітів:</div>
@@ -445,157 +401,204 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// ---- DEFAULT WORK TYPES ----
 const DEFAULT_WORK_TYPES = [
-    { id: "fuel",    name: "Перевезення палива",    points: 4 },
-    { id: "weapon",  name: "Очищення озброєння",    points: 3 },
-    { id: "patrol",  name: "Повітряний патруль",    points: 5 },
-    { id: "ammo",    name: "БК (боєкомплект)",       points: 4 },
-    { id: "repair",  name: "Ремонт техніки",         points: 3 },
-    { id: "convoy",  name: "Конвой",                 points: 6 },
-    { id: "other",   name: "Інше",                   points: 1 },
+    { id: "fuel",    name: "Перевезення палива",  points: 4 },
+    { id: "weapon",  name: "Очищення озброєння",  points: 3 },
+    { id: "patrol",  name: "Повітряний патруль",  points: 5 },
+    { id: "ammo",    name: "БК (боєкомплект)",     points: 4 },
+    { id: "repair",  name: "Ремонт техніки",       points: 3 },
+    { id: "convoy",  name: "Конвой",               points: 6 },
+    { id: "other",   name: "Інше",                 points: 1 },
 ];
 
 let workTypes = [...DEFAULT_WORK_TYPES];
 let currentUserData = null;
 let editId = null;
 let allReports = [];
+let rowCounter = 0;
 
-// ---- LOAD WORK TYPES FROM FIRESTORE ----
+// LOAD WORK TYPES
 async function loadWorkTypes() {
     try {
         const snap = await getDoc(doc(db, "config", "workTypes"));
-        if (snap.exists() && snap.data().types) {
-            workTypes = snap.data().types;
-        }
+        if (snap.exists() && snap.data().types) workTypes = snap.data().types;
     } catch(e) {}
     renderScoringTable();
-    // Re-render existing rows with updated types
-    const existing = document.querySelectorAll('.work-row');
-    if (!existing.length) addWorkRow();
 }
 
-// ---- SCORING TABLE (ADMIN) ----
+// SCORING TABLE
 function renderScoringTable() {
     const tbody = document.getElementById('scoringBody');
-    tbody.innerHTML = workTypes.map(wt => `
+    tbody.innerHTML = workTypes.map((wt, i) => `
         <tr>
             <td><div class="work-type-name">${wt.name}</div></td>
-            <td style="text-align:right;">
-                <input type="number" class="score-input" data-id="${wt.id}" value="${wt.points}" min="0" max="999">
-                <span style="color:#555;font-size:11px;margin-left:6px;">балів</span>
+            <td style="text-align:center;">
+                <input type="number" class="score-input" data-idx="${i}" value="${wt.points}" min="0" max="999">
+            </td>
+            <td>
+                <button class="btn-del-type" onclick="window.deleteWorkType(${i})">✕ ВИДАЛИТИ</button>
             </td>
         </tr>
     `).join('');
 }
 
+window.deleteWorkType = (idx) => {
+    if (workTypes.length <= 1) { showToast("❌ Потрібен хоча б 1 вид роботи"); return; }
+    workTypes.splice(idx, 1);
+    renderScoringTable();
+    refreshAllSelects();
+};
+
+window.addWorkType = () => {
+    const nameEl = document.getElementById('newTypeName');
+    const ptsEl  = document.getElementById('newTypePoints');
+    const name = nameEl.value.trim();
+    const pts  = parseInt(ptsEl.value) || 1;
+    if (!name) { showToast("❌ Введіть назву!"); return; }
+    workTypes.push({ id: 'custom_' + Date.now(), name, points: pts });
+    nameEl.value = ''; ptsEl.value = '';
+    renderScoringTable();
+    refreshAllSelects();
+    showToast("✅ Вид роботи додано!");
+};
+
 window.saveScores = async () => {
     document.querySelectorAll('.score-input').forEach(inp => {
-        const id = inp.getAttribute('data-id');
-        const wt = workTypes.find(w => w.id === id);
-        if (wt) wt.points = parseInt(inp.value) || 0;
+        const idx = parseInt(inp.getAttribute('data-idx'));
+        if (workTypes[idx]) workTypes[idx].points = parseInt(inp.value) || 0;
     });
     try {
         await setDoc(doc(db, "config", "workTypes"), { types: workTypes });
+        refreshAllSelects();
         showToast("✅ Бали збережено!");
-        // refresh selects in existing rows
-        document.querySelectorAll('.work-type-select').forEach(sel => {
-            const current = sel.value;
-            sel.innerHTML = workTypes.map(wt => `<option value="${wt.id}">${wt.name}</option>`).join('');
-            sel.value = current;
-        });
-        updateAllPointsHints();
     } catch(e) { showToast("❌ Помилка збереження"); }
 };
 
-// ---- WORK ROWS ----
-let rowCounter = 0;
-window.addWorkRow = () => {
+function refreshAllSelects() {
+    document.querySelectorAll('.work-type-select').forEach(sel => {
+        const cur = sel.value;
+        sel.innerHTML = buildOptions(cur);
+        const row = sel.closest('.work-row');
+        if (row) updatePointsHint(parseInt(row.getAttribute('data-row')));
+    });
+}
+
+function buildOptions(selectedId) {
+    return workTypes.map(wt =>
+        `<option value="${wt.id}"${wt.id === selectedId ? ' selected' : ''}>${wt.name}</option>`
+    ).join('');
+}
+
+// WORK ROWS
+window.addWorkRow = (prefill) => {
     const id = rowCounter++;
-    const sel = workTypes.map(wt => `<option value="${wt.id}">${wt.name}</option>`).join('');
+    const typeId     = prefill?.typeId  || workTypes[0]?.id || 'other';
+    const qtyVal     = prefill?.qty     || 1;
+    const linkVal    = prefill?.link    || '';
+    const customName = prefill?.customName || '';
+
     const row = document.createElement('div');
     row.className = 'work-row';
     row.setAttribute('data-row', id);
     row.innerHTML = `
-        <input type="number" class="f-input work-qty" placeholder="К-сть" min="1" value="1" oninput="window.updatePointsHint(${id})">
-        <input type="text" class="f-input work-link" placeholder="Силка (посилання на докази)">
-        <select class="f-input work-type-select" onchange="window.updatePointsHint(${id})">${sel}</select>
-        <button class="btn-remove-row" onclick="window.removeRow(${id})" title="Видалити">✕</button>
+        <input type="number" class="f-input work-qty" placeholder="К-сть" min="1" value="${qtyVal}" oninput="window.updatePointsHint(${id})">
+        <input type="text" class="f-input work-link" placeholder="Силка (посилання)" value="${linkVal}">
+        <select class="f-input work-type-select" onchange="window.onTypeChange(${id})">${buildOptions(typeId)}</select>
+        <button class="btn-remove-row" onclick="window.removeRow(${id})">✕</button>
     `;
     document.getElementById('workRows').appendChild(row);
-    // hint below
+
+    // Custom name input (shown when "Інше" selected)
+    const customWrap = document.createElement('div');
+    customWrap.className = 'work-custom-wrap';
+    customWrap.id = `cwrap-${id}`;
+    customWrap.innerHTML = `<input type="text" class="f-input work-custom-name" placeholder="Введіть свій вид роботи..." value="${customName}">`;
+    if (typeId === 'other') customWrap.style.display = 'block';
+    document.getElementById('workRows').appendChild(customWrap);
+
+    // Points hint
     const hint = document.createElement('div');
     hint.className = 'points-hint';
     hint.id = `hint-${id}`;
-    hint.style.gridColumn = '1 / -1';
     document.getElementById('workRows').appendChild(hint);
+
     updatePointsHint(id);
 };
-window.removeRow = (id) => {
+
+window.onTypeChange = (id) => {
     const row = document.querySelector(`[data-row="${id}"]`);
-    const hint = document.getElementById(`hint-${id}`);
-    if (row) row.remove();
-    if (hint) hint.remove();
+    const sel  = row?.querySelector('.work-type-select');
+    const wrap = document.getElementById(`cwrap-${id}`);
+    if (sel && wrap) wrap.style.display = sel.value === 'other' ? 'block' : 'none';
+    updatePointsHint(id);
 };
+
+window.removeRow = (id) => {
+    document.querySelector(`[data-row="${id}"]`)?.remove();
+    document.getElementById(`cwrap-${id}`)?.remove();
+    document.getElementById(`hint-${id}`)?.remove();
+};
+
 window.updatePointsHint = (id) => {
     const row = document.querySelector(`[data-row="${id}"]`);
     if (!row) return;
-    const qty = parseInt(row.querySelector('.work-qty').value) || 0;
+    const qty    = parseInt(row.querySelector('.work-qty').value) || 0;
     const typeId = row.querySelector('.work-type-select').value;
-    const wt = workTypes.find(w => w.id === typeId);
-    const pts = wt ? wt.points * qty : 0;
-    const hint = document.getElementById(`hint-${id}`);
+    const wt     = workTypes.find(w => w.id === typeId);
+    const pts    = (wt?.points || 0) * qty;
+    const hint   = document.getElementById(`hint-${id}`);
     if (hint && wt) hint.innerHTML = `Ви отримаєте <span>${pts} балів</span> (${qty} × ${wt.points})`;
 };
-window.updateAllPointsHints = () => {
-    document.querySelectorAll('.work-row').forEach(row => {
-        const id = row.getAttribute('data-row');
-        if (id !== null) updatePointsHint(parseInt(id));
-    });
-};
 
-// ---- SUBMIT ----
-async function sendLogToDiscord(userObj, periodStr, isEdit) {
-    const payload = {
-        username: "Звіти Бот",
-        avatar_url: "https://cdn-icons-png.flaticon.com/512/806/806068.png",
-        embeds: [{
-            title: isEdit ? "✏️ ЗВІТ ЗМІНЕНО" : "📅 НОВИЙ ЗВІТ",
-            color: isEdit ? 16776960 : 5793266,
-            description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Період:** ${periodStr}\n\n💻 Перегляньте на сайті.`,
-            footer: { text: `UID: ${userObj.uid}` },
-            timestamp: new Date().toISOString()
-        }]
-    };
-    try { await fetch(WEBHOOK_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) }); } catch(e) {}
+// SUBMIT
+async function sendDiscord(userObj, periodStr, isEdit) {
+    try {
+        await fetch(WEBHOOK_URL, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ username:"Звіти Бот", embeds:[{
+                title: isEdit ? "✏️ ЗВІТ ЗМІНЕНО" : "📅 НОВИЙ ЗВІТ",
+                color: isEdit ? 16776960 : 5793266,
+                description: `**Автор:** ${userObj.name} (${userObj.rank})\n**Період:** ${periodStr}`,
+                footer: { text: `UID: ${userObj.uid}` },
+                timestamp: new Date().toISOString()
+            }]})
+        });
+    } catch(e) {}
 }
 
 window.submitReport = async () => {
     const period = document.getElementById('repPeriod').value.trim();
-    if (!period) return alert("Вкажіть дату звітності!");
+    if (!period) return showToast("⚠️ Вкажіть дату звітності!");
 
     const rows = document.querySelectorAll('.work-row');
-    if (!rows.length) return alert("Додайте хоча б один вид роботи!");
+    if (!rows.length) return showToast("⚠️ Додайте хоча б одну роботу!");
 
-    let works = [];
-    let totalPoints = 0;
-    let valid = true;
+    let works = []; let totalPoints = 0; let valid = true;
     rows.forEach(row => {
-        const qty = parseInt(row.querySelector('.work-qty').value) || 0;
-        const link = row.querySelector('.work-link').value.trim();
+        const rowId  = row.getAttribute('data-row');
+        const qty    = parseInt(row.querySelector('.work-qty').value) || 0;
+        const link   = row.querySelector('.work-link').value.trim();
         const typeId = row.querySelector('.work-type-select').value;
-        const wt = workTypes.find(w => w.id === typeId);
+        const wt     = workTypes.find(w => w.id === typeId);
+
+        let typeName = wt ? wt.name : typeId;
+        if (typeId === 'other') {
+            const cn = document.querySelector(`#cwrap-${rowId} .work-custom-name`)?.value.trim();
+            if (cn) typeName = cn;
+        }
+
         if (!qty || !link) { valid = false; return; }
-        const pts = (wt ? wt.points : 1) * qty;
+        const pts = (wt?.points || 0) * qty;
         totalPoints += pts;
-        works.push({ typeId, typeName: wt ? wt.name : typeId, qty, link, pointsEach: wt ? wt.points : 1, pointsTotal: pts });
+        works.push({ typeId, typeName, qty, link, pointsEach: wt?.points || 0, pointsTotal: pts });
     });
-    if (!valid) return alert("Заповніть кількість та силку для всіх робіт!");
+
+    if (!valid) return showToast("⚠️ Заповніть кількість та силку для всіх робіт!");
 
     try {
         if (editId) {
             await updateDoc(doc(db, "reports", editId), { period, works, totalPoints, updatedAt: serverTimestamp() });
-            await sendLogToDiscord(currentUserData, period, true);
+            await sendDiscord(currentUserData, period, true);
             editId = null;
             document.getElementById('mainBtn').innerText = "Опублікувати звіт";
         } else {
@@ -606,46 +609,45 @@ window.submitReport = async () => {
                 period, works, totalPoints,
                 timestamp: serverTimestamp()
             });
-            await sendLogToDiscord(currentUserData, period, false);
+            await sendDiscord(currentUserData, period, false);
         }
         document.getElementById('repPeriod').value = "";
         document.getElementById('workRows').innerHTML = "";
         rowCounter = 0;
         addWorkRow();
         showToast("✅ Звіт опубліковано!");
-    } catch(e) { alert("Помилка відправки!"); }
+    } catch(e) { showToast("❌ Помилка відправки!"); }
 };
 
-// ---- LOAD REPORTS ----
+// FEED
+function linkify(text) {
+    if (!text) return "";
+    return text.replace(/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
+}
+
 function loadReports() {
     const q = query(collection(db, "reports"), orderBy("timestamp", "desc"));
     onSnapshot(q, (snapshot) => {
         allReports = [];
         const feed = document.getElementById('reportsFeed');
         feed.innerHTML = "";
-        snapshot.forEach((s) => {
+        snapshot.forEach(s => {
             const data = s.data(); const id = s.id;
             allReports.push({ id, ...data });
             const time = data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString('uk') : "";
             const isAdmin = currentUserData?.role === 'admin';
             const isOwner = currentUserData?.uid === data.ownerId;
 
-            // Build works display
             let worksHtml = '';
-            let contentText = '';
             if (data.works && Array.isArray(data.works)) {
-                // New format
-                worksHtml = data.works.map((w, i) =>
-                    `${i+1}. ${w.typeName} (${w.qty} раз${w.qty > 1 ? 'и' : ''}): <a href="${w.link}" target="_blank">${w.link}</a>`
+                worksHtml = data.works.map((w,i) =>
+                    `${i+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`
                 ).join('\n');
-                contentText = data.works.map((w,i) => `${i+1}. ${w.typeName} (${w.qty} рази): ${w.link}`).join('\n');
             } else if (data.content) {
-                // Legacy text format
                 worksHtml = linkify(data.content);
-                contentText = data.content;
             }
 
-            const scoreHtml = (data.totalPoints !== undefined)
+            const scoreHtml = data.totalPoints !== undefined
                 ? `<div class="total-score">🏆 РАЗОМ БАЛІВ: ${data.totalPoints}</div>` : '';
 
             feed.innerHTML += `
@@ -658,20 +660,15 @@ function loadReports() {
                     <div class="work-content" id="wc-${id}">${worksHtml}</div>
                     ${scoreHtml}
                     <div class="controls">
-                        ${isOwner || isAdmin ? `<button class="ctrl-btn" onclick="window.startEdit('${id}')">РЕДАГУВАТИ</button>` : ''}
-                        ${isOwner || isAdmin ? `<button class="ctrl-btn btn-del" onclick="window.deleteReport('${id}')">ВИДАЛИТИ</button>` : ''}
+                        ${isOwner||isAdmin?`<button class="ctrl-btn" onclick="window.startEdit('${id}')">РЕДАГУВАТИ</button>`:''}
+                        ${isOwner||isAdmin?`<button class="ctrl-btn btn-del" onclick="window.deleteReport('${id}')">ВИДАЛИТИ</button>`:''}
                     </div>
                 </div>`;
         });
     });
 }
 
-function linkify(text) {
-    if (!text) return "";
-    return text.replace(/(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig, '<a href="$1" target="_blank">$1</a>');
-}
-
-// ---- EDIT ----
+// EDIT
 window.startEdit = (id) => {
     const rep = allReports.find(r => r.id === id);
     if (!rep) return;
@@ -680,24 +677,8 @@ window.startEdit = (id) => {
     document.getElementById('workRows').innerHTML = '';
     rowCounter = 0;
     if (rep.works && Array.isArray(rep.works)) {
-        rep.works.forEach(w => {
-            const rowId = rowCounter++;
-            const sel = workTypes.map(wt => `<option value="${wt.id}"${wt.id === w.typeId ? ' selected' : ''}>${wt.name}</option>`).join('');
-            const row = document.createElement('div');
-            row.className = 'work-row';
-            row.setAttribute('data-row', rowId);
-            row.innerHTML = `
-                <input type="number" class="f-input work-qty" placeholder="К-сть" min="1" value="${w.qty}" oninput="window.updatePointsHint(${rowId})">
-                <input type="text" class="f-input work-link" placeholder="Силка" value="${w.link}">
-                <select class="f-input work-type-select" onchange="window.updatePointsHint(${rowId})">${sel}</select>
-                <button class="btn-remove-row" onclick="window.removeRow(${rowId})">✕</button>`;
-            document.getElementById('workRows').appendChild(row);
-            const hint = document.createElement('div');
-            hint.className = 'points-hint'; hint.id = `hint-${rowId}`;
-            document.getElementById('workRows').appendChild(hint);
-            updatePointsHint(rowId);
-        });
-    }
+        rep.works.forEach(w => addWorkRow(w));
+    } else { addWorkRow(); }
     document.getElementById('mainBtn').innerText = "ЗБЕРЕГТИ ЗМІНИ";
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -706,45 +687,39 @@ window.deleteReport = async (id) => {
     if (confirm("Видалити звіт?")) await deleteDoc(doc(db, "reports", id));
 };
 
-// ---- GENERATE TEXT ----
-window.openGenerateModal = () => {
+// GENERATE
+window.openGenModal = () => {
+    document.getElementById('modalAdmin').style.display = 'none';
     document.getElementById('modalGen').style.display = 'flex';
     document.getElementById('genOutput').innerText = '— Оберіть фільтри та натисніть ГЕНЕРУВАТИ —';
 };
 
 window.generateText = () => {
-    const nickFilter = document.getElementById('genNick').value.trim().toLowerCase();
-    const periodFilter = document.getElementById('genPeriod').value.trim().toLowerCase();
-
-    let filtered = allReports.filter(r => {
-        const nickMatch = !nickFilter || r.name.toLowerCase().includes(nickFilter);
-        const periodMatch = !periodFilter || (r.period && r.period.toLowerCase().includes(periodFilter));
-        return nickMatch && periodMatch;
-    });
-
-    if (!filtered.length) {
-        document.getElementById('genOutput').innerText = '— Нічого не знайдено за вказаними фільтрами —';
-        return;
-    }
+    const nickF = document.getElementById('genNick').value.trim().toLowerCase();
+    const perF  = document.getElementById('genPeriod').value.trim().toLowerCase();
+    const filtered = allReports.filter(r =>
+        (!nickF || r.name.toLowerCase().includes(nickF)) &&
+        (!perF  || (r.period && r.period.toLowerCase().includes(perF)))
+    );
+    if (!filtered.length) { document.getElementById('genOutput').innerText = '— Нічого не знайдено —'; return; }
 
     let text = '';
     filtered.forEach((r, idx) => {
         text += `━━━━━━━━━━━━━━━━━━━━━━━━\n`;
         text += `1. Ваш нік: ${r.name}\n`;
-        text += `2. Період: ${r.period || '—'}\n`;
+        text += `2. Період з якого по який: ${r.period || '—'}\n`;
         text += `3. Ваше звання: ${r.rank}\n`;
         text += `4. Виконана робота:\n`;
         if (r.works && Array.isArray(r.works)) {
-            r.works.forEach((w, wi) => {
-                text += `   4.${wi+1}. ${w.typeName} (${w.qty} раз${w.qty > 1 ? 'и' : ''}): ${w.link}\n`;
+            r.works.forEach((w,wi) => {
+                text += `   4.${wi+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): ${w.link}\n`;
             });
             text += `   ▸ Разом балів: ${r.totalPoints || 0}\n`;
         } else if (r.content) {
-            text += r.content.split('\n').map(l => `   ${l}`).join('\n') + '\n';
+            text += r.content.split('\n').map(l=>`   ${l}`).join('\n') + '\n';
         }
         if (idx < filtered.length - 1) text += '\n';
     });
-
     document.getElementById('genOutput').innerText = text;
 };
 
@@ -754,28 +729,26 @@ window.copyGenerated = async () => {
     try {
         await navigator.clipboard.writeText(text);
         const btn = document.getElementById('btnCopy');
-        btn.innerText = '✅ СКОПІЙОВАНО!';
-        btn.classList.add('copied');
+        btn.innerText = '✅ СКОПІЙОВАНО!'; btn.classList.add('copied');
         setTimeout(() => { btn.innerText = '📋 СКОПІЮВАТИ'; btn.classList.remove('copied'); }, 2000);
     } catch(e) { showToast("❌ Не вдалося скопіювати"); }
 };
 
-// ---- AUTH ----
+// AUTH
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const snap = await getDoc(doc(db, "users", user.uid));
         if (snap.exists()) currentUserData = { ...snap.data(), uid: user.uid };
-        const isAdmin = currentUserData?.role === 'admin';
-        if (isAdmin) {
-            document.getElementById('adminBadge').classList.add('show');
-            document.getElementById('adminPanel').classList.add('show');
+        if (currentUserData?.role === 'admin') {
+            document.getElementById('btnAdminNav').classList.add('show');
         }
         await loadWorkTypes();
+        addWorkRow();
         loadReports();
     } else { window.location.href = "index.html"; }
 });
 
-// ---- TOAST ----
+// TOAST
 window.showToast = (msg) => {
     const t = document.getElementById('toast');
     t.innerText = msg; t.classList.add('show');
@@ -787,7 +760,7 @@ window.showToast = (msg) => {
     document.onkeydown = function(e) {
         if(e.keyCode==123||(e.ctrlKey&&e.shiftKey&&(e.keyCode==73||e.keyCode==74||e.keyCode==67))||(e.ctrlKey&&e.keyCode==85)) return false;
     };
-    setInterval(()=>{ try{ console.clear(); }catch(e){} },500);
+    setInterval(()=>{ try{ console.clear(); }catch(e){} }, 500);
 </script>
 </body>
 </html>
