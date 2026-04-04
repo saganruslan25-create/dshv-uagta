@@ -263,17 +263,24 @@
         .work-content a { color: #3b82f6; text-decoration: underline; font-weight: 600; }
 
         /* Total score bar at bottom of card */
-        .score-bar {
-            margin-top: 14px; background: rgba(34,197,94,0.05);
-            border: 1px solid rgba(34,197,94,0.2); border-radius: 12px;
-            padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
-            flex-wrap: wrap; gap: 8px;
+        .score-bar-toggle {
+            margin-top: 14px; display: flex; align-items: center; gap: 10px; cursor: pointer;
+            background: rgba(34,197,94,0.04); border: 1px solid rgba(34,197,94,0.15);
+            border-radius: 12px; padding: 9px 16px; transition: 0.2s; user-select: none; -webkit-user-select: none;
         }
-        .score-bar-left { display: flex; align-items: center; gap: 10px; }
-        .score-bar-icon { font-size: 18px; }
-        .score-bar-label { font-size: 11px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .score-bar-num { font-size: 22px; font-weight: 900; color: var(--primary-bright); font-family: var(--font); line-height: 1; }
-        .score-breakdown { display: flex; gap: 6px; flex-wrap: wrap; }
+        .score-bar-toggle:hover { background: rgba(34,197,94,0.09); border-color: rgba(34,197,94,0.3); }
+        .score-bar-toggle-icon { font-size: 16px; }
+        .score-bar-toggle-label { font-size: 11px; color: #555; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; flex: 1; }
+        .score-bar-toggle-num { font-size: 18px; font-weight: 900; color: var(--primary-bright); font-family: var(--font); line-height: 1; }
+        .score-bar-toggle-arrow { font-size: 11px; color: #444; transition: transform 0.25s; }
+        .score-bar-toggle.open .score-bar-toggle-arrow { transform: rotate(180deg); }
+        .score-bar {
+            display: none; background: rgba(34,197,94,0.05);
+            border: 1px solid rgba(34,197,94,0.2); border-top: none;
+            border-radius: 0 0 12px 12px; padding: 10px 16px;
+            flex-wrap: wrap; gap: 8px; animation: fadeIn 0.2s ease;
+        }
+        .score-bar.open { display: flex; }
         .score-chip {
             background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
             padding: 3px 9px; border-radius: 20px; font-size: 10px; color: #888; font-weight: 700;
@@ -521,8 +528,10 @@ function refreshAllSelects() {
 }
 
 function buildOptions(selectedId) {
-    return workTypes.map(wt =>
-        `<option value="${wt.id}"${wt.id === selectedId ? ' selected' : ''}>${wt.name}</option>`
+    // Check if selectedId exists in current workTypes
+    const exists = workTypes.some(wt => wt.id === selectedId);
+    return workTypes.map((wt, idx) =>
+        `<option value="${wt.id}"${(exists ? wt.id === selectedId : idx === 0) ? ' selected' : ''}>${wt.name}</option>`
     ).join('');
 }
 
@@ -581,7 +590,9 @@ window.addWorkRow = (prefill) => {
     `;
 
     document.getElementById('workRows').appendChild(block);
-    onTypeChangeBlock(block, typeId);
+    // Use the actual selected value from the DOM (may differ from prefill if typeId not found)
+    const actualTypeId = block.querySelector('.work-type-select')?.value || typeId;
+    onTypeChangeBlock(block, actualTypeId);
     updateHint(id);
 };
 
@@ -755,24 +766,31 @@ function linkify(t) {
         '<a href="$1" target="_blank">$1</a>');
 }
 
-function buildScoreBar(data) {
+function buildScoreBar(data, cardId) {
     if (!data.works || !Array.isArray(data.works)) return '';
     const total = data.totalPoints ?? 0;
     const chips = data.works.map(w =>
         `<span class="score-chip">${w.typeName}: ${w.pointsTotal}б.</span>`
     ).join('');
     return `
-        <div class="score-bar">
-            <div class="score-bar-left">
-                <span class="score-bar-icon">🏆</span>
-                <div>
-                    <div class="score-bar-label">Разом балів</div>
-                    <div class="score-bar-num">${total}</div>
-                </div>
-            </div>
+        <div class="score-bar-toggle" id="toggle-${cardId}" onclick="toggleScoreBar('${cardId}')">
+            <span class="score-bar-toggle-icon">🏆</span>
+            <span class="score-bar-toggle-label">Разом балів</span>
+            <span class="score-bar-toggle-num">${total}</span>
+            <span class="score-bar-toggle-arrow">▼</span>
+        </div>
+        <div class="score-bar" id="scorebar-${cardId}">
             <div class="score-breakdown">${chips}</div>
         </div>`;
 }
+
+window.toggleScoreBar = (cardId) => {
+    const toggle = document.getElementById(`toggle-${cardId}`);
+    const bar    = document.getElementById(`scorebar-${cardId}`);
+    if (!toggle || !bar) return;
+    const isOpen = bar.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+};
 
 function loadReports() {
     const q = query(collection(db, "reports"), orderBy("timestamp", "desc"));
@@ -804,7 +822,7 @@ function loadReports() {
                     </div>
                     <div class="date-badge">📅 ${data.period}</div>
                     <div class="work-content">${worksHtml}</div>
-                    ${buildScoreBar(data)}
+                    ${buildScoreBar(data, id)}
                     <div class="controls">
                         ${isOwner||isAdmin ? `<button class="ctrl-btn" onclick="window.startEdit('${id}')">РЕДАГУВАТИ</button>` : ''}
                         ${isOwner||isAdmin ? `<button class="ctrl-btn btn-del" onclick="window.deleteReport('${id}')">ВИДАЛИТИ</button>` : ''}
