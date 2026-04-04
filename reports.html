@@ -87,6 +87,51 @@
         .modal-title.green { color: var(--primary-bright); }
         .modal-title.yellow { color: var(--yellow); }
 
+        /* ── PREVIEW WORK ROWS ── */
+        .prev-work-row {
+            display: grid; grid-template-columns: 28px 1fr auto; gap: 8px;
+            align-items: center; padding: 7px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .prev-work-row:last-child { border-bottom: none; }
+        .prev-num { font-size: 12px; color: #444; font-weight: 800; text-align: center; }
+        .prev-work-text {
+            font-size: 13px; line-height: 1.5; color: #ccc;
+        }
+        .prev-work-text a { color: #3b82f6; text-decoration: underline; }
+        .prev-edit-btn {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            color: #555; padding: 5px 10px; border-radius: 8px; font-size: 10px;
+            font-weight: 800; cursor: pointer; transition: 0.2s; font-family: var(--font);
+            white-space: nowrap; text-transform: uppercase;
+        }
+        .prev-edit-btn:hover { color: white; border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.08); }
+
+        /* inline edit popup */
+        .prev-inline-edit {
+            grid-column: 1 / -1; background: rgba(0,0,0,0.4);
+            border: 1px solid rgba(34,197,94,0.25); border-radius: 12px;
+            padding: 12px; margin-top: 4px; display: none;
+        }
+        .prev-inline-edit.show { display: block; animation: fadeIn 0.15s ease; }
+        .prev-edit-grid { display: grid; grid-template-columns: 80px 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+        .prev-edit-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .prev-btn-save {
+            background: var(--primary); color: black; border: none;
+            padding: 7px 16px; border-radius: 9px; font-size: 11px; font-weight: 900;
+            cursor: pointer; font-family: var(--font); text-transform: uppercase;
+        }
+        .prev-btn-cancel {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: #666; padding: 7px 14px; border-radius: 9px; font-size: 11px; font-weight: 800;
+            cursor: pointer; font-family: var(--font); text-transform: uppercase;
+        }
+        .prev-btn-del {
+            background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+            color: var(--red); padding: 7px 14px; border-radius: 9px; font-size: 11px; font-weight: 800;
+            cursor: pointer; font-family: var(--font); text-transform: uppercase; margin-right: auto;
+        }
+
         /* ── CATEGORY TABS ── */
         .cat-tabs {
             display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
@@ -393,6 +438,48 @@
         </div>
     </div>
 
+    <!-- ══ MODAL: PREVIEW ══ -->
+    <div id="modalPreview" class="modal" onclick="if(event.target==this)this.style.display='none'">
+        <div class="modal-inner wide" style="max-width:780px;">
+            <button class="modal-close" onclick="document.getElementById('modalPreview').style.display='none'">✕</button>
+            <div class="modal-title green">👁 ПОПЕРЕДНІЙ ПЕРЕГЛЯД ЗВІТУ</div>
+
+            <!-- editable period -->
+            <div style="margin-bottom:16px;">
+                <div style="font-size:10px;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;">Дата звітності</div>
+                <input type="text" id="prevPeriod" class="f-input" style="font-size:14px;font-weight:800;color:var(--primary-bright);">
+            </div>
+
+            <!-- preview card mock -->
+            <div style="background:rgba(255,255,255,0.02);border:1px solid var(--glass-border);border-radius:18px;padding:22px;margin-bottom:20px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                    <div id="prevName" style="font-weight:900;font-size:16px;"></div>
+                    <div style="font-size:11px;color:#444;font-weight:700;" id="prevTime"></div>
+                </div>
+                <div id="prevDateBadge" style="background:rgba(34,197,94,0.07);padding:6px 13px;border-radius:10px;color:var(--primary-bright);font-weight:800;font-size:12px;margin-bottom:13px;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(34,197,94,0.18);"></div>
+                <!-- editable work rows -->
+                <div id="prevWorksList" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.04);border-radius:13px;padding:14px;margin-bottom:0;"></div>
+            </div>
+
+            <!-- total -->
+            <div id="prevTotalBar" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:12px;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:20px;">🏆</span>
+                    <div>
+                        <div style="font-size:10px;color:#555;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Разом балів</div>
+                        <div id="prevTotalNum" style="font-size:26px;font-weight:900;color:var(--primary-bright);line-height:1;"></div>
+                    </div>
+                </div>
+                <div id="prevChips" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+                <button class="btn-submit" style="flex:1;background:rgba(255,255,255,0.05);color:#888;box-shadow:none;border:1px solid rgba(255,255,255,0.1);" onclick="document.getElementById('modalPreview').style.display='none'">← НАЗАД ДО ФОРМИ</button>
+                <button class="btn-submit" id="prevPublishBtn" style="flex:2;" onclick="window.submitReport()">✅ ОПУБЛІКУВАТИ ЗВІТ</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ══ SUBMIT FORM ══ -->
     <div class="report-form">
         <div class="input-group">
@@ -401,15 +488,10 @@
         </div>
         <div class="works-section">
             <span class="works-label">Виконана робота та посилання на докази</span>
-            <div class="cat-tabs">
-                <button class="cat-tab active-all" id="cat-all"        onclick="window.setCategory('all')">📋 Всі</button>
-                <button class="cat-tab"            id="cat-instructor" onclick="window.setCategory('instructor')">🎓 Інструктор</button>
-                <button class="cat-tab"            id="cat-fighter"    onclick="window.setCategory('fighter')">⚔️ Боєць</button>
-            </div>
             <div id="workRows"></div>
             <button class="btn-add-row" onclick="window.addWorkRow()">+ ДОДАТИ РОБОТУ</button>
         </div>
-        <button class="btn-submit" id="mainBtn" onclick="window.submitReport()">Опублікувати звіт</button>
+        <button class="btn-submit" id="mainBtn" onclick="window.openPreview()">👁 ПЕРЕГЛЯНУТИ ЗВІТ</button>
     </div>
 
     <div class="feed-header">Архів щотижневих звітів:</div>
@@ -717,6 +799,133 @@ window.updateHint = (id) => {
     hint.innerHTML = `Ви отримаєте <span>${pts} балів</span> (${note})`;
 };
 
+// ── PREVIEW ──
+let previewWorks = [];
+let previewPeriod = '';
+
+window.openPreview = () => {
+    const period = document.getElementById('repPeriod').value.trim();
+    if (!period) return showToast("⚠️ Вкажіть дату звітності!");
+    if (!document.querySelectorAll('.work-block').length) return showToast("⚠️ Додайте хоча б одну роботу!");
+    const { works, total, ok } = collectWorks();
+    if (!ok) return showToast("⚠️ Заповніть кількість та силку для всіх робіт!");
+
+    previewWorks  = works.map((w, i) => ({ ...w, _pid: i }));
+    previewPeriod = period;
+
+    // Fill modal fields
+    document.getElementById('prevPeriod').value = period;
+    document.getElementById('prevName').innerHTML = `👤 ${currentUserData.name} <span class="rank-tag">${currentUserData.rank}</span>`;
+    document.getElementById('prevTime').innerText = new Date().toLocaleString('uk');
+    document.getElementById('prevDateBadge').innerHTML = `📅 ${period}`;
+
+    // Sync period input → badge live
+    document.getElementById('prevPeriod').oninput = function() {
+        document.getElementById('prevDateBadge').innerHTML = `📅 ${this.value}`;
+    };
+
+    renderPreviewList();
+    document.getElementById('modalPreview').style.display = 'flex';
+};
+
+function calcPreviewTotal() {
+    return previewWorks.reduce((s, w) => s + (w.pointsTotal || 0), 0);
+}
+
+function renderPreviewList() {
+    const total = calcPreviewTotal();
+    document.getElementById('prevTotalNum').innerText = total;
+    document.getElementById('prevChips').innerHTML = previewWorks.map(w =>
+        `<span class="score-chip">${w.typeName}: ${w.pointsTotal}б.</span>`
+    ).join('');
+
+    const list = document.getElementById('prevWorksList');
+    list.innerHTML = previewWorks.map((w, idx) => `
+        <div class="prev-work-row" id="prow-${w._pid}">
+            <div class="prev-num">${idx + 1}.</div>
+            <div class="prev-work-text">
+                <strong>${w.typeName}</strong> (${w.qty} раз${w.qty > 1 ? 'и' : ''}):
+                <a href="${w.link}" target="_blank">${w.link}</a>
+                <span style="color:var(--primary-bright);font-size:11px;font-weight:800;margin-left:6px;">+${w.pointsTotal}б.</span>
+            </div>
+            <button class="prev-edit-btn" onclick="window.prevToggleEdit(${w._pid})">✏️ Змінити</button>
+            <div class="prev-inline-edit" id="pedit-${w._pid}">
+                <div class="prev-edit-grid">
+                    <div>
+                        <div style="font-size:9px;color:#555;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">К-сть</div>
+                        <input type="number" class="f-input" id="pqty-${w._pid}" value="${w.qty}" min="1" style="padding:9px 10px;font-size:13px;">
+                    </div>
+                    <div>
+                        <div style="font-size:9px;color:#555;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Тип роботи</div>
+                        <select class="f-input" id="ptype-${w._pid}" style="padding:9px 10px;font-size:13px;" onchange="window.prevRecalc(${w._pid})">
+                            ${workTypes.map(wt => `<option value="${wt.id}"${wt.id === w.typeId ? ' selected' : ''}>${wt.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div>
+                        <div style="font-size:9px;color:#555;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Посилання</div>
+                        <input type="text" class="f-input" id="plink-${w._pid}" value="${w.link}" style="padding:9px 10px;font-size:13px;">
+                    </div>
+                </div>
+                <div class="prev-edit-actions">
+                    <button class="prev-btn-del" onclick="window.prevDeleteRow(${w._pid})">🗑 Видалити</button>
+                    <button class="prev-btn-cancel" onclick="window.prevToggleEdit(${w._pid})">Скасувати</button>
+                    <button class="prev-btn-save" onclick="window.prevSaveRow(${w._pid})">✅ Зберегти</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+window.prevToggleEdit = (pid) => {
+    const el = document.getElementById(`pedit-${pid}`);
+    if (el) el.classList.toggle('show');
+};
+
+window.prevRecalc = (pid) => {
+    // just for live feel, actual recalc on save
+};
+
+window.prevSaveRow = (pid) => {
+    const idx  = previewWorks.findIndex(w => w._pid === pid);
+    if (idx === -1) return;
+    const newQty    = parseInt(document.getElementById(`pqty-${pid}`)?.value) || 1;
+    const newLink   = document.getElementById(`plink-${pid}`)?.value.trim() || '';
+    const newTypeId = document.getElementById(`ptype-${pid}`)?.value;
+    const wt        = workTypes.find(w => w.id === newTypeId);
+
+    let pts = (wt?.points || 0) * newQty;
+    let typeName = wt?.name || newTypeId;
+
+    // keep extra fields as-is (kraz, attack etc.) — simple recalc
+    if (wt?.extra === 'kraz') {
+        const kraz = previewWorks[idx].krazCount || 1;
+        pts = (wt.points || 0) * kraz;
+        typeName += ` (${kraz} КрАЗ, ${previewWorks[idx].boxCount || 50} ящ./КрАЗ)`;
+    } else if (wt?.extra === 'attack') {
+        const atype = previewWorks[idx].attackType || 'vch';
+        const ppt   = atype === 'block' ? (wt.pointsAlt || 10) : (wt.points || 5);
+        pts = ppt * newQty;
+        typeName += ` (${atype === 'block' ? 'Блок-Пост' : 'ВЧ'})`;
+    } else if (wt?.extra === 'custom') {
+        const cp = previewWorks[idx].customPoints || 0;
+        pts = cp * newQty;
+        typeName = previewWorks[idx].customName || typeName;
+    }
+
+    previewWorks[idx] = { ...previewWorks[idx], qty: newQty, link: newLink, typeId: newTypeId, typeName, pointsTotal: pts };
+    renderPreviewList();
+    // re-open this edit panel after re-render so user sees result
+};
+
+window.prevDeleteRow = (pid) => {
+    previewWorks = previewWorks.filter(w => w._pid !== pid);
+    renderPreviewList();
+    if (!previewWorks.length) {
+        document.getElementById('modalPreview').style.display = 'none';
+        showToast("⚠️ Всі рядки видалено — поверніться до форми");
+    }
+};
+
 // ── SUBMIT ──
 async function sendDiscord(userObj, periodStr, isEdit) {
     try {
@@ -779,19 +988,23 @@ function collectWorks() {
 }
 
 window.submitReport = async () => {
-    const period = document.getElementById('repPeriod').value.trim();
+    // Read period from preview modal input (may have been edited)
+    const period = (document.getElementById('prevPeriod')?.value || previewPeriod || document.getElementById('repPeriod').value).trim();
     if (!period) return showToast("⚠️ Вкажіть дату звітності!");
-    if (!document.querySelectorAll('.work-block').length) return showToast("⚠️ Додайте хоча б одну роботу!");
 
-    const { works, total, ok } = collectWorks();
-    if (!ok) return showToast("⚠️ Заповніть кількість та силку для всіх робіт!");
+    const works = previewWorks;
+    if (!works.length) return showToast("⚠️ Немає робіт для публікації!");
+    const total = calcPreviewTotal();
+
+    // Close preview modal
+    document.getElementById('modalPreview').style.display = 'none';
 
     try {
         if (editId) {
             await updateDoc(doc(db, "reports", editId), { period, works, totalPoints: total, updatedAt: serverTimestamp() });
             await sendDiscord(currentUserData, period, true);
             editId = null;
-            document.getElementById('mainBtn').innerText = "Опублікувати звіт";
+            document.getElementById('mainBtn').innerText = "👁 ПЕРЕГЛЯНУТИ ЗВІТ";
         } else {
             await addDoc(collection(db, "reports"), {
                 ownerId: currentUserData.uid,
@@ -805,6 +1018,7 @@ window.submitReport = async () => {
         document.getElementById('repPeriod').value = "";
         document.getElementById('workRows').innerHTML = "";
         rowCounter = 0;
+        previewWorks = [];
         addWorkRow();
         showToast("✅ Звіт опубліковано!");
     } catch(e) { showToast("❌ Помилка відправки!"); }
@@ -894,7 +1108,7 @@ window.startEdit = (id) => {
     if (rep.works && Array.isArray(rep.works)) {
         rep.works.forEach(w => addWorkRow(w));
     } else { addWorkRow(); }
-    document.getElementById('mainBtn').innerText = "ЗБЕРЕГТИ ЗМІНИ";
+    document.getElementById('mainBtn').innerText = "👁 ПЕРЕГЛЯНУТИ ЗМІНИ";
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
