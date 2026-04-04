@@ -87,6 +87,21 @@
         .modal-title.green { color: var(--primary-bright); }
         .modal-title.yellow { color: var(--yellow); }
 
+        /* ── CATEGORY TABS ── */
+        .cat-tabs {
+            display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap;
+        }
+        .cat-tab {
+            padding: 9px 18px; border-radius: 11px; font-size: 11px; font-weight: 800;
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1.5px;
+            font-family: var(--font); border: 1px solid rgba(255,255,255,0.1); color: #555;
+            background: rgba(255,255,255,0.02);
+        }
+        .cat-tab:hover { color: #888; border-color: rgba(255,255,255,0.2); }
+        .cat-tab.active-all  { border-color: rgba(255,255,255,0.35); color: white; background: rgba(255,255,255,0.07); }
+        .cat-tab.active-instructor { border-color: rgba(234,179,8,0.5); color: var(--yellow); background: rgba(234,179,8,0.08); }
+        .cat-tab.active-fighter    { border-color: rgba(34,197,94,0.5); color: var(--primary-bright); background: rgba(34,197,94,0.08); }
+
         /* ── FORM ── */
         .report-form {
             background: var(--card-bg); border: 1px solid var(--glass-border);
@@ -386,6 +401,11 @@
         </div>
         <div class="works-section">
             <span class="works-label">Виконана робота та посилання на докази</span>
+            <div class="cat-tabs">
+                <button class="cat-tab active-all" id="cat-all"        onclick="window.setCategory('all')">📋 Всі</button>
+                <button class="cat-tab"            id="cat-instructor" onclick="window.setCategory('instructor')">🎓 Інструктор</button>
+                <button class="cat-tab"            id="cat-fighter"    onclick="window.setCategory('fighter')">⚔️ Боєць</button>
+            </div>
             <div id="workRows"></div>
             <button class="btn-add-row" onclick="window.addWorkRow()">+ ДОДАТИ РОБОТУ</button>
         </div>
@@ -426,23 +446,23 @@ const db = getFirestore(app);
 // pointsAlt: for "Відбиття нападу" second option (блок-пост)
 // ─────────────────────────────────────────────────────
 const DEFAULT_WORK_TYPES = [
-    { id: "lecture",    name: "Одна Лекція",                     points: 1,  extra: null },
-    { id: "training",   name: "Одне Тренування",                 points: 2,  extra: null },
-    { id: "rp_event",   name: "РП Подія / Спец.завдання",        points: 6,  extra: null },
-    { id: "exam_off",   name: "Оффлайн іспит",                   points: 5,  extra: null },
-    { id: "exam_on",    name: "Онлайн іспит",                    points: 1,  extra: null },
-    { id: "agit",       name: "Агітація",                        points: 5,  extra: null },
-    { id: "recruit",    name: "Приведення бійця в підрозділ",     points: 20, extra: null },
-    { id: "blockpost",  name: "Охорона Блок-Посту 30 хв.",        points: 7,  extra: null },
-    { id: "border",     name: "Охорона Кордону 30 хв.",           points: 7,  extra: null },
-    { id: "nabir",      name: "Участь у Наборі",                  points: 5,  extra: null },
-    { id: "ammo",       name: "Поставка БК (1 КрАЗ / 50 ящиків)",points: 4,  extra: "kraz" },
-    { id: "attack",     name: "Відбиття нападу на ВЧ/Блок-Пост", points: 5,  extra: "attack", pointsAlt: 10 },
-    { id: "povestka",   name: "Видача повістки",                  points: 5,  extra: "qty_label", qtyLabel: "Кількість повісток" },
-    { id: "bomb",       name: "Розмінування бомби",               points: 2,  extra: null },
-    { id: "mp",         name: "Участь у МП",                      points: 5,  extra: null },
-    { id: "grp",        name: "Участь у ГРП",                     points: 15, extra: null },
-    { id: "other",      name: "Інше",                             points: 0,  extra: "custom" },
+    { id: "lecture",    name: "Одна Лекція",                     points: 1,  extra: null,       category: "instructor" },
+    { id: "training",   name: "Одне Тренування",                 points: 2,  extra: null,       category: "instructor" },
+    { id: "rp_event",   name: "РП Подія / Спец.завдання",        points: 6,  extra: null,       category: "fighter" },
+    { id: "exam_off",   name: "Оффлайн іспит",                   points: 5,  extra: null,       category: "fighter" },
+    { id: "exam_on",    name: "Онлайн іспит",                    points: 1,  extra: null,       category: "fighter" },
+    { id: "agit",       name: "Агітація",                        points: 5,  extra: null,       category: "both" },
+    { id: "recruit",    name: "Приведення бійця в підрозділ",     points: 20, extra: null,       category: "both" },
+    { id: "blockpost",  name: "Охорона Блок-Посту 30 хв.",        points: 7,  extra: null,       category: "fighter" },
+    { id: "border",     name: "Охорона Кордону 30 хв.",           points: 7,  extra: null,       category: "fighter" },
+    { id: "nabir",      name: "Участь у Наборі",                  points: 5,  extra: null,       category: "both" },
+    { id: "ammo",       name: "Поставка БК (1 КрАЗ / 50 ящиків)",points: 4,  extra: "kraz",     category: "fighter" },
+    { id: "attack",     name: "Відбиття нападу на ВЧ/Блок-Пост", points: 5,  extra: "attack",   category: "fighter", pointsAlt: 10 },
+    { id: "povestka",   name: "Видача повістки",                  points: 5,  extra: "qty_label",category: "both", qtyLabel: "Кількість повісток" },
+    { id: "bomb",       name: "Розмінування бомби",               points: 2,  extra: null,       category: "fighter" },
+    { id: "mp",         name: "Участь у МП",                      points: 5,  extra: null,       category: "both" },
+    { id: "grp",        name: "Участь у ГРП",                     points: 15, extra: null,       category: "both" },
+    { id: "other",      name: "Інше",                             points: 0,  extra: "custom",   category: "both" },
 ];
 
 let workTypes = [...DEFAULT_WORK_TYPES];
@@ -450,6 +470,7 @@ let currentUserData = null;
 let editId = null;
 let allReports = [];
 let rowCounter = 0;
+let activeCategory = 'all'; // 'all' | 'instructor' | 'fighter'
 
 // ── LOAD WORK TYPES ──
 async function loadWorkTypes() {
@@ -521,26 +542,56 @@ window.saveScores = async () => {
 function refreshAllSelects() {
     document.querySelectorAll('.work-type-select').forEach(sel => {
         const cur = sel.value;
-        sel.innerHTML = buildOptions(cur);
+        const curText = sel.options[sel.selectedIndex]?.text || '';
+        sel.innerHTML = buildOptions(cur, curText);
         const block = sel.closest('.work-block');
         if (block) onTypeChangeBlock(block, sel.value);
     });
 }
 
-function buildOptions(selectedId) {
-    // Check if selectedId exists in current workTypes
-    const exists = workTypes.some(wt => wt.id === selectedId);
-    return workTypes.map((wt, idx) =>
-        `<option value="${wt.id}"${(exists ? wt.id === selectedId : idx === 0) ? ' selected' : ''}>${wt.name}</option>`
+window.setCategory = (cat) => {
+    activeCategory = cat;
+    // Update tab styles
+    ['all','instructor','fighter'].forEach(c => {
+        const el = document.getElementById(`cat-${c}`);
+        if (!el) return;
+        el.className = `cat-tab${cat === c ? ' active-' + c : ''}`;
+    });
+    // Rebuild all selects to filter by new category
+    refreshAllSelects();
+};
+
+function buildOptions(selectedId, selectedName) {
+    // Filter by category
+    const filtered = activeCategory === 'all'
+        ? workTypes
+        : workTypes.filter(wt => !wt.category || wt.category === activeCategory || wt.category === 'both');
+
+    // Try match by id first, then by name (for backwards compatibility with old saved reports)
+    let matchId = selectedId;
+    if (selectedId && !filtered.some(wt => wt.id === selectedId)) {
+        // fallback: find by saved typeName
+        if (selectedName) {
+            const byName = filtered.find(wt => selectedName.startsWith(wt.name) || wt.name === selectedName);
+            if (byName) matchId = byName.id;
+            else matchId = null; // not in this category filter
+        } else { matchId = null; }
+    }
+
+    // If nothing matches, pick first
+    const firstId = filtered[0]?.id;
+    return filtered.map(wt =>
+        `<option value="${wt.id}"${wt.id === (matchId || firstId) ? ' selected' : ''}>${wt.name}</option>`
     ).join('');
 }
 
 // ── WORK BLOCKS ──
 window.addWorkRow = (prefill) => {
-    const id     = rowCounter++;
-    const typeId = prefill?.typeId || workTypes[0]?.id;
-    const qty    = prefill?.qty    || 1;
-    const link   = prefill?.link   || '';
+    const id       = rowCounter++;
+    const typeId   = prefill?.typeId   || workTypes[0]?.id;
+    const typeName = prefill?.typeName || '';
+    const qty      = prefill?.qty      || 1;
+    const link     = prefill?.link     || '';
 
     const block = document.createElement('div');
     block.className = 'work-block';
@@ -549,7 +600,7 @@ window.addWorkRow = (prefill) => {
         <div class="work-row-main">
             <input type="number" class="f-input work-qty" placeholder="К-сть" min="1" value="${qty}" oninput="window.updateHint(${id})">
             <input type="text" class="f-input work-link" placeholder="Силка (посилання на докази)" value="${link}">
-            <select class="f-input work-type-select" onchange="window.onTypeChange(${id})">${buildOptions(typeId)}</select>
+            <select class="f-input work-type-select" onchange="window.onTypeChange(${id})">${buildOptions(typeId, typeName)}</select>
             <button class="btn-remove-row" onclick="window.removeRow(${id})">✕</button>
         </div>
 
@@ -917,11 +968,7 @@ window.showToast = (msg) => {
 };
 </script>
 
-<script>
-    document.onkeydown = function(e) {
-        if(e.keyCode==123||(e.ctrlKey&&e.shiftKey&&(e.keyCode==73||e.keyCode==74||e.keyCode==67))||(e.ctrlKey&&e.keyCode==85)) return false;
-    };
-    setInterval(()=>{ try{ console.clear(); }catch(e){} }, 500);
+
 </script>
 </body>
 </html>
