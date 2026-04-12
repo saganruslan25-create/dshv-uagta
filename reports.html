@@ -459,7 +459,8 @@
                 </div>
                 <div id="prevDateBadge" style="background:rgba(34,197,94,0.07);padding:6px 13px;border-radius:10px;color:var(--primary-bright);font-weight:800;font-size:12px;margin-bottom:13px;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(34,197,94,0.18);"></div>
                 <!-- editable work rows -->
-                <div id="prevWorksList" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.04);border-radius:13px;padding:14px;margin-bottom:0;"></div>
+                <div id="prevWorksList" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.04);border-radius:13px;padding:14px;margin-bottom:10px;"></div>
+                <button class="btn-add-row" onclick="window.prevAddRow()" style="margin-bottom:0;">+ ДОДАТИ РЯДОК</button>
             </div>
 
             <!-- total -->
@@ -836,6 +837,43 @@ function calcPreviewTotal() {
     return previewWorks.reduce((s, w) => s + (w.pointsTotal || 0), 0);
 }
 
+function buildPreviewTypeOptions(selectedId) {
+    return workTypes.map(wt =>
+        `<option value="${wt.id}"${wt.id === selectedId ? ' selected' : ''}>${wt.name}</option>`
+    ).join('');
+}
+
+function calcRowPts(pid) {
+    const qty    = parseInt(document.getElementById(`pqty-${pid}`)?.value) || 0;
+    const typeId = document.getElementById(`ptype-${pid}`)?.value;
+    const wt     = workTypes.find(w => w.id === typeId);
+    if (!wt) return 0;
+    if (wt.extra === 'custom') return qty * 1;
+    if (wt.extra === 'kraz')   return (wt.points || 0) * qty;
+    if (wt.extra === 'attack') return (wt.points || 0) * qty;
+    return (wt.points || 0) * qty;
+}
+
+window.prevUpdateRow = (pid) => {
+    const idx = previewWorks.findIndex(w => w._pid === pid);
+    if (idx === -1) return;
+    const qty    = parseInt(document.getElementById(`pqty-${pid}`)?.value) || 1;
+    const typeId = document.getElementById(`ptype-${pid}`)?.value;
+    const link   = document.getElementById(`plink-${pid}`)?.value.trim() || '';
+    const wt     = workTypes.find(w => w.id === typeId);
+    const pts    = wt ? (wt.extra === 'custom' ? qty : (wt.points || 0) * qty) : 0;
+    previewWorks[idx] = { ...previewWorks[idx], qty, typeId, typeName: wt?.name || typeId, link, pointsTotal: pts };
+    // update hint
+    const hint = document.getElementById(`phint-${pid}`);
+    if (hint) hint.innerHTML = `<span style="color:var(--primary-bright);font-weight:800;">+${pts}б.</span>`;
+    // update totals bar
+    const total = calcPreviewTotal();
+    document.getElementById('prevTotalNum').innerText = total;
+    document.getElementById('prevChips').innerHTML = previewWorks.map(w =>
+        `<span class="score-chip">${w.typeName}: ${w.pointsTotal}б.</span>`
+    ).join('');
+};
+
 function renderPreviewList() {
     const total = calcPreviewTotal();
     document.getElementById('prevTotalNum').innerText = total;
@@ -845,30 +883,49 @@ function renderPreviewList() {
 
     const list = document.getElementById('prevWorksList');
     list.innerHTML = previewWorks.map((w, idx) => `
-        <div class="prev-work-row" id="prow-${w._pid}">
-            <div class="prev-num">${idx + 1}.</div>
-            <div class="prev-work-text" contenteditable="true" id="pedit-text-${w._pid}" style="outline:none;border-radius:8px;padding:4px 6px;transition:background 0.2s;cursor:text;" 
-                onfocus="this.style.background='rgba(34,197,94,0.07)';this.style.border='1px solid rgba(34,197,94,0.3)'"
-                onblur="this.style.background='';this.style.border='';window.prevSaveEditable(${w._pid})"
-                title="Клікни щоб редагувати"
-            ><strong>${w.typeName}</strong> (${w.qty} раз${w.qty > 1 ? 'и' : ''}):
-<a href="${w.link}" target="_blank">${w.link}</a>
-<span style="color:var(--primary-bright);font-size:11px;font-weight:800;margin-left:6px;">+${w.pointsTotal}б.</span></div>
-            <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
+        <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div class="prev-num" style="padding-top:12px;">${idx + 1}.</div>
+            <div style="display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;">
+                <input type="number" id="pqty-${w._pid}" class="f-input" value="${w.qty}" min="1"
+                    style="padding:9px 10px;font-size:13px;"
+                    oninput="window.prevUpdateRow(${w._pid})">
+                <select id="ptype-${w._pid}" class="f-input"
+                    style="padding:9px 10px;font-size:13px;"
+                    onchange="window.prevUpdateRow(${w._pid})">
+                    ${buildPreviewTypeOptions(w.typeId)}
+                </select>
+                <div style="grid-column:1/-1;">
+                    <input type="text" id="plink-${w._pid}" class="f-input" value="${w.link}"
+                        placeholder="Посилання на докази"
+                        style="padding:9px 10px;font-size:13px;"
+                        oninput="window.prevUpdateRow(${w._pid})">
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:8px;">
+                <span id="phint-${w._pid}" style="font-size:12px;color:var(--primary-bright);font-weight:800;">+${w.pointsTotal}б.</span>
+                <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
+            </div>
         </div>
     `).join('');
 }
 
-window.prevToggleEdit = (pid) => { /* legacy, unused */ };
-window.prevRecalc = (pid) => { /* legacy, unused */ };
-
-window.prevSaveEditable = (pid) => {
-    const el = document.getElementById(`pedit-text-${pid}`);
-    if (!el) return;
-    const idx = previewWorks.findIndex(w => w._pid === pid);
-    if (idx === -1) return;
-    // store raw HTML so formatting/links are preserved on submit
-    previewWorks[idx]._editedHtml = el.innerHTML;
+window.prevAddRow = () => {
+    const firstType = workTypes.find(wt => wt.extra !== 'custom') || workTypes[0];
+    const newWork = {
+        _pid: Date.now(),
+        typeId: firstType?.id || '',
+        typeName: firstType?.name || '',
+        qty: 1,
+        link: '',
+        pointsTotal: firstType?.points || 0,
+    };
+    previewWorks.push(newWork);
+    renderPreviewList();
+    // scroll to bottom of list & focus link field
+    setTimeout(() => {
+        const linkEl = document.getElementById(`plink-${newWork._pid}`);
+        if (linkEl) { linkEl.focus(); linkEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    }, 50);
 };
 
 window.prevSaveRow = (pid) => {
@@ -974,18 +1031,10 @@ function collectWorks() {
 }
 
 window.submitReport = async () => {
-    // Flush any open contenteditable before submit
-    document.querySelectorAll('[contenteditable]').forEach(el => el.blur());
-
     const period = (document.getElementById('prevPeriod')?.value || previewPeriod || document.getElementById('repPeriod').value).trim();
     if (!period) return showToast("⚠️ Вкажіть дату звітності!");
 
-    const works = previewWorks.map(w => {
-        // If user edited the text directly — save it as editedHtml
-        const el = document.getElementById(`pedit-text-${w._pid}`);
-        const html = el ? el.innerHTML : null;
-        return { ...w, editedHtml: html || null };
-    });
+    const works = previewWorks;
     if (!works.length) return showToast("⚠️ Немає робіт для публікації!");
     const total = calcPreviewTotal();
 
@@ -1064,10 +1113,9 @@ function loadReports() {
 
             let worksHtml = '';
             if (data.works && Array.isArray(data.works)) {
-                worksHtml = data.works.map((w,i) => {
-                    if (w.editedHtml) return w.editedHtml;
-                    return `${i+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`;
-                }).join('\n');
+                worksHtml = data.works.map((w,i) =>
+                    `${i+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`
+                ).join('\n');
             } else if (data.content) {
                 worksHtml = linkify(data.content);
             }
