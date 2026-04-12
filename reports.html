@@ -974,11 +974,18 @@ function collectWorks() {
 }
 
 window.submitReport = async () => {
-    // Read period from preview modal input (may have been edited)
+    // Flush any open contenteditable before submit
+    document.querySelectorAll('[contenteditable]').forEach(el => el.blur());
+
     const period = (document.getElementById('prevPeriod')?.value || previewPeriod || document.getElementById('repPeriod').value).trim();
     if (!period) return showToast("⚠️ Вкажіть дату звітності!");
 
-    const works = previewWorks;
+    const works = previewWorks.map(w => {
+        // If user edited the text directly — save it as editedHtml
+        const el = document.getElementById(`pedit-text-${w._pid}`);
+        const html = el ? el.innerHTML : null;
+        return { ...w, editedHtml: html || null };
+    });
     if (!works.length) return showToast("⚠️ Немає робіт для публікації!");
     const total = calcPreviewTotal();
 
@@ -1057,9 +1064,10 @@ function loadReports() {
 
             let worksHtml = '';
             if (data.works && Array.isArray(data.works)) {
-                worksHtml = data.works.map((w,i) =>
-                    `${i+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`
-                ).join('\n');
+                worksHtml = data.works.map((w,i) => {
+                    if (w.editedHtml) return w.editedHtml;
+                    return `${i+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`;
+                }).join('\n');
             } else if (data.content) {
                 worksHtml = linkify(data.content);
             }
@@ -1164,14 +1172,17 @@ function highlightFromHash() {
     const id = hash.replace('#report-', '');
     const card = document.getElementById(`card-${id}`);
     if (!card) return;
-    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    card.style.transition = 'border-color 0.4s, box-shadow 0.4s';
-    card.style.borderColor = 'rgba(34,197,94,0.8)';
-    card.style.boxShadow = '0 0 30px rgba(34,197,94,0.25)';
-    setTimeout(() => {
-        card.style.borderColor = '';
-        card.style.boxShadow = '';
-    }, 2500);
+    // scroll instantly then highlight
+    card.scrollIntoView({ behavior: 'instant', block: 'center' });
+    requestAnimationFrame(() => {
+        card.style.transition = 'border-color 0.4s, box-shadow 0.4s';
+        card.style.borderColor = 'rgba(34,197,94,0.8)';
+        card.style.boxShadow = '0 0 30px rgba(34,197,94,0.25)';
+        setTimeout(() => {
+            card.style.borderColor = '';
+            card.style.boxShadow = '';
+        }, 2500);
+    });
 }
 
 // ── AUTH ──
