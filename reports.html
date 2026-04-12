@@ -881,26 +881,28 @@ window.prevUpdateRow = (pid) => {
 function renderPreviewList() {
     const total = calcPreviewTotal();
     document.getElementById('prevTotalNum').innerText = total;
-    document.getElementById('prevChips').innerHTML = previewWorks.filter(w => !w._isNote).map(w =>
+    document.getElementById('prevChips').innerHTML = previewWorks.filter(w => !w._isSep).map(w =>
         `<span class="score-chip">${w.typeName}: ${w.pointsTotal}б.</span>`
     ).join('');
 
     const list = document.getElementById('prevWorksList');
-    list.innerHTML = previewWorks.map((w, idx) => {
-        if (w._isNote) {
+    let workNum = 0;
+    list.innerHTML = previewWorks.map((w) => {
+        if (w._isSep) {
+            workNum = 0; // скидаємо нумерацію
             return `
-            <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-                <div class="prev-num">📝</div>
+            <div id="prow-${w._pid}" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0 6px;">
                 <input type="text" id="pnote-${w._pid}" class="f-input" value="${w.text || ''}"
-                    placeholder="Нотатка / позначка..."
-                    style="padding:9px 12px;font-size:13px;"
+                    placeholder="Заголовок розділу (напр. МОЯ РОБОТА ІНСТ.ДШВ)"
+                    style="padding:9px 12px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary-bright);border-color:rgba(34,197,94,0.3);"
                     oninput="window.prevUpdateNote(${w._pid}, this.value)">
                 <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
             </div>`;
         }
+        workNum++;
         return `
         <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
-            <div class="prev-num" style="padding-top:12px;">${idx + 1}.</div>
+            <div class="prev-num" style="padding-top:12px;">${workNum}.</div>
             <div style="display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;">
                 <input type="number" id="pqty-${w._pid}" class="f-input" value="${w.qty}" min="1"
                     style="padding:9px 10px;font-size:13px;"
@@ -923,35 +925,18 @@ function renderPreviewList() {
             </div>
         </div>`;
     }).join('');
-
-    // Sync notes back to main form note area
-    syncNotesToForm();
 }
 
-function syncNotesToForm() {
-    const notes = previewWorks.filter(w => w._isNote && w.text);
-    const noteArea = document.getElementById('formNotes');
-    const noteGroup = document.getElementById('formNotesGroup');
-    if (!noteArea || !noteGroup) return;
-    if (notes.length) {
-        noteGroup.style.display = 'block';
-        noteArea.value = notes.map(n => n.text).join('\n');
-    } else {
-        noteGroup.style.display = 'none';
-        noteArea.value = '';
-    }
-}
+function syncNotesToForm() {} // більше не потрібна
 
 window.prevUpdateNote = (pid, val) => {
     const idx = previewWorks.findIndex(w => w._pid === pid);
     if (idx !== -1) previewWorks[idx].text = val;
-    syncNotesToForm();
 };
 
 window.prevAddRow = () => {
     const pid = Date.now();
-    const newNote = { _pid: pid, _isNote: true, text: '', pointsTotal: 0 };
-    previewWorks.push(newNote);
+    previewWorks.push({ _pid: pid, _isSep: true, text: '', pointsTotal: 0 });
     renderPreviewList();
     setTimeout(() => {
         const el = document.getElementById(`pnote-${pid}`);
@@ -1065,8 +1050,11 @@ window.submitReport = async () => {
     const period = (document.getElementById('prevPeriod')?.value || previewPeriod || document.getElementById('repPeriod').value).trim();
     if (!period) return showToast("⚠️ Вкажіть дату звітності!");
 
-    const works = previewWorks.filter(w => !w._isNote);
-    const notes = previewWorks.filter(w => w._isNote && w.text).map(n => n.text);
+    const works = previewWorks.filter(w => !w._isSep);
+    const orderedItems = previewWorks.map(w => w._isSep
+        ? { _isSep: true, text: w.text }
+        : { typeId: w.typeId, typeName: w.typeName, qty: w.qty, link: w.link, pointsTotal: w.pointsTotal }
+    );
     if (!works.length) return showToast("⚠️ Немає робіт для публікації!");
     const total = calcPreviewTotal();
 
@@ -1075,7 +1063,7 @@ window.submitReport = async () => {
 
     try {
         if (editId) {
-            await updateDoc(doc(db, "reports", editId), { period, works, notes, totalPoints: total, updatedAt: serverTimestamp() });
+            await updateDoc(doc(db, "reports", editId), { period, works, orderedItems, totalPoints: total, updatedAt: serverTimestamp() });
             await sendDiscord(currentUserData, period, true);
             editId = null;
             document.getElementById('mainBtn').innerText = "👁 ПЕРЕГЛЯНУТИ ЗВІТ";
@@ -1084,7 +1072,7 @@ window.submitReport = async () => {
                 ownerId: currentUserData.uid,
                 name: currentUserData.name,
                 rank: currentUserData.rank,
-                period, works, notes, totalPoints: total,
+                period, works, orderedItems, totalPoints: total,
                 timestamp: serverTimestamp()
             });
             await sendDiscord(currentUserData, period, false);
@@ -1144,10 +1132,17 @@ function loadReports() {
             const isOwner  = currentUserData?.uid === data.ownerId;
 
             let worksHtml = '';
-            if (data.works && Array.isArray(data.works)) {
-                worksHtml = data.works.map((w,i) =>
-                    `${i+1}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`
-                ).join('\n');
+            const items = data.orderedItems || (data.works ? data.works.map(w => ({ ...w })) : null);
+            if (items && Array.isArray(items)) {
+                let n = 0;
+                worksHtml = items.map(w => {
+                    if (w._isSep) {
+                        n = 0;
+                        return `<div style="margin:10px 0 4px;font-size:11px;font-weight:900;color:var(--primary-bright);text-transform:uppercase;letter-spacing:2px;">${w.text || '─────'}</div>`;
+                    }
+                    n++;
+                    return `${n}. ${w.typeName} (${w.qty} раз${w.qty>1?'и':''}): <a href="${w.link}" target="_blank">${w.link}</a>`;
+                }).join('\n');
             } else if (data.content) {
                 worksHtml = linkify(data.content);
             }
@@ -1160,7 +1155,6 @@ function loadReports() {
                     </div>
                     <div class="date-badge">📅 ${data.period}</div>
                     <div class="work-content">${worksHtml}</div>
-                    ${data.notes && data.notes.length ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:12px;color:#666;line-height:1.7;white-space:pre-wrap;">📝 ${data.notes.join('\n')}</div>` : ''}
                     ${buildScoreBar(data, id)}
                     <div class="controls">
                         <button class="ctrl-btn btn-copy-link" onclick="window.copyReportLink('${id}')">🔗 ПОСИЛАННЯ</button>
