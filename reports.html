@@ -460,7 +460,9 @@
                 <div id="prevDateBadge" style="background:rgba(34,197,94,0.07);padding:6px 13px;border-radius:10px;color:var(--primary-bright);font-weight:800;font-size:12px;margin-bottom:13px;display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(34,197,94,0.18);"></div>
                 <!-- editable work rows -->
                 <div id="prevWorksList" style="background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.04);border-radius:13px;padding:14px;margin-bottom:10px;"></div>
-                <button class="btn-add-row" onclick="window.prevAddRow()" style="margin-bottom:0;">+ ДОДАТИ РЯДОК</button>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn-add-row" onclick="window.prevAddRow()" style="flex:2;margin-bottom:0;">── ДОДАТИ РОЗДІЛЮВАЧ</button>
+                </div>
             </div>
 
             <!-- total -->
@@ -491,7 +493,10 @@
         <div class="works-section">
             <span class="works-label">Виконана робота та посилання на докази</span>
             <div id="workRows"></div>
-            <button class="btn-add-row" onclick="window.addWorkRow()">+ ДОДАТИ РОБОТУ</button>
+            <div style="display:flex;gap:8px;margin-top:4px;">
+                <button class="btn-add-row" onclick="window.addWorkRow()" style="flex:2;">+ ДОДАТИ РОБОТУ</button>
+                <button class="btn-add-row" onclick="window.addSepRow()" style="flex:1;border-color:rgba(34,197,94,0.2);color:#666;">── РОЗДІЛЮВАЧ</button>
+            </div>
         </div>
         <div class="input-group" id="formNotesGroup" style="display:none;">
             <label>Нотатки / позначки (з preview)</label>
@@ -678,6 +683,32 @@ function buildOptions(selectedId, selectedName) {
 }
 
 // ── WORK BLOCKS ──
+function moveRow(id, dir) {
+    const container = document.getElementById('workRows');
+    const blocks = Array.from(container.children);
+    const idx = blocks.findIndex(b => b.getAttribute('data-block') == id || b.getAttribute('data-sep') == id);
+    const target = dir === 'up' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= blocks.length) return;
+    if (dir === 'up') container.insertBefore(blocks[idx], blocks[target]);
+    else container.insertBefore(blocks[target], blocks[idx]);
+}
+
+window.addSepRow = (prefill) => {
+    const id = rowCounter++;
+    const block = document.createElement('div');
+    block.setAttribute('data-sep', id);
+    block.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;margin-bottom:10px;';
+    block.innerHTML = `
+        <input type="text" class="f-input sep-text" placeholder="Назва розділу (напр. МОЯ РОБОТА ІНСТ.ДШВ)"
+            value="${prefill?.text||''}"
+            style="padding:10px 14px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary-bright);border-color:rgba(34,197,94,0.25);background:rgba(34,197,94,0.04);">
+        <button onclick="moveRow(${id},'up')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;width:34px;height:46px;cursor:pointer;font-size:14px;" title="Вверх">▲</button>
+        <button onclick="moveRow(${id},'down')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;width:34px;height:46px;cursor:pointer;font-size:14px;" title="Вниз">▼</button>
+        <button onclick="this.closest('[data-sep]').remove()" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);color:var(--red);border-radius:9px;width:34px;height:46px;cursor:pointer;font-size:14px;">✕</button>
+    `;
+    document.getElementById('workRows').appendChild(block);
+};
+
 window.addWorkRow = (prefill) => {
     const id       = rowCounter++;
     const typeId   = prefill?.typeId   || workTypes[0]?.id;
@@ -689,10 +720,12 @@ window.addWorkRow = (prefill) => {
     block.className = 'work-block';
     block.setAttribute('data-block', id);
     block.innerHTML = `
-        <div class="work-row-main">
+        <div class="work-row-main" style="grid-template-columns:90px 1fr 190px 34px 34px 34px;">
             <input type="number" class="f-input work-qty" placeholder="К-сть" min="1" value="${qty}" oninput="window.updateHint(${id})">
             <input type="text" class="f-input work-link" placeholder="Силка (посилання на докази)" value="${link}">
             <select class="f-input work-type-select" onchange="window.onTypeChange(${id})">${buildOptions(typeId, typeName)}</select>
+            <button onclick="moveRow(${id},'up')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;height:46px;cursor:pointer;font-size:12px;" title="Вверх">▲</button>
+            <button onclick="moveRow(${id},'down')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;height:46px;cursor:pointer;font-size:12px;" title="Вниз">▼</button>
             <button class="btn-remove-row" onclick="window.removeRow(${id})">✕</button>
         </div>
 
@@ -732,7 +765,6 @@ window.addWorkRow = (prefill) => {
     `;
 
     document.getElementById('workRows').appendChild(block);
-    // Use the actual selected value from the DOM (may differ from prefill if typeId not found)
     const actualTypeId = block.querySelector('.work-type-select')?.value || typeId;
     onTypeChangeBlock(block, actualTypeId);
     updateHint(id);
@@ -816,10 +848,10 @@ window.openPreview = () => {
     const period = document.getElementById('repPeriod').value.trim();
     if (!period) return showToast("⚠️ Вкажіть дату звітності!");
     if (!document.querySelectorAll('.work-block').length) return showToast("⚠️ Додайте хоча б одну роботу!");
-    const { works, total, ok } = collectWorks();
+    const { works, total, ok, orderedItems } = collectWorks();
     if (!ok) return showToast("⚠️ Заповніть кількість та силку для всіх робіт!");
 
-    previewWorks  = works.map((w, i) => ({ ...w, _pid: i }));
+    previewWorks = orderedItems.map((w, i) => ({ ...w, _pid: i }));
     previewPeriod = period;
 
     // Fill modal fields
@@ -891,17 +923,19 @@ function renderPreviewList() {
         if (w._isSep) {
             workNum = 0; // скидаємо нумерацію
             return `
-            <div id="prow-${w._pid}" style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0 6px;">
+            <div id="prow-${w._pid}" style="display:grid;grid-template-columns:1fr auto auto auto;gap:6px;align-items:center;padding:10px 0 6px;">
                 <input type="text" id="pnote-${w._pid}" class="f-input" value="${w.text || ''}"
                     placeholder="Заголовок розділу (напр. МОЯ РОБОТА ІНСТ.ДШВ)"
                     style="padding:9px 12px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--primary-bright);border-color:rgba(34,197,94,0.3);"
                     oninput="window.prevUpdateNote(${w._pid}, this.value)">
+                <button onclick="window.prevMoveRow(${w._pid},'up')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;width:34px;height:40px;cursor:pointer;font-size:12px;">▲</button>
+                <button onclick="window.prevMoveRow(${w._pid},'down')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;width:34px;height:40px;cursor:pointer;font-size:12px;">▼</button>
                 <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
             </div>`;
         }
         workNum++;
         return `
-        <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+        <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto auto auto auto;gap:6px;align-items:start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
             <div class="prev-num" style="padding-top:12px;">${workNum}.</div>
             <div style="display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;">
                 <input type="number" id="pqty-${w._pid}" class="f-input" value="${w.qty}" min="1"
@@ -919,10 +953,10 @@ function renderPreviewList() {
                         oninput="window.prevUpdateRow(${w._pid})">
                 </div>
             </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;padding-top:8px;">
-                <span id="phint-${w._pid}" style="font-size:12px;color:var(--primary-bright);font-weight:800;">+${w.pointsTotal}б.</span>
-                <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
-            </div>
+            <span id="phint-${w._pid}" style="font-size:12px;color:var(--primary-bright);font-weight:800;padding-top:12px;">+${w.pointsTotal}б.</span>
+            <button onclick="window.prevMoveRow(${w._pid},'up')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;width:34px;height:40px;cursor:pointer;font-size:12px;margin-top:4px;">▲</button>
+            <button onclick="window.prevMoveRow(${w._pid},'down')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:#555;border-radius:9px;width:34px;height:40px;cursor:pointer;font-size:12px;margin-top:4px;">▼</button>
+            <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);margin-top:4px;">✕</button>
         </div>`;
     }).join('');
 }
@@ -932,6 +966,14 @@ function syncNotesToForm() {} // більше не потрібна
 window.prevUpdateNote = (pid, val) => {
     const idx = previewWorks.findIndex(w => w._pid === pid);
     if (idx !== -1) previewWorks[idx].text = val;
+};
+
+window.prevMoveRow = (pid, dir) => {
+    const idx = previewWorks.findIndex(w => w._pid === pid);
+    const target = dir === 'up' ? idx - 1 : idx + 1;
+    if (target < 0 || target >= previewWorks.length) return;
+    [previewWorks[idx], previewWorks[target]] = [previewWorks[target], previewWorks[idx]];
+    renderPreviewList();
 };
 
 window.prevAddRow = () => {
@@ -1002,14 +1044,23 @@ async function sendDiscord(userObj, periodStr, isEdit) {
 }
 
 function collectWorks() {
-    const blocks = document.querySelectorAll('.work-block');
-    let works = []; let total = 0; let ok = true;
+    // Читаємо всі елементи з workRows у порядку DOM (і роботи і розділювачі)
+    const container = document.getElementById('workRows');
+    const children  = Array.from(container.children);
+    let orderedItems = []; let works = []; let total = 0; let ok = true;
 
-    blocks.forEach(block => {
-        const id     = block.getAttribute('data-block');
-        const typeId = block.querySelector('.work-type-select')?.value;
-        const qty    = parseInt(block.querySelector('.work-qty')?.value) || 0;
-        const link   = block.querySelector('.work-link')?.value.trim() || '';
+    children.forEach(el => {
+        // Розділювач
+        if (el.hasAttribute('data-sep')) {
+            const text = el.querySelector('.sep-text')?.value.trim() || '';
+            orderedItems.push({ _isSep: true, text });
+            return;
+        }
+        // Рядок роботи
+        const id     = el.getAttribute('data-block');
+        const typeId = el.querySelector('.work-type-select')?.value;
+        const qty    = parseInt(el.querySelector('.work-qty')?.value) || 0;
+        const link   = el.querySelector('.work-link')?.value.trim() || '';
         const wt     = workTypes.find(w => w.id === typeId);
 
         if (!qty || !link) { ok = false; return; }
@@ -1018,19 +1069,19 @@ function collectWorks() {
         let pts = 0; let extra = {};
 
         if (wt?.extra === 'custom') {
-            const cn = block.querySelector('.work-custom-name')?.value.trim();
-            const cp = 1; // завжди 1 бал
+            const cn = el.querySelector('.work-custom-name')?.value.trim();
+            const cp = 1;
             if (cn) typeName = cn;
             pts = cp * qty;
             extra = { customName: cn, customPoints: cp };
         } else if (wt?.extra === 'kraz') {
-            const kraz = parseInt(block.querySelector('.work-kraz')?.value) || 1;
-            const boxc = parseInt(block.querySelector('.work-boxes')?.value) || 50;
+            const kraz = parseInt(el.querySelector('.work-kraz')?.value) || 1;
+            const boxc = parseInt(el.querySelector('.work-boxes')?.value) || 50;
             pts = (wt.points || 0) * kraz;
             extra = { krazCount: kraz, boxCount: boxc };
             typeName += ` (${kraz} КрАЗ, ${boxc} ящ./КрАЗ)`;
         } else if (wt?.extra === 'attack') {
-            const atype = block.querySelector('.attack-opt.selected')?.getAttribute('data-atype') || 'vch';
+            const atype = el.querySelector('.attack-opt.selected')?.getAttribute('data-atype') || 'vch';
             const ppt   = atype === 'block' ? (wt.pointsAlt || 10) : (wt.points || 5);
             pts = ppt * qty;
             extra = { attackType: atype };
@@ -1040,10 +1091,12 @@ function collectWorks() {
         }
 
         total += pts;
-        works.push({ typeId, typeName, qty, link, pointsTotal: pts, ...extra });
+        const work = { typeId, typeName, qty, link, pointsTotal: pts, ...extra };
+        works.push(work);
+        orderedItems.push(work);
     });
 
-    return { works, total, ok };
+    return { works, total, ok, orderedItems };
 }
 
 window.submitReport = async () => {
@@ -1055,8 +1108,7 @@ window.submitReport = async () => {
         ? { _isSep: true, text: w.text }
         : { typeId: w.typeId, typeName: w.typeName, qty: w.qty, link: w.link, pointsTotal: w.pointsTotal }
     );
-    if (!works.length) return showToast("⚠️ Немає робіт для публікації!");
-    const total = calcPreviewTotal();
+    if (!works.length) return showToast("⚠️ Немає робіт для публікації!");    const total = calcPreviewTotal();
 
     // Close preview modal
     document.getElementById('modalPreview').style.display = 'none';
@@ -1175,8 +1227,12 @@ window.startEdit = (id) => {
     document.getElementById('repPeriod').value = rep.period || '';
     document.getElementById('workRows').innerHTML = '';
     rowCounter = 0;
-    if (rep.works && Array.isArray(rep.works)) {
-        rep.works.forEach(w => addWorkRow(w));
+    const items = rep.orderedItems || (rep.works ? rep.works : []);
+    if (items.length) {
+        items.forEach(w => {
+            if (w._isSep) addSepRow(w);
+            else addWorkRow(w);
+        });
     } else { addWorkRow(); }
     document.getElementById('mainBtn').innerText = "👁 ПЕРЕГЛЯНУТИ ЗМІНИ";
     window.scrollTo({ top: 0, behavior: 'smooth' });
