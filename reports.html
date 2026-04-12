@@ -338,12 +338,13 @@
             display: none; background: rgba(34,197,94,0.05);
             border: 1px solid rgba(34,197,94,0.2); border-top: none;
             border-radius: 0 0 12px 12px; padding: 10px 16px;
-            flex-wrap: wrap; gap: 8px; animation: fadeIn 0.2s ease;
+            flex-wrap: wrap; gap: 6px; animation: fadeIn 0.2s ease; align-content: flex-start;
         }
         .score-bar.open { display: flex; }
         .score-chip {
             background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-            padding: 3px 9px; border-radius: 20px; font-size: 10px; color: #888; font-weight: 700;
+            padding: 4px 10px; border-radius: 20px; font-size: 10px; color: #888; font-weight: 700;
+            white-space: nowrap; flex-shrink: 0;
         }
 
         .controls { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
@@ -645,18 +646,22 @@ window.setCategory = (cat) => {
 
 function buildOptions(selectedId, selectedName) {
     // Filter by category
-    const filtered = activeCategory === 'all'
+    let filtered = activeCategory === 'all'
         ? workTypes
         : workTypes.filter(wt => !wt.category || wt.category === activeCategory || wt.category === 'both');
+
+    // "Інше" always last
+    const others = filtered.filter(wt => wt.extra === 'custom');
+    const rest   = filtered.filter(wt => wt.extra !== 'custom');
+    filtered = [...rest, ...others];
 
     // Try match by id first, then by name (for backwards compatibility with old saved reports)
     let matchId = selectedId;
     if (selectedId && !filtered.some(wt => wt.id === selectedId)) {
-        // fallback: find by saved typeName
         if (selectedName) {
             const byName = filtered.find(wt => selectedName.startsWith(wt.name) || wt.name === selectedName);
             if (byName) matchId = byName.id;
-            else matchId = null; // not in this category filter
+            else matchId = null;
         } else { matchId = null; }
     }
 
@@ -688,10 +693,9 @@ window.addWorkRow = (prefill) => {
 
         <!-- sub: custom name (Інше) -->
         <div class="work-extra" id="extra-custom-${id}">
-            <div class="work-extra-label">Введіть свій вид роботи та кількість балів:</div>
-            <div class="work-extra-row">
-                <input type="text"   class="f-input work-custom-name"   placeholder="Назва роботи..." value="${prefill?.customName||''}">
-                <input type="number" class="f-input work-custom-points" placeholder="Бали за 1 шт." min="0" value="${prefill?.customPoints||'0'}" oninput="window.updateHint(${id})">
+            <div class="work-extra-label">Введіть свій вид роботи (1 бал за одиницю):</div>
+            <div class="work-extra-row single">
+                <input type="text" class="f-input work-custom-name" placeholder="Назва роботи..." value="${prefill?.customName||''}">
             </div>
         </div>
 
@@ -779,9 +783,9 @@ window.updateHint = (id) => {
     let pts = 0; let note = '';
 
     if (wt.extra === 'custom') {
-        const cp = parseInt(block.querySelector('.work-custom-points')?.value) || 0;
+        const cp = 1; // завжди 1 бал за одиницю
         pts = cp * qty;
-        note = `${qty} × ${cp}`;
+        note = `${qty} × 1`;
     } else if (wt.extra === 'kraz') {
         const kraz = parseInt(block.querySelector('.work-kraz')?.value) || 1;
         pts = wt.points * kraz;
@@ -843,46 +847,28 @@ function renderPreviewList() {
     list.innerHTML = previewWorks.map((w, idx) => `
         <div class="prev-work-row" id="prow-${w._pid}">
             <div class="prev-num">${idx + 1}.</div>
-            <div class="prev-work-text">
-                <strong>${w.typeName}</strong> (${w.qty} раз${w.qty > 1 ? 'и' : ''}):
-                <a href="${w.link}" target="_blank">${w.link}</a>
-                <span style="color:var(--primary-bright);font-size:11px;font-weight:800;margin-left:6px;">+${w.pointsTotal}б.</span>
-            </div>
-            <button class="prev-edit-btn" onclick="window.prevToggleEdit(${w._pid})">✏️ Змінити</button>
-            <div class="prev-inline-edit" id="pedit-${w._pid}">
-                <div class="prev-edit-grid">
-                    <div>
-                        <div style="font-size:9px;color:#555;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">К-сть</div>
-                        <input type="number" class="f-input" id="pqty-${w._pid}" value="${w.qty}" min="1" style="padding:9px 10px;font-size:13px;">
-                    </div>
-                    <div>
-                        <div style="font-size:9px;color:#555;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Тип роботи</div>
-                        <select class="f-input" id="ptype-${w._pid}" style="padding:9px 10px;font-size:13px;" onchange="window.prevRecalc(${w._pid})">
-                            ${workTypes.map(wt => `<option value="${wt.id}"${wt.id === w.typeId ? ' selected' : ''}>${wt.name}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div>
-                        <div style="font-size:9px;color:#555;font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;">Посилання</div>
-                        <input type="text" class="f-input" id="plink-${w._pid}" value="${w.link}" style="padding:9px 10px;font-size:13px;">
-                    </div>
-                </div>
-                <div class="prev-edit-actions">
-                    <button class="prev-btn-del" onclick="window.prevDeleteRow(${w._pid})">🗑 Видалити</button>
-                    <button class="prev-btn-cancel" onclick="window.prevToggleEdit(${w._pid})">Скасувати</button>
-                    <button class="prev-btn-save" onclick="window.prevSaveRow(${w._pid})">✅ Зберегти</button>
-                </div>
-            </div>
+            <div class="prev-work-text" contenteditable="true" id="pedit-text-${w._pid}" style="outline:none;border-radius:8px;padding:4px 6px;transition:background 0.2s;cursor:text;" 
+                onfocus="this.style.background='rgba(34,197,94,0.07)';this.style.border='1px solid rgba(34,197,94,0.3)'"
+                onblur="this.style.background='';this.style.border='';window.prevSaveEditable(${w._pid})"
+                title="Клікни щоб редагувати"
+            ><strong>${w.typeName}</strong> (${w.qty} раз${w.qty > 1 ? 'и' : ''}):
+<a href="${w.link}" target="_blank">${w.link}</a>
+<span style="color:var(--primary-bright);font-size:11px;font-weight:800;margin-left:6px;">+${w.pointsTotal}б.</span></div>
+            <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
         </div>
     `).join('');
 }
 
-window.prevToggleEdit = (pid) => {
-    const el = document.getElementById(`pedit-${pid}`);
-    if (el) el.classList.toggle('show');
-};
+window.prevToggleEdit = (pid) => { /* legacy, unused */ };
+window.prevRecalc = (pid) => { /* legacy, unused */ };
 
-window.prevRecalc = (pid) => {
-    // just for live feel, actual recalc on save
+window.prevSaveEditable = (pid) => {
+    const el = document.getElementById(`pedit-text-${pid}`);
+    if (!el) return;
+    const idx = previewWorks.findIndex(w => w._pid === pid);
+    if (idx === -1) return;
+    // store raw HTML so formatting/links are preserved on submit
+    previewWorks[idx]._editedHtml = el.innerHTML;
 };
 
 window.prevSaveRow = (pid) => {
@@ -960,7 +946,7 @@ function collectWorks() {
 
         if (wt?.extra === 'custom') {
             const cn = block.querySelector('.work-custom-name')?.value.trim();
-            const cp = parseInt(block.querySelector('.work-custom-points')?.value) || 0;
+            const cp = 1; // завжди 1 бал
             if (cn) typeName = cn;
             pts = cp * qty;
             extra = { customName: cn, customPoints: cp };
@@ -1063,8 +1049,7 @@ function loadReports() {
         allReports = [];
         const feed = document.getElementById('reportsFeed');
         feed.innerHTML = "";
-        snapshot.forEach(s => {
-            const data = s.data(); const id = s.id;
+        snapshot.forEach(s => {            const data = s.data(); const id = s.id;
             allReports.push({ id, ...data });
             const time     = data.timestamp ? new Date(data.timestamp.toMillis()).toLocaleString('uk') : "";
             const isAdmin  = currentUserData?.role === 'admin';
@@ -1080,7 +1065,7 @@ function loadReports() {
             }
 
             feed.innerHTML += `
-                <div class="report-card">
+                <div class="report-card" id="card-${id}">
                     <div class="report-header">
                         <div class="user-name">👤 ${data.name} <span class="rank-tag">${data.rank}</span></div>
                         <div class="report-time">${time}</div>
@@ -1089,11 +1074,13 @@ function loadReports() {
                     <div class="work-content">${worksHtml}</div>
                     ${buildScoreBar(data, id)}
                     <div class="controls">
+                        <button class="ctrl-btn btn-copy-link" onclick="window.copyReportLink('${id}')">🔗 ПОСИЛАННЯ</button>
                         ${isOwner||isAdmin ? `<button class="ctrl-btn" onclick="window.startEdit('${id}')">РЕДАГУВАТИ</button>` : ''}
                         ${isOwner||isAdmin ? `<button class="ctrl-btn btn-del" onclick="window.deleteReport('${id}')">ВИДАЛИТИ</button>` : ''}
                     </div>
                 </div>`;
         });
+        setTimeout(highlightFromHash, 100);
     });
 }
 
@@ -1162,6 +1149,30 @@ window.copyGenerated = async () => {
         setTimeout(() => { btn.innerText = '📋 СКОПІЮВАТИ'; btn.classList.remove('copied'); }, 2000);
     } catch(e) { showToast("❌ Не вдалося скопіювати"); }
 };
+
+window.copyReportLink = async (id) => {
+    const url = `${location.origin}${location.pathname}#report-${id}`;
+    try {
+        await navigator.clipboard.writeText(url);
+        showToast("🔗 Посилання скопійовано!");
+    } catch(e) { showToast("❌ Не вдалося скопіювати"); }
+};
+
+function highlightFromHash() {
+    const hash = location.hash;
+    if (!hash.startsWith('#report-')) return;
+    const id = hash.replace('#report-', '');
+    const card = document.getElementById(`card-${id}`);
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.style.transition = 'border-color 0.4s, box-shadow 0.4s';
+    card.style.borderColor = 'rgba(34,197,94,0.8)';
+    card.style.boxShadow = '0 0 30px rgba(34,197,94,0.25)';
+    setTimeout(() => {
+        card.style.borderColor = '';
+        card.style.boxShadow = '';
+    }, 2500);
+}
 
 // ── AUTH ──
 onAuthStateChanged(auth, async (user) => {
