@@ -493,6 +493,10 @@
             <div id="workRows"></div>
             <button class="btn-add-row" onclick="window.addWorkRow()">+ ДОДАТИ РОБОТУ</button>
         </div>
+        <div class="input-group" id="formNotesGroup" style="display:none;">
+            <label>Нотатки / позначки (з preview)</label>
+            <textarea id="formNotes" class="f-input" rows="3" style="resize:vertical;" readonly></textarea>
+        </div>
         <button class="btn-submit" id="mainBtn" onclick="window.openPreview()">👁 ПЕРЕГЛЯНУТИ ЗВІТ</button>
     </div>
 
@@ -877,12 +881,24 @@ window.prevUpdateRow = (pid) => {
 function renderPreviewList() {
     const total = calcPreviewTotal();
     document.getElementById('prevTotalNum').innerText = total;
-    document.getElementById('prevChips').innerHTML = previewWorks.map(w =>
+    document.getElementById('prevChips').innerHTML = previewWorks.filter(w => !w._isNote).map(w =>
         `<span class="score-chip">${w.typeName}: ${w.pointsTotal}б.</span>`
     ).join('');
 
     const list = document.getElementById('prevWorksList');
-    list.innerHTML = previewWorks.map((w, idx) => `
+    list.innerHTML = previewWorks.map((w, idx) => {
+        if (w._isNote) {
+            return `
+            <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+                <div class="prev-num">📝</div>
+                <input type="text" id="pnote-${w._pid}" class="f-input" value="${w.text || ''}"
+                    placeholder="Нотатка / позначка..."
+                    style="padding:9px 12px;font-size:13px;"
+                    oninput="window.prevUpdateNote(${w._pid}, this.value)">
+                <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
+            </div>`;
+        }
+        return `
         <div class="prev-work-row" id="prow-${w._pid}" style="grid-template-columns:28px 1fr auto;gap:8px;align-items:start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
             <div class="prev-num" style="padding-top:12px;">${idx + 1}.</div>
             <div style="display:grid;grid-template-columns:70px 1fr;gap:6px;margin-bottom:6px;">
@@ -905,26 +921,41 @@ function renderPreviewList() {
                 <span id="phint-${w._pid}" style="font-size:12px;color:var(--primary-bright);font-weight:800;">+${w.pointsTotal}б.</span>
                 <button class="prev-edit-btn" onclick="window.prevDeleteRow(${w._pid})" style="border-color:rgba(239,68,68,0.3);color:var(--red);">✕</button>
             </div>
-        </div>
-    `).join('');
+        </div>`;
+    }).join('');
+
+    // Sync notes back to main form note area
+    syncNotesToForm();
 }
 
+function syncNotesToForm() {
+    const notes = previewWorks.filter(w => w._isNote && w.text);
+    const noteArea = document.getElementById('formNotes');
+    const noteGroup = document.getElementById('formNotesGroup');
+    if (!noteArea || !noteGroup) return;
+    if (notes.length) {
+        noteGroup.style.display = 'block';
+        noteArea.value = notes.map(n => n.text).join('\n');
+    } else {
+        noteGroup.style.display = 'none';
+        noteArea.value = '';
+    }
+}
+
+window.prevUpdateNote = (pid, val) => {
+    const idx = previewWorks.findIndex(w => w._pid === pid);
+    if (idx !== -1) previewWorks[idx].text = val;
+    syncNotesToForm();
+};
+
 window.prevAddRow = () => {
-    const firstType = workTypes.find(wt => wt.extra !== 'custom') || workTypes[0];
-    const newWork = {
-        _pid: Date.now(),
-        typeId: firstType?.id || '',
-        typeName: firstType?.name || '',
-        qty: 1,
-        link: '',
-        pointsTotal: firstType?.points || 0,
-    };
-    previewWorks.push(newWork);
+    const pid = Date.now();
+    const newNote = { _pid: pid, _isNote: true, text: '', pointsTotal: 0 };
+    previewWorks.push(newNote);
     renderPreviewList();
-    // scroll to bottom of list & focus link field
     setTimeout(() => {
-        const linkEl = document.getElementById(`plink-${newWork._pid}`);
-        if (linkEl) { linkEl.focus(); linkEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+        const el = document.getElementById(`pnote-${pid}`);
+        if (el) { el.focus(); el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
     }, 50);
 };
 
@@ -1034,7 +1065,8 @@ window.submitReport = async () => {
     const period = (document.getElementById('prevPeriod')?.value || previewPeriod || document.getElementById('repPeriod').value).trim();
     if (!period) return showToast("⚠️ Вкажіть дату звітності!");
 
-    const works = previewWorks;
+    const works = previewWorks.filter(w => !w._isNote);
+    const notes = previewWorks.filter(w => w._isNote && w.text).map(n => n.text);
     if (!works.length) return showToast("⚠️ Немає робіт для публікації!");
     const total = calcPreviewTotal();
 
@@ -1043,7 +1075,7 @@ window.submitReport = async () => {
 
     try {
         if (editId) {
-            await updateDoc(doc(db, "reports", editId), { period, works, totalPoints: total, updatedAt: serverTimestamp() });
+            await updateDoc(doc(db, "reports", editId), { period, works, notes, totalPoints: total, updatedAt: serverTimestamp() });
             await sendDiscord(currentUserData, period, true);
             editId = null;
             document.getElementById('mainBtn').innerText = "👁 ПЕРЕГЛЯНУТИ ЗВІТ";
@@ -1052,7 +1084,7 @@ window.submitReport = async () => {
                 ownerId: currentUserData.uid,
                 name: currentUserData.name,
                 rank: currentUserData.rank,
-                period, works, totalPoints: total,
+                period, works, notes, totalPoints: total,
                 timestamp: serverTimestamp()
             });
             await sendDiscord(currentUserData, period, false);
@@ -1128,6 +1160,7 @@ function loadReports() {
                     </div>
                     <div class="date-badge">📅 ${data.period}</div>
                     <div class="work-content">${worksHtml}</div>
+                    ${data.notes && data.notes.length ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;font-size:12px;color:#666;line-height:1.7;white-space:pre-wrap;">📝 ${data.notes.join('\n')}</div>` : ''}
                     ${buildScoreBar(data, id)}
                     <div class="controls">
                         <button class="ctrl-btn btn-copy-link" onclick="window.copyReportLink('${id}')">🔗 ПОСИЛАННЯ</button>
