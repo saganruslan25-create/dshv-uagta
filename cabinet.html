@@ -999,13 +999,34 @@
             });
         }
 
-        window.changeStat = async (field, val) => {
-            if (myData.role !== 'admin') return; 
-            const docRef = doc(db, "users", editingUID);
-            const snap = await getDoc(docRef);
-            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
-            await updateDoc(docRef, { [field]: newVal });
-        };
+window.changeStat = async (field, val) => {
+    if (myData.role !== 'admin') return; 
+    const docRef = doc(db, "users", editingUID);
+    const snap = await getDoc(docRef);
+    const userData = snap.data();
+    const oldVal = userData[field] || 0;
+    const newVal = Math.max(0, oldVal + val);
+    await updateDoc(docRef, { [field]: newVal });
+
+    // Вебхук тільки якщо значення збільшилось
+    if (val > 0) {
+        const isWarn = field === 'warns';
+        const isRep = field === 'reprimands';
+        if (isWarn || isRep) {
+            const label = isWarn ? "⚠️ Попередження" : "📋 Догана";
+            const color = isWarn ? 16776960 : 15844367; // жовтий / помаранчевий
+            sendDiscordWebhook({
+                embeds: [{
+                    title: `${label} видано`,
+                    description: `**Бійцю:** ${userData.name || "Невідомий"}\n**ID:** ${userData.gameID || "---"}\n**Звання:** ${userData.rank || "---"}\n**Кількість зараз:** ${newVal}`,
+                    color: color,
+                    timestamp: new Date().toISOString(),
+                    footer: { text: "ДШВ | COMMAND CENTER" }
+                }]
+            });
+        }
+    }
+};
 
         window.enterManageMode = async (id) => {
             editingUID = id;
@@ -1045,8 +1066,21 @@
             const code = await getSecret();
             const input = prompt("Введіть пароль:");
             if (input === code) {
-                await deleteDoc(doc(db, "users", id));
-                alert("Бійця видалено!");
+ // Спочатку отримуємо дані перед видаленням
+            const snapDel = await getDoc(doc(db, "users", id));
+            const uDel = snapDel.data();
+            await deleteDoc(doc(db, "users", id));
+// Надсилаємо вебхук
+sendDiscordWebhook({
+    embeds: [{
+        title: "🗑️ Бійця видалено з реєстру",
+        description: `**Ім'я:** ${uDel.name || "Невідомий"}\n**ID:** ${uDel.gameID || "---"}\n**Звання:** ${uDel.rank || "---"}`,
+        color: 15158332,
+        timestamp: new Date().toISOString(),
+        footer: { text: "ДШВ | COMMAND CENTER" }
+    }]
+});
+alert("Бійця видалено!");
             } else {
                 if (input === null) {
                 // Скасування або порожній ввід
