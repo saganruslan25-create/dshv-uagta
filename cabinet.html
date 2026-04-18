@@ -742,14 +742,24 @@ function closePw(){
 
 async function checkPw(){
     const input = document.getElementById('pwInp').value.trim();
+    if(!input) return;
+
+    const btn = document.querySelector('#pwModal button');
+    if(btn){ btn.disabled=true; btn.textContent='...'; }
+
     let correct = 'admin123';
 
     if(window._db){
         try{
             const snap = await window._getDoc(window._doc(window._db,'settings','secrets'));
             if(snap.exists() && snap.data().adminCode) correct = snap.data().adminCode;
-        }catch(e){ console.warn('pw:',e); }
+        }catch(e){
+            console.warn('pw:',e);
+            showPwMsg('⚠ Firebase офлайн. Локальний пароль.','warn');
+        }
     }
+
+    if(btn){ btn.disabled=false; btn.textContent='УВІЙТИ'; }
 
     if(input===correct){
         closePw();
@@ -757,8 +767,26 @@ async function checkPw(){
     } else {
         const inp=document.getElementById('pwInp');
         inp.classList.add('err'); inp.value='';
-        setTimeout(()=>inp.classList.remove('err'),400);
+        setTimeout(()=>inp.classList.remove('err'),600);
+        showPwMsg('❌ Невірний пароль','err');
     }
+}
+
+function showPwMsg(text, type){
+    let el = document.getElementById('pwMsg');
+    if(!el){
+        el = document.createElement('div');
+        el.id = 'pwMsg';
+        el.style.cssText='font-size:12px;margin-top:8px;text-align:center;transition:opacity .3s;';
+        const modal = document.getElementById('pwModal');
+        const inp = modal.querySelector('input');
+        inp.parentNode.insertBefore(el, inp.nextSibling);
+    }
+    el.textContent = text;
+    el.style.color = type==='err' ? '#ef4444' : '#fbbf24';
+    el.style.opacity = '1';
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>{ el.style.opacity='0'; }, 3000);
 }
 
 function openAdmin(){
