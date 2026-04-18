@@ -893,14 +893,24 @@ async function checkPw(){
     btn.disabled=true; btn.textContent='...';
     spinner.classList.add('on');
 
-    let correct = 'admin123';
+    // 1. Спочатку — локальний пароль з localStorage (миттєво, без мережі)
+    let correct = localStorage.getItem('dshv_adminCode') || 'admin123';
+
+    // 2. Якщо Firebase доступний — спробуємо оновити пароль з хмари (з таймаутом)
     if(window._db){
         try{
-            const snap = await window._getDoc(window._doc(window._db,'settings','secrets'));
-            if(snap.exists() && snap.data().adminCode) correct = snap.data().adminCode;
+            const fbPromise = window._getDoc(window._doc(window._db,'settings','secrets'));
+            const timeout   = new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),3500));
+            const snap = await Promise.race([fbPromise, timeout]);
+            if(snap.exists && snap.exists() && snap.data().adminCode){
+                const fbCode = snap.data().adminCode;
+                // Зберігаємо в localStorage для офлайн-роботи
+                localStorage.setItem('dshv_adminCode', fbCode);
+                correct = fbCode;
+            }
         }catch(e){
-            console.warn('pw:',e);
-            showPwMsg('⚠ Firebase офлайн','warn');
+            console.warn('pw:', e.message==='timeout' ? 'Firebase timeout' : e);
+            // Мовчки продовжуємо з локальним паролем
         }
     }
 
