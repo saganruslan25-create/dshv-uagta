@@ -2,1065 +2,1001 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ДШВ | COMMAND CENTER</title>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
 
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // ===== ВСТАВТЕ СВІЙ FIREBASE CONFIG =====
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db  = getFirestore(app);
+
+        window._db     = db;
+        window._doc    = doc;
+        window._getDoc = getDoc;
+        window._setDoc = setDoc;
+        document.dispatchEvent(new Event('firebaseReady'));
+    </script>
+
     <style>
         :root {
-            --primary: #00ff44;
-            --primary-dim: rgba(0,255,68,0.15);
-            --primary-glow: rgba(0,255,68,0.7);
-            --bg: #030507;
-            --card-bg: rgba(10,12,16,0.85);
-            --glass-border: rgba(0,255,68,0.25);
-            --danger: #ef4444;
-            --warning: #fbbf24;
-            --text-gray: #5a7080;
+            --pr:  #00ff44;
+            --prg: rgba(0,255,68,0.65);
+            --prd: rgba(0,255,68,0.12);
+            --bg:  #030507;
+            --gb:  rgba(0,255,68,0.22);
+            --red: #ef4444;
+            --yel: #fbbf24;
+            --gr:  #4a6070;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
 
-        body {
+        html, body {
+            width:100%; height:100%;
             background: var(--bg);
-            background-image:
-                radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,255,68,0.04) 0%, transparent 70%),
-                repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(0,255,68,0.03) 50px),
-                repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,255,68,0.03) 50px);
-            min-height: 100vh;
             font-family: 'Rajdhani', sans-serif;
             color: white;
-            overflow-x: hidden;
+            overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* Grid background */
+        body::before {
+            content:'';
+            position:fixed; inset:0;
+            background-image:
+                repeating-linear-gradient(0deg,  transparent, transparent 49px, rgba(0,255,68,.025) 50px),
+                repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,255,68,.025) 50px);
+            pointer-events:none; z-index:0;
         }
 
         /* ===== HEADER ===== */
         header {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 14px 5%;
-            background: rgba(3,5,7,0.9);
-            border-bottom: 1px solid var(--glass-border);
-            backdrop-filter: blur(20px);
-            box-shadow: 0 0 30px rgba(0,255,68,0.1);
+            position:fixed; top:0; left:0; right:0; z-index:200;
+            display:flex; justify-content:space-between; align-items:center;
+            padding:11px 5%;
+            background:rgba(3,5,7,.9);
+            border-bottom:1px solid var(--gb);
+            backdrop-filter:blur(20px);
+            -webkit-backdrop-filter:blur(20px);
         }
-        .logo-box {
-            font-family: 'Orbitron', monospace;
-            background: var(--primary); color: #000;
-            padding: 6px 16px; border-radius: 8px;
-            font-weight: 900; font-size: 14px; letter-spacing: 2px;
-            text-decoration: none;
-            box-shadow: 0 0 25px var(--primary);
+        .logo {
+            font-family:'Orbitron',monospace;
+            background:var(--pr); color:#000;
+            padding:6px 15px; border-radius:8px;
+            font-weight:900; font-size:13px; letter-spacing:2px;
+            text-decoration:none;
+            box-shadow:0 0 20px rgba(0,255,68,.45);
         }
-        .header-right { display: flex; align-items: center; gap: 10px; }
-        .header-btn {
-            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
-            color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 8px;
-            font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 13px;
-            cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
-            text-decoration: none; display: inline-block;
+        .hdr-r { display:flex; align-items:center; gap:8px; }
+        .hbtn {
+            background:rgba(255,255,255,.04); border:1px solid var(--gb);
+            color:rgba(255,255,255,.6); padding:7px 13px; border-radius:8px;
+            font-family:'Rajdhani',sans-serif; font-weight:600; font-size:13px;
+            cursor:pointer; text-decoration:none; display:inline-flex;
+            align-items:center; gap:5px; transition:all .2s;
         }
-        .header-btn:hover { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(0,255,68,0.3); }
-        .header-btn.admin-btn { border-color: rgba(251,191,36,0.4); color: var(--warning); }
-        .header-btn.admin-btn:hover { background: rgba(251,191,36,0.1); box-shadow: 0 0 12px rgba(251,191,36,0.3); }
+        .hbtn:hover { border-color:var(--pr); color:var(--pr); }
+        .hbtn.yl { border-color:rgba(251,191,36,.35); color:var(--yel); }
+        .hbtn.yl:hover { background:rgba(251,191,36,.07); }
 
-        /* ===== MAIN STAGE ===== */
+        /* ===== STAGE ===== */
         .stage {
-            min-height: 100vh;
-            display: flex; align-items: center; justify-content: center;
-            position: relative;
-            padding-top: 70px;
+            position:fixed; inset:0;
+            display:flex; align-items:center; justify-content:center;
+            z-index:1;
         }
 
-        /* Ambient scan line */
-        .scanline {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,68,0.01) 3px);
-            pointer-events: none; z-index: 0;
-        }
-
-        /* ===== HUB SYSTEM ===== */
+        /* ===== HUB WRAPPER ===== */
         .hub {
-            position: relative;
-            width: 700px;
-            height: 700px;
-            display: flex; align-items: center; justify-content: center;
+            position:relative;
+            width:  min(580px, 90vmin);
+            height: min(580px, 90vmin);
+            flex-shrink:0;
         }
 
-        /* Center photo zone */
-        .hub-center {
-            position: relative;
-            z-index: 10;
-            cursor: pointer;
-        }
-
-        .hub-photo-ring {
-            width: 200px; height: 200px;
-            border-radius: 50%;
-            border: 2px solid var(--glass-border);
-            position: relative;
-            transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1);
-            box-shadow: 0 0 0 0 var(--primary-glow);
-        }
-        .hub-center:hover .hub-photo-ring,
-        .hub.expanded .hub-photo-ring {
-            border-color: var(--primary);
-            box-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(0,255,68,0.3), inset 0 0 30px rgba(0,255,68,0.05);
-            transform: scale(1.05);
-        }
-
-        /* Rotating dashes ring */
-        .hub-photo-ring::before {
-            content: '';
-            position: absolute; inset: -8px;
-            border-radius: 50%;
-            border: 1px dashed rgba(0,255,68,0.2);
-            animation: spin 20s linear infinite;
-        }
-        .hub-photo-ring::after {
-            content: '';
-            position: absolute; inset: -16px;
-            border-radius: 50%;
-            border: 1px dashed rgba(0,255,68,0.1);
-            animation: spin 35s linear infinite reverse;
-        }
-        .hub.expanded .hub-photo-ring::before {
-            border-color: rgba(0,255,68,0.5);
-            animation: spin 8s linear infinite;
-        }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        .hub-photo-inner {
-            width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
-            background: #0a0f12;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 70px;
-            position: relative;
-        }
-        .hub-photo-inner img {
-            width: 100%; height: 100%; object-fit: cover;
-            border-radius: 50%;
-        }
-
-        .hub-label {
-            position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
-            font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 3px;
-            color: var(--primary); opacity: 0.6; white-space: nowrap;
-            transition: all 0.3s;
-        }
-        .hub.expanded .hub-label { opacity: 0; }
-
-        /* Hover hint */
-        .hub-hint {
-            position: absolute; bottom: -65px; left: 50%; transform: translateX(-50%);
-            font-size: 12px; color: var(--text-gray); white-space: nowrap;
-            letter-spacing: 1px; transition: opacity 0.3s;
-        }
-        .hub.expanded .hub-hint { opacity: 0; pointer-events: none; }
-
-        /* ===== BUTTONS ORBITING ===== */
-        .hub-btn {
-            position: absolute;
-            transform-origin: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s, transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
-            z-index: 20;
-        }
-        .hub.expanded .hub-btn {
-            opacity: 1;
-            pointer-events: all;
-        }
-
-        /* Button types */
-        .btn-standard {
-            background: rgba(10,15,20,0.95);
-            border: 1px solid var(--glass-border);
-            color: white;
-            padding: 12px 22px;
-            border-radius: 12px;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700; font-size: 14px;
-            cursor: pointer;
-            text-decoration: none;
-            display: flex; align-items: center; gap: 8px;
-            white-space: nowrap;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            transition: all 0.25s;
-            letter-spacing: 0.5px;
-        }
-        .btn-standard:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            box-shadow: 0 0 25px rgba(0,255,68,0.4), 0 4px 20px rgba(0,0,0,0.5);
-            transform: translateY(-2px) scale(1.03);
-        }
-
-        .btn-special {
-            background: linear-gradient(135deg, rgba(0,255,68,0.15), rgba(0,180,50,0.05));
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            padding: 12px 22px;
-            border-radius: 12px;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 700; font-size: 14px;
-            cursor: pointer;
-            text-decoration: none;
-            display: flex; align-items: center; gap: 8px;
-            white-space: nowrap;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 15px rgba(0,255,68,0.2), 0 4px 20px rgba(0,0,0,0.5);
-            transition: all 0.25s;
-            letter-spacing: 0.5px;
-            position: relative;
-            overflow: hidden;
-        }
-        .btn-special::before {
-            content: '';
-            position: absolute; inset: 0;
-            background: linear-gradient(135deg, transparent 40%, rgba(0,255,68,0.1));
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .btn-special:hover {
-            background: linear-gradient(135deg, rgba(0,255,68,0.25), rgba(0,180,50,0.1));
-            box-shadow: 0 0 30px rgba(0,255,68,0.5), 0 4px 20px rgba(0,0,0,0.5);
-            transform: translateY(-2px) scale(1.03);
-        }
-        .btn-special:hover::before { opacity: 1; }
-
-        /* Connector lines from center to buttons */
-        .hub-lines {
-            position: absolute; inset: 0;
-            pointer-events: none;
-            z-index: 5;
-        }
-        .hub-lines svg {
-            width: 100%; height: 100%;
-            position: absolute; inset: 0;
+        /* SVG overlay */
+        #hubSvg {
+            position:absolute; inset:0;
+            width:100%; height:100%;
+            overflow:visible;
+            pointer-events:none;
         }
         .hub-line {
-            stroke: var(--primary);
-            stroke-width: 1;
-            stroke-dasharray: 4 6;
-            opacity: 0;
-            transition: opacity 0.4s 0.2s;
+            stroke:var(--pr); stroke-width:1;
+            stroke-dasharray:4 7; opacity:0;
+            transition:opacity .4s;
         }
-        .hub.expanded .hub-line {
-            opacity: 0.3;
-            animation: dashFlow 2s linear infinite;
+        .hub.open .hub-line {
+            opacity:.28;
+            animation:dashMove 1.8s linear infinite;
         }
-        @keyframes dashFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -20; } }
+        @keyframes dashMove { to { stroke-dashoffset:-22; } }
+
+        /* ===== CENTER PHOTO ===== */
+        .hub-center {
+            position:absolute;
+            top:50%; left:50%;
+            transform:translate(-50%,-50%);
+            z-index:10;
+        }
+
+        .ring {
+            width:  clamp(110px, 22vmin, 170px);
+            height: clamp(110px, 22vmin, 170px);
+            border-radius:50%;
+            position:relative;
+            transition:transform .5s cubic-bezier(.34,1.56,.64,1), box-shadow .5s;
+        }
+        /* Spinning dashes */
+        .ring::before {
+            content:''; position:absolute; inset:-10px; border-radius:50%;
+            border:1px dashed rgba(0,255,68,.22);
+            animation:spin 22s linear infinite;
+            transition:border-color .4s, animation-duration .4s;
+        }
+        .ring::after {
+            content:''; position:absolute; inset:-20px; border-radius:50%;
+            border:1px dashed rgba(0,255,68,.1);
+            animation:spin 38s linear infinite reverse;
+        }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        .hub.open .ring,
+        .hub-center:hover .ring {
+            transform:scale(1.07);
+            box-shadow:0 0 55px rgba(0,255,68,.5), 0 0 100px rgba(0,255,68,.18);
+        }
+        .hub.open .ring::before { border-color:rgba(0,255,68,.6); animation-duration:6s; }
+
+        .photo-inner {
+            width:100%; height:100%; border-radius:50%;
+            border:2px solid rgba(0,255,68,.2);
+            overflow:hidden; background:#070a0d;
+            display:flex; align-items:center; justify-content:center;
+            font-size:clamp(36px,7vmin,65px);
+            transition:border-color .4s;
+        }
+        .hub.open .photo-inner,
+        .hub-center:hover .photo-inner { border-color:var(--pr); }
+        .photo-inner img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+
+        .hub-label {
+            position:absolute;
+            bottom:calc(-100% - 10px); left:50%; transform:translateX(-50%);
+            font-family:'Orbitron',monospace; font-size:8px; letter-spacing:3px;
+            color:var(--pr); opacity:.5; white-space:nowrap;
+            transition:opacity .3s;
+        }
+        .hub-hint {
+            position:absolute;
+            bottom:calc(-100% - 28px); left:50%; transform:translateX(-50%);
+            font-size:10px; color:var(--gr); white-space:nowrap; letter-spacing:1px;
+            transition:opacity .3s;
+        }
+        .hub.open .hub-label,
+        .hub.open .hub-hint { opacity:0; }
+
+        /* ===== ORBIT BUTTONS ===== */
+        .orb {
+            position:absolute;
+            /* positioned by JS */
+            transform:translate(-50%,-50%) scale(.55);
+            opacity:0; pointer-events:none;
+            transition:
+                opacity .35s ease,
+                transform .45s cubic-bezier(.34,1.56,.64,1);
+            z-index:20;
+            text-decoration:none;
+            white-space:nowrap;
+            display:flex; align-items:center; gap:6px;
+            padding:9px 16px; border-radius:10px;
+            font-family:'Rajdhani',sans-serif;
+            font-weight:700;
+            font-size:clamp(11px,1.8vmin,14px);
+            letter-spacing:.3px;
+            backdrop-filter:blur(8px);
+            -webkit-backdrop-filter:blur(8px);
+        }
+        .hub.open .orb {
+            opacity:1; pointer-events:all;
+            transform:translate(-50%,-50%) scale(1);
+        }
+        .orb.std {
+            background:rgba(6,11,17,.93);
+            border:1px solid rgba(0,255,68,.2);
+            color:rgba(255,255,255,.82);
+            box-shadow:0 4px 18px rgba(0,0,0,.5);
+        }
+        .orb.std:hover {
+            border-color:var(--pr); color:var(--pr);
+            box-shadow:0 0 20px rgba(0,255,68,.3), 0 4px 18px rgba(0,0,0,.5);
+            transform:translate(-50%,-50%) scale(1.05) !important;
+        }
+        .orb.spc {
+            background:linear-gradient(135deg,rgba(0,255,68,.13),rgba(0,155,38,.05));
+            border:1px solid rgba(0,255,68,.5);
+            color:var(--pr);
+            box-shadow:0 0 14px rgba(0,255,68,.18), 0 4px 18px rgba(0,0,0,.5);
+        }
+        .orb.spc:hover {
+            background:linear-gradient(135deg,rgba(0,255,68,.22),rgba(0,155,38,.1));
+            box-shadow:0 0 30px rgba(0,255,68,.4), 0 4px 18px rgba(0,0,0,.5);
+            transform:translate(-50%,-50%) scale(1.05) !important;
+        }
+
+        /* ===== CORNERS ===== */
+        .corner {
+            position:fixed; width:46px; height:46px;
+            pointer-events:none; z-index:2;
+        }
+        .corner::before,.corner::after {
+            content:''; position:absolute;
+            background:var(--pr); opacity:.32; border-radius:1px;
+        }
+        .c-tl{top:55px;left:0}   .c-tl::before{top:0;left:0;width:2px;height:32px} .c-tl::after{top:0;left:0;width:32px;height:2px}
+        .c-tr{top:55px;right:0}  .c-tr::before{top:0;right:0;width:2px;height:32px} .c-tr::after{top:0;right:0;width:32px;height:2px}
+        .c-bl{bottom:46px;left:0} .c-bl::before{bottom:0;left:0;width:2px;height:32px} .c-bl::after{bottom:0;left:0;width:32px;height:2px}
+        .c-br{bottom:46px;right:0}.c-br::before{bottom:0;right:0;width:2px;height:32px} .c-br::after{bottom:0;right:0;width:32px;height:2px}
+
+        /* ===== STATUS BAR ===== */
+        .sbar {
+            position:fixed; bottom:14px; left:50%; transform:translateX(-50%);
+            display:flex; gap:18px; align-items:center;
+            background:rgba(3,5,7,.88); border:1px solid var(--gb);
+            padding:6px 20px; border-radius:50px;
+            backdrop-filter:blur(10px); z-index:150; white-space:nowrap;
+        }
+        .sdot { width:5px;height:5px;border-radius:50%;background:var(--pr);
+            box-shadow:0 0 7px var(--pr); animation:blink 2s infinite; }
+        @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+        .stxt{font-family:'Orbitron',monospace;font-size:8px;color:var(--gr);letter-spacing:2px;}
+        .sval{color:var(--pr);}
+
+        /* ===== PW MODAL ===== */
+        #pwModal {
+            position:fixed; inset:0; z-index:5000;
+            background:rgba(0,0,0,.93);
+            display:none; align-items:center; justify-content:center;
+            backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px);
+        }
+        #pwModal.on { display:flex; }
+        .pw-box {
+            background:rgba(5,8,14,.98);
+            border:1px solid var(--gb); border-radius:20px;
+            padding:38px 32px; width:90%; max-width:350px; text-align:center;
+            box-shadow:0 0 55px rgba(0,255,68,.13);
+            animation:popIn .22s ease;
+        }
+        @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+        .pw-box h2{font-family:'Orbitron',monospace;font-size:12px;color:var(--pr);letter-spacing:3px;margin-bottom:7px;}
+        .pw-box p{color:var(--gr);font-size:12px;margin-bottom:22px;letter-spacing:.4px;}
+        .pw-inp {
+            width:100%; background:#000; border:1px solid rgba(255,255,255,.1);
+            color:white; padding:13px; border-radius:10px;
+            font-family:'Rajdhani',sans-serif; font-size:18px;
+            text-align:center; letter-spacing:6px; outline:none; margin-bottom:13px;
+            transition:border-color .2s, box-shadow .2s;
+        }
+        .pw-inp:focus{border-color:var(--pr);box-shadow:0 0 16px rgba(0,255,68,.16);}
+        .pw-inp.err{border-color:var(--red);animation:shake .3s;}
+        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+        .pw-go{
+            width:100%; padding:12px; background:var(--pr); color:#000;
+            border:none; border-radius:10px;
+            font-family:'Orbitron',monospace; font-weight:700; font-size:11px;
+            letter-spacing:2px; cursor:pointer;
+            box-shadow:0 0 16px rgba(0,255,68,.28); transition:box-shadow .2s;
+        }
+        .pw-go:hover{box-shadow:0 0 32px rgba(0,255,68,.5);}
+        .pw-cancel{
+            display:block; margin-top:11px; background:none; border:none;
+            color:var(--gr); font-family:'Rajdhani',sans-serif;
+            font-size:12px; cursor:pointer; letter-spacing:1px; transition:color .2s;
+        }
+        .pw-cancel:hover{color:white;}
 
         /* ===== ADMIN PANEL ===== */
         #adminPanel {
-            position: fixed; inset: 0; z-index: 5000;
-            background: rgba(0,0,0,0.92);
-            display: none; align-items: flex-start; justify-content: center;
-            padding: 80px 20px 20px;
-            backdrop-filter: blur(10px);
-            overflow-y: auto;
+            position:fixed; inset:0; z-index:4000;
+            background:rgba(0,0,0,.92);
+            display:none; justify-content:center; align-items:flex-start;
+            padding:68px 14px 14px;
+            overflow-y:auto;
+            backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
         }
-        #adminPanel.visible { display: flex; }
+        #adminPanel.on { display:flex; }
+        .adm {
+            background:rgba(4,8,14,.98);
+            border:1px solid var(--gb); border-radius:18px;
+            width:100%; max-width:840px;
+            overflow:hidden;
+            box-shadow:0 0 55px rgba(0,255,68,.1);
+            animation:popIn .22s ease;
+        }
+        .adm-h {
+            padding:16px 20px;
+            background:rgba(0,255,68,.03);
+            border-bottom:1px solid var(--gb);
+            display:flex; justify-content:space-between; align-items:center;
+        }
+        .adm-h h2{font-family:'Orbitron',monospace;font-size:11px;color:var(--pr);letter-spacing:3px;}
+        .adm-x {
+            background:none; border:1px solid rgba(239,68,68,.3); color:var(--red);
+            width:29px;height:29px;border-radius:7px;cursor:pointer;font-size:14px;
+            display:flex;align-items:center;justify-content:center;transition:all .2s;
+        }
+        .adm-x:hover{background:var(--red);color:white;}
+        .adm-b{padding:18px;display:flex;flex-direction:column;gap:18px;}
 
-        .admin-container {
-            background: rgba(8,12,18,0.98);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            width: 100%; max-width: 900px;
-            box-shadow: 0 0 60px rgba(0,255,68,0.15);
-            overflow: hidden;
-        }
-        .admin-header {
-            padding: 20px 25px;
-            background: rgba(0,255,68,0.05);
-            border-bottom: 1px solid var(--glass-border);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .admin-header h2 {
-            font-family: 'Orbitron', monospace; font-size: 14px;
-            color: var(--primary); letter-spacing: 3px;
-        }
-        .admin-close {
-            background: none; border: 1px solid rgba(239,68,68,0.3); color: var(--danger);
-            width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
-            font-size: 16px; font-family: 'Rajdhani', sans-serif;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.2s;
-        }
-        .admin-close:hover { background: var(--danger); color: white; }
+        .sec {font-size:9px;color:var(--pr);letter-spacing:2.5px;font-weight:700;
+            text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:8px;}
+        .sec::after{content:'';flex:1;height:1px;background:var(--gb);}
 
-        .admin-body { padding: 25px; }
+        /* Photo zone */
+        .pzone {
+            border:2px dashed var(--gb);border-radius:13px;
+            padding:18px;display:flex;align-items:center;gap:16px;
+            cursor:pointer;position:relative;transition:border-color .2s;
+        }
+        .pzone:hover{border-color:var(--pr);}
+        .pzone input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+        .pprev{
+            width:62px;height:62px;border-radius:50%;flex-shrink:0;
+            background:#080d12;border:2px solid var(--gb);
+            display:flex;align-items:center;justify-content:center;
+            font-size:24px;overflow:hidden;
+        }
+        .pprev img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+        .pzone-t strong{color:white;font-size:13px;display:block;margin-bottom:3px;}
+        .pzone-t span{color:var(--gr);font-size:11px;}
 
-        /* Photo upload zone */
-        .photo-zone {
-            border: 2px dashed var(--glass-border);
-            border-radius: 15px;
-            padding: 30px;
-            text-align: center;
-            margin-bottom: 25px;
-            transition: all 0.3s;
-            position: relative;
+        /* Hitbox */
+        .hbwrap{border:1px solid var(--gb);border-radius:13px;overflow:hidden;}
+        .hb-top{
+            padding:9px 15px;background:rgba(255,255,255,.02);
+            border-bottom:1px solid var(--gb);
+            display:flex;justify-content:space-between;align-items:center;
         }
-        .photo-zone:hover { border-color: var(--primary); }
-        .photo-zone-preview {
-            width: 100px; height: 100px; border-radius: 50%;
-            object-fit: cover; margin: 0 auto 15px; display: block;
-            border: 2px solid var(--glass-border);
-            background: #0a0f12; font-size: 40px;
-            line-height: 100px;
+        .hb-top span{font-size:9px;color:var(--pr);letter-spacing:2px;font-weight:700;}
+        .hb-top small{font-size:9px;color:var(--gr);}
+        .hb-cr{position:relative;background:#030609;height:240px;overflow:hidden;}
+        #hbCanvas{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;display:block;}
+        .hb-bot{
+            padding:9px 15px;background:rgba(255,255,255,.02);
+            border-top:1px solid var(--gb);
+            display:flex;align-items:center;gap:10px;flex-wrap:wrap;
         }
-        .photo-zone input[type=file] {
-            position: absolute; inset: 0; opacity: 0; cursor: pointer;
-        }
-        .photo-zone p { color: var(--text-gray); font-size: 13px; }
-        .photo-zone strong { color: var(--primary); }
+        .hb-info{color:var(--gr);font-size:11px;margin-left:auto;}
+        .hb-info span{color:var(--pr);}
 
-        /* Hitbox editor */
-        .hitbox-editor {
-            border: 1px solid var(--glass-border);
-            border-radius: 15px;
-            overflow: hidden;
-            margin-bottom: 25px;
+        /* Buttons list */
+        .blist{display:flex;flex-direction:column;gap:7px;}
+        .brow{
+            display:grid;
+            grid-template-columns:26px 1fr 1fr 100px 52px 34px;
+            gap:7px;align-items:center;
+            background:rgba(255,255,255,.025);
+            border:1px solid rgba(255,255,255,.06);
+            border-radius:9px;padding:9px 11px;
+            transition:border-color .2s;
         }
-        .hitbox-header {
-            padding: 12px 18px;
-            background: rgba(255,255,255,0.03);
-            border-bottom: 1px solid var(--glass-border);
-            font-size: 12px; color: var(--primary); letter-spacing: 2px; font-weight: 700;
-            display: flex; justify-content: space-between; align-items: center;
+        .brow:hover{border-color:var(--gb);}
+        .dh{color:var(--gr);font-size:15px;cursor:grab;opacity:.5;text-align:center;}
+        .dh:active{cursor:grabbing;}
+        .ai{
+            background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08);
+            color:white;padding:6px 9px;border-radius:7px;
+            font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;
+            transition:border-color .2s;width:100%;
         }
-        .hitbox-canvas-wrap {
-            position: relative;
-            background: #050a0f;
-            width: 100%; padding-bottom: 56.25%;
-            overflow: hidden;
+        .ai:focus{border-color:var(--pr);}
+        .ai::placeholder{color:var(--gr);}
+        .ai-s{
+            background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.08);
+            color:white;padding:6px 9px;border-radius:7px;
+            font-family:'Rajdhani',sans-serif;font-size:12px;outline:none;
+            cursor:pointer;width:100%;
         }
-        #hitboxCanvas {
-            position: absolute; inset: 0;
-            width: 100%; height: 100%;
-            cursor: crosshair;
+        .ai-s option{background:#0a0f15;}
+        .ai-ic{text-align:center;font-size:17px;}
+        .delbtn{
+            background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);
+            color:var(--red);border-radius:7px;cursor:pointer;font-size:13px;
+            width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+            transition:all .2s;flex-shrink:0;
         }
-        .hitbox-tools {
-            padding: 12px 18px;
-            display: flex; gap: 10px; flex-wrap: wrap;
-            background: rgba(255,255,255,0.02);
-            border-top: 1px solid var(--glass-border);
+        .delbtn:hover{background:rgba(239,68,68,.2);}
+        .col-hs{
+            display:grid;
+            grid-template-columns:26px 1fr 1fr 100px 52px 34px;
+            gap:7px;padding:0 11px;margin-bottom:5px;
         }
+        .ch{font-size:9px;color:var(--gr);letter-spacing:1px;text-transform:uppercase;}
+        .addbtn{
+            background:rgba(0,255,68,.07);border:1px dashed rgba(0,255,68,.35);
+            color:var(--pr);padding:9px;border-radius:9px;cursor:pointer;
+            font-family:'Rajdhani',sans-serif;font-weight:700;font-size:12px;
+            letter-spacing:1px;transition:all .2s;width:100%;margin-top:7px;
+        }
+        .addbtn:hover{background:rgba(0,255,68,.13);}
+        .savebtn{
+            width:100%;padding:13px;background:var(--pr);color:#000;
+            border:none;border-radius:11px;
+            font-family:'Orbitron',monospace;font-weight:700;font-size:11px;
+            letter-spacing:2px;cursor:pointer;
+            box-shadow:0 0 18px rgba(0,255,68,.28);transition:box-shadow .2s,transform .15s;
+        }
+        .savebtn:hover{box-shadow:0 0 38px rgba(0,255,68,.5);transform:translateY(-1px);}
 
-        /* Buttons list editor */
-        .buttons-editor { margin-bottom: 25px; }
-        .buttons-editor-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px;
+        /* ===== TOAST ===== */
+        .toast{
+            position:fixed;top:68px;right:14px;z-index:9999;
+            background:rgba(5,8,14,.95);border:1px solid var(--gb);
+            border-radius:9px;padding:11px 16px;
+            font-size:13px;color:white;letter-spacing:.3px;
+            opacity:0;transform:translateX(16px);
+            transition:all .25s;pointer-events:none;
         }
-        .buttons-editor-header h3 {
-            font-size: 12px; color: var(--primary); letter-spacing: 2px; font-weight: 700;
-        }
+        .toast.on{opacity:1;transform:translateX(0);}
+        .toast.ok{border-color:var(--pr);color:var(--pr);}
+        .toast.bad{border-color:var(--red);color:var(--red);}
 
-        .btn-list { display: flex; flex-direction: column; gap: 10px; }
-        .btn-list-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 12px;
-            padding: 12px 15px;
-            display: grid; grid-template-columns: 40px 1fr 1fr 110px 80px 70px;
-            gap: 10px; align-items: center;
+        /* ===== MOBILE ===== */
+        @media(max-width:560px){
+            .brow{grid-template-columns:22px 1fr 30px;}
+            .brow .href-col,.brow .type-col,.brow .icon-col{display:none;}
+            .col-hs{grid-template-columns:22px 1fr 30px;}
+            .col-hs .ch-href,.col-hs .ch-type,.col-hs .ch-icon{display:none;}
+            .adm-b{padding:12px;}
+            .hb-cr{height:180px;}
         }
-        .btn-list-item:hover { border-color: var(--glass-border); }
-
-        .drag-handle {
-            color: var(--text-gray); font-size: 18px; cursor: grab;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0.5;
-        }
-        .drag-handle:active { cursor: grabbing; }
-
-        .admin-input {
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 8px 12px; border-radius: 8px;
-            font-family: 'Rajdhani', sans-serif; font-size: 13px; outline: none;
-            transition: border-color 0.2s; width: 100%;
-        }
-        .admin-input:focus { border-color: var(--primary); }
-        .admin-input::placeholder { color: var(--text-gray); }
-
-        .admin-select {
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 8px 12px; border-radius: 8px;
-            font-family: 'Rajdhani', sans-serif; font-size: 13px; outline: none;
-            cursor: pointer; width: 100%;
-        }
-        .admin-select:focus { border-color: var(--primary); }
-        .admin-select option { background: #0a0f15; }
-
-        .btn-add-item {
-            background: rgba(0,255,68,0.08); border: 1px dashed var(--primary);
-            color: var(--primary); padding: 10px; border-radius: 10px;
-            cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 700;
-            font-size: 13px; letter-spacing: 1px; transition: all 0.2s; width: 100%;
-            margin-top: 10px;
-        }
-        .btn-add-item:hover { background: rgba(0,255,68,0.15); }
-
-        .btn-delete-item {
-            background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2);
-            color: var(--danger); padding: 8px; border-radius: 8px;
-            cursor: pointer; font-size: 14px; transition: all 0.2s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .btn-delete-item:hover { background: rgba(239,68,68,0.2); }
-
-        .admin-save-btn {
-            width: 100%; padding: 15px;
-            background: var(--primary); color: black;
-            border: none; border-radius: 12px;
-            font-family: 'Orbitron', monospace; font-weight: 700; font-size: 13px;
-            letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
-            box-shadow: 0 0 20px rgba(0,255,68,0.3);
-        }
-        .admin-save-btn:hover { box-shadow: 0 0 40px rgba(0,255,68,0.5); transform: translateY(-1px); }
-
-        /* Password modal */
-        #pwModal {
-            position: fixed; inset: 0; z-index: 6000;
-            background: rgba(0,0,0,0.95);
-            display: none; align-items: center; justify-content: center;
-            backdrop-filter: blur(20px);
-        }
-        #pwModal.visible { display: flex; }
-        .pw-box {
-            background: rgba(8,12,18,0.98);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 40px;
-            width: 100%; max-width: 380px;
-            text-align: center;
-            box-shadow: 0 0 60px rgba(0,255,68,0.2);
-        }
-        .pw-box h2 {
-            font-family: 'Orbitron', monospace; font-size: 14px;
-            color: var(--primary); letter-spacing: 3px; margin-bottom: 8px;
-        }
-        .pw-box p { color: var(--text-gray); font-size: 12px; margin-bottom: 25px; }
-        .pw-input {
-            width: 100%; background: #000; border: 1px solid rgba(255,255,255,0.1);
-            color: white; padding: 14px 16px; border-radius: 10px;
-            font-family: 'Rajdhani', sans-serif; font-size: 16px;
-            text-align: center; letter-spacing: 4px; outline: none;
-            margin-bottom: 15px;
-            transition: border-color 0.2s;
-        }
-        .pw-input:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(0,255,68,0.2); }
-        .pw-input.error { border-color: var(--danger); animation: shake 0.3s; }
-        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
-        .pw-submit {
-            width: 100%; padding: 14px; background: var(--primary); color: black;
-            border: none; border-radius: 10px; font-family: 'Orbitron', monospace;
-            font-weight: 700; font-size: 12px; letter-spacing: 2px; cursor: pointer;
-            box-shadow: 0 0 20px rgba(0,255,68,0.3); transition: all 0.2s;
-        }
-        .pw-submit:hover { box-shadow: 0 0 35px rgba(0,255,68,0.5); }
-        .pw-cancel {
-            background: none; border: none; color: var(--text-gray);
-            font-family: 'Rajdhani', sans-serif; font-size: 13px; cursor: pointer;
-            margin-top: 12px; letter-spacing: 1px;
-            transition: color 0.2s;
-        }
-        .pw-cancel:hover { color: white; }
-
-        /* Corner decorations */
-        .corner {
-            position: fixed; width: 60px; height: 60px; pointer-events: none; z-index: 1;
-        }
-        .corner::before, .corner::after { content: ''; position: absolute; background: var(--primary); opacity: 0.4; }
-        .corner-tl { top: 70px; left: 0; }
-        .corner-tl::before { top: 0; left: 0; width: 2px; height: 40px; }
-        .corner-tl::after { top: 0; left: 0; width: 40px; height: 2px; }
-        .corner-tr { top: 70px; right: 0; }
-        .corner-tr::before { top: 0; right: 0; width: 2px; height: 40px; }
-        .corner-tr::after { top: 0; right: 0; width: 40px; height: 2px; }
-        .corner-bl { bottom: 0; left: 0; }
-        .corner-bl::before { bottom: 0; left: 0; width: 2px; height: 40px; }
-        .corner-bl::after { bottom: 0; left: 0; width: 40px; height: 2px; }
-        .corner-br { bottom: 0; right: 0; }
-        .corner-br::before { bottom: 0; right: 0; width: 2px; height: 40px; }
-        .corner-br::after { bottom: 0; right: 0; width: 40px; height: 2px; }
-
-        /* Status bar */
-        .status-bar {
-            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-            display: flex; gap: 30px; align-items: center;
-            background: rgba(3,5,7,0.9); border: 1px solid var(--glass-border);
-            padding: 8px 25px; border-radius: 50px;
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary); animation: blink 2s infinite; }
-        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
-        .status-text { font-family: 'Orbitron', monospace; font-size: 9px; color: var(--text-gray); letter-spacing: 2px; }
-        .status-val { color: var(--primary); }
-
-        /* Notification toast */
-        .toast {
-            position: fixed; top: 80px; right: 20px; z-index: 9999;
-            background: rgba(8,12,18,0.95); border: 1px solid var(--glass-border);
-            border-radius: 12px; padding: 14px 20px;
-            font-size: 13px; color: white; letter-spacing: 0.5px;
-            opacity: 0; transform: translateX(30px);
-            transition: all 0.3s; pointer-events: none;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        }
-        .toast.show { opacity: 1; transform: translateX(0); }
-        .toast.success { border-color: var(--primary); color: var(--primary); }
-        .toast.error { border-color: var(--danger); color: var(--danger); }
-
-        /* Hitbox points */
-        .hitbox-point {
-            position: absolute; width: 12px; height: 12px;
-            border-radius: 50%; background: var(--primary);
-            transform: translate(-50%, -50%);
-            border: 2px solid rgba(0,255,68,0.3);
-            box-shadow: 0 0 8px var(--primary);
-            cursor: move; z-index: 10;
-            transition: transform 0.1s;
-        }
-        .hitbox-point:hover { transform: translate(-50%,-50%) scale(1.4); }
-        .hitbox-point-label {
-            position: absolute; left: 14px; top: -3px;
-            font-size: 9px; color: var(--primary); letter-spacing: 1px;
-            white-space: nowrap; pointer-events: none;
-        }
-
-        /* column header labels */
-        .col-labels {
-            display: grid; grid-template-columns: 40px 1fr 1fr 110px 80px 70px;
-            gap: 10px; padding: 0 15px; margin-bottom: 8px;
-        }
-        .col-label { font-size: 10px; color: var(--text-gray); letter-spacing: 1px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div class="scanline"></div>
-<div class="corner corner-tl"></div>
-<div class="corner corner-tr"></div>
-<div class="corner corner-bl"></div>
-<div class="corner corner-br"></div>
+<div class="corner c-tl"></div>
+<div class="corner c-tr"></div>
+<div class="corner c-bl"></div>
+<div class="corner c-br"></div>
 
-<!-- ===== HEADER ===== -->
+<!-- HEADER -->
 <header>
-    <a href="cabinet.html" class="logo-box">ДШВ</a>
-    <div class="header-right">
-        <a href="cabinet.html" class="header-btn">⬅ КАБІНЕТ</a>
-        <button class="header-btn admin-btn" onclick="openAdminPanel()">⚙️ РЕДАКТОР</button>
+    <a href="cabinet.html" class="logo">ДШВ</a>
+    <div class="hdr-r">
+        <a href="cabinet.html" class="hbtn">⬅ КАБІНЕТ</a>
+        <button class="hbtn yl" onclick="openAdminFlow()">⚙️ РЕДАКТОР</button>
     </div>
 </header>
 
-<!-- ===== MAIN HUB ===== -->
+<!-- STAGE -->
 <div class="stage">
     <div class="hub" id="hub">
-        <!-- SVG Lines -->
-        <div class="hub-lines">
-            <svg id="hubSvg" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
-                <!-- Lines drawn dynamically by JS -->
-            </svg>
-        </div>
+        <svg id="hubSvg" viewBox="0 0 580 580" preserveAspectRatio="xMidYMid meet">
+            <!-- lines injected by JS -->
+        </svg>
 
-        <!-- Center photo -->
-        <div class="hub-center" id="hubCenter" onclick="toggleHub()">
-            <div class="hub-photo-ring">
-                <div class="hub-photo-inner" id="hubPhotoInner">
-                    <!-- Photo or emoji -->
-                    👤
-                </div>
+        <div class="hub-center" id="hubCenter">
+            <div class="ring" id="ring">
+                <div class="photo-inner" id="photoInner">👤</div>
             </div>
             <div class="hub-label">ДШВ COMMAND CENTER</div>
         </div>
-        <div class="hub-hint">НАТИСНИ ДЛЯ ВІДКРИТТЯ</div>
-
-        <!-- Buttons rendered dynamically -->
+        <div class="hub-hint">НАВЕДИ ДЛЯ ВІДКРИТТЯ</div>
     </div>
 </div>
 
-<!-- ===== STATUS BAR ===== -->
-<div class="status-bar">
-    <div class="status-dot"></div>
-    <span class="status-text">СИСТЕМА: <span class="status-val">ОНЛАЙН</span></span>
-    <span class="status-text">|</span>
-    <span class="status-text" id="clockEl">--:--:--</span>
+<!-- STATUS -->
+<div class="sbar">
+    <div class="sdot"></div>
+    <span class="stxt">СТАТУС: <span class="sval">ОНЛАЙН</span></span>
+    <span class="stxt">|</span>
+    <span class="stxt" id="clk">--:--:--</span>
 </div>
 
-<!-- ===== PASSWORD MODAL ===== -->
+<!-- PASSWORD MODAL -->
 <div id="pwModal">
     <div class="pw-box">
-        <h2>АДМІН ПАНЕЛЬ</h2>
-        <p>Введіть секретний код для доступу до редактора</p>
-        <input type="password" class="pw-input" id="pwInput" placeholder="••••••" maxlength="30"
-               onkeydown="if(event.key==='Enter') checkPassword()">
-        <button class="pw-submit" onclick="checkPassword()">ПІДТВЕРДИТИ</button><br>
-        <button class="pw-cancel" onclick="closePwModal()">СКАСУВАТИ</button>
+        <h2>АДМІН ДОСТУП</h2>
+        <p>Введіть секретний код адміністратора</p>
+        <input type="password" class="pw-inp" id="pwInp" placeholder="••••••" maxlength="40"
+               onkeydown="if(event.key==='Enter')checkPw()">
+        <button class="pw-go" onclick="checkPw()">ПІДТВЕРДИТИ</button>
+        <button class="pw-cancel" onclick="closePw()">Скасувати</button>
     </div>
 </div>
 
-<!-- ===== ADMIN PANEL ===== -->
+<!-- ADMIN PANEL -->
 <div id="adminPanel">
-    <div class="admin-container">
-        <div class="admin-header">
+    <div class="adm">
+        <div class="adm-h">
             <h2>⚙ РЕДАКТОР ГОЛОВНОЇ СТОРІНКИ</h2>
-            <button class="admin-close" onclick="closeAdminPanel()">✕</button>
+            <button class="adm-x" onclick="closeAdmin()">✕</button>
         </div>
-        <div class="admin-body">
+        <div class="adm-b">
 
-            <!-- Photo upload -->
-            <div class="photo-zone" id="photoZone">
-                <input type="file" accept="image/*" onchange="handlePhotoUpload(this)">
-                <div class="photo-zone-preview" id="photoPreview">👤</div>
-                <strong>Натисни або перетягни фото</strong>
-                <p style="margin-top:6px;">Це фото буде центром головної сторінки</p>
-            </div>
-
-            <!-- Hitbox editor -->
-            <div class="hitbox-editor">
-                <div class="hitbox-header">
-                    <span>🎯 ХІТБОКСИ — ТОЧКИ ВИХОДУ КНОПОК</span>
-                    <span style="color: var(--text-gray); font-size: 10px;">Клікай на фото щоб ставити точки</span>
-                </div>
-                <div class="hitbox-canvas-wrap">
-                    <canvas id="hitboxCanvas"></canvas>
-                    <div id="hitboxPoints"></div>
-                </div>
-                <div class="hitbox-tools">
-                    <button class="btn-delete-item" style="padding: 8px 16px; font-family: Rajdhani; font-size:13px; font-weight:700;" onclick="clearHitboxPoints()">🗑 Очистити точки</button>
-                    <span style="color: var(--text-gray); font-size: 12px; align-self: center; margin-left: 10px;">Точок встановлено: <span id="pointsCount" style="color: var(--primary);">0</span></span>
+            <div>
+                <div class="sec">📷 ФОТО ЦЕНТРУ</div>
+                <div class="pzone" id="pzone">
+                    <input type="file" accept="image/*" onchange="onPhoto(this)">
+                    <div class="pprev" id="pprev">👤</div>
+                    <div class="pzone-t">
+                        <strong>Натисни або перетягни фото</strong>
+                        <span>Буде центром хаб-меню</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Buttons editor -->
-            <div class="buttons-editor">
-                <div class="buttons-editor-header">
-                    <h3>🔲 КНОПКИ НАВІГАЦІЇ</h3>
-                    <span style="color: var(--text-gray); font-size: 11px;">Перетягуй для зміни порядку</span>
+            <div>
+                <div class="sec">🎯 ХІТБОКСИ — ПОЛІГОН ВИХОДУ КНОПОК</div>
+                <div class="hbwrap">
+                    <div class="hb-top">
+                        <span>РЕДАКТОР ПОЛІГОНУ</span>
+                        <small>Клік = точка • ПКМ / довгий тап = видалити • Тягни = переміщуй</small>
+                    </div>
+                    <div class="hb-cr">
+                        <canvas id="hbCanvas"></canvas>
+                    </div>
+                    <div class="hb-bot">
+                        <button class="hbtn" onclick="clearHb()" style="font-size:11px;padding:5px 11px;">🗑 Очистити</button>
+                        <button class="hbtn" onclick="undoHb()" style="font-size:11px;padding:5px 11px;">↩ Відмінити</button>
+                        <span class="hb-info">Вершин: <span id="hbN">0</span> &nbsp;•&nbsp; <span id="hbS" style="color:var(--yel)">Відкритий</span></span>
+                    </div>
                 </div>
-
-                <div class="col-labels">
-                    <div class="col-label"></div>
-                    <div class="col-label">Назва</div>
-                    <div class="col-label">Посилання</div>
-                    <div class="col-label">Тип</div>
-                    <div class="col-label">Іконка</div>
-                    <div class="col-label">Видалити</div>
-                </div>
-
-                <div class="btn-list" id="btnList">
-                    <!-- dynamically rendered -->
-                </div>
-
-                <button class="btn-add-item" onclick="addButton()">+ ДОДАТИ КНОПКУ</button>
             </div>
 
-            <button class="admin-save-btn" onclick="saveConfig()">💾 ЗБЕРЕГТИ ТА ЗАСТОСУВАТИ</button>
+            <div>
+                <div class="sec">🔲 КНОПКИ НАВІГАЦІЇ</div>
+                <div class="col-hs">
+                    <div class="ch"></div>
+                    <div class="ch">Назва</div>
+                    <div class="ch ch-href">Посилання</div>
+                    <div class="ch ch-type">Тип</div>
+                    <div class="ch ch-icon">Ікон</div>
+                    <div class="ch"></div>
+                </div>
+                <div class="blist" id="blist"></div>
+                <button class="addbtn" onclick="addBtn()">+ ДОДАТИ КНОПКУ</button>
+            </div>
+
+            <button class="savebtn" onclick="saveAll()">💾 ЗБЕРЕГТИ ТА ЗАСТОСУВАТИ</button>
         </div>
     </div>
 </div>
 
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ===================================================
-// CONFIG — Default buttons (will be overridden by Firebase/localStorage)
-// ===================================================
-let hubConfig = {
-    photo: null, // base64 or URL
+// ================================================================
+// CONFIG
+// ================================================================
+let cfg = {
+    photo: null,
     buttons: [
-        { id: 1, name: 'Кабінет',       href: 'cabinet.html',      type: 'standard', icon: '🏠' },
-        { id: 2, name: 'Звіти',          href: 'reports.html',      type: 'standard', icon: '📅' },
-        { id: 3, name: 'Суботник',       href: 'subotnik.html',     type: 'standard', icon: '🧹' },
-        { id: 4, name: 'Чати',           href: 'chats.html',        type: 'standard', icon: '💬' },
-        { id: 5, name: 'Іспити',         href: 'isput.html',        type: 'special',  icon: '💼' },
-        { id: 6, name: 'Рулетка',        href: 'ryletka.html',      type: 'special',  icon: '🎲' },
-        { id: 7, name: 'Реєстр',         href: 'cabinet.html#staff',type: 'standard', icon: '📋' },
+        { id:1, name:'Кабінет',  href:'cabinet.html',       type:'std', icon:'🏠' },
+        { id:2, name:'Звіти',    href:'reports.html',        type:'std', icon:'📅' },
+        { id:3, name:'Суботник', href:'subotnik.html',       type:'std', icon:'🧹' },
+        { id:4, name:'Чати',     href:'chats.html',          type:'std', icon:'💬' },
+        { id:5, name:'Іспити',   href:'isput.html',          type:'spc', icon:'💼' },
+        { id:6, name:'Рулетка',  href:'ryletka.html',        type:'spc', icon:'🎲' },
+        { id:7, name:'Реєстр',   href:'cabinet.html#staff',  type:'std', icon:'📋' },
     ],
     hitboxPoints: []
 };
 
-let hubExpanded = false;
-
-// ===================================================
+// ================================================================
 // CLOCK
-// ===================================================
-function updateClock() {
-    const now = new Date();
-    const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
-        .map(n => String(n).padStart(2,'0')).join(':');
-    document.getElementById('clockEl').textContent = t;
-}
-setInterval(updateClock, 1000);
-updateClock();
+// ================================================================
+(function tick(){
+    const n=new Date();
+    document.getElementById('clk').textContent=
+        [n.getHours(),n.getMinutes(),n.getSeconds()]
+        .map(v=>String(v).padStart(2,'0')).join(':');
+    setTimeout(tick,1000);
+})();
 
-// ===================================================
-// LOAD CONFIG
-// ===================================================
-function loadConfig() {
-    const saved = localStorage.getItem('dshv_hub_config');
-    if (saved) {
-        try {
-            hubConfig = JSON.parse(saved);
-        } catch(e) {}
-    }
+// ================================================================
+// FIREBASE
+// ================================================================
+document.addEventListener('firebaseReady', async ()=>{
+    try {
+        const snap = await window._getDoc(window._doc(window._db,'settings','hubConfig'));
+        if (snap.exists()) {
+            const d = snap.data();
+            if (d.buttons) cfg.buttons = d.buttons;
+            if (d.photo)   cfg.photo   = d.photo;
+            if (d.hitboxPoints) cfg.hitboxPoints = d.hitboxPoints;
+            renderHub();
+        }
+    } catch(e){ console.warn('fb load:',e); }
+});
+
+// Local fallback
+(function(){
+    try{
+        const s=localStorage.getItem('dshv_hub');
+        if(s){ const d=JSON.parse(s); Object.assign(cfg,d); }
+    }catch(e){}
     renderHub();
-    // In production: also load from Firebase
-    // loadFromFirebase();
+})();
+
+// ================================================================
+// HUB — hover open / close (with mobile tap)
+// ================================================================
+const hub = document.getElementById('hub');
+let hubOpen=false, hoverT=null;
+
+function openHub(){
+    if(hubOpen) return;
+    hubOpen=true;
+    hub.classList.add('open');
+    renderOrbits();
+}
+function closeHub(){
+    if(!hubOpen) return;
+    hubOpen=false;
+    hub.classList.remove('open');
 }
 
-// ===================================================
-// TOGGLE HUB
-// ===================================================
-function toggleHub() {
-    hubExpanded = !hubExpanded;
-    const hub = document.getElementById('hub');
-    if (hubExpanded) {
-        hub.classList.add('expanded');
-        renderHubButtons();
-    } else {
-        hub.classList.remove('expanded');
+// Desktop: hover
+hub.addEventListener('mouseenter',()=>{ clearTimeout(hoverT); openHub(); });
+hub.addEventListener('mouseleave',()=>{ hoverT=setTimeout(closeHub,300); });
+
+// Mobile: tap center to toggle
+document.getElementById('hubCenter').addEventListener('click', ()=>{
+    if(window.matchMedia('(hover:none)').matches){
+        hubOpen ? closeHub() : openHub();
     }
+});
+
+// ================================================================
+// RENDER HUB PHOTO
+// ================================================================
+function renderHub(){
+    const inner = document.getElementById('photoInner');
+    inner.innerHTML = cfg.photo ? `<img src="${cfg.photo}" alt="">` : '👤';
+    if(hubOpen) renderOrbits();
 }
 
-// ===================================================
-// RENDER HUB
-// ===================================================
-function renderHub() {
-    // Set photo
-    const inner = document.getElementById('hubPhotoInner');
-    if (hubConfig.photo) {
-        inner.innerHTML = `<img src="${hubConfig.photo}" alt="Hub">`;
-    } else {
-        inner.innerHTML = '👤';
-    }
-    renderHubButtons();
-}
+// ================================================================
+// RENDER ORBIT BUTTONS
+//   — buttons START exactly at circle edge, not from center
+// ================================================================
+function renderOrbits(){
+    hub.querySelectorAll('.orb').forEach(el=>el.remove());
+    document.getElementById('hubSvg').querySelectorAll('.hub-line').forEach(el=>el.remove());
 
-function renderHubButtons() {
-    // Remove old buttons
-    document.querySelectorAll('.hub-btn').forEach(el => el.remove());
-    document.getElementById('hubSvg').innerHTML = '';
+    const W = hub.offsetWidth;
+    const H = hub.offsetHeight;
+    const cx = W/2, cy = H/2;
+    const ringEl = document.getElementById('ring');
+    const photoR = ringEl.offsetWidth/2;   // half of photo ring
 
-    const hub = document.getElementById('hub');
-    const buttons = hubConfig.buttons;
-    const count = buttons.length;
-    const cx = 350; // center X in SVG viewBox
-    const cy = 350; // center Y
+    // Orbit radius: where button CENTERS will be placed
+    // Make sure buttons are inside the hub container + small margin
+    const maxR = Math.min(W,H)/2 - 70; // leave room for button width
+    const orbitR = Math.min(maxR, photoR + 130);
 
-    buttons.forEach((btn, i) => {
-        // Distribute around circle
-        const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
-        const radius = 230;
-        const x = Math.cos(angle) * radius; // offset from center
-        const y = Math.sin(angle) * radius;
+    const svg = document.getElementById('hubSvg');
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
 
-        // Create button element
+    cfg.buttons.forEach((btn,i)=>{
+        const count = cfg.buttons.length;
+        const angle = (i/count)*2*Math.PI - Math.PI/2;
+        const cos = Math.cos(angle), sin = Math.sin(angle);
+
+        const bx = cx + cos*orbitR;
+        const by = cy + sin*orbitR;
+
+        // Line from ring EDGE to button center
+        const ex = cx + cos*(photoR+8);
+        const ey = cy + sin*(photoR+8);
+
         const el = document.createElement('a');
         el.href = btn.href;
-        el.className = `hub-btn ${btn.type === 'special' ? 'btn-special' : 'btn-standard'}`;
-        el.innerHTML = `<span>${btn.icon}</span> ${btn.name}`;
-        el.style.left = `calc(50% + ${x}px)`;
-        el.style.top = `calc(50% + ${y}px)`;
-        el.style.transform = 'translate(-50%, -50%)';
-
-        // Stagger delay
-        el.style.transitionDelay = `${i * 0.05}s`;
-
+        el.className = `orb ${btn.type==='spc'?'spc':'std'}`;
+        el.style.left  = bx+'px';
+        el.style.top   = by+'px';
+        el.style.transitionDelay = `${i*0.055}s`;
+        el.innerHTML = `<span>${btn.icon}</span>${btn.name}`;
         hub.appendChild(el);
 
-        // SVG line from center to button area
-        const svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        svgLine.setAttribute('x1', cx);
-        svgLine.setAttribute('y1', cy);
-        const bx = cx + x;
-        const by = cy + y;
-        svgLine.setAttribute('x2', bx);
-        svgLine.setAttribute('y2', by);
-        svgLine.classList.add('hub-line');
-        svgLine.style.transitionDelay = `${i * 0.05 + 0.1}s`;
-        document.getElementById('hubSvg').appendChild(svgLine);
+        const ln = document.createElementNS('http://www.w3.org/2000/svg','line');
+        ln.setAttribute('x1',ex); ln.setAttribute('y1',ey);
+        ln.setAttribute('x2',bx); ln.setAttribute('y2',by);
+        ln.classList.add('hub-line');
+        ln.style.transitionDelay = `${i*0.055+0.05}s`;
+        svg.appendChild(ln);
     });
 }
 
-// ===================================================
-// ADMIN — PASSWORD
-// ===================================================
-// In production: fetch password from Firebase settings collection
-// For demo: local password
-const DEMO_PASSWORD = 'admin123'; // REPLACE WITH FIREBASE FETCH
+window.addEventListener('resize',()=>{ if(hubOpen) renderOrbits(); });
 
-function openAdminPanel() {
-    document.getElementById('pwModal').classList.add('visible');
-    setTimeout(() => document.getElementById('pwInput').focus(), 100);
+// ================================================================
+// ADMIN FLOW
+// ================================================================
+function openAdminFlow(){
+    document.getElementById('pwInp').value='';
+    document.getElementById('pwModal').classList.add('on');
+    setTimeout(()=>document.getElementById('pwInp').focus(),150);
+}
+function closePw(){
+    document.getElementById('pwModal').classList.remove('on');
 }
 
-function closePwModal() {
-    document.getElementById('pwModal').classList.remove('visible');
-    document.getElementById('pwInput').value = '';
-}
+async function checkPw(){
+    const input = document.getElementById('pwInp').value.trim();
+    let correct = 'admin123';
 
-async function checkPassword() {
-    const input = document.getElementById('pwInput').value;
-    
-    // === FIREBASE CHECK (uncomment when using Firebase) ===
-    // const snap = await getDoc(doc(db, 'settings', 'adminPassword'));
-    // const realPw = snap.data()?.password;
-    // if (input === realPw) { ... }
+    if(window._db){
+        try{
+            const snap = await window._getDoc(window._doc(window._db,'settings','secrets'));
+            if(snap.exists() && snap.data().adminCode) correct = snap.data().adminCode;
+        }catch(e){ console.warn('pw:',e); }
+    }
 
-    // DEMO check:
-    if (input === DEMO_PASSWORD) {
-        closePwModal();
-        openAdminEditor();
+    if(input===correct){
+        closePw();
+        openAdmin();
     } else {
-        const inp = document.getElementById('pwInput');
-        inp.classList.add('error');
-        setTimeout(() => inp.classList.remove('error'), 400);
-        inp.value = '';
+        const inp=document.getElementById('pwInp');
+        inp.classList.add('err'); inp.value='';
+        setTimeout(()=>inp.classList.remove('err'),400);
     }
 }
 
-function openAdminEditor() {
-    document.getElementById('adminPanel').classList.add('visible');
-    renderAdminButtons();
-    renderPhotoPreview();
-    renderHitboxCanvas();
+function openAdmin(){
+    document.getElementById('adminPanel').classList.add('on');
+    renderAdminBtns();
+    renderPprev();
+    initHbCanvas();
+}
+function closeAdmin(){
+    document.getElementById('adminPanel').classList.remove('on');
 }
 
-function closeAdminPanel() {
-    document.getElementById('adminPanel').classList.remove('visible');
-}
-
-// ===================================================
+// ================================================================
 // ADMIN — PHOTO
-// ===================================================
-function handlePhotoUpload(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        hubConfig.photo = e.target.result;
-        renderPhotoPreview();
-        renderHitboxCanvas();
+// ================================================================
+function onPhoto(input){
+    const f=input.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=e=>{ cfg.photo=e.target.result; renderPprev(); initHbCanvas(); };
+    r.readAsDataURL(f);
+}
+function renderPprev(){
+    const p=document.getElementById('pprev');
+    if(cfg.photo) p.innerHTML=`<img src="${cfg.photo}" alt="">`;
+    else p.textContent='👤';
+}
+
+// ================================================================
+// HITBOX CANVAS — polygon (edges + points + closed detection)
+// ================================================================
+let hbPts=[], hbC, hbCtx, hbW, hbH, hbDrag=null;
+
+function initHbCanvas(){
+    hbC=document.getElementById('hbCanvas');
+    const wrap=hbC.parentElement;
+    hbW=wrap.clientWidth; hbH=wrap.clientHeight;
+    hbC.width=hbW; hbC.height=hbH;
+    hbCtx=hbC.getContext('2d');
+
+    hbPts=(cfg.hitboxPoints||[]).map(p=>({x:p.x*hbW, y:p.y*hbH}));
+
+    hbC.onmousedown  = e=>hbDown(e.offsetX,e.offsetY,false);
+    hbC.onmousemove  = e=>{ if(hbDrag!==null){ hbPts[hbDrag]={x:e.offsetX,y:e.offsetY}; drawHb(); } };
+    hbC.onmouseup    = ()=>hbDrag=null;
+    hbC.oncontextmenu= e=>{ e.preventDefault(); const {x,y}=hbOffset(e); hbRemoveNear(x,y); };
+
+    // Touch
+    hbC.ontouchstart = e=>{
+        e.preventDefault();
+        const t=hbTouchPos(e.touches[0]);
+        hbDown(t.x,t.y,true);
+        hbC._touchTimer=setTimeout(()=>{ hbRemoveNear(t.x,t.y); },600);
     };
-    reader.readAsDataURL(file);
+    hbC.ontouchmove = e=>{
+        clearTimeout(hbC._touchTimer);
+        if(hbDrag===null) return;
+        e.preventDefault();
+        const t=hbTouchPos(e.touches[0]);
+        hbPts[hbDrag]={x:t.x,y:t.y}; drawHb();
+    };
+    hbC.ontouchend = ()=>{ clearTimeout(hbC._touchTimer); hbDrag=null; };
+
+    drawHb();
 }
 
-function renderPhotoPreview() {
-    const prev = document.getElementById('photoPreview');
-    if (hubConfig.photo) {
-        prev.innerHTML = '';
-        prev.style.backgroundImage = `url(${hubConfig.photo})`;
-        prev.style.backgroundSize = 'cover';
-        prev.style.backgroundPosition = 'center';
-    } else {
-        prev.textContent = '👤';
+function hbOffset(e){
+    const r=hbC.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+}
+function hbTouchPos(t){
+    const r=hbC.getBoundingClientRect();
+    return {x:t.clientX-r.left, y:t.clientY-r.top};
+}
+function hbNear(x,y,rad=14){
+    for(let i=hbPts.length-1;i>=0;i--){
+        const dx=hbPts[i].x-x, dy=hbPts[i].y-y;
+        if(Math.sqrt(dx*dx+dy*dy)<=rad) return i;
     }
+    return -1;
+}
+function hbDown(x,y,isTouch){
+    const idx=hbNear(x,y,isTouch?20:13);
+    if(idx>=0) hbDrag=idx;
+    else { hbPts.push({x,y}); drawHb(); syncHbUI(); }
+}
+function hbRemoveNear(x,y){
+    const idx=hbNear(x,y,18);
+    if(idx>=0){ hbPts.splice(idx,1); drawHb(); syncHbUI(); }
 }
 
-// ===================================================
-// ADMIN — HITBOX CANVAS
-// ===================================================
-let hitboxPoints = [];
+function drawHb(){
+    hbCtx.clearRect(0,0,hbW,hbH);
 
-function renderHitboxCanvas() {
-    const wrap = document.querySelector('.hitbox-canvas-wrap');
-    const canvas = document.getElementById('hitboxCanvas');
-    const ctx = canvas.getContext('2d');
-    const W = wrap.clientWidth;
-    const H = wrap.clientHeight;
-    canvas.width = W;
-    canvas.height = H;
+    // Grid
+    hbCtx.strokeStyle='rgba(0,255,68,.06)'; hbCtx.lineWidth=1;
+    for(let x=0;x<=hbW;x+=40){hbCtx.beginPath();hbCtx.moveTo(x,0);hbCtx.lineTo(x,hbH);hbCtx.stroke();}
+    for(let y=0;y<=hbH;y+=40){hbCtx.beginPath();hbCtx.moveTo(0,y);hbCtx.lineTo(hbW,y);hbCtx.stroke();}
 
-    // Draw background image if available
-    ctx.clearRect(0, 0, W, H);
-    if (hubConfig.photo) {
-        const img = new Image();
-        img.onload = () => {
-            // Draw scaled + centered
-            const scale = Math.min(W/img.width, H/img.height) * 0.8;
-            const dw = img.width * scale;
-            const dh = img.height * scale;
-            const dx = (W - dw) / 2;
-            const dy = (H - dh) / 2;
-            ctx.globalAlpha = 0.4;
-            ctx.drawImage(img, dx, dy, dw, dh);
-            ctx.globalAlpha = 1;
-            drawHitboxOverlay(ctx, W, H);
+    if(cfg.photo){
+        const img=new Image();
+        img.onload=()=>{
+            const sc=Math.min(hbW/img.width,hbH/img.height)*.82;
+            const dw=img.width*sc, dh=img.height*sc;
+            hbCtx.globalAlpha=.28;
+            hbCtx.drawImage(img,(hbW-dw)/2,(hbH-dh)/2,dw,dh);
+            hbCtx.globalAlpha=1;
+            drawHbVerts();
         };
-        img.src = hubConfig.photo;
+        img.src=cfg.photo;
     } else {
-        // Draw grid
-        ctx.strokeStyle = 'rgba(0,255,68,0.1)';
-        ctx.lineWidth = 1;
-        for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-        for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-        ctx.fillStyle = 'rgba(0,255,68,0.3)';
-        ctx.font = '13px Rajdhani';
-        ctx.textAlign = 'center';
-        ctx.fillText('Завантаж фото щоб бачити його тут', W/2, H/2);
-        drawHitboxOverlay(ctx, W, H);
+        drawHbVerts();
     }
-
-    // Click to add point
-    canvas.onclick = (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const px = (e.clientX - rect.left) / rect.width;
-        const py = (e.clientY - rect.top) / rect.height;
-        hitboxPoints.push({ x: px, y: py });
-        hubConfig.hitboxPoints = hitboxPoints;
-        drawHitboxOverlay(ctx, W, H);
-        document.getElementById('pointsCount').textContent = hitboxPoints.length;
-        redrawPoints(W, H);
-    };
-
-    hitboxPoints = hubConfig.hitboxPoints || [];
-    document.getElementById('pointsCount').textContent = hitboxPoints.length;
-    redrawPoints(W, H);
+    syncHbUI();
 }
 
-function drawHitboxOverlay(ctx, W, H) {
-    hitboxPoints.forEach((p, i) => {
-        const x = p.x * W;
-        const y = p.y * H;
-        ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,255,68,0.8)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(0,255,68,0.3)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
+function drawHbVerts(){
+    const pts=hbPts;
+    if(pts.length===0) return;
+
+    const closed = pts.length>=3;
+    const col = closed ? 'rgba(0,255,68,.75)' : 'rgba(251,191,36,.75)';
+    const fill= closed ? 'rgba(0,255,68,.06)' : 'rgba(251,191,36,.04)';
+
+    // Polygon fill
+    hbCtx.beginPath();
+    pts.forEach((p,i)=>i===0?hbCtx.moveTo(p.x,p.y):hbCtx.lineTo(p.x,p.y));
+    if(closed) hbCtx.closePath();
+    hbCtx.fillStyle=fill; hbCtx.fill();
+
+    // Edges
+    hbCtx.setLineDash([5,5]); hbCtx.lineWidth=1.5; hbCtx.strokeStyle=col;
+    hbCtx.beginPath();
+    pts.forEach((p,i)=>i===0?hbCtx.moveTo(p.x,p.y):hbCtx.lineTo(p.x,p.y));
+    if(closed) hbCtx.closePath();
+    hbCtx.stroke();
+    hbCtx.setLineDash([]);
+
+    // Points
+    pts.forEach((p,i)=>{
+        // Glow ring
+        hbCtx.beginPath(); hbCtx.arc(p.x,p.y,9,0,Math.PI*2);
+        hbCtx.strokeStyle=closed?'rgba(0,255,68,.22)':'rgba(251,191,36,.22)';
+        hbCtx.lineWidth=2; hbCtx.stroke();
+        // Dot
+        hbCtx.beginPath(); hbCtx.arc(p.x,p.y,5,0,Math.PI*2);
+        hbCtx.fillStyle=closed?'#00ff44':'#fbbf24'; hbCtx.fill();
+        // Label
+        hbCtx.fillStyle=closed?'#00ff44':'#fbbf24';
+        hbCtx.font='bold 9px Orbitron,monospace';
+        hbCtx.fillText(`P${i+1}`,p.x+11,p.y-5);
     });
 }
 
-function redrawPoints(W, H) {
-    const container = document.getElementById('hitboxPoints');
-    container.innerHTML = '';
-    hitboxPoints.forEach((p, i) => {
-        const dot = document.createElement('div');
-        dot.className = 'hitbox-point';
-        dot.style.left = (p.x * 100) + '%';
-        dot.style.top = (p.y * 100) + '%';
-        dot.title = `Точка ${i + 1}`;
-
-        const lbl = document.createElement('div');
-        lbl.className = 'hitbox-point-label';
-        lbl.textContent = `P${i+1}`;
-        dot.appendChild(lbl);
-
-        // Right-click to delete
-        dot.oncontextmenu = (e) => {
-            e.preventDefault();
-            hitboxPoints.splice(i, 1);
-            hubConfig.hitboxPoints = hitboxPoints;
-            const canvas = document.getElementById('hitboxCanvas');
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            renderHitboxCanvas();
-        };
-
-        container.appendChild(dot);
-    });
+function syncHbUI(){
+    document.getElementById('hbN').textContent=hbPts.length;
+    const ok=hbPts.length>=3;
+    const s=document.getElementById('hbS');
+    s.textContent=ok?'✅ Замкнений':'⚠ Відкритий';
+    s.style.color=ok?'var(--pr)':'var(--yel)';
 }
 
-function clearHitboxPoints() {
-    hitboxPoints = [];
-    hubConfig.hitboxPoints = [];
-    renderHitboxCanvas();
-    document.getElementById('pointsCount').textContent = 0;
-}
+function clearHb(){ hbPts=[]; drawHb(); }
+function undoHb(){ if(hbPts.length>0){ hbPts.pop(); drawHb(); } }
 
-// ===================================================
+// ================================================================
 // ADMIN — BUTTONS LIST
-// ===================================================
-function renderAdminButtons() {
-    const list = document.getElementById('btnList');
-    list.innerHTML = '';
-    hubConfig.buttons.forEach((btn, i) => {
-        const row = document.createElement('div');
-        row.className = 'btn-list-item';
-        row.dataset.id = btn.id;
-        row.draggable = true;
-        row.innerHTML = `
-            <div class="drag-handle">⠿</div>
-            <input type="text" class="admin-input" placeholder="Назва..." value="${btn.name}"
-                   onchange="updateButton(${btn.id}, 'name', this.value)">
-            <input type="text" class="admin-input" placeholder="посилання.html" value="${btn.href}"
-                   onchange="updateButton(${btn.id}, 'href', this.value)">
-            <select class="admin-select" onchange="updateButton(${btn.id}, 'type', this.value)">
-                <option value="standard" ${btn.type==='standard'?'selected':''}>Звичайна</option>
-                <option value="special" ${btn.type==='special'?'selected':''}>Особлива</option>
+// ================================================================
+function renderAdminBtns(){
+    const list=document.getElementById('blist');
+    list.innerHTML='';
+    cfg.buttons.forEach((btn,i)=>{
+        const row=document.createElement('div');
+        row.className='brow'; row.draggable=true; row.dataset.id=btn.id;
+        row.innerHTML=`
+            <div class="dh" title="Перетягни">⠿</div>
+            <input class="ai" type="text" placeholder="Назва..." value="${esc(btn.name)}"
+                   onchange="updB(${btn.id},'name',this.value)">
+            <input class="ai href-col" type="text" placeholder="link.html" value="${esc(btn.href)}"
+                   onchange="updB(${btn.id},'href',this.value)">
+            <select class="ai-s type-col" onchange="updB(${btn.id},'type',this.value)">
+                <option value="std" ${btn.type==='std'?'selected':''}>Звичайна</option>
+                <option value="spc" ${btn.type==='spc'?'selected':''}>Особлива</option>
             </select>
-            <input type="text" class="admin-input" placeholder="🎯" value="${btn.icon}" maxlength="4"
-                   onchange="updateButton(${btn.id}, 'icon', this.value)" style="text-align:center; font-size:18px;">
-            <button class="btn-delete-item" onclick="deleteButton(${btn.id})">🗑</button>
+            <input class="ai ai-ic icon-col" type="text" maxlength="4" value="${btn.icon}"
+                   onchange="updB(${btn.id},'icon',this.value)">
+            <button class="delbtn" onclick="delB(${btn.id})">🗑</button>
         `;
-
-        // Drag-and-drop reorder
-        row.ondragstart = (e) => { e.dataTransfer.setData('id', btn.id); row.style.opacity = '0.4'; };
-        row.ondragend = () => { row.style.opacity = '1'; };
-        row.ondragover = (e) => { e.preventDefault(); };
-        row.ondrop = (e) => {
+        row.ondragstart=e=>{ e.dataTransfer.setData('bid',btn.id); row.style.opacity='.4'; };
+        row.ondragend  =()=>{ row.style.opacity='1'; };
+        row.ondragover =e=>e.preventDefault();
+        row.ondrop     =e=>{
             e.preventDefault();
-            const draggedId = parseInt(e.dataTransfer.getData('id'));
-            const targetId = btn.id;
-            if (draggedId === targetId) return;
-            const di = hubConfig.buttons.findIndex(b => b.id === draggedId);
-            const ti = hubConfig.buttons.findIndex(b => b.id === targetId);
-            const [dragged] = hubConfig.buttons.splice(di, 1);
-            hubConfig.buttons.splice(ti, 0, dragged);
-            renderAdminButtons();
+            const fi=cfg.buttons.findIndex(b=>b.id===parseInt(e.dataTransfer.getData('bid')));
+            const ti=cfg.buttons.findIndex(b=>b.id===btn.id);
+            if(fi===ti) return;
+            const [m]=cfg.buttons.splice(fi,1); cfg.buttons.splice(ti,0,m);
+            renderAdminBtns();
         };
-
         list.appendChild(row);
     });
 }
 
-function updateButton(id, field, value) {
-    const btn = hubConfig.buttons.find(b => b.id === id);
-    if (btn) btn[field] = value;
+function updB(id,f,v){ const b=cfg.buttons.find(b=>b.id===id); if(b) b[f]=v; }
+function addBtn(){
+    cfg.buttons.push({id:Date.now(),name:'Нова кнопка',href:'#',type:'std',icon:'🔗'});
+    renderAdminBtns();
 }
+function delB(id){ cfg.buttons=cfg.buttons.filter(b=>b.id!==id); renderAdminBtns(); }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
-function addButton() {
-    const newId = Date.now();
-    hubConfig.buttons.push({ id: newId, name: 'Нова кнопка', href: '#', type: 'standard', icon: '🔗' });
-    renderAdminButtons();
-}
+// ================================================================
+// SAVE
+// ================================================================
+async function saveAll(){
+    cfg.hitboxPoints=(hbPts||[]).map(p=>({x:p.x/hbW,y:p.y/hbH}));
+    localStorage.setItem('dshv_hub',JSON.stringify(cfg));
 
-function deleteButton(id) {
-    hubConfig.buttons = hubConfig.buttons.filter(b => b.id !== id);
-    renderAdminButtons();
-}
-
-// ===================================================
-// SAVE CONFIG
-// ===================================================
-function saveConfig() {
-    localStorage.setItem('dshv_hub_config', JSON.stringify(hubConfig));
-    
-    // === FIREBASE SAVE (uncomment when using Firebase) ===
-    // await setDoc(doc(db, 'settings', 'hubConfig'), hubConfig);
+    if(window._db){
+        try{
+            const toSave={buttons:cfg.buttons,hitboxPoints:cfg.hitboxPoints};
+            if(cfg.photo&&!cfg.photo.startsWith('data:')) toSave.photo=cfg.photo;
+            await window._setDoc(window._doc(window._db,'settings','hubConfig'),toSave);
+        }catch(e){ console.warn('fb save:',e); }
+    }
 
     renderHub();
-    closeAdminPanel();
-    showToast('✅ Збережено та застосовано!', 'success');
+    closeAdmin();
+    toast('✅ Збережено та застосовано!','ok');
 }
 
-function showToast(msg, type = '') {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.className = `toast show ${type}`;
-    setTimeout(() => t.className = 'toast', 3000);
+// ================================================================
+// TOAST
+// ================================================================
+function toast(msg,cls=''){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.className=`toast on ${cls}`;
+    setTimeout(()=>t.className='toast',3200);
 }
-
-// ===================================================
-// INIT
-// ===================================================
-loadConfig();
 </script>
 </body>
 </html>
