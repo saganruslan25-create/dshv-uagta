@@ -56,13 +56,31 @@
             touch-action: manipulation;
         }
 
-        /* Grid background */
+        /* Aurora neon background */
         body::before {
             content:'';
             position:fixed; inset:0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 50%, rgba(0,255,68,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 80% at 80% 30%, rgba(0,200,255,0.05) 0%, transparent 55%),
+                radial-gradient(ellipse 70% 50% at 50% 80%, rgba(0,255,68,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse 50% 70% at 10% 10%, rgba(0,180,255,0.04) 0%, transparent 50%);
+            animation: auroraDrift 14s ease-in-out infinite alternate;
+            pointer-events:none; z-index:0;
+        }
+        @keyframes auroraDrift {
+            0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0% 100%; opacity:1; }
+            33%  { background-position: 30% 20%, 70% 40%, 80% 60%, 20% 80%; opacity:.85; }
+            66%  { background-position: 60% 50%, 30% 70%, 20% 30%, 70% 20%; opacity:1; }
+            100% { background-position: 10% 80%, 90% 10%, 60% 80%, 40% 50%; opacity:.9; }
+        }
+        /* Grid overlay */
+        body::after {
+            content:'';
+            position:fixed; inset:0;
             background-image:
-                repeating-linear-gradient(0deg,  transparent, transparent 49px, rgba(0,255,68,.025) 50px),
-                repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,255,68,.025) 50px);
+                repeating-linear-gradient(0deg,  transparent, transparent 49px, rgba(0,255,68,.018) 50px),
+                repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,255,68,.018) 50px);
             pointer-events:none; z-index:0;
         }
 
@@ -197,11 +215,11 @@
         .orb {
             position:absolute;
             /* positioned by JS */
-            transform:translate(-50%,-50%) scale(.55);
+            transform:translate(-50%,-50%) scale(.7) translateY(8px);
             opacity:0; pointer-events:none;
             transition:
-                opacity .35s ease,
-                transform .45s cubic-bezier(.34,1.56,.64,1);
+                opacity .5s cubic-bezier(.22,1,.36,1),
+                transform .5s cubic-bezier(.22,1,.36,1);
             z-index:20;
             text-decoration:none;
             white-space:nowrap;
@@ -216,7 +234,7 @@
         }
         .hub.open .orb {
             opacity:1; pointer-events:all;
-            transform:translate(-50%,-50%) scale(1);
+            transform:translate(-50%,-50%) scale(1) translateY(0);
         }
         .orb.std {
             background:rgba(6,11,17,.93);
@@ -272,45 +290,148 @@
         /* ===== PW MODAL ===== */
         #pwModal {
             position:fixed; inset:0; z-index:5000;
-            background:rgba(0,0,0,.93);
+            background:rgba(0,0,0,0);
             display:none; align-items:center; justify-content:center;
-            backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px);
+            backdrop-filter:blur(0px); -webkit-backdrop-filter:blur(0px);
+            transition: background .35s, backdrop-filter .35s;
         }
-        #pwModal.on { display:flex; }
+        #pwModal.on {
+            display:flex;
+            background:rgba(0,5,2,.82);
+            backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+            animation: modalFadeIn .3s ease forwards;
+        }
+        @keyframes modalFadeIn {
+            from { background:rgba(0,0,0,0); backdrop-filter:blur(0px); }
+            to   { background:rgba(0,5,2,.82); backdrop-filter:blur(22px); }
+        }
+        @keyframes modalFadeOut {
+            from { background:rgba(0,5,2,.82); backdrop-filter:blur(22px); opacity:1; }
+            to   { background:rgba(0,0,0,0); backdrop-filter:blur(0px); opacity:0; }
+        }
         .pw-box {
-            background:rgba(5,8,14,.98);
-            border:1px solid var(--gb); border-radius:20px;
-            padding:38px 32px; width:90%; max-width:350px; text-align:center;
-            box-shadow:0 0 55px rgba(0,255,68,.13);
-            animation:popIn .22s ease;
+            background: linear-gradient(160deg, rgba(6,13,10,.98) 0%, rgba(3,7,5,.99) 100%);
+            border:1px solid rgba(0,255,68,.22);
+            border-radius:24px;
+            padding:0; width:90%; max-width:360px;
+            box-shadow:
+                0 0 0 1px rgba(0,255,68,.06) inset,
+                0 0 60px rgba(0,255,68,.12),
+                0 30px 80px rgba(0,0,0,.7);
+            animation: pwSlideIn .4s cubic-bezier(.22,1,.36,1);
+            overflow:hidden;
+            position:relative;
         }
-        @keyframes popIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
-        .pw-box h2{font-family:'Orbitron',monospace;font-size:12px;color:var(--pr);letter-spacing:3px;margin-bottom:7px;}
-        .pw-box p{color:var(--gr);font-size:12px;margin-bottom:22px;letter-spacing:.4px;}
+        @keyframes pwSlideIn {
+            from { transform:scale(.88) translateY(24px); opacity:0; }
+            to   { transform:scale(1) translateY(0); opacity:1; }
+        }
+        /* Top accent bar */
+        .pw-bar {
+            height:3px;
+            background: linear-gradient(90deg, transparent, #00ff44, rgba(0,200,255,.8), #00ff44, transparent);
+            background-size: 200% 100%;
+            animation: barShimmer 2.5s linear infinite;
+        }
+        @keyframes barShimmer { to { background-position: -200% 0; } }
+
+        .pw-inner { padding:32px 28px 28px; text-align:center; }
+
+        /* Close X button */
+        .pw-close {
+            position:absolute; top:14px; right:14px;
+            width:28px; height:28px; border-radius:8px;
+            background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1);
+            color:rgba(255,255,255,.4); font-size:14px; cursor:pointer;
+            display:flex; align-items:center; justify-content:center;
+            transition: all .2s; line-height:1;
+        }
+        .pw-close:hover { background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.5); color:var(--red); }
+
+        .pw-icon {
+            width:52px; height:52px; margin:0 auto 16px;
+            border-radius:50%; border:1px solid rgba(0,255,68,.25);
+            background:rgba(0,255,68,.07);
+            display:flex; align-items:center; justify-content:center;
+            font-size:22px;
+            box-shadow: 0 0 24px rgba(0,255,68,.15);
+            animation: iconPulse 3s ease-in-out infinite;
+        }
+        @keyframes iconPulse {
+            0%,100% { box-shadow:0 0 18px rgba(0,255,68,.15); }
+            50%      { box-shadow:0 0 32px rgba(0,255,68,.32), 0 0 60px rgba(0,255,68,.08); }
+        }
+        .pw-box h2 {
+            font-family:'Orbitron',monospace; font-size:13px;
+            color:var(--pr); letter-spacing:3px; margin-bottom:5px;
+        }
+        .pw-box p { color:var(--gr); font-size:11px; margin-bottom:24px; letter-spacing:.5px; }
+
+        /* Input wrapper with eye toggle */
+        .pw-inp-wrap {
+            position:relative; margin-bottom:12px;
+        }
         .pw-inp {
-            width:100%; background:#000; border:1px solid rgba(255,255,255,.1);
-            color:white; padding:13px; border-radius:10px;
+            width:100%; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.1);
+            color:white; padding:13px 44px 13px 16px; border-radius:12px;
             font-family:'Rajdhani',sans-serif; font-size:18px;
-            text-align:center; letter-spacing:6px; outline:none; margin-bottom:13px;
-            transition:border-color .2s, box-shadow .2s;
+            letter-spacing:5px; outline:none;
+            transition:border-color .25s, box-shadow .25s;
         }
-        .pw-inp:focus{border-color:var(--pr);box-shadow:0 0 16px rgba(0,255,68,.16);}
-        .pw-inp.err{border-color:var(--red);animation:shake .3s;}
-        @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
-        .pw-go{
-            width:100%; padding:12px; background:var(--pr); color:#000;
-            border:none; border-radius:10px;
-            font-family:'Orbitron',monospace; font-weight:700; font-size:11px;
+        .pw-inp:focus { border-color:var(--pr); box-shadow:0 0 0 3px rgba(0,255,68,.08), 0 0 20px rgba(0,255,68,.12); }
+        .pw-inp.err { border-color:var(--red); animation:shake .35s; box-shadow:0 0 0 3px rgba(239,68,68,.08); }
+        @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}80%{transform:translateX(-4px)}}
+        .pw-eye {
+            position:absolute; right:12px; top:50%; transform:translateY(-50%);
+            background:none; border:none; color:rgba(255,255,255,.3);
+            cursor:pointer; font-size:16px; padding:4px;
+            transition:color .2s; line-height:1;
+        }
+        .pw-eye:hover { color:var(--pr); }
+
+        /* Loading spinner shown while checking */
+        .pw-spinner {
+            display:none; width:18px; height:18px;
+            border:2px solid rgba(0,255,68,.2); border-top-color:var(--pr);
+            border-radius:50%; animation:spin .7s linear infinite; margin:0 auto 12px;
+        }
+        .pw-spinner.on { display:block; }
+
+        /* Buttons row */
+        .pw-btns { display:flex; gap:10px; }
+        .pw-go {
+            flex:1; padding:13px;
+            background: linear-gradient(135deg,#00ff44,#00cc35);
+            color:#000; border:none; border-radius:12px;
+            font-family:'Orbitron',monospace; font-weight:700; font-size:10px;
             letter-spacing:2px; cursor:pointer;
-            box-shadow:0 0 16px rgba(0,255,68,.28); transition:box-shadow .2s;
+            box-shadow:0 0 18px rgba(0,255,68,.28), 0 4px 14px rgba(0,0,0,.4);
+            transition:box-shadow .25s, transform .15s;
+            position:relative; overflow:hidden;
         }
-        .pw-go:hover{box-shadow:0 0 32px rgba(0,255,68,.5);}
-        .pw-cancel{
-            display:block; margin-top:11px; background:none; border:none;
-            color:var(--gr); font-family:'Rajdhani',sans-serif;
-            font-size:12px; cursor:pointer; letter-spacing:1px; transition:color .2s;
+        .pw-go::after {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg, transparent 0%, rgba(255,255,255,.18) 50%, transparent 100%);
+            transform:translateX(-100%);
+            transition:transform .5s;
         }
-        .pw-cancel:hover{color:white;}
+        .pw-go:hover::after { transform:translateX(100%); }
+        .pw-go:hover { box-shadow:0 0 36px rgba(0,255,68,.5), 0 6px 20px rgba(0,0,0,.5); transform:translateY(-1px); }
+        .pw-go:active { transform:translateY(0); }
+        .pw-cancel {
+            padding:13px 18px; background:rgba(255,255,255,.04);
+            border:1px solid rgba(255,255,255,.1); color:rgba(255,255,255,.45);
+            border-radius:12px; font-family:'Rajdhani',sans-serif;
+            font-weight:600; font-size:13px; cursor:pointer; letter-spacing:.5px;
+            transition:all .2s; white-space:nowrap;
+        }
+        .pw-cancel:hover { background:rgba(239,68,68,.08); border-color:rgba(239,68,68,.3); color:var(--red); }
+
+        .pw-msg {
+            font-size:11px; min-height:18px; margin-top:10px;
+            text-align:center; transition:opacity .3s; opacity:0; letter-spacing:.5px;
+        }
+        .pw-msg.on { opacity:1; }
 
         /* ===== ADMIN PANEL ===== */
         #adminPanel {
@@ -513,12 +634,24 @@
 <!-- PASSWORD MODAL -->
 <div id="pwModal">
     <div class="pw-box">
-        <h2>АДМІН ДОСТУП</h2>
-        <p>Введіть секретний код адміністратора</p>
-        <input type="password" class="pw-inp" id="pwInp" placeholder="••••••" maxlength="40"
-               onkeydown="if(event.key==='Enter')checkPw()">
-        <button class="pw-go" onclick="checkPw()">ПІДТВЕРДИТИ</button>
-        <button class="pw-cancel" onclick="closePw()">Скасувати</button>
+        <div class="pw-bar"></div>
+        <button class="pw-close" onclick="closePw()" title="Закрити">✕</button>
+        <div class="pw-inner">
+            <div class="pw-icon">🔐</div>
+            <h2>АДМІН ДОСТУП</h2>
+            <p>Введіть секретний код адміністратора</p>
+            <div class="pw-inp-wrap">
+                <input type="password" class="pw-inp" id="pwInp" placeholder="••••••••" maxlength="40"
+                       onkeydown="if(event.key==='Enter')checkPw()">
+                <button class="pw-eye" id="pwEye" onclick="togglePwEye()" title="Показати/приховати">👁</button>
+            </div>
+            <div class="pw-spinner" id="pwSpinner"></div>
+            <div class="pw-btns">
+                <button class="pw-cancel" onclick="closePw()">СКАСУВАТИ</button>
+                <button class="pw-go" id="pwGoBtn" onclick="checkPw()">УВІЙТИ</button>
+            </div>
+            <div class="pw-msg" id="pwMsg"></div>
+        </div>
     </div>
 </div>
 
@@ -732,38 +865,51 @@ window.addEventListener('resize',()=>{ if(hubOpen) renderOrbits(); });
 // ADMIN FLOW
 // ================================================================
 function openAdminFlow(){
-    document.getElementById('pwInp').value='';
+    const inp=document.getElementById('pwInp');
+    inp.value=''; inp.type='password';
+    document.getElementById('pwEye').textContent='👁';
+    document.getElementById('pwMsg').classList.remove('on');
     document.getElementById('pwModal').classList.add('on');
-    setTimeout(()=>document.getElementById('pwInp').focus(),150);
+    setTimeout(()=>inp.focus(),180);
 }
 function closePw(){
-    document.getElementById('pwModal').classList.remove('on');
+    const modal=document.getElementById('pwModal');
+    modal.style.animation='modalFadeOut .25s ease forwards';
+    setTimeout(()=>{ modal.classList.remove('on'); modal.style.animation=''; },240);
+}
+function togglePwEye(){
+    const inp=document.getElementById('pwInp');
+    const eye=document.getElementById('pwEye');
+    if(inp.type==='password'){ inp.type='text'; eye.textContent='🙈'; }
+    else { inp.type='password'; eye.textContent='👁'; }
 }
 
 async function checkPw(){
     const input = document.getElementById('pwInp').value.trim();
     if(!input) return;
 
-    const btn = document.querySelector('#pwModal button');
-    if(btn){ btn.disabled=true; btn.textContent='...'; }
+    const btn=document.getElementById('pwGoBtn');
+    const spinner=document.getElementById('pwSpinner');
+    btn.disabled=true; btn.textContent='...';
+    spinner.classList.add('on');
 
     let correct = 'admin123';
-
     if(window._db){
         try{
             const snap = await window._getDoc(window._doc(window._db,'settings','secrets'));
             if(snap.exists() && snap.data().adminCode) correct = snap.data().adminCode;
         }catch(e){
             console.warn('pw:',e);
-            showPwMsg('⚠ Firebase офлайн. Локальний пароль.','warn');
+            showPwMsg('⚠ Firebase офлайн','warn');
         }
     }
 
-    if(btn){ btn.disabled=false; btn.textContent='УВІЙТИ'; }
+    btn.disabled=false; btn.textContent='УВІЙТИ';
+    spinner.classList.remove('on');
 
     if(input===correct){
         closePw();
-        openAdmin();
+        setTimeout(openAdmin,260);
     } else {
         const inp=document.getElementById('pwInp');
         inp.classList.add('err'); inp.value='';
@@ -773,20 +919,12 @@ async function checkPw(){
 }
 
 function showPwMsg(text, type){
-    let el = document.getElementById('pwMsg');
-    if(!el){
-        el = document.createElement('div');
-        el.id = 'pwMsg';
-        el.style.cssText='font-size:12px;margin-top:8px;text-align:center;transition:opacity .3s;';
-        const modal = document.getElementById('pwModal');
-        const inp = modal.querySelector('input');
-        inp.parentNode.insertBefore(el, inp.nextSibling);
-    }
-    el.textContent = text;
+    const el=document.getElementById('pwMsg');
+    el.textContent=text;
     el.style.color = type==='err' ? '#ef4444' : '#fbbf24';
-    el.style.opacity = '1';
+    el.classList.add('on');
     clearTimeout(el._t);
-    el._t = setTimeout(()=>{ el.style.opacity='0'; }, 3000);
+    el._t=setTimeout(()=>el.classList.remove('on'),3000);
 }
 
 function openAdmin(){
