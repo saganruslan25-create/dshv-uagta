@@ -2,1183 +2,1065 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ДШВ | COMMAND CENTER</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
     <style>
-        /* ОСНОВНІ ПАРАМЕТРИ КОЛЬОРІВ */
         :root {
-            --primary: #00ff44;       /* Яскравий кислотно-зелений */
-            --primary-bright: #e0ffe8; 
-            --primary-glow: rgba(0, 255, 68, 0.7); 
+            --primary: #00ff44;
+            --primary-dim: rgba(0,255,68,0.15);
+            --primary-glow: rgba(0,255,68,0.7);
             --bg: #030507;
-            --card-bg: rgba(10, 12, 16, 0.6);
-            --glass-border: rgba(0, 255, 68, 0.3);
+            --card-bg: rgba(10,12,16,0.85);
+            --glass-border: rgba(0,255,68,0.25);
             --danger: #ef4444;
-            --danger-glow: rgba(239, 68, 68, 0.6);
-            --warning: #fbbf24; 
-            --text-gray: #94a3b8;
+            --warning: #fbbf24;
+            --text-gray: #5a7080;
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            margin: 0; padding: 0;
-            background-color: var(--bg);
-            background-image: 
-                radial-gradient(circle at 15% 50%, rgba(0, 255, 68, 0.25), transparent 50%),
-                radial-gradient(circle at 85% 30%, rgba(0, 255, 68, 0.25), transparent 50%);
-            background-size: 100% 100%;
-            background-attachment: fixed;
-            color: white; 
-            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 80% 60% at 50% 50%, rgba(0,255,68,0.04) 0%, transparent 70%),
+                repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(0,255,68,0.03) 50px),
+                repeating-linear-gradient(90deg, transparent, transparent 49px, rgba(0,255,68,0.03) 50px);
             min-height: 100vh;
+            font-family: 'Rajdhani', sans-serif;
+            color: white;
             overflow-x: hidden;
-            user-select: none; 
-            -webkit-user-select: none;
+            user-select: none;
         }
 
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #05070a; }
-        ::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 10px;
-            box-shadow: 0 0 10px var(--primary);
-        }
-
-        /* ГЛОБАЛЬНИЙ ПЕРЕХІД КЛАС */
-        * { box-sizing: border-box; transition: all 0.2s ease; }
-        
-        input, textarea { user-select: text !important; -webkit-user-select: text !important; }
-
-        /* АНІМАЦІЯ НАВЕДЕННЯ */
-        .menu-item:hover, .info-box:hover, .profile-card:hover, .staff-item:hover, 
-        .btn-action-g:hover, .btn-action-r:hover, .btn-manage:hover, .logo-box:hover, 
-        .btn-lock-menu:hover, .btn-verify:hover, .edit-icon:hover, .staff-toggle-btn:hover {
-            transform: translateY(-1px); 
-            border-color: var(--primary);
-            box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(0,255,102,0.1);
-            text-shadow: 0 0 8px var(--primary);
-            z-index: 10;
-        }
-
-        /* ЕКРАНИ */
-        #verifyWaitingScreen, #banScreen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(3,5, 7, 0.98); z-index: 9999; display: none;
-            flex-direction: column; align-items: center; justify-content: center;
-            text-align: center; padding: 20px;
-        }
-        #verifyWaitingScreen h1 { color: var(--primary); font-size: 36px; font-weight: 900; margin-bottom: 20px; text-shadow: 0 0 30px var(--primary); }
-        #banScreen { background: #000; z-index: 10000; color: var(--danger); }
-
-        /* ШАПКА */
+        /* ===== HEADER ===== */
         header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 5%; background: rgba(3,5, 7, 0.8);
+            padding: 14px 5%;
+            background: rgba(3,5,7,0.9);
             border-bottom: 1px solid var(--glass-border);
-            position: sticky; top: 0; z-index: 1000;
-            box-shadow: 0 0 20px rgba(0,255,102,0.2);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 0 30px rgba(0,255,68,0.1);
         }
-        .logo-box { 
-            background: var(--primary); color: black; padding: 6px 14px; 
-            border-radius: 8px; font-weight:900; text-decoration: none; font-size: 15px;
-            text-transform: uppercase;
-            box-shadow: 0 0 20px var(--primary);
+        .logo-box {
+            font-family: 'Orbitron', monospace;
+            background: var(--primary); color: #000;
+            padding: 6px 16px; border-radius: 8px;
+            font-weight: 900; font-size: 14px; letter-spacing: 2px;
+            text-decoration: none;
+            box-shadow: 0 0 25px var(--primary);
         }
-        .header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .header-btn {
+            background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            color: rgba(255,255,255,0.7); padding: 8px 16px; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-weight: 600; font-size: 13px;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.5px;
+            text-decoration: none; display: inline-block;
+        }
+        .header-btn:hover { border-color: var(--primary); color: var(--primary); box-shadow: 0 0 12px rgba(0,255,68,0.3); }
+        .header-btn.admin-btn { border-color: rgba(251,191,36,0.4); color: var(--warning); }
+        .header-btn.admin-btn:hover { background: rgba(251,191,36,0.1); box-shadow: 0 0 12px rgba(251,191,36,0.3); }
 
-        .btn-small-header {
-            background: rgba(255,255,255, 0.05); border: 1px solid var(--primary);
-            color: var(--primary-bright); padding: 8px 15px; border-radius: 10px;
-            font-weight: 900; cursor: pointer; font-size: 12px;
-        }
-        .btn-small-header:hover { 
-            background: var(--primary); 
-            color: black; 
-            border: none; 
-            box-shadow: 0 0 15px var(--primary); 
-        }
-        
-        .btn-square-header {
-            background: rgba(255,255,255, 0.05); border: 1px solid var(--primary);
-            color: var(--primary-bright); width: 38px; height: 38px; border-radius: 10px;
-            font-weight: 900; cursor: pointer; font-size: 18px;
+        /* ===== MAIN STAGE ===== */
+        .stage {
+            min-height: 100vh;
             display: flex; align-items: center; justify-content: center;
-            text-decoration: none; flex-shrink: 0;
-            box-shadow: 0 0 8px rgba(0,255,68,0.15);
-        }
-        .btn-square-header:hover { 
-            background: var(--primary); 
-            color: black; 
-            border-color: var(--primary);
-            box-shadow: 0 0 15px var(--primary);
-            transform: translateY(-1px);
-        }
-        
-        .btn-logout-custom {
-            background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger);
-            color: var(--danger); padding: 10px 20px; border-radius: 10px;
-            font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 13px;
-        }
-        .btn-logout-custom:hover { background: var(--danger); color: white; transform: translateY(-2px); box-shadow: 0 0 20px var(--danger); }
-
-        /* СПОВІЩЕННЯ */
-        .notif-wrapper { position: relative; cursor: pointer; padding: 5px; z-index: 2001; }
-        .bell-icon { font-size: 24px; color: var(--warning); filter: drop-shadow(0 0 8px var(--warning)); }
-        .bell-badge { 
-            position: absolute; top: -2px; right: -2px; 
-            background: var(--danger); color: white; font-size: 10px; font-weight: 900;
-            padding: 2px 5px; border-radius: 50%; border: 2px solid var(--bg);
-            display: none; animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-        
-        #notifDropdown {
-            position: absolute; top: 70px; right: 5%; width: 340px; 
-            background: rgba(10, 15, 25, 0.95); border: 1px solid var(--glass-border); border-radius: 15px;
-            display: none; flex-direction: column; padding: 0; z-index: 2000; 
-            box-shadow: 0 0 40px rgba(0,0,0,0.9); overflow: hidden;
-        }
-        .notif-header {
-            padding: 12px 15px; background: rgba(255,255,255,0.05);
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--glass-border);
-        }
-        .notif-item-link {
-            padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer;
-            display: flex; flex-direction: column; text-decoration: none; color: white;
-            user-select: text;
-        }
-        .notif-item-link:hover { background: rgba(255,255,255,0.05); }
-        .notif-item-link.read { opacity: 0.5; filter: grayscale(1); }
-        .notif-text { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
-        .notif-time { font-size: 10px; color: var(--text-gray); }
-
-        /* СІТКА */
-        .main-wrapper { display: flex; justify-content: center; padding: 30px 5%; }
-        .main-container {
-            display: grid; grid-template-columns: 270px 400px 1fr; gap: 20px;
-            width: 100%; max-width: 1550px;
-        }
-        .side-menu, .profile-card, .info-box {
-            background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
-            position: relative; 
-        }
-
-        /* МЕНЮ */
-        .side-menu { padding: 18px; display: flex; flex-direction: column; gap: 10px; }
-        .menu-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 18px; background: rgba(255,255,255,0.02); border-radius: 12px;
-            color: white; text-decoration: none; font-size:14px; font-weight:600;
-            border: 1px solid transparent;
-        }
-        .menu-item:hover {
-            background: rgba(0, 255, 68, 0.15); 
-            color: var(--primary-bright);
-            border-color: var(--primary);
-            transform: translateY(-1px); 
-            box-shadow: 0 0 20px var(--primary-glow);
-        }
-        .fire-dot { width: 9px; height: 9px; background: var(--danger); border-radius: 50%; display: none; }
-        .btn-lock-menu {
-            margin-top: auto; padding: 14px; border-radius: 12px; font-weight: 900; font-size: 12px;
-            text-transform: uppercase; cursor: pointer; border: 1px solid var(--danger);
-            background: rgba(239, 68, 68, 0.05); color: var(--danger); display: none; text-align: center;
-        }
-
-        /* ПРОФІЛЬ (КАРТКА) */
-        .profile-card { 
-            padding: 35px 20px; text-align: center; display: flex; flex-direction: column; 
-            align-items: center; justify-content: center; border: 1px solid var(--primary);
-            box-shadow: 0 0 40px rgba(0, 255, 68, 0.2);
-        }
-        .avatar-circle { 
-            width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--primary); 
-            display: flex; align-items: center; justify-content: center; font-size: 60px; 
-            margin-bottom: 20px; background: #111;
-            box-shadow: 0 0 25px var(--primary-glow);
-        }
-        .user-name { font-size: 26px; font-weight: 900; margin-bottom: 5px; text-transform: uppercase; letter-spacing: -0.5px; color: white; text-shadow: 0 0 10px rgba(255,255,255,0.4); }
-        
-        .profile-card h2, .profile-card h6 {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            color: var(--primary-bright); 
-            letter-spacing: 2px; margin: 5px 0;
-            text-align: center; 
-        }
-        
-        .profile-card h2 { font-weight: 900; font-size: 28px; text-shadow: 0 0 15px var(--primary); }
-        .profile-card h6 { font-weight: 700; font-size: 14px; }
-        .id-badge { background: var(--primary); color: black; padding: 8px 25px; border-radius: 10px; font-weight: 900; font-size: 14px; margin-top: 15px; box-shadow: 0 0 15px var(--primary); }
-        
-        /* Олівці */
-        .edit-icon {
-            background: none; border: none; color: var(--text-gray); cursor: pointer; font-size: 16px;
-            opacity: 0; transition: 0.3s;
-        }
-        .profile-card:hover .edit-icon, .info-box:hover .edit-icon {
-            opacity: 1; color: var(--primary-bright);
-        }
-        .edit-icon:hover {
-            transform: scale(1.2) rotate(10deg);
-            text-shadow: 0 0 10px var(--primary);
-        }
-
-        /* ІНФО БЛОКИ */
-        .info-panel { display: flex; flex-direction: column; gap: 15px; }
-        .info-box { padding: 22px; text-align: center; min-height: 105px; display: flex; flex-direction: column; justify-content: center; position: relative; border: 1px solid rgba(0,255,102,0.2); }
-        .info-box span { font-size: 11px; font-weight: 800; color: var(--primary-bright); text-transform: uppercase; margin-bottom: 10px; display: block; opacity: 0.9; text-shadow: 0 0 8px var(--primary); }
-        .info-box h2 { font-size: 22px; font-weight: 800; margin: 0; line-height: 1.2; text-shadow: 0 0 5px rgba(255,255,255,0.2); }
-        
-        /* ФІКС ДЛЯ ПАСПОРТА ТА ДИСКОРДА */
-        .editable-field-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        /* ТИПИЧНИЙ БЛОК */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .admin-controls { display: none; justify-content: center; gap: 10px; margin-top: 5px; }
-        .btn-mini { background: #1a1a1a; border: 1px solid #333; color: white; width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-weight: 900; font-size: 14px;}
-        .btn-mini:hover { background: var(--primary); color: black; box-shadow: 0 0 15px var(--primary); }
-
-        /* МОДАЛЬНІ ВІКНА */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); 
-            display: none; justify-content: center; align-items: center; z-index: 3000;
-        }
-        .modal-content{
-            background: #0f1115; border: 1px solid var(--glass-border);
-            padding: 30px; border-radius: 20px; width: 90%; max-width: 400px;
-            position: relative; box-shadow: 0 0 60px rgba(0, 255, 68, 0.4);
-            animation: modalPop 0.3s ease; display: flex; flex-direction: column; max-height: 90vh;
-            overflow-y: auto;
-            user-select: text !important;
-        }
-        #reportsModal .modal-content { width: 95%; max-width: 800px; height: 85vh; overflow: hidden; display: flex; flex-direction: column; }
-        #modalReportsList { overflow-y: auto; flex-grow: 1; padding-right: 5px; user-select: text !important; }
-
-        @keyframes modalPop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .close-modal-btn {
-            position: absolute; top: 15px; right: 20px; background: none; border: none;
-            color: #555; font-size: 24px; cursor: pointer;
-        }
-        .close-modal-btn:hover { color: white; transform: rotate(90deg); }
-
-        .modal-input-group { margin-bottom: 20px; text-align: left; }
-        .modal-label { display: block; font-size: 12px; color: var(--text-gray); margin-bottom: 8px; text-transform: uppercase; font-weight: 700; }
-        .modal-input {
-            width: 100%; background: #000; border: 1px solid #333; color: white;
-            padding: 12px; border-radius: 10px; font-size: 14px; outline: none; font-family: inherit;
-            transition: 0.3s;
-        }
-        .modal-input:focus { border-color: var(--primary); box-shadow: 0 0 15px var(--primary-glow); }
-        .modal-btn {
-            width: 100%; padding: 15px; border: none; border-radius: 10px;
-            font-weight: 900; font-size: 14px; cursor: pointer; text-transform: uppercase;
-        }
-        .btn-primary { background: var(--primary); color: black; margin-bottom: 10px; }
-        .btn-primary:hover { background: var(--primary-bright); box-shadow: 0 0 20px var(--primary); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-danger:hover { background: #ff5555; box-shadow: 0 0 20px var(--danger); }
-
-        /* МОДАЛЬКА РОЛІ (СТИЛЬ ЯК В ІНШИХ) */
-        .role-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
-            color: white; padding: 15px; border-radius: 10px; font-weight: 800; cursor: pointer;
-            width: 100%; margin-bottom: 10px; transition: 0.3s;
-            text-align: center;
-            border: 1px solid var(--warning); /* Жовта рамка зберігається */
-            color: var(--warning); /* Жовтий колір зберігається */
-        }
-        .role-btn:hover { background: rgba(0, 255, 68, 0.1); border-color: var(--primary); color: var(--primary-bright); }
-        .role-btn.active { 
-            background: var(--primary); 
-            color: black; 
-            border-color: var(--primary);
-            box-shadow: 0 0 15px var(--primary); 
-        }
-
-        /* СТАФ */
-        .staff-toggle-btn {
-            width: 100%;
-            max-width: 500px;
-            margin: 40px auto 0;
-            background: rgba(0, 255, 68, 0.05); border: 1px dashed var(--glass-border);
-            color: var(--primary); padding: 15px; border-radius: 15px;
-            font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 1px;
-            display: none; 
-            align-items: center; justify-content: center; gap: 10px;
-            opacity: 0;
             position: relative;
+            padding-top: 70px;
         }
-        .staff-toggle-btn.visible { 
-            display: flex; 
-            opacity: 1;
+
+        /* Ambient scan line */
+        .scanline {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,68,0.01) 3px);
+            pointer-events: none; z-index: 0;
         }
-        .staff-toggle-btn:hover {
-            transform: translateY(-1px);
-            border-color: var(--primary);
-            box-shadow: 0 0 30px var(--primary-glow), inset 0 0 10px rgba(0,255,102,0.2);
-            text-shadow: 0 0 10px var(--primary);
+
+        /* ===== HUB SYSTEM ===== */
+        .hub {
+            position: relative;
+            width: 700px;
+            height: 700px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Center photo zone */
+        .hub-center {
+            position: relative;
             z-index: 10;
+            cursor: pointer;
         }
-        
-        .staff-section-container { 
-            display: grid; 
-            grid-template-rows: 0fr; 
-            transition: grid-template-rows 0.6s ease-out, opacity 0.5s ease;
-            opacity: 0;
-            width: 100%; 
-            max-width: 1550px; 
-            margin: 20px auto 0; 
-            padding: 0;
+
+        .hub-photo-ring {
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            border: 2px solid var(--glass-border);
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: 0 0 0 0 var(--primary-glow);
+        }
+        .hub-center:hover .hub-photo-ring,
+        .hub.expanded .hub-photo-ring {
+            border-color: var(--primary);
+            box-shadow: 0 0 40px var(--primary-glow), 0 0 80px rgba(0,255,68,0.3), inset 0 0 30px rgba(0,255,68,0.05);
+            transform: scale(1.05);
+        }
+
+        /* Rotating dashes ring */
+        .hub-photo-ring::before {
+            content: '';
+            position: absolute; inset: -8px;
+            border-radius: 50%;
+            border: 1px dashed rgba(0,255,68,0.2);
+            animation: spin 20s linear infinite;
+        }
+        .hub-photo-ring::after {
+            content: '';
+            position: absolute; inset: -16px;
+            border-radius: 50%;
+            border: 1px dashed rgba(0,255,68,0.1);
+            animation: spin 35s linear infinite reverse;
+        }
+        .hub.expanded .hub-photo-ring::before {
+            border-color: rgba(0,255,68,0.5);
+            animation: spin 8s linear infinite;
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .hub-photo-inner {
+            width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
+            background: #0a0f12;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 70px;
             position: relative;
         }
-        .staff-section-container.open {
-            grid-template-rows: 1fr;
+        .hub-photo-inner img {
+            width: 100%; height: 100%; object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .hub-label {
+            position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
+            font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 3px;
+            color: var(--primary); opacity: 0.6; white-space: nowrap;
+            transition: all 0.3s;
+        }
+        .hub.expanded .hub-label { opacity: 0; }
+
+        /* Hover hint */
+        .hub-hint {
+            position: absolute; bottom: -65px; left: 50%; transform: translateX(-50%);
+            font-size: 12px; color: var(--text-gray); white-space: nowrap;
+            letter-spacing: 1px; transition: opacity 0.3s;
+        }
+        .hub.expanded .hub-hint { opacity: 0; pointer-events: none; }
+
+        /* ===== BUTTONS ORBITING ===== */
+        .hub-btn {
+            position: absolute;
+            transform-origin: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s, transform 0.5s cubic-bezier(0.34,1.56,0.64,1);
+            z-index: 20;
+        }
+        .hub.expanded .hub-btn {
             opacity: 1;
+            pointer-events: all;
         }
-        .staff-inner-wrapper {
+
+        /* Button types */
+        .btn-standard {
+            background: rgba(10,15,20,0.95);
+            border: 1px solid var(--glass-border);
+            color: white;
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex; align-items: center; gap: 8px;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            transition: all 0.25s;
+            letter-spacing: 0.5px;
+        }
+        .btn-standard:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            box-shadow: 0 0 25px rgba(0,255,68,0.4), 0 4px 20px rgba(0,0,0,0.5);
+            transform: translateY(-2px) scale(1.03);
+        }
+
+        .btn-special {
+            background: linear-gradient(135deg, rgba(0,255,68,0.15), rgba(0,180,50,0.05));
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 12px 22px;
+            border-radius: 12px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700; font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex; align-items: center; gap: 8px;
+            white-space: nowrap;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 15px rgba(0,255,68,0.2), 0 4px 20px rgba(0,0,0,0.5);
+            transition: all 0.25s;
+            letter-spacing: 0.5px;
+            position: relative;
             overflow: hidden;
-            width: 100%;
-            display: flex;
-            justify-content: center;
         }
-        .staff-section { 
-            width: 100%; 
-            background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 25px;
-            padding: 30px 5%; 
-            margin: 0; 
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        .btn-special::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(0,255,68,0.1));
+            opacity: 0; transition: opacity 0.3s;
         }
-        .staff-item {
+        .btn-special:hover {
+            background: linear-gradient(135deg, rgba(0,255,68,0.25), rgba(0,180,50,0.1));
+            box-shadow: 0 0 30px rgba(0,255,68,0.5), 0 4px 20px rgba(0,0,0,0.5);
+            transform: translateY(-2px) scale(1.03);
+        }
+        .btn-special:hover::before { opacity: 1; }
+
+        /* Connector lines from center to buttons */
+        .hub-lines {
+            position: absolute; inset: 0;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .hub-lines svg {
+            width: 100%; height: 100%;
+            position: absolute; inset: 0;
+        }
+        .hub-line {
+            stroke: var(--primary);
+            stroke-width: 1;
+            stroke-dasharray: 4 6;
+            opacity: 0;
+            transition: opacity 0.4s 0.2s;
+        }
+        .hub.expanded .hub-line {
+            opacity: 0.3;
+            animation: dashFlow 2s linear infinite;
+        }
+        @keyframes dashFlow { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -20; } }
+
+        /* ===== ADMIN PANEL ===== */
+        #adminPanel {
+            position: fixed; inset: 0; z-index: 5000;
+            background: rgba(0,0,0,0.92);
+            display: none; align-items: flex-start; justify-content: center;
+            padding: 80px 20px 20px;
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+        #adminPanel.visible { display: flex; }
+
+        .admin-container {
+            background: rgba(8,12,18,0.98);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            width: 100%; max-width: 900px;
+            box-shadow: 0 0 60px rgba(0,255,68,0.15);
+            overflow: hidden;
+        }
+        .admin-header {
+            padding: 20px 25px;
+            background: rgba(0,255,68,0.05);
+            border-bottom: 1px solid var(--glass-border);
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(255,255,255,0.03); padding: 18px 25px; border-radius: 15px; margin-bottom: 12px;
-            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .admin-header h2 {
+            font-family: 'Orbitron', monospace; font-size: 14px;
+            color: var(--primary); letter-spacing: 3px;
+        }
+        .admin-close {
+            background: none; border: 1px solid rgba(239,68,68,0.3); color: var(--danger);
+            width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+            font-size: 16px; font-family: 'Rajdhani', sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .admin-close:hover { background: var(--danger); color: white; }
+
+        .admin-body { padding: 25px; }
+
+        /* Photo upload zone */
+        .photo-zone {
+            border: 2px dashed var(--glass-border);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 25px;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .photo-zone:hover { border-color: var(--primary); }
+        .photo-zone-preview {
+            width: 100px; height: 100px; border-radius: 50%;
+            object-fit: cover; margin: 0 auto 15px; display: block;
+            border: 2px solid var(--glass-border);
+            background: #0a0f12; font-size: 40px;
+            line-height: 100px;
+        }
+        .photo-zone input[type=file] {
+            position: absolute; inset: 0; opacity: 0; cursor: pointer;
+        }
+        .photo-zone p { color: var(--text-gray); font-size: 13px; }
+        .photo-zone strong { color: var(--primary); }
+
+        /* Hitbox editor */
+        .hitbox-editor {
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+        .hitbox-header {
+            padding: 12px 18px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: 1px solid var(--glass-border);
+            font-size: 12px; color: var(--primary); letter-spacing: 2px; font-weight: 700;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .hitbox-canvas-wrap {
+            position: relative;
+            background: #050a0f;
+            width: 100%; padding-bottom: 56.25%;
+            overflow: hidden;
+        }
+        #hitboxCanvas {
+            position: absolute; inset: 0;
+            width: 100%; height: 100%;
+            cursor: crosshair;
+        }
+        .hitbox-tools {
+            padding: 12px 18px;
+            display: flex; gap: 10px; flex-wrap: wrap;
+            background: rgba(255,255,255,0.02);
+            border-top: 1px solid var(--glass-border);
         }
 
-        .order-arrows { display: flex; flex-direction: column; gap: 5px; margin-right: 20px; }
-        .btn-arrow {
-            background: rgba(255,255,255, 0.05); border: 1px solid rgba(255,255,255,0.1);
-            color: var(--primary); border-radius: 6px; width: 26px; height: 26px;
-            font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        /* Buttons list editor */
+        .buttons-editor { margin-bottom: 25px; }
+        .buttons-editor-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px;
         }
-        .btn-arrow:hover { background: var(--primary); color: black; }
-        
-        .btn-action-g, .btn-manage, .btn-verify { padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; border: none; text-transform: uppercase; font-size: 12px; }
-        .btn-action-g { background: var(--primary); color: black; }
-        .btn-manage { background: #1e293b; color: white; border: 1px solid var(--glass-border); }
-        .btn-verify { background: var(--warning); color: black; }
-        .btn-action-r { background: none; border: 1px solid var(--danger); color: var(--danger); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; font-size: 12px; }
-        .btn-role { background: rgba(255,255,255,0.05); border: 1px solid var(--warning); color: var(--warning); font-size: 11px; padding: 8px 15px; }
+        .buttons-editor-header h3 {
+            font-size: 12px; color: var(--primary); letter-spacing: 2px; font-weight: 700;
+        }
 
-        /* АРХІВ */
-        .report-card {
-            background: rgba(255,255,255,0.03); border-radius: 15px; margin-bottom: 20px;
-            overflow: hidden; border: 1px solid rgba(255,255,255,0.05);
+        .btn-list { display: flex; flex-direction: column; gap: 10px; }
+        .btn-list-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px;
+            padding: 12px 15px;
+            display: grid; grid-template-columns: 40px 1fr 1fr 110px 80px 70px;
+            gap: 10px; align-items: center;
         }
-        .rep-weekly { border-left: 5px solid var(--primary); }
-        .rep-subotnik { border-left: 5px solid var(--warning); }
-        .report-header { padding: 15px 20px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; }
-        .report-body { padding: 20px; font-size: 14px; line-height: 1.7; color: #ddd; white-space: pre-wrap; }
+        .btn-list-item:hover { border-color: var(--glass-border); }
 
-        /* АДАПТАЦІЯ */
-        @media (max-width: 1024px) {
-            .main-container { grid-template-columns: 1fr; }
-            .side-menu { order: 2; }
-            .profile-card { order: 1; }
-            .info-panel { order: 3; }
-            .side-menu, .profile-card, .info-panel, .staff-section { width: 100%; }
+        .drag-handle {
+            color: var(--text-gray); font-size: 18px; cursor: grab;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0.5;
         }
-        @media (max-width: 768px) {
-            header { padding: 14px 20px; }
-            .logo-box { font-size: 12px; padding: 5px 10px; }
-            .header-right { gap: 10px; }
-            #notifDropdown { right: 20px; left: 20px; width: auto; max-width: 90vw; }
-            .profile-card { padding: 20px; }
-            .avatar-circle { width: 100px; height: 100px; font-size: 45px; }
-            .user-name { font-size: 20px; }
-            .staff-item { flex-direction: column; align-items: flex-start; gap: 15px; }
-            .staff-item > div:first-child { width: 100%; }
-            .staff-item > div:last-child { width: 100%; display: flex; flex-wrap: wrap; gap: 5px; }
-            .modal-content { width: 95%; }
-            .staff-section { padding: 20px; }
-            .staff-toggle-btn { max-width: 90%; }
+        .drag-handle:active { cursor: grabbing; }
+
+        .admin-input {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 8px 12px; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 13px; outline: none;
+            transition: border-color 0.2s; width: 100%;
         }
+        .admin-input:focus { border-color: var(--primary); }
+        .admin-input::placeholder { color: var(--text-gray); }
+
+        .admin-select {
+            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 8px 12px; border-radius: 8px;
+            font-family: 'Rajdhani', sans-serif; font-size: 13px; outline: none;
+            cursor: pointer; width: 100%;
+        }
+        .admin-select:focus { border-color: var(--primary); }
+        .admin-select option { background: #0a0f15; }
+
+        .btn-add-item {
+            background: rgba(0,255,68,0.08); border: 1px dashed var(--primary);
+            color: var(--primary); padding: 10px; border-radius: 10px;
+            cursor: pointer; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+            font-size: 13px; letter-spacing: 1px; transition: all 0.2s; width: 100%;
+            margin-top: 10px;
+        }
+        .btn-add-item:hover { background: rgba(0,255,68,0.15); }
+
+        .btn-delete-item {
+            background: rgba(239,68,68,0.05); border: 1px solid rgba(239,68,68,0.2);
+            color: var(--danger); padding: 8px; border-radius: 8px;
+            cursor: pointer; font-size: 14px; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-delete-item:hover { background: rgba(239,68,68,0.2); }
+
+        .admin-save-btn {
+            width: 100%; padding: 15px;
+            background: var(--primary); color: black;
+            border: none; border-radius: 12px;
+            font-family: 'Orbitron', monospace; font-weight: 700; font-size: 13px;
+            letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+            box-shadow: 0 0 20px rgba(0,255,68,0.3);
+        }
+        .admin-save-btn:hover { box-shadow: 0 0 40px rgba(0,255,68,0.5); transform: translateY(-1px); }
+
+        /* Password modal */
+        #pwModal {
+            position: fixed; inset: 0; z-index: 6000;
+            background: rgba(0,0,0,0.95);
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(20px);
+        }
+        #pwModal.visible { display: flex; }
+        .pw-box {
+            background: rgba(8,12,18,0.98);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 40px;
+            width: 100%; max-width: 380px;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(0,255,68,0.2);
+        }
+        .pw-box h2 {
+            font-family: 'Orbitron', monospace; font-size: 14px;
+            color: var(--primary); letter-spacing: 3px; margin-bottom: 8px;
+        }
+        .pw-box p { color: var(--text-gray); font-size: 12px; margin-bottom: 25px; }
+        .pw-input {
+            width: 100%; background: #000; border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 14px 16px; border-radius: 10px;
+            font-family: 'Rajdhani', sans-serif; font-size: 16px;
+            text-align: center; letter-spacing: 4px; outline: none;
+            margin-bottom: 15px;
+            transition: border-color 0.2s;
+        }
+        .pw-input:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(0,255,68,0.2); }
+        .pw-input.error { border-color: var(--danger); animation: shake 0.3s; }
+        @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+        .pw-submit {
+            width: 100%; padding: 14px; background: var(--primary); color: black;
+            border: none; border-radius: 10px; font-family: 'Orbitron', monospace;
+            font-weight: 700; font-size: 12px; letter-spacing: 2px; cursor: pointer;
+            box-shadow: 0 0 20px rgba(0,255,68,0.3); transition: all 0.2s;
+        }
+        .pw-submit:hover { box-shadow: 0 0 35px rgba(0,255,68,0.5); }
+        .pw-cancel {
+            background: none; border: none; color: var(--text-gray);
+            font-family: 'Rajdhani', sans-serif; font-size: 13px; cursor: pointer;
+            margin-top: 12px; letter-spacing: 1px;
+            transition: color 0.2s;
+        }
+        .pw-cancel:hover { color: white; }
+
+        /* Corner decorations */
+        .corner {
+            position: fixed; width: 60px; height: 60px; pointer-events: none; z-index: 1;
+        }
+        .corner::before, .corner::after { content: ''; position: absolute; background: var(--primary); opacity: 0.4; }
+        .corner-tl { top: 70px; left: 0; }
+        .corner-tl::before { top: 0; left: 0; width: 2px; height: 40px; }
+        .corner-tl::after { top: 0; left: 0; width: 40px; height: 2px; }
+        .corner-tr { top: 70px; right: 0; }
+        .corner-tr::before { top: 0; right: 0; width: 2px; height: 40px; }
+        .corner-tr::after { top: 0; right: 0; width: 40px; height: 2px; }
+        .corner-bl { bottom: 0; left: 0; }
+        .corner-bl::before { bottom: 0; left: 0; width: 2px; height: 40px; }
+        .corner-bl::after { bottom: 0; left: 0; width: 40px; height: 2px; }
+        .corner-br { bottom: 0; right: 0; }
+        .corner-br::before { bottom: 0; right: 0; width: 2px; height: 40px; }
+        .corner-br::after { bottom: 0; right: 0; width: 40px; height: 2px; }
+
+        /* Status bar */
+        .status-bar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 30px; align-items: center;
+            background: rgba(3,5,7,0.9); border: 1px solid var(--glass-border);
+            padding: 8px 25px; border-radius: 50px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 8px var(--primary); animation: blink 2s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        .status-text { font-family: 'Orbitron', monospace; font-size: 9px; color: var(--text-gray); letter-spacing: 2px; }
+        .status-val { color: var(--primary); }
+
+        /* Notification toast */
+        .toast {
+            position: fixed; top: 80px; right: 20px; z-index: 9999;
+            background: rgba(8,12,18,0.95); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 14px 20px;
+            font-size: 13px; color: white; letter-spacing: 0.5px;
+            opacity: 0; transform: translateX(30px);
+            transition: all 0.3s; pointer-events: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .toast.show { opacity: 1; transform: translateX(0); }
+        .toast.success { border-color: var(--primary); color: var(--primary); }
+        .toast.error { border-color: var(--danger); color: var(--danger); }
+
+        /* Hitbox points */
+        .hitbox-point {
+            position: absolute; width: 12px; height: 12px;
+            border-radius: 50%; background: var(--primary);
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(0,255,68,0.3);
+            box-shadow: 0 0 8px var(--primary);
+            cursor: move; z-index: 10;
+            transition: transform 0.1s;
+        }
+        .hitbox-point:hover { transform: translate(-50%,-50%) scale(1.4); }
+        .hitbox-point-label {
+            position: absolute; left: 14px; top: -3px;
+            font-size: 9px; color: var(--primary); letter-spacing: 1px;
+            white-space: nowrap; pointer-events: none;
+        }
+
+        /* column header labels */
+        .col-labels {
+            display: grid; grid-template-columns: 40px 1fr 1fr 110px 80px 70px;
+            gap: 10px; padding: 0 15px; margin-bottom: 8px;
+        }
+        .col-label { font-size: 10px; color: var(--text-gray); letter-spacing: 1px; text-transform: uppercase; }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body>
 
-    <div id="verifyWaitingScreen">
-        <h1>ВЕРИФІКАЦІЯ...</h1>
-        <p style="color: var(--text-gray); max-width: 500px;">Очікуйте підтвердження доступу від керівництва підрозділу.</p>
-        <button class="btn-action-r" style="margin-top: 30px;" onclick="window.logout()">ВИЙТИ З АКАУНТУ</button>
+<div class="scanline"></div>
+<div class="corner corner-tl"></div>
+<div class="corner corner-tr"></div>
+<div class="corner corner-bl"></div>
+<div class="corner corner-br"></div>
+
+<!-- ===== HEADER ===== -->
+<header>
+    <a href="cabinet.html" class="logo-box">ДШВ</a>
+    <div class="header-right">
+        <a href="cabinet.html" class="header-btn">⬅ КАБІНЕТ</a>
+        <button class="header-btn admin-btn" onclick="openAdminPanel()">⚙️ РЕДАКТОР</button>
     </div>
+</header>
 
-    <div id="banScreen">
-        <h1 style="font-size: 60px; font-weight: 900;">ACCESS REVOKED</h1>
-    </div>
-
-    <header>
-        <a href="index.html" class="logo-box">ДШВ</a>
-        <div class="header-right">
-            <button class="btn-small-header" onclick="openCreditsModal()">🏆 ПОЧАТОК</button>
-            <a href="gallery.html" class="btn-small-header" style="text-decoration: none;">📸 ГАЛЕРЕЯ</a>
-            <a href="applications.html" id="headerAppBtn" class="btn-square-header" style="display:none;" title="Перевірка рапортів">📝</a>
-            <a href="ryletka.html" id="headerRyletkaBtn" class="btn-square-header" style="display:none;" title="Рулетка Удачі">🎲</a>
-            <div class="notif-wrapper" onclick="toggleNotifs(event)">
-                <span class="bell-icon">🔔</span>
-                <div id="bellBadge" class="bell-badge">0</div>
-            </div>
-            <div id="notifDropdown">
-                <div class="notif-header">
-                    <h4 style="color: var(--primary-bright); font-size: 12px; font-weight:800;">СПОВІЩЕННЯ</h4>
-                    <button onclick="clearAllNotifications()" style="background: none; border: none; color: var(--text-gray); font-size: 10px; cursor: pointer; font-weight: 700;">ПРОЧИТАТИ ВСЕ</button>
-                </div>
-                <div id="notifList" style="max-height: 300px; overflow-y: auto;">
-                    <div style="color: var(--text-gray); text-align: center; padding: 20px; font-size: 12px;">Нових подій немає</div>
-                </div>
-            </div>
-            <span id="topName" style="color: var(--primary-bright); font-weight: 800; font-size: 14px;">...</span>
-            <button onclick="window.logout()" class="btn-logout-custom">ВИЙТИ</button>
+<!-- ===== MAIN HUB ===== -->
+<div class="stage">
+    <div class="hub" id="hub">
+        <!-- SVG Lines -->
+        <div class="hub-lines">
+            <svg id="hubSvg" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg">
+                <!-- Lines drawn dynamically by JS -->
+            </svg>
         </div>
-    </header>
 
-    <div class="main-wrapper" id="mainContent">
-        <div class="main-container">
-            <div class="side-menu">
-                <button id="backToMe" onclick="resetView()" style="display: none; width: 100%; background: var(--warning); color: black; padding: 14px; border-radius: 12px; font-weight: 900; border: none; cursor: pointer; margin-bottom: 15px; font-size: 13px;">⬅ МІЙ ПРОФІЛЬ</button>
-                
-                <!-- ОНОВЛЕНЕ МЕНЮ -->
-                <a href="index.html" class="menu-item">🏠 Головна сторінка</a>
-                <a href="reports.html" class="menu-item">📅 Щотижневі звіти <div id="dot-reports" class="fire-dot"></div></a>
-                <a href="subotnik.html" class="menu-item">🧹 Суботник <div id="dot-subotniks" class="fire-dot"></div></a>
-                <a href="chats.html" class="menu-item">💬 Чати / Інформація <div id="dot-chats" class="fire-dot"></div></a>
-                <a href="isput.html" class="menu-item">💼 Іспити</a>
-                <a href="cabinetpilota.html" class="menu-item">✈️ Кабінет Пілота</a>
-
-                
-                <div id="lockBtn" class="btn-lock-menu" onclick="toggleSystemAccess()">🔒 КЕРУВАННЯ ДОСТУПОМ</div>
-            </div>
-
-            <div class="profile-card">
-                <div class="avatar-circle">👤</div>
-                <div id="userName" class="user-name">...</div>
-                <h2 id="userRank">
-                    <span id="userRankText">...</span>
-                    <button id="btnEditRank" class="edit-icon">✎</button>
-                </h2>
-                <h6 id="userPos">
-                    <span id="userPosText">...</span>
-                    <button id="btnEditPos" class="edit-icon">✎</button>
-                </h6>
-                <h3>ㅤ</h3>
-                <div id="userID" class="id-badge">ID: ...</div>
-            </div>
-
-            <div class="info-panel">
-                <div class="info-box">
-                    <h2 id="greeting"> Очікуйте, йде завантаження сайту </h2>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="info-box">
-                        <span>ПОПЕРЕДЖЕННЯ</span>
-                        <h2 id="userRep">0</h2>
-                        <div class="admin-controls">
-                            <button class="btn-mini" onclick="changeStat('reprimands', -1)">-</button>
-                            <button class="btn-mini" onclick="changeStat('reprimands', 1)">+</button>
-                        </div>
-                    </div>
-                    <div class="info-box">
-                        <span>ДОГАНИ</span>
-                        <h2 id="userWarns">0</h2> 
-                        <div class="admin-controls">
-                            <button class="btn-mini" onclick="changeStat('warns', -1)">-</button>
-                            <button class="btn-mini" onclick="changeStat('warns', 1)">+</button>
-                        </div>
-                    </div>
-                    
-                    <div class="info-box">
-                        <span>ПАСПОРТ</span>
-                        <div class="editable-field-row">
-                            <h2 id="userPassport" style="font-size: 16px;">---</h2>
-                            <button class="edit-icon" id="btnAddPass">✎</button>
-                        </div>
-                    </div>
-                    
-                    <div class="info-box">
-                        <span>DISCORD</span>
-                        <div class="editable-field-row">
-                            <h2 id="userDiscord" style="font-size: 16px;">---</h2>
-                            <button class="edit-icon" id="btnAddDisc">✎</button>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-box">
-                    <span>ПОСАДА</span>
-                    <div class="editable-field-row">
-                        <h2 id="userPosEdit" style="font-size: 16px;">---</h2>
-                        <button class="edit-icon" id="btnAddPos">✎</button>
-                    </div>
+        <!-- Center photo -->
+        <div class="hub-center" id="hubCenter" onclick="toggleHub()">
+            <div class="hub-photo-ring">
+                <div class="hub-photo-inner" id="hubPhotoInner">
+                    <!-- Photo or emoji -->
+                    👤
                 </div>
             </div>
+            <div class="hub-label">ДШВ COMMAND CENTER</div>
         </div>
+        <div class="hub-hint">НАТИСНИ ДЛЯ ВІДКРИТТЯ</div>
+
+        <!-- Buttons rendered dynamically -->
     </div>
+</div>
 
-    <button id="toggleStaffBtn" class="staff-toggle-btn" onclick="toggleStaffList()">
-        📋 ВІДКРИТИ РЕЄСТР ОСОБОВОГО СКЛАДУ ▼
-    </button>
+<!-- ===== STATUS BAR ===== -->
+<div class="status-bar">
+    <div class="status-dot"></div>
+    <span class="status-text">СИСТЕМА: <span class="status-val">ОНЛАЙН</span></span>
+    <span class="status-text">|</span>
+    <span class="status-text" id="clockEl">--:--:--</span>
+</div>
 
-    <div class="staff-section-container" id="adminSection">
-        <div class="staff-inner-wrapper">
-            <div class="staff-section">
-                <h3 style="color: var(--primary-bright); margin-bottom: 25px; text-transform: uppercase; font-size: 16px;">📋 РЕЄСТР ОСОБОВОГО СКЛАДУ</h3>
-                <div id="staffList"></div>
+<!-- ===== PASSWORD MODAL ===== -->
+<div id="pwModal">
+    <div class="pw-box">
+        <h2>АДМІН ПАНЕЛЬ</h2>
+        <p>Введіть секретний код для доступу до редактора</p>
+        <input type="password" class="pw-input" id="pwInput" placeholder="••••••" maxlength="30"
+               onkeydown="if(event.key==='Enter') checkPassword()">
+        <button class="pw-submit" onclick="checkPassword()">ПІДТВЕРДИТИ</button><br>
+        <button class="pw-cancel" onclick="closePwModal()">СКАСУВАТИ</button>
+    </div>
+</div>
+
+<!-- ===== ADMIN PANEL ===== -->
+<div id="adminPanel">
+    <div class="admin-container">
+        <div class="admin-header">
+            <h2>⚙ РЕДАКТОР ГОЛОВНОЇ СТОРІНКИ</h2>
+            <button class="admin-close" onclick="closeAdminPanel()">✕</button>
+        </div>
+        <div class="admin-body">
+
+            <!-- Photo upload -->
+            <div class="photo-zone" id="photoZone">
+                <input type="file" accept="image/*" onchange="handlePhotoUpload(this)">
+                <div class="photo-zone-preview" id="photoPreview">👤</div>
+                <strong>Натисни або перетягни фото</strong>
+                <p style="margin-top:6px;">Це фото буде центром головної сторінки</p>
             </div>
-        </div>
-    </div>
 
-    <div id="creditsModal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal-btn" onclick="closeCreditsModal()">&times;</button>
-            <div class="credits-title">🏆 ПОЧАТОК</div>
-            <p style="text-align: center; color: var(--primary); font-weight: 700; margin-bottom: 20px; padding: 0 10px; background: rgba(0, 255, 68, 0.05); border-radius: 10px;">Шановний Бієць дякую що ти користуєшся нашим продуктом</p>
-            
-            <ul class="credits-list">
-                <li><span class="credits-role">Глав.Розробник/Тех.Адмін -</span> <span class="credits-name">Руслан Кущирг</span></li>
-                <li><span class="credits-role">Тех.Адмін -</span> <span class="credits-name">Нікіта Лізейник</span></li>
-                <li><span class="credits-role">Керівник Підрозділу -</span> <span class="credits-name">Кіріл Басов</span></li>
-                <li><span class="credits-role" style="border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">Вніс великий вклад -</span></li>
-                <li style="margin-top: -5px; padding-bottom: 10px;"><span class="credits-name">Нікіта Лізейник, Василь Грищук</span></li>
-                <li><span class="credits-role">Кодер -</span> <span class="credits-name">Руслан Кущирг</span></li>
-                <li><span class="credits-role">Дезайнер -</span> <span class="credits-name">Руслан Кущирг</span></li>
-                <li><span class="credits-role">Ідея -</span> <span class="credits-name">Руслан Кущирг</span></li>
-                <li><span class="credits-role">Ідеї -</span> <span class="credits-name" style="color: var(--warning);">Також на сайті є багато ідей від: Нікіта Лізейник, Руслан Кущирг, Василь Грищук</span></li>
-            </ul>
-        </div>
-    </div>
-
-    <div id="editModal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal-btn" onclick="closeEditModal()">&times;</button>
-            <h3 style="color: var(--primary-bright); text-align: center; margin-bottom: 20px;">РЕДАГУВАННЯ</h3>
-            <input type="hidden" id="editFieldName">
-            <input type="hidden" id="editTargetUid">
-            <div class="modal-input-group">
-                <label class="modal-label" id="editLabel">Значення</label>
-                <input type="text" id="editInput" class="modal-input">
-            </div>
-            <button class="modal-btn btn-primary" onclick="saveEdit()">ЗБЕРЕГТИ</button>
-        </div>
-    </div>
-
-    <!-- МОДАЛЬКА РОЛІ -->
-    <div id="roleModal" class="modal-overlay">
-        <div class="modal-content">
-            <button class="close-modal-btn" onclick="closeRoleModal()">&times;</button>
-            <h3 style="color: var(--primary-bright); text-align: center; margin-bottom: 20px;">ПРИЗНАЧИТИ РОЛЬ</h3>
-            <div id="roleCurrentUid" type="hidden"></div>
-            
-            <button class="role-btn" id="btnRoleFighter" onclick="window.assignRole('fighter')">БІЄЦЬ</button>
-            <button class="role-btn" id="btnRoleInstructor" onclick="window.assignRole('instructor')">ІНСТРУКТОР</button>
-        </div>
-    </div>
-
-    <div id="reportsModal" class="modal-overlay">
-        <div class="modal-content">
-            <div style="display:flex; justify-content:center; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
-                <h2 id="modalTitle" style="color: var(--primary-bright); font-size: 20px; margin:0;">АРХІВ ЗВІТІВ</h2>
-            </div>
-            <div id="modalReportsList"></div>
-            <span onclick="document.getElementById('reportsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 35px; cursor: pointer; color: #555;">&times;</span>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, getDoc, updateDoc, collection, onSnapshot, query, where, deleteDoc, getDocs, setDoc, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyATUpLUHSp1VbyxkJXhMS-2R71zNOBGC00",
-            authDomain: "dsv-gta.firebaseapp.com",
-            projectId: "dsv-gta",
-            storageBucket: "dsv-gta.firebasestorage.app",
-            messagingSenderId: "661591588818",
-            appId: "1:661591588818:web:a8e8dca3d061447e24d20b"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let currentUID = null;
-        let myData = null;
-        let editingUID = null;
-        let cachedSecret = null;
-
-        const greetings = [
-            "Раді бачити Вас!","Вітаємо з поверненням!","Приємно знову Вас бачити!",
-            "З поверненням у стрій!","Раді знову Вас вітати!","Вітаємо на борту!",
-            "Система доповіда: боєць на місці","Система доповіда: боєць на місці","ЗСУ раді бачити своїх"
-        ];
-
-        document.onkeydown = function(e) {
-            if (e.keyCode == 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode == 85)) return false;
-        };
-
-        window.logout = () => signOut(auth).then(() => window.location.href = "index.html");
-
-        async function getSecret() {
-            if (cachedSecret) return cachedSecret;
-            try {
-                const s = await getDoc(doc(db, "settings", "secrets"));
-                if (s.exists() && s.data().adminCode) {
-                    cachedSecret = s.data().adminCode;
-                } else {
-                    cachedSecret = "admin123";
-                }
-            } catch (e) {
-                cachedSecret = "admin123";
-            }
-            return cachedSecret;
-        }
-
-        let readNotifIds = JSON.parse(localStorage.getItem('readNotifIds')) || [];
-        function isRead(id) { return readNotifIds.includes(id); }
-        function markAsRead(id) {
-            if (!isRead(id)) {
-                readNotifIds.push(id);
-                localStorage.setItem('readNotifIds', JSON.stringify(readNotifIds));
-            }
-        }
-        function addNotification(text, link, id) {
-            const list = document.getElementById('notifList');
-            if (list.innerText.includes("немає") && !document.querySelector('.notif-item-link')) list.innerHTML = "";
-            if (document.getElementById('notif-' + id)) return;
-            const item = document.createElement('a');
-            item.id = 'notif-' + id;
-            item.href = link;
-            item.className = 'notif-item-link';
-            if (isRead(id)) item.classList.add('read');
-            item.innerHTML = `<span class="notif-text">📢 ${text}</span><span class="notif-time">щойно</span>`;
-            item.onclick = (e) => { markAsRead(id); item.classList.add('read'); updateBadgeCount(); };
-            list.prepend(item);
-            updateBadgeCount();
-        }
-        function updateBadgeCount() {
-            const unread = document.querySelectorAll('.notif-item-link:not(.read)').length;
-            const badge = document.getElementById('bellBadge');
-            if (unread > 0) { badge.innerText = unread; badge.style.display = 'block'; } 
-            else { badge.style.display = 'none'; }
-        }
-        window.clearAllNotifications = () => {
-            document.getElementById('notifList').innerHTML = '<div style="color: var(--text-gray); text-align: center; padding: 20px; font-size: 12px;">Нових подій немає</div>';
-            readNotifIds = [];
-            localStorage.setItem('readNotifIds', JSON.stringify([]));
-            updateBadgeCount();
-            document.querySelectorAll('.fire-dot').forEach(d => d.style.display = 'none');
-        };
-        window.toggleNotifs = (e) => {
-            if (e) e.stopPropagation();
-            const drop = document.getElementById('notifDropdown');
-            drop.style.display = drop.style.display === 'flex' ? 'none' : 'flex';
-        };
-
-        window.openCreditsModal = () => document.getElementById('creditsModal').style.display = 'flex';
-        window.closeCreditsModal = () => document.getElementById('creditsModal').style.display = 'none';
-
-        // --- РЕДАГУВАННЯ ---
-        window.openEditModal = (uid, fieldName, label, currentVal) => {
-            document.getElementById('editTargetUid').value = uid;
-            document.getElementById('editFieldName').value = fieldName;
-            document.getElementById('editLabel').innerText = label;
-            
-            // ФІКС: Якщо значення "---" або undefined, передаємо порожній рядок, щоб в інпуті не було "---"
-            let cleanVal = currentVal;
-            if (cleanVal === '---' || cleanVal === undefined) cleanVal = "";
-            
-            document.getElementById('editInput').value = cleanVal;
-            document.getElementById('editModal').style.display = 'flex';
-        };
-        window.closeEditModal = () => document.getElementById('editModal').style.display = 'none';
-        window.saveEdit = async () => {
-            const uid = document.getElementById('editTargetUid').value;
-            const fieldName = document.getElementById('editFieldName').value;
-            const val = document.getElementById('editInput').value;
-            if (uid) await updateDoc(doc(db, "users", uid), { [fieldName]: val });
-            closeEditModal();
-        };
-
-        // --- РОЛІ ---
-        window.openRoleModal = (uid, currentRole) => {
-            document.getElementById('roleCurrentUid').value = uid;
-            
-            const btnFighter = document.getElementById('btnRoleFighter');
-            const btnInstructor = document.getElementById('btnRoleInstructor');
-            
-            btnFighter.classList.remove('active');
-            btnInstructor.classList.remove('active');
-            
-            if (currentRole === 'fighter' || currentRole === 'user') btnFighter.classList.add('active');
-            if (currentRole === 'instructor') btnInstructor.classList.add('active');
-            
-            document.getElementById('roleModal').style.display = 'flex';
-        };
-        window.closeRoleModal = () => document.getElementById('roleModal').style.display = 'none';
-        window.assignRole = async (newRole) => {
-            const uid = document.getElementById('roleCurrentUid').value;
-            if (uid) {
-                await updateDoc(doc(db, "users", uid), { role: newRole });
-                closeRoleModal();
-            }
-        };
-
-        // --- ПІДКЛЮЧЕННЯ ---
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) { window.location.href = "index.html"; return; }
-            const res = await fetch('https://api.ipify.org?format=json');
-            const ipData = await res.json();
-            const banSnap = await getDoc(doc(db, "bannedIPs", ipData.ip));
-            if (banSnap.exists()) { document.getElementById('banScreen').style.display = 'flex'; return; }
-
-            currentUID = user.uid;
-            editingUID = user.uid;
-
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            
-            // --- ВИПРАВЛЕННЯ АВТОРЕЄСТРАЦІЇ ---
-            if (!userDoc.exists()) {
-                alert("Профіль не знайдено в базі даних. Будь ласка, зареєструйтесь.");
-                await signOut(auth);
-                window.location.href = "index.html";
-                return;
-            }
-
-            myData = userDoc.data();
-            if (!myData.verified && myData.role !== 'admin') {
-                document.getElementById('verifyWaitingScreen').style.display = 'flex';
-                return;
-            }
-
-            document.getElementById("greeting").textContent = greetings[Math.floor(Math.random() * greetings.length)];
-            
-            listenToUserUpdates(user.uid);
-            updateUI(myData);
-            listenToSystemStatus(myData.role);
-            
-            if (myData.role === 'admin') {
-                document.getElementById('toggleStaffBtn').classList.add('visible');
-                document.getElementById('lockBtn').style.display = 'block';
-                loadStaffList();
-            } else {
-                document.getElementById('toggleStaffBtn').style.display = 'none';
-            }
-            
-            // Доступ до Ролетки (для Адмінів, Інструкторів та Користувачів)
-            if (myData.role === 'admin' || myData.role === 'instructor' || myData.role === 'user') {
-                document.getElementById('headerRyletkaBtn').style.display = 'flex';
-                document.getElementById('headerAppBtn').style.display = 'flex';
-            } else {
-                document.getElementById('headerRyletkaBtn').style.display = 'none';
-                document.getElementById('headerAppBtn').style.display = 'none';
-            }
-
-            initNotifications();
-            listenForMentions();
-            listenForNewVerifications();
-        });
-
-        let userListenerUnsubscribe = null;
-        function listenToUserUpdates(uid) {
-            if (userListenerUnsubscribe) userListenerUnsubscribe();
-            userListenerUnsubscribe = onSnapshot(doc(db, "users", uid), (doc) => {
-                if (doc.exists()) {
-                    const data = doc.data();
-                    if (editingUID === uid) {
-                        updateUI(data); 
-                    }
-                }
-            });
-        }
-
-        function updateUI(data) {
-            const setTextIfChanged = (id, text) => {
-                const el = document.getElementById(id);
-                if (el && el.innerText !== String(text)) {
-                    el.innerText = text;
-                }
-            };
-
-            setTextIfChanged('userName', data.name || "---");
-            setTextIfChanged('topName', data.name || "---");
-            setTextIfChanged('userID', "ID: " + (data.gameID || "---"));
-            
-            const fullRank = data.rank || "Рекрут | Службовець";
-            const parts = fullRank.split('|');
-            
-            setTextIfChanged('userRankText', parts[0].trim());
-            setTextIfChanged('userPosText', data.position || (parts[1] ? parts[1].trim() : "Службовець"));
-            
-            setTextIfChanged('userRep', data.reprimands || 0);
-            setTextIfChanged('userWarns', data.warns || 0);
-
-            // ЛОГІКА ПАСПОРТА І ДИСКОРДА
-            // ВИПРАВЛЕНО: Якщо даних немає, показуємо пустий рядок замість "---", щоб при кліку редагування в поле вводу не летіло "---".
-            setTextIfChanged('userPassport', data.passport || "");
-            setTextIfChanged('userDiscord', data.discord || "");
-
-            const btnPass = document.getElementById('btnAddPass');
-            const btnDisc = document.getElementById('btnAddDisc');
-
-            if(btnPass && !btnPass.hasAttribute('data-event-bound')) {
-                btnPass.onclick = () => window.openEditModal(editingUID, 'passport', 'Паспорт', document.getElementById('userPassport').innerText);
-                btnPass.setAttribute('data-event-bound', 'true');
-            }
-            
-            if(btnDisc && !btnDisc.hasAttribute('data-event-bound')) {
-                btnDisc.onclick = () => window.openEditModal(editingUID, 'discord', 'Discord', document.getElementById('userDiscord').innerText);
-                btnDisc.setAttribute('data-event-bound', 'true');
-            }
-
-            const posValue = data.position || (parts[1] ? parts[1].trim() : "---");
-            setTextIfChanged('userPosEdit', posValue);
-
-            // ПРАВА АДМІНІСТРАТОРА
-            const isAdmin = (myData.role === 'admin');
-
-            const isManaging = (isAdmin && editingUID !== currentUID);
-            const isSelf = (editingUID === currentUID);
-
-            const btnRank = document.getElementById('btnEditRank');
-            const btnPos = document.getElementById('btnEditPos');
-            const btnPosEdit = document.getElementById('btnAddPos');
-
-            if (isAdmin) {
-                btnRank.style.display = 'inline-block'; btnRank.style.opacity = '1';
-                btnPos.style.display = 'inline-block'; btnPos.style.opacity = '1';
-                btnPosEdit.style.display = 'inline-block'; btnPosEdit.style.opacity = '1';
-
-                btnRank.onclick = () => window.openEditModal(editingUID, 'rank', 'Звання', parts[0].trim());
-                btnPos.onclick = () => window.openEditModal(editingUID, 'position', 'Посада', data.position);
-                btnPosEdit.onclick = () => window.openEditModal(editingUID, 'position', 'Посада', data.position);
-            } 
-            else if (isSelf) {
-                btnRank.style.display = 'none'; btnRank.style.opacity = '0';
-                btnPos.style.display = 'inline-block'; btnPos.style.opacity = '1';
-                btnPosEdit.style.display = 'inline-block'; btnPosEdit.style.opacity = '1';
-                
-                btnPos.onclick = () => window.openEditModal(editingUID, 'position', 'Ваша посада', data.position);
-                btnPosEdit.onclick = () => window.openEditModal(editingUID, 'position', 'Ваша посада', data.position);
-            } 
-            else {
-                btnRank.style.display = 'none'; btnRank.style.opacity = '0';
-                btnPos.style.display = 'none'; btnPos.style.opacity = '0';
-                btnPosEdit.style.display = 'none'; btnPosEdit.style.opacity = '0';
-            }
-
-            document.querySelectorAll('.admin-controls').forEach(c => {
-                c.style.display = isAdmin ? 'flex' : 'none'; 
-            });
-        }
-
-        window.toggleStaffList = () => {
-            const section = document.getElementById('adminSection');
-            const btn = document.getElementById('toggleStaffBtn');
-            if (section.classList.contains('open')) {
-                section.classList.remove('open');
-                btn.style.background = 'rgba(0, 255, 68, 0.05)';
-                btn.style.color = 'var(--primary)';
-                btn.innerHTML = '📋 ВІДКРИТИ РЕЄСТР ОСОБОВОГО СКЛАДУ ▼';
-            } else {
-                section.classList.add('open');
-                btn.style.background = 'var(--primary)';
-                btn.style.color = 'black';
-                btn.innerHTML = '📋 ЗАКРИТИ РЕЄСТР ОСОБОВОГО СКЛАДУ ▲';
-            }
-        };
-
-        async function loadStaffList() {
-            const list = document.getElementById('staffList');
-            onSnapshot(collection(db, "users"), async (fullSnap) => {
-                const batch = writeBatch(db);
-                let needsUpdate = false;
-                fullSnap.forEach(docSnap => {
-                    if (docSnap.data().staffIndex === undefined) {
-                        batch.update(doc(db, "users", docSnap.id), { staffIndex: Date.now() });
-                        needsUpdate = true;
-                    }
-                });
-                if (needsUpdate) await batch.commit();
-
-                const q = query(collection(db, "users"), orderBy("staffIndex", "asc"));
-                onSnapshot(q, (snap) => {
-                    list.innerHTML = "";
-                    snap.forEach((s) => {
-                        const u = {id: s.id, ...s.data()};
-                        const item = document.createElement('div');
-                        item.className = 'staff-item';
-                        const rankParts = (u.rank || "Рекрут | Службовець").split('|');
-                        const rName = rankParts[0].trim();
-                        const pName = u.position || (rankParts[1] ? rankParts[1].trim() : "---");
-
-                        const editBtns = (myData.role === 'admin') ? `
-                            <button class="edit-icon" style="display: inline-block; opacity: 1; margin-left:5px; color:var(--primary-bright);" onclick="window.openEditModal('${u.id}', 'rank', 'Звання', '${rName}')">✎</button>
-                        ` : '';
-
-                        // Кнопка Ролі (тільки для адміна)
-                        const roleBtn = (myData.role === 'admin') ? `
-                            <button class="btn-role" onclick="window.openRoleModal('${u.id}', '${u.role || 'user'}')">РОЛЬ</button>
-                        ` : '';
-
-                        item.innerHTML = `
-                            <div style="display: flex; align-items: center;">
-                                <div class="order-arrows">
-                                    <button class="btn-arrow" onclick="window.moveUser('${u.id}', -1)">▲</button>
-                                    <button class="btn-arrow" onclick="window.moveUser('${u.id}', 1)">▼</button>
-                                </div>
-                                <div>
-                                    <b style="font-size: 14px;">${u.name} ${editBtns}</b> 
-                                    <br><small>ID: ${u.gameID || '---'} | ${rName}, ${pName}</small>
-                                </div>
-                            </div>
-                            <div style="display: flex; gap: 10px;">
-                                ${!u.verified ? `<button class="btn-verify" onclick="window.verifyUser('${u.id}')">ВЕРИФІКАЦІЯ</button>` : ""}
-                                <button class="btn-action-g" onclick="window.viewReports('${u.id}', '${u.name}')">АРХІВ</button>
-                                <button class="btn-manage" onclick="window.enterManageMode('${u.id}')">КЕРУВАТИ</button>
-                                <button class="btn-action-r" onclick="window.deleteUser('${u.id}')">X</button>
-                                ${roleBtn}
-                            </div>
-                        `;
-                        list.appendChild(item);
-                    });
-                });
-            });
-        }
-
-        window.moveUser = async (id, direction) => {
-            const snap = await getDocs(query(collection(db, "users"), orderBy("staffIndex", "asc")));
-            let users = [];
-            snap.forEach(d => users.push({id: d.id, ...d.data()}));
-            const idx = users.findIndex(u => u.id === id);
-            if (idx === -1) return;
-            const newIdx = idx + direction;
-            if (newIdx < 0 || newIdx >= users.length) return;
-            const batch = writeBatch(db);
-            batch.update(doc(db, "users", users[idx].id), { staffIndex: newIdx });
-            batch.update(doc(db, "users", users[newIdx].id), { staffIndex: idx });
-            await batch.commit();
-        };
-
-        function listenForMentions() {
-            const halfHourAgo = new Date(Date.now() - 30 * 60 * 1000);
-            onSnapshot(collection(db, "channels"), (snap) => {
-                snap.forEach(channel => {
-                    const q = query(collection(db, "channels", channel.id, "messages"), where("createdAt", ">", halfHourAgo));
-                    onSnapshot(q, (mSnap) => {
-                        mSnap.docChanges().forEach(change => {
-                            if (change.type === "added") {
-                                const msg = change.doc.data();
-                                if (msg.text && msg.text.includes(`@${myData.name}`) && msg.uid !== currentUID) {
-                                    addNotification(`Згадка від ${msg.author}`, 'chats.html', 'mention-' + change.doc.id);
-                                }
-                            }
-                        });
-                    });
-                });
-            });
-        }
-
-        window.changeStat = async (field, val) => {
-            if (myData.role !== 'admin') return; 
-            const docRef = doc(db, "users", editingUID);
-            const snap = await getDoc(docRef);
-            const newVal = Math.max(0, (snap.data()[field] || 0) + val);
-            await updateDoc(docRef, { [field]: newVal });
-        };
-
-        window.enterManageMode = async (id) => {
-            editingUID = id;
-            listenToUserUpdates(id);
-            const s = await getDoc(doc(db, "users", id));
-            updateUI(s.data());
-            document.getElementById('backToMe').style.display = 'block';
-            window.scrollTo({top: 0, behavior: 'smooth'});
-        };
-
-        window.resetView = () => { 
-            editingUID = currentUID; 
-            listenToUserUpdates(currentUID);
-            updateUI(myData); 
-            document.getElementById('backToMe').style.display = 'none'; 
-        };
-
-        window.verifyUser = async (id) => {
-            if (confirm("Надати доступ?")) {
-                await updateDoc(doc(db, "users", id), { verified: true });
-                // Відправляємо webhook при верифікації
-                const snap = await getDoc(doc(db, "users", id));
-                const u = snap.data();
-                sendDiscordWebhook({
-                    embeds: [{
-                        title: "✅ Акаунт верифіковано",
-                        description: `**Ім'я:** ${u.name || "Невідомий"}\n**ID:** ${u.gameID || "---"}\n**Статус:** ✅ Доступ надано`,
-                        color: 3066993,
-                        timestamp: new Date().toISOString(),
-                        footer: { text: "ДШВ | COMMAND CENTER" }
-                    }]
-                });
-            }
-        };
-
-        window.deleteUser = async (id) => {
-            const code = await getSecret();
-            const input = prompt("Введіть пароль:");
-            if (input === code) {
-                await deleteDoc(doc(db, "users", id));
-                alert("Бійця видалено!");
-            } else {
-                if (input === null) {
-                // Скасування або порожній ввід
-                } else {
-                    alert("Невірний пароль!");
-                }
-            }
-        };
-
-        function initNotifications() {
-            ['reports', 'subotniks', 'applications', 'ryletka'].forEach(t => {
-                let isInitialLoad = true;
-                onSnapshot(collection(db, t), (snap) => {
-                    if (isInitialLoad) { isInitialLoad = false; return; }
-                    snap.docChanges().forEach((change) => {
-                        if (change.type === "added") {
-                            const id = t + change.doc.id;
-                            if (isRead(id) || document.getElementById('notif-' + id)) return;
-                            let text = `Новий запис: ${t}`;
-                            let link = `${t}.html`;
-                            if (t === 'applications' && myData.role !== 'admin') return;
-                            // Якщо це ролетка, а не адмін і не інструктор - не показувати
-                            if (t === 'ryletka' && myData.role !== 'admin' && myData.role !== 'instructor' && myData.role !== 'user') return;
-                            addNotification(text, link, id);
-                        }
-                    });
-                });
-            });
-        }
-
-        function listenToSystemStatus(role) {
-            
-        }
-
-        window.toggleSystemAccess = async () => {
-            const code = await getSecret(); 
-            const input = prompt("ВВЕДІТЬ СЕКРЕТНИЙ КОД:");
-            if (input === code) {
-                const ref = doc(db, "settings", "systemStatus");
-                const snap = await getDoc(ref);
-                if (!snap.exists()) {
-                    await setDoc(ref, { isLocked: false });
-                }
-                const newState = !snap.data().isLocked;
-                await updateDoc(ref, { isLocked: newState });
-                alert(newState ? "Система заблокована" : "Система розблокована");
-            } else {
-                if (input === null) {
-                    // Скасування
-                } else {
-                    alert("Невірний код!");
-                }
-            }
-        };
-
-        // Функція для обробки посилань
-        function linkify(text) {
-            if (!text) return "";
-            const urlRegex = /(https?:\/\/\S+)/g;
-            return text.replace(urlRegex, '<a href="$1" target="_blank" style="color: var(--primary-bright);">$1</a>');
-        }
-
-        window.viewReports = async (uid, name) => {
-            const listUI = document.getElementById('modalReportsList');
-            document.getElementById('modalTitle').innerText = "АРХІВ: " + name;
-            document.getElementById('reportsModal').style.display = 'flex';
-            listUI.innerHTML = "<p style='text-align: center; padding: 20px; font-size: 13px;'>Завантаження архіву...</p>";
-            let found = [];
-            for (const c of ['reports', 'subotniks']) {
-                const snap = await getDocs(collection(db, c));
-                snap.forEach(d => {
-                    const data = d.data();
-                    if (JSON.stringify(data).toLowerCase().includes(name.toLowerCase())) {
-                        found.push({ ...data, colType: c === 'reports' ? 'Щотижневий' : 'Суботник' });
-                    }
-                });
-            }
-            
-            listUI.innerHTML = found.map(f => `
-                <div class="report-card ${f.colType === 'Щотижневий' ? 'rep-weekly' : 'rep-subotnik'}">
-                    <div class="report-header">
-                        <span style="font-size: 12px; font-weight: 900; color: var(--primary-bright);">${f.period || f.date || '---'}</span>
-                        <span style="font-size: 10px; background: ${f.colType === 'Щотижневий' ? 'var(--primary)' : 'var(--warning)'}; color: black; padding: 3px 8px; border-radius: 5px; font-weight: 900;">${f.colType}</span>
-                    </div>
-                    <div class="report-body">${linkify(f.content || f.message)}</div>
+            <!-- Hitbox editor -->
+            <div class="hitbox-editor">
+                <div class="hitbox-header">
+                    <span>🎯 ХІТБОКСИ — ТОЧКИ ВИХОДУ КНОПОК</span>
+                    <span style="color: var(--text-gray); font-size: 10px;">Клікай на фото щоб ставити точки</span>
                 </div>
-            `).join('') || "<p style='text-align: center; padding: 50px; color: var(--text-gray); font-size: 13px;'>Звітів не знайдено.</p>";
+                <div class="hitbox-canvas-wrap">
+                    <canvas id="hitboxCanvas"></canvas>
+                    <div id="hitboxPoints"></div>
+                </div>
+                <div class="hitbox-tools">
+                    <button class="btn-delete-item" style="padding: 8px 16px; font-family: Rajdhani; font-size:13px; font-weight:700;" onclick="clearHitboxPoints()">🗑 Очистити точки</button>
+                    <span style="color: var(--text-gray); font-size: 12px; align-self: center; margin-left: 10px;">Точок встановлено: <span id="pointsCount" style="color: var(--primary);">0</span></span>
+                </div>
+            </div>
+
+            <!-- Buttons editor -->
+            <div class="buttons-editor">
+                <div class="buttons-editor-header">
+                    <h3>🔲 КНОПКИ НАВІГАЦІЇ</h3>
+                    <span style="color: var(--text-gray); font-size: 11px;">Перетягуй для зміни порядку</span>
+                </div>
+
+                <div class="col-labels">
+                    <div class="col-label"></div>
+                    <div class="col-label">Назва</div>
+                    <div class="col-label">Посилання</div>
+                    <div class="col-label">Тип</div>
+                    <div class="col-label">Іконка</div>
+                    <div class="col-label">Видалити</div>
+                </div>
+
+                <div class="btn-list" id="btnList">
+                    <!-- dynamically rendered -->
+                </div>
+
+                <button class="btn-add-item" onclick="addButton()">+ ДОДАТИ КНОПКУ</button>
+            </div>
+
+            <button class="admin-save-btn" onclick="saveConfig()">💾 ЗБЕРЕГТИ ТА ЗАСТОСУВАТИ</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================================================
+// CONFIG — Default buttons (will be overridden by Firebase/localStorage)
+// ===================================================
+let hubConfig = {
+    photo: null, // base64 or URL
+    buttons: [
+        { id: 1, name: 'Кабінет',       href: 'cabinet.html',      type: 'standard', icon: '🏠' },
+        { id: 2, name: 'Звіти',          href: 'reports.html',      type: 'standard', icon: '📅' },
+        { id: 3, name: 'Суботник',       href: 'subotnik.html',     type: 'standard', icon: '🧹' },
+        { id: 4, name: 'Чати',           href: 'chats.html',        type: 'standard', icon: '💬' },
+        { id: 5, name: 'Іспити',         href: 'isput.html',        type: 'special',  icon: '💼' },
+        { id: 6, name: 'Рулетка',        href: 'ryletka.html',      type: 'special',  icon: '🎲' },
+        { id: 7, name: 'Реєстр',         href: 'cabinet.html#staff',type: 'standard', icon: '📋' },
+    ],
+    hitboxPoints: []
+};
+
+let hubExpanded = false;
+
+// ===================================================
+// CLOCK
+// ===================================================
+function updateClock() {
+    const now = new Date();
+    const t = [now.getHours(), now.getMinutes(), now.getSeconds()]
+        .map(n => String(n).padStart(2,'0')).join(':');
+    document.getElementById('clockEl').textContent = t;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===================================================
+// LOAD CONFIG
+// ===================================================
+function loadConfig() {
+    const saved = localStorage.getItem('dshv_hub_config');
+    if (saved) {
+        try {
+            hubConfig = JSON.parse(saved);
+        } catch(e) {}
+    }
+    renderHub();
+    // In production: also load from Firebase
+    // loadFromFirebase();
+}
+
+// ===================================================
+// TOGGLE HUB
+// ===================================================
+function toggleHub() {
+    hubExpanded = !hubExpanded;
+    const hub = document.getElementById('hub');
+    if (hubExpanded) {
+        hub.classList.add('expanded');
+        renderHubButtons();
+    } else {
+        hub.classList.remove('expanded');
+    }
+}
+
+// ===================================================
+// RENDER HUB
+// ===================================================
+function renderHub() {
+    // Set photo
+    const inner = document.getElementById('hubPhotoInner');
+    if (hubConfig.photo) {
+        inner.innerHTML = `<img src="${hubConfig.photo}" alt="Hub">`;
+    } else {
+        inner.innerHTML = '👤';
+    }
+    renderHubButtons();
+}
+
+function renderHubButtons() {
+    // Remove old buttons
+    document.querySelectorAll('.hub-btn').forEach(el => el.remove());
+    document.getElementById('hubSvg').innerHTML = '';
+
+    const hub = document.getElementById('hub');
+    const buttons = hubConfig.buttons;
+    const count = buttons.length;
+    const cx = 350; // center X in SVG viewBox
+    const cy = 350; // center Y
+
+    buttons.forEach((btn, i) => {
+        // Distribute around circle
+        const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
+        const radius = 230;
+        const x = Math.cos(angle) * radius; // offset from center
+        const y = Math.sin(angle) * radius;
+
+        // Create button element
+        const el = document.createElement('a');
+        el.href = btn.href;
+        el.className = `hub-btn ${btn.type === 'special' ? 'btn-special' : 'btn-standard'}`;
+        el.innerHTML = `<span>${btn.icon}</span> ${btn.name}`;
+        el.style.left = `calc(50% + ${x}px)`;
+        el.style.top = `calc(50% + ${y}px)`;
+        el.style.transform = 'translate(-50%, -50%)';
+
+        // Stagger delay
+        el.style.transitionDelay = `${i * 0.05}s`;
+
+        hub.appendChild(el);
+
+        // SVG line from center to button area
+        const svgLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        svgLine.setAttribute('x1', cx);
+        svgLine.setAttribute('y1', cy);
+        const bx = cx + x;
+        const by = cy + y;
+        svgLine.setAttribute('x2', bx);
+        svgLine.setAttribute('y2', by);
+        svgLine.classList.add('hub-line');
+        svgLine.style.transitionDelay = `${i * 0.05 + 0.1}s`;
+        document.getElementById('hubSvg').appendChild(svgLine);
+    });
+}
+
+// ===================================================
+// ADMIN — PASSWORD
+// ===================================================
+// In production: fetch password from Firebase settings collection
+// For demo: local password
+const DEMO_PASSWORD = 'admin123'; // REPLACE WITH FIREBASE FETCH
+
+function openAdminPanel() {
+    document.getElementById('pwModal').classList.add('visible');
+    setTimeout(() => document.getElementById('pwInput').focus(), 100);
+}
+
+function closePwModal() {
+    document.getElementById('pwModal').classList.remove('visible');
+    document.getElementById('pwInput').value = '';
+}
+
+async function checkPassword() {
+    const input = document.getElementById('pwInput').value;
+    
+    // === FIREBASE CHECK (uncomment when using Firebase) ===
+    // const snap = await getDoc(doc(db, 'settings', 'adminPassword'));
+    // const realPw = snap.data()?.password;
+    // if (input === realPw) { ... }
+
+    // DEMO check:
+    if (input === DEMO_PASSWORD) {
+        closePwModal();
+        openAdminEditor();
+    } else {
+        const inp = document.getElementById('pwInput');
+        inp.classList.add('error');
+        setTimeout(() => inp.classList.remove('error'), 400);
+        inp.value = '';
+    }
+}
+
+function openAdminEditor() {
+    document.getElementById('adminPanel').classList.add('visible');
+    renderAdminButtons();
+    renderPhotoPreview();
+    renderHitboxCanvas();
+}
+
+function closeAdminPanel() {
+    document.getElementById('adminPanel').classList.remove('visible');
+}
+
+// ===================================================
+// ADMIN — PHOTO
+// ===================================================
+function handlePhotoUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        hubConfig.photo = e.target.result;
+        renderPhotoPreview();
+        renderHitboxCanvas();
+    };
+    reader.readAsDataURL(file);
+}
+
+function renderPhotoPreview() {
+    const prev = document.getElementById('photoPreview');
+    if (hubConfig.photo) {
+        prev.innerHTML = '';
+        prev.style.backgroundImage = `url(${hubConfig.photo})`;
+        prev.style.backgroundSize = 'cover';
+        prev.style.backgroundPosition = 'center';
+    } else {
+        prev.textContent = '👤';
+    }
+}
+
+// ===================================================
+// ADMIN — HITBOX CANVAS
+// ===================================================
+let hitboxPoints = [];
+
+function renderHitboxCanvas() {
+    const wrap = document.querySelector('.hitbox-canvas-wrap');
+    const canvas = document.getElementById('hitboxCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = wrap.clientWidth;
+    const H = wrap.clientHeight;
+    canvas.width = W;
+    canvas.height = H;
+
+    // Draw background image if available
+    ctx.clearRect(0, 0, W, H);
+    if (hubConfig.photo) {
+        const img = new Image();
+        img.onload = () => {
+            // Draw scaled + centered
+            const scale = Math.min(W/img.width, H/img.height) * 0.8;
+            const dw = img.width * scale;
+            const dh = img.height * scale;
+            const dx = (W - dw) / 2;
+            const dy = (H - dh) / 2;
+            ctx.globalAlpha = 0.4;
+            ctx.drawImage(img, dx, dy, dw, dh);
+            ctx.globalAlpha = 1;
+            drawHitboxOverlay(ctx, W, H);
+        };
+        img.src = hubConfig.photo;
+    } else {
+        // Draw grid
+        ctx.strokeStyle = 'rgba(0,255,68,0.1)';
+        ctx.lineWidth = 1;
+        for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+        for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+        ctx.fillStyle = 'rgba(0,255,68,0.3)';
+        ctx.font = '13px Rajdhani';
+        ctx.textAlign = 'center';
+        ctx.fillText('Завантаж фото щоб бачити його тут', W/2, H/2);
+        drawHitboxOverlay(ctx, W, H);
+    }
+
+    // Click to add point
+    canvas.onclick = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width;
+        const py = (e.clientY - rect.top) / rect.height;
+        hitboxPoints.push({ x: px, y: py });
+        hubConfig.hitboxPoints = hitboxPoints;
+        drawHitboxOverlay(ctx, W, H);
+        document.getElementById('pointsCount').textContent = hitboxPoints.length;
+        redrawPoints(W, H);
+    };
+
+    hitboxPoints = hubConfig.hitboxPoints || [];
+    document.getElementById('pointsCount').textContent = hitboxPoints.length;
+    redrawPoints(W, H);
+}
+
+function drawHitboxOverlay(ctx, W, H) {
+    hitboxPoints.forEach((p, i) => {
+        const x = p.x * W;
+        const y = p.y * H;
+        ctx.beginPath();
+        ctx.arc(x, y, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,255,68,0.8)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,255,68,0.3)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    });
+}
+
+function redrawPoints(W, H) {
+    const container = document.getElementById('hitboxPoints');
+    container.innerHTML = '';
+    hitboxPoints.forEach((p, i) => {
+        const dot = document.createElement('div');
+        dot.className = 'hitbox-point';
+        dot.style.left = (p.x * 100) + '%';
+        dot.style.top = (p.y * 100) + '%';
+        dot.title = `Точка ${i + 1}`;
+
+        const lbl = document.createElement('div');
+        lbl.className = 'hitbox-point-label';
+        lbl.textContent = `P${i+1}`;
+        dot.appendChild(lbl);
+
+        // Right-click to delete
+        dot.oncontextmenu = (e) => {
+            e.preventDefault();
+            hitboxPoints.splice(i, 1);
+            hubConfig.hitboxPoints = hitboxPoints;
+            const canvas = document.getElementById('hitboxCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            renderHitboxCanvas();
         };
 
-        // ===== DISCORD WEBHOOK =====
-        const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1467185135853109382/kL3eATlCs-DcxVl9oxorz8rV-9vVJgw1tpfrjgr2dtTemaNM1HRZf75-krtm9A2CVm8e";
+        container.appendChild(dot);
+    });
+}
 
-        async function sendDiscordWebhook(payload) {
-            try {
-                await fetch(DISCORD_WEBHOOK, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload),
-                    mode: "no-cors"
-                });
-            } catch(e) {
-                console.warn("Discord webhook:", e);
-            }
-        }
+function clearHitboxPoints() {
+    hitboxPoints = [];
+    hubConfig.hitboxPoints = [];
+    renderHitboxCanvas();
+    document.getElementById('pointsCount').textContent = 0;
+}
 
-        function listenForNewVerifications() {
-            // Слідкуємо за новими документами в колекції users
-            let isInitial = true;
-            onSnapshot(collection(db, "users"), (snap) => {
-                if (isInitial) { isInitial = false; return; }
-                snap.docChanges().forEach((change) => {
-                    if (change.type === "added") {
-                        const u = change.doc.data();
-                        sendDiscordWebhook({
-                            embeds: [{
-                                title: "🆕 Новий акаунт зареєстровано",
-                                description: `**Ім'я:** ${u.name || "Невідомий"}\n**ID:** ${u.gameID || "---"}\n**Статус:** ⏳ Очікує верифікації`,
-                                color: 16776960,
-                                timestamp: new Date().toISOString(),
-                                footer: { text: "ДШВ | COMMAND CENTER" }
-                            }]
-                        });
-                    }
-                });
-            });
-        }
+// ===================================================
+// ADMIN — BUTTONS LIST
+// ===================================================
+function renderAdminButtons() {
+    const list = document.getElementById('btnList');
+    list.innerHTML = '';
+    hubConfig.buttons.forEach((btn, i) => {
+        const row = document.createElement('div');
+        row.className = 'btn-list-item';
+        row.dataset.id = btn.id;
+        row.draggable = true;
+        row.innerHTML = `
+            <div class="drag-handle">⠿</div>
+            <input type="text" class="admin-input" placeholder="Назва..." value="${btn.name}"
+                   onchange="updateButton(${btn.id}, 'name', this.value)">
+            <input type="text" class="admin-input" placeholder="посилання.html" value="${btn.href}"
+                   onchange="updateButton(${btn.id}, 'href', this.value)">
+            <select class="admin-select" onchange="updateButton(${btn.id}, 'type', this.value)">
+                <option value="standard" ${btn.type==='standard'?'selected':''}>Звичайна</option>
+                <option value="special" ${btn.type==='special'?'selected':''}>Особлива</option>
+            </select>
+            <input type="text" class="admin-input" placeholder="🎯" value="${btn.icon}" maxlength="4"
+                   onchange="updateButton(${btn.id}, 'icon', this.value)" style="text-align:center; font-size:18px;">
+            <button class="btn-delete-item" onclick="deleteButton(${btn.id})">🗑</button>
+        `;
 
-        window.onclick = function(event) {
-            if (!event.target.closest('.notif-wrapper') && !event.target.closest('#notifDropdown')) {
-                document.getElementById('notifDropdown').style.display = 'none';
-            }
-        }
-    </script>
+        // Drag-and-drop reorder
+        row.ondragstart = (e) => { e.dataTransfer.setData('id', btn.id); row.style.opacity = '0.4'; };
+        row.ondragend = () => { row.style.opacity = '1'; };
+        row.ondragover = (e) => { e.preventDefault(); };
+        row.ondrop = (e) => {
+            e.preventDefault();
+            const draggedId = parseInt(e.dataTransfer.getData('id'));
+            const targetId = btn.id;
+            if (draggedId === targetId) return;
+            const di = hubConfig.buttons.findIndex(b => b.id === draggedId);
+            const ti = hubConfig.buttons.findIndex(b => b.id === targetId);
+            const [dragged] = hubConfig.buttons.splice(di, 1);
+            hubConfig.buttons.splice(ti, 0, dragged);
+            renderAdminButtons();
+        };
+
+        list.appendChild(row);
+    });
+}
+
+function updateButton(id, field, value) {
+    const btn = hubConfig.buttons.find(b => b.id === id);
+    if (btn) btn[field] = value;
+}
+
+function addButton() {
+    const newId = Date.now();
+    hubConfig.buttons.push({ id: newId, name: 'Нова кнопка', href: '#', type: 'standard', icon: '🔗' });
+    renderAdminButtons();
+}
+
+function deleteButton(id) {
+    hubConfig.buttons = hubConfig.buttons.filter(b => b.id !== id);
+    renderAdminButtons();
+}
+
+// ===================================================
+// SAVE CONFIG
+// ===================================================
+function saveConfig() {
+    localStorage.setItem('dshv_hub_config', JSON.stringify(hubConfig));
+    
+    // === FIREBASE SAVE (uncomment when using Firebase) ===
+    // await setDoc(doc(db, 'settings', 'hubConfig'), hubConfig);
+
+    renderHub();
+    closeAdminPanel();
+    showToast('✅ Збережено та застосовано!', 'success');
+}
+
+function showToast(msg, type = '') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = `toast show ${type}`;
+    setTimeout(() => t.className = 'toast', 3000);
+}
+
+// ===================================================
+// INIT
+// ===================================================
+loadConfig();
+</script>
 </body>
 </html>
