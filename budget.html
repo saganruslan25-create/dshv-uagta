@@ -560,6 +560,50 @@ select.inp-field { cursor: pointer; }
   .wallets-grid { grid-template-columns: 1fr; }
   .collections-grid { grid-template-columns: 1fr; }
   .tab-nav { overflow-x: auto; width: 100%; }
+  /* Header mobile */
+  header { padding: 12px 4%; gap: 8px; flex-wrap: wrap; }
+  .header-right { gap: 6px; }
+  .btn-head { padding: 6px 10px; font-size: 11px; }
+  /* Container */
+  .container { padding: 20px 14px; }
+  /* Wallets */
+  .wallet-balance { font-size: 26px; }
+  .wallet-card { padding: 18px; border-radius: 18px; }
+  /* Stats */
+  .stat-value { font-size: 28px; }
+  .stat-card { padding: 18px 20px; }
+  /* ATM modal full-screen on mobile */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .atm-modal { border-radius: 24px 24px 0 0; max-width: 100%; width: 100%; }
+  .report-preview-modal { border-radius: 24px 24px 0 0; max-width: 100%; width: 100%; max-height: 95vh; }
+  /* Tab nav */
+  .tab-btn { padding: 8px 12px; font-size: 12px; }
+  /* History items */
+  .h-icon { width: 36px; height: 36px; font-size: 16px; }
+  .h-reason { font-size: 13px; }
+  .h-amount { font-size: 15px; }
+  /* Donate page */
+  .donate-page { padding: 0 4px; }
+  .donate-title { font-size: 22px; }
+  .donate-raised { font-size: 30px; }
+  .donate-form-card { padding: 20px; }
+  .donate-progress-card { padding: 18px; }
+  /* Action buttons */
+  .action-btn { padding: 16px; }
+  .action-btn-icon { font-size: 26px; }
+  /* Collections */
+  .collection-card { padding: 18px; }
+  /* Charts */
+  .chart-card { padding: 16px; }
+  .chart-canvas-wrap { height: 220px; }
+}
+
+@media (max-width: 400px) {
+  .tab-btn { padding: 7px 9px; font-size: 11px; gap: 4px; }
+  .wallet-balance { font-size: 22px; }
+  .stat-value { font-size: 24px; }
+  .h-actions { flex-direction: column; gap: 4px; }
+  .atm-display-value { font-size: 30px; }
 }
 </style>
 </head>
@@ -588,7 +632,7 @@ select.inp-field { cursor: pointer; }
       </div>
       <div style="font-size:11px;color:var(--text-gray);font-weight:600;margin-top:8px;" id="donateDonorsPub">0 донатів</div>
     </div>
-    <div class="donate-form-card">
+    <div class="donate-form-card" id="donateFormCard">
       <div class="donate-form-title">💙 Підтримати збір</div>
       <div class="inp-group">
         <div class="inp-label">Ваше ім'я або позивний</div>
@@ -613,9 +657,7 @@ select.inp-field { cursor: pointer; }
         Сума автоматично зараховується до збору. Адмін може відкатити або видалити донат за потребою.
       </div>
     </div>    </div>
-    <div class="donate-close">
-      <button class="btn-cancel" onclick="closeDonate()">← Назад</button>
-    </div>
+
   </div>
 </div>
 
@@ -1124,11 +1166,21 @@ async function showPublicDonate(collId) {
 
     // status
     const badge = document.getElementById('donateBadge');
-    if (d.status === 'closed') {
+    const isClosed = d.status === 'closed';
+    if (isClosed) {
       badge.textContent = '🔴 ЗБІР ЗАКРИТО';
       badge.style.background = 'rgba(239,68,68,0.12)';
       badge.style.borderColor = 'rgba(239,68,68,0.3)';
       badge.style.color = 'var(--danger)';
+      // Hide form, show closed message
+      const formCard = document.getElementById('donateFormCard');
+      if (formCard) {
+        formCard.innerHTML = '<div style="text-align:center;padding:24px 0;">' +
+          '<div style="font-size:40px;margin-bottom:12px;">🔒</div>' +
+          '<div style="font-size:15px;font-weight:800;color:var(--danger);">Збір закрито</div>' +
+          '<div style="font-size:12px;color:var(--text-gray);margin-top:8px;font-weight:600;">Приймання донатів призупинено.<br>Дякуємо за підтримку!</div>' +
+        '</div>';
+      }
     }
 
     // settings — requisites
