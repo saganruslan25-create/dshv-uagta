@@ -1783,9 +1783,6 @@ window.openCollectionDetail = async (id) => {
   document.getElementById('collDetailGoalText').textContent = goal ? 'з '+formatMoney(goal)+' грн' : 'без ліміту';
   document.getElementById('collDetailFill').style.width = (goal ? Math.min(100,(raised/goal)*100) : 0)+'%';
   document.getElementById('collToggleBtn').textContent = c.status==='closed' ? '▶ Відкрити збір' : '⏸ Закрити збір';
-  document.getElementById('collConfirmAmount').value = '';
-  document.getElementById('collConfirmDonor').value = '';
-
   // Load donors with realtime listener
   const donorsSnap = await getDocs(collection(db, 'collections', id, 'donors'));
   const donors = donorsSnap.docs.map(d => ({id:d.id,...d.data()}))
@@ -1824,30 +1821,6 @@ window.openCollectionDetail = async (id) => {
   openModal('collectionDetailModal');
 };
 
-window.confirmDonation = async () => {
-  if (!activeCollectionId) return;
-  const amount = parseFloat(document.getElementById('collConfirmAmount').value);
-  const donor = document.getElementById('collConfirmDonor').value.trim();
-  if (!amount || !donor) { showToast('❌ Вкажіть суму і донора', true); return; }
-  try {
-    const cRef = doc(db, 'collections', activeCollectionId);
-    const cSnap = await getDoc(cRef);
-    const cData = cSnap.data();
-    // Add confirmed donor
-    await addDoc(collection(db, 'collections', activeCollectionId, 'donors'), {
-      name: donor, amount, confirmed: true, timestamp: serverTimestamp()
-    });
-    // Update totals
-    await updateDoc(cRef, {
-      raised: (cData.raised||0) + amount,
-      donorsCount: (cData.donorsCount||0) + 1
-    });
-    showToast(`✅ Підтверджено ${formatMoney(amount)} грн від ${donor}`);
-    document.getElementById('collConfirmAmount').value = '';
-    document.getElementById('collConfirmDonor').value = '';
-    openCollectionDetail(activeCollectionId);
-  } catch(e) { showToast('❌ ' + e.message, true); }
-};
 
 window.rollbackDonor = async (donorId, amount) => {
   if (!activeCollectionId) return;
