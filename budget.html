@@ -595,6 +595,10 @@ select.inp-field { cursor: pointer; }
         <input type="text" class="inp-field" id="donorName" placeholder="Напр.: Іван або Позивний...">
       </div>
       <div style="margin-top:14px;" class="inp-group">
+        <div class="inp-label">Скільки ви переказудете (грн)</div>
+        <input type="number" class="inp-field" id="donorAmount" placeholder="0" min="1" style="font-size:22px;font-weight:800;color:var(--primary);">
+      </div>
+      <div style="margin-top:14px;" class="inp-group">
         <div class="inp-label">Повідомлення (необов'язково)</div>
         <input type="text" class="inp-field" id="donorMsg" placeholder="Слава Україні!">
       </div>
@@ -603,12 +607,12 @@ select.inp-field { cursor: pointer; }
         <div class="donate-req-text" id="donateReqText"></div>
       </div>
       <div style="margin-top:18px;">
-        <button class="btn-blue" onclick="submitDonation()">💙 Я переказав кошти</button>
+        <button class="btn-blue" onclick="submitDonation()">💙 Переказав(-ла) кошти</button>
       </div>
       <div style="font-size:11px;color:var(--text-gray);font-weight:600;margin-top:12px;text-align:center;line-height:1.5;">
-        Після натискання ваше ім'я буде додано до списку учасників збору. Адміністратор підтвердить суму.
+        Сума автоматично зараховується до збору. Адмін може відкатити або видалити донат за потребою.
       </div>
-    </div>
+    </div>    </div>
     <div class="donate-close">
       <button class="btn-cancel" onclick="closeDonate()">← Назад</button>
     </div>
@@ -797,12 +801,8 @@ select.inp-field { cursor: pointer; }
         <div class="inp-label">Валюта</div>
         <select class="inp-field" id="walletCurrency">
           <option value="UAH">🇺🇦 Гривня (UAH)</option>
-          <option value="KRB">⚔️ Карбованці (KRB)</option>
           <option value="USD">🇺🇸 Долар США (USD)</option>
           <option value="EUR">🇪🇺 Євро (EUR)</option>
-          <option value="GBP">🇬🇧 Фунт стерлінгів (GBP)</option>
-          <option value="PLN">🇵🇱 Злотий (PLN)</option>
-          <option value="CZK">🇨🇿 Крона (CZK)</option>
         </select>
       </div>
       <div class="inp-group">
@@ -1040,14 +1040,7 @@ select.inp-field { cursor: pointer; }
         <div style="font-size:12px;color:var(--text-gray);font-weight:600;" id="collDetailGoalText">з ? грн</div>
         <div class="coll-progress-bar" style="margin-top:12px;"><div class="coll-progress-fill" id="collDetailFill" style="width:0%"></div></div>
       </div>
-      <div>
-        <div class="inp-label" style="margin-bottom:8px;">Підтвердити донат (додати суму)</div>
-        <div style="display:flex;gap:8px;">
-          <input type="number" class="inp-field" id="collConfirmAmount" placeholder="Сума...">
-          <input type="text" class="inp-field" id="collConfirmDonor" placeholder="Донор...">
-          <button class="btn-primary" style="width:auto;padding:12px 16px;white-space:nowrap;" onclick="confirmDonation()">✅</button>
-        </div>
-      </div>
+      <!-- donor confirm removed - auto system -->
       <div style="max-height:200px;overflow-y:auto;" id="collDonorsList"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;">
         <button class="btn-blue" onclick="copyCollectionLink()" style="flex:1;">🔗 Скопіювати посилання</button>
@@ -1159,13 +1152,32 @@ window.submitDonation = async () => {
   const collId = document.getElementById('publicDonate')._collId;
   const name = document.getElementById('donorName').value.trim();
   const msg = document.getElementById('donorMsg').value.trim();
-  if (!name) { alert('Вкажіть ваше ім\'я'); return; }
+  const amount = parseFloat(document.getElementById('donorAmount').value) || 0;
+  if (!name) { alert("Вкажіть ваше ім'я"); return; }
+  if (!amount || amount <= 0) { alert('Вкажіть суму переказу'); return; }
   try {
+    const cRef = doc(db, 'collections', collId);
+    const cSnap = await getDoc(cRef);
+    const cData = cSnap.data();
+    // Add donor record (already confirmed = true, auto-counted)
     await addDoc(collection(db, 'collections', collId, 'donors'), {
-      name, msg, confirmed: false, timestamp: serverTimestamp()
+      name, msg, amount, confirmed: true, timestamp: serverTimestamp()
     });
-    showToast('💙 Дякуємо! Адміністратор підтвердить ваш внесок.');
+    // Immediately update raised total
+    await updateDoc(cRef, {
+      raised: (cData.raised || 0) + amount,
+      donorsCount: (cData.donorsCount || 0) + 1
+    });
+    // Update public display
+    const newRaised = (cData.raised || 0) + amount;
+    document.getElementById('donateRaisedPub').textContent = formatMoney(newRaised);
+    const goal = cData.goal || 0;
+    const pct = goal ? Math.min(100, (newRaised/goal)*100) : 0;
+    document.getElementById('donateProgressFill').style.width = pct + '%';
+    document.getElementById('donateDonorsPub').textContent = ((cData.donorsCount||0)+1) + ' донатів';
+    showToast('💙 Дякуємо! ' + formatMoney(amount) + ' грн зараховано!');
     document.getElementById('donorName').value = '';
+    document.getElementById('donorAmount').value = '';
     document.getElementById('donorMsg').value = '';
   } catch(e) { alert('Помилка: ' + e.message); }
 };
@@ -1774,21 +1786,40 @@ window.openCollectionDetail = async (id) => {
   document.getElementById('collConfirmAmount').value = '';
   document.getElementById('collConfirmDonor').value = '';
 
-  // Load donors
+  // Load donors with realtime listener
   const donorsSnap = await getDocs(collection(db, 'collections', id, 'donors'));
-  const donors = donorsSnap.docs.map(d => ({id:d.id,...d.data()}));
-  const dHTML = donors.length ? donors.map(d => {
-    const confirmed = d.confirmed;
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+  const donors = donorsSnap.docs.map(d => ({id:d.id,...d.data()}))
+    .sort((a,b) => (b.timestamp?.seconds||0) - (a.timestamp?.seconds||0));
+  
+  const dHTML = donors.length ? donors.map((d, i) => {
+    const ts = d.timestamp?.toDate ? d.timestamp.toDate().toLocaleDateString('uk-UA',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    const amt = d.amount || 0;
+    const rolledBack = d.rolledBack ? ' style="opacity:0.4;"' : '';
+    return `<div${rolledBack} style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
       <div style="flex:1;">
-        <div style="font-size:13px;font-weight:700;color:white;">${d.name}</div>
-        ${d.msg?`<div style="font-size:11px;color:var(--text-gray);">${d.msg}</div>`:''}
+        <div style="font-size:13px;font-weight:700;color:white;">${d.name}${d.rolledBack ? ' <span style="font-size:10px;color:var(--gold);">[&#x21A9; Відкат]</span>' : ''}</div>
+        ${d.msg ? `<div style="font-size:11px;color:var(--text-gray);">${d.msg}</div>` : ''}
+        ${ts ? `<div style="font-size:10px;color:var(--text-gray);margin-top:2px;">${ts}</div>` : ''}
       </div>
-      ${d.amount?`<div style="font-size:13px;font-weight:800;color:#3b82f6;">+${formatMoney(d.amount)} грн</div>`:''}
-      <div style="font-size:10px;padding:3px 8px;border-radius:6px;${confirmed?'background:rgba(0,255,68,0.1);color:var(--primary);':'background:rgba(251,191,36,0.1);color:var(--gold);'}font-weight:700;">${confirmed?'✅':'⏳'}</div>
+      ${amt ? `<div style="font-size:14px;font-weight:800;color:#3b82f6;">+${formatMoney(amt)} грн</div>` : ''}
+      <div style="display:flex;gap:4px;">
+        <button data-action="rollback" data-id="${d.id}" data-amt="${amt}" style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);color:var(--gold);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;" title="Відкатити">↩</button>
+        <button data-action="delete" data-id="${d.id}" data-amt="${amt}" style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:var(--danger);border-radius:6px;padding:4px 8px;font-size:11px;font-weight:700;cursor:pointer;" title="Видалити">🗑</button>
+      </div>
     </div>`;
   }).join('') : '<div style="font-size:13px;color:var(--text-gray);padding:12px 0;text-align:center;">Донорів ще немає</div>';
-  document.getElementById('collDonorsList').innerHTML = dHTML;
+  const listEl = document.getElementById('collDonorsList');
+  listEl.innerHTML = dHTML;
+  // Event delegation for rollback/delete buttons (avoids onclick arg quoting issues)
+  listEl.onclick = (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    const action = btn.dataset.action;
+    const donorId = btn.dataset.id;
+    const amt = parseFloat(btn.dataset.amt) || 0;
+    if (action === 'rollback') rollbackDonor(donorId, amt);
+    if (action === 'delete') deleteDonor(donorId, amt);
+  };
 
   openModal('collectionDetailModal');
 };
@@ -1814,6 +1845,47 @@ window.confirmDonation = async () => {
     showToast(`✅ Підтверджено ${formatMoney(amount)} грн від ${donor}`);
     document.getElementById('collConfirmAmount').value = '';
     document.getElementById('collConfirmDonor').value = '';
+    openCollectionDetail(activeCollectionId);
+  } catch(e) { showToast('❌ ' + e.message, true); }
+};
+
+window.rollbackDonor = async (donorId, amount) => {
+  if (!activeCollectionId) return;
+  if (!confirm('Відкатити донат? Сума буде виднята з збору, запис залишиться.')) return;
+  try {
+    const cRef = doc(db, 'collections', activeCollectionId);
+    const cSnap = await getDoc(cRef);
+    const cData = cSnap.data();
+    // Mark donor as rolled back (don't delete, keep history)
+    await updateDoc(doc(db, 'collections', activeCollectionId, 'donors', donorId), {
+      confirmed: false, rolledBack: true
+    });
+    // Subtract from raised
+    const newRaised = Math.max(0, (cData.raised||0) - amount);
+    const newCount = Math.max(0, (cData.donorsCount||0) - 1);
+    await updateDoc(cRef, { raised: newRaised, donorsCount: newCount });
+    showToast('↩ Донат відкатано. Сума виднята зі збору.');
+    openCollectionDetail(activeCollectionId);
+  } catch(e) { showToast('❌ ' + e.message, true); }
+};
+
+window.deleteDonor = async (donorId, amount) => {
+  if (!activeCollectionId) return;
+  if (!confirm('Видалити донат? Сума буде виднята і запис повністью видалиться.')) return;
+  try {
+    const cRef = doc(db, 'collections', activeCollectionId);
+    const cSnap = await getDoc(cRef);
+    const cData = cSnap.data();
+    const donorSnap = await getDoc(doc(db, 'collections', activeCollectionId, 'donors', donorId));
+    const donorData = donorSnap.exists() ? donorSnap.data() : {};
+    // Only subtract if donor was confirmed (counted in raised)
+    if (donorData.confirmed && !donorData.rolledBack) {
+      const newRaised = Math.max(0, (cData.raised||0) - amount);
+      const newCount = Math.max(0, (cData.donorsCount||0) - 1);
+      await updateDoc(cRef, { raised: newRaised, donorsCount: newCount });
+    }
+    await deleteDoc(doc(db, 'collections', activeCollectionId, 'donors', donorId));
+    showToast('🗑 Донат видалено.');
     openCollectionDetail(activeCollectionId);
   } catch(e) { showToast('❌ ' + e.message, true); }
 };
@@ -1860,19 +1932,23 @@ function updateChartWalletSelect() {
   });
 }
 
-window.loadChartData = async () => {
+let chartUnsubscribe = null;
+
+window.loadChartData = () => {
   const walletId = document.getElementById('chartWalletSelect').value;
   if (!walletId) return;
 
-  const q = query(collection(db, 'wallets', walletId, 'transactions'), orderBy('timestamp', 'desc'));
-  const snap = await getDocs(q);
-  const txs = snap.docs.map(d => ({id:d.id,...d.data()})).filter(t => !t.archived);
-  const w = wallets.find(x => x.id === walletId);
-  const sym = w ? (CURRENCY_SYMBOLS[w.currency]||'') : '';
+  if (chartUnsubscribe) { chartUnsubscribe(); chartUnsubscribe = null; }
 
-  buildLineChart(txs, sym);
-  buildBarChart(txs, sym);
-  buildPieChart(txs, sym);
+  const q = query(collection(db, 'wallets', walletId, 'transactions'), orderBy('timestamp', 'desc'));
+  chartUnsubscribe = onSnapshot(q, (snap) => {
+    const txs = snap.docs.map(d => ({id:d.id,...d.data()})).filter(t => !t.archived);
+    const w = wallets.find(x => x.id === walletId);
+    const sym = w ? (CURRENCY_SYMBOLS[w.currency]||'') : '';
+    buildLineChart(txs, sym);
+    buildBarChart(txs, sym);
+    buildPieChart(txs, sym);
+  });
 };
 
 function buildLineChart(txs, sym) {
