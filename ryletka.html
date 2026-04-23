@@ -52,6 +52,12 @@
             cursor: not-allowed !important;
         }
 
+        body.daily-locked .sidebar .menu-btn {
+            opacity: 0.4;
+            pointer-events: none !important;
+            cursor: not-allowed !important;
+        }
+
         input, textarea {
             user-select: text !important;
             -webkit-user-select: text !important;
@@ -1742,6 +1748,26 @@
     <!-- ============= DAILY REWARD PAGE ============= -->
     <section id="dailyPage" class="content-section">
 
+        <!-- INTERRUPTED PHASE (page refresh during game) -->
+        <div id="dailyPhaseInterrupted" class="daily-phase">
+            <div class="daily-cooldown-banner">
+                <div style="font-size:60px; margin-bottom:15px;">🚫</div>
+                <h2 style="color:var(--danger);">ПОВТОРНА СПРОБА НЕМОЖЛИВА</h2>
+                <p style="color:var(--text-gray); font-size:14px; margin-bottom:10px;">Ти оновив сторінку під час міні-гри.<br>Нагорода за сьогодні вже не доступна.</p>
+                <p style="color:var(--text-gray); font-size:12px;">Повертайся завтра для нової нагороди!</p>
+            </div>
+        </div>
+
+        <!-- COMPLETED (no cd, game already done today) -->
+        <div id="dailyPhaseCompleted" class="daily-phase">
+            <div class="daily-cooldown-banner">
+                <div style="font-size:60px; margin-bottom:15px;">✅</div>
+                <h2 style="color:var(--primary);">НАГОРОДУ ОТРИМАНО</h2>
+                <p style="color:var(--text-gray); font-size:14px; margin-bottom:10px;">Ти вже отримав щоденну нагороду сьогодні.</p>
+                <p style="color:var(--text-gray); font-size:12px;">Повертайся завтра!</p>
+            </div>
+        </div>
+
         <!-- COOLDOWN PHASE -->
         <div id="dailyPhaseCooldown" class="daily-phase">
             <div class="daily-cooldown-banner">
@@ -1934,7 +1960,35 @@
     const TOTAL_CARDS = 100;
     let isProcessing = false; 
     let isSpinRequested = false;
-    const SPIN_STATE_KEY = 'roulette_spin_state';
+    const SPIN_STATE_KEY        = 'roulette_spin_state';
+    const DAILY_ACTIVE_KEY      = 'daily_game_active';   // set when mini-game starts, cleared on result
+    const DAILY_COMPLETED_KEY   = 'daily_game_completed'; // set after reward claimed (per user+date)
+
+    function setDailyActive(uid) {
+        localStorage.setItem(DAILY_ACTIVE_KEY, JSON.stringify({ uid, ts: Date.now() }));
+    }
+    function clearDailyActive() {
+        localStorage.removeItem(DAILY_ACTIVE_KEY);
+    }
+    function isDailyActive(uid) {
+        try {
+            const d = JSON.parse(localStorage.getItem(DAILY_ACTIVE_KEY) || 'null');
+            if (!d || d.uid !== uid) return false;
+            // Valid for 30 minutes max
+            return (Date.now() - d.ts) < 30 * 60 * 1000;
+        } catch { return false; }
+    }
+    function setDailyCompleted(uid) {
+        const key = `${DAILY_COMPLETED_KEY}_${uid}_${new Date().toDateString()}`;
+        localStorage.setItem(key, '1');
+    }
+    function isDailyCompleted(uid) {
+        const key = `${DAILY_COMPLETED_KEY}_${uid}_${new Date().toDateString()}`;
+        return localStorage.getItem(key) === '1';
+    }
+
+    function lockNavForDaily() { document.body.classList.add('daily-locked'); }
+    function unlockNavForDaily() { document.body.classList.remove('daily-locked'); }
 
     function saveSpinState(state) {
         localStorage.setItem(SPIN_STATE_KEY, JSON.stringify({ ...state, timestamp: Date.now() }));
@@ -2360,7 +2414,8 @@
             // CD settings from main tab
             const cdEnabledVal = document.getElementById('cdEnabledToggle_main').checked;
             const cdHoursVal = parseInt(document.getElementById('dailyCdHours_main').value) || 24;
-            // Shuffle settings from main tab — sync to daily tab fields before saving
+            // Shuffle settings from main tab — sync to daily tab fields AND save to Firebase
+            const shuffleSettingsMain = {};
             ['easy','medium','hard','vhard','god'].forEach(d => {
                 const spMain = document.getElementById(`sp_${d}_main`);
                 const sdMain = document.getElementById(`sd_${d}_main`);
@@ -2368,6 +2423,10 @@
                 const sdOrig = document.getElementById(`shuffleDelay_${d}`);
                 if (spMain && spOrig) spOrig.value = spMain.value;
                 if (sdMain && sdOrig) sdOrig.value = sdMain.value;
+                shuffleSettingsMain[d] = {
+                    pairs: parseInt(spMain ? spMain.value : (spOrig ? spOrig.value : 1)) || 1,
+                    delay: parseInt(sdMain ? sdMain.value : (sdOrig ? sdOrig.value : 400)) || 400,
+                };
             });
             // Also sync to daily admin cd toggle
             const cdToggleDaily = document.getElementById('cdEnabledToggle');
@@ -2393,6 +2452,9 @@
                 cdEnabled: cdEnabledVal,
                 cdHours: cdHoursVal,
             }, { merge: true });
+            // Persist shuffleSettings to dailyReward config so the game picks them up
+            await setDoc(doc(db, 'configs', 'dailyReward'), { shuffleSettings: shuffleSettingsMain }, { merge: true });
+            dailyConfig.shuffleSettings = shuffleSettingsMain;
             
             if (saleOn && (!oldSaleActive || oldSalePercent !== saleVal)) {
                 const newPrice = Math.round(price + (price * saleVal / 100));
@@ -3316,7 +3378,9 @@
     /* ─── PHASE SWITCHER ─── */
     function showDailyPhase(id) {
         document.querySelectorAll('.daily-phase').forEach(el => el.classList.remove('active'));
-        document.getElementById('dailyPhase' + id.charAt(0).toUpperCase() + id.slice(1)).classList.add('active');
+        const phaseId = 'dailyPhase' + id.charAt(0).toUpperCase() + id.slice(1);
+        const el = document.getElementById(phaseId);
+        if (el) el.classList.add('active');
     }
 
     /* ─── COOLDOWN CHECK ─── */
@@ -3340,14 +3404,29 @@
             }
         } catch(e) { /* use defaults */ }
 
+        // ── Check if page was refreshed during active game ──
+        if (isDailyActive(user.uid)) {
+            clearDailyActive();
+            unlockNavForDaily();
+            // Mark as completed so they can't retry
+            setDailyCompleted(user.uid);
+            showDailyPhase('interrupted');
+            return;
+        }
+
+        // ── If no CD: check if already completed today ──
         if (!cdEnabled) {
-            // CD disabled — go straight to wheel
+            if (isDailyCompleted(user.uid)) {
+                showDailyPhase('completed');
+                return;
+            }
             loadDailyConfig();
             showDailyPhase('wheel');
             drawWheel();
             return;
         }
 
+        // ── CD enabled: check Firebase lastDailyClaim ──
         const snap = await getDoc(doc(db, 'users', user.uid));
         const data = snap.data();
         const lastClaim = data.lastDailyClaim ? data.lastDailyClaim.toDate() : null;
@@ -3396,10 +3475,11 @@
             const snap = await getDoc(doc(db, 'configs', 'dailyReward'));
             if (snap.exists()) {
                 const d = snap.data();
-                dailyConfig.slots       = d.slots       || DEFAULT_CARD_SLOTS;
-                dailyConfig.multipliers = d.multipliers || DEFAULT_MULTIPLIERS;
-                dailyConfig.revealTime  = d.revealTime  || DEFAULT_REVEAL_TIME;
-                dailyConfig.shuffleTime = d.shuffleTime || DEFAULT_SHUFFLE_TIME;
+                dailyConfig.slots           = d.slots           || DEFAULT_CARD_SLOTS;
+                dailyConfig.multipliers     = d.multipliers     || DEFAULT_MULTIPLIERS;
+                dailyConfig.revealTime      = d.revealTime      || DEFAULT_REVEAL_TIME;
+                dailyConfig.shuffleTime     = d.shuffleTime     || DEFAULT_SHUFFLE_TIME;
+                dailyConfig.shuffleSettings = d.shuffleSettings || null;
             }
         } catch(e) { console.error('dailyConfig load error', e); }
         dailyConfigLoaded = true;
@@ -3458,6 +3538,11 @@
 
     window.spinDiffWheel = () => {
         if (wheelSpinning) return;
+        if (isDailyCompleted(user.uid)) {
+            notify('Ти вже отримав нагороду сьогодні!');
+            checkDailyCooldown();
+            return;
+        }
         wheelSpinning = true;
         const btn = document.getElementById('wheelSpinBtn');
         btn.disabled = true;
@@ -3513,6 +3598,8 @@
         await loadDailyConfig();
 
         secondChanceUsed = false;
+        setDailyActive(user.uid);   // mark game in progress
+        lockNavForDaily();           // disable nav buttons
         showDailyPhase('cards');
 
         // Badge
@@ -3586,8 +3673,14 @@
         document.getElementById('cardCountdownLabel').textContent = 'Перемішую...';
 
         const shuffleMs  = (dailyConfig.shuffleTime || 4) * 1000;
-        const pairs      = currentDifficulty.shufflePairs || 2;
-        const swapDelay  = currentDifficulty.shuffleDelay || 450;
+        // Read pairs/delay from saved config (admin-editable), fallback to DIFFICULTIES hardcode
+        const diffId     = currentDifficulty.id;
+        const cfgPairs   = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
+                            ? dailyConfig.shuffleSettings[diffId].pairs : null;
+        const cfgDelay   = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
+                            ? dailyConfig.shuffleSettings[diffId].delay : null;
+        const pairs      = cfgPairs  != null ? cfgPairs  : (currentDifficulty.shufflePairs || 2);
+        const swapDelay  = cfgDelay  != null ? cfgDelay  : (currentDifficulty.shuffleDelay || 450);
         const totalSwaps = pairs * 3;
 
         runCountdown(shuffleMs, '#f97316', '🔀 Перемішую...', () => {
@@ -3601,7 +3694,7 @@
             let a = Math.floor(Math.random() * cardPositions.length);
             let b;
             do { b = Math.floor(Math.random() * cardPositions.length); } while (b === a);
-            animateSwap(a, b);
+            animateSwap(a, b, swapDelay);
             // Update logical positions
             [cardPositions[a], cardPositions[b]] = [cardPositions[b], cardPositions[a]];
             swapCount++;
@@ -3610,7 +3703,14 @@
         doSwap();
     }
 
-    function animateSwap(posA, posB) {
+    function animateSwap(posA, posB, swapDelay) {
+        if (swapDelay == null) {
+            // fallback: read from currentDifficulty
+            const diffId   = currentDifficulty.id;
+            const cfgDelay = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
+                              ? dailyConfig.shuffleSettings[diffId].delay : null;
+            swapDelay = cfgDelay != null ? cfgDelay : (currentDifficulty.shuffleDelay || 450);
+        }
         const grid  = document.getElementById('cardsGrid');
         const cards = Array.from(grid.children);
         const cardA = cards[posA];
@@ -3623,10 +3723,10 @@
         const dy    = rectB.top  - rectA.top;
 
         // Move A → B
-        cardA.style.transition = `transform ${currentDifficulty.shuffleDelay * 0.8}ms ease`;
+        cardA.style.transition = `transform ${swapDelay * 0.8}ms ease`;
         cardA.style.transform  = `translate(${dx}px,${dy}px)`;
         // Move B → A
-        cardB.style.transition = `transform ${currentDifficulty.shuffleDelay * 0.8}ms ease`;
+        cardB.style.transition = `transform ${swapDelay * 0.8}ms ease`;
         cardB.style.transform  = `translate(${-dx}px,${-dy}px)`;
 
         setTimeout(() => {
@@ -3644,7 +3744,7 @@
                 grid.insertBefore(cardA, cardB);
                 grid.insertBefore(cardB, cards[posA + 1] || null);
             }
-        }, currentDifficulty.shuffleDelay * 0.85);
+        }, swapDelay * 0.85);
     }
 
     function startPickPhase() {
@@ -3764,6 +3864,9 @@
                 } catch(we) { console.warn('Daily webhook error:', we); }
             }
 
+            clearDailyActive();
+            setDailyCompleted(user.uid);
+            unlockNavForDaily();
             showCardResult(resultIcon, resultTitle, resultDesc, borderColor);
         } catch(e) {
             notify('Помилка нарахування: ' + e.message);
@@ -3788,6 +3891,8 @@
         wheelAngle          = 0;
         dailyConfigLoaded   = false;
         secondChanceUsed    = false;
+        clearDailyActive();
+        unlockNavForDaily();
         // Go back to cooldown check
         checkDailyCooldown();
     };
@@ -3855,6 +3960,18 @@
         document.getElementById('dailyRevealTime').value  = dailyConfig.revealTime  || DEFAULT_REVEAL_TIME;
         document.getElementById('dailyShuffleTime').value = dailyConfig.shuffleTime || DEFAULT_SHUFFLE_TIME;
 
+        // Fill shuffle pairs/delay per difficulty from saved config
+        if (dailyConfig.shuffleSettings) {
+            ['easy','medium','hard','vhard','god'].forEach(d => {
+                const s = dailyConfig.shuffleSettings[d];
+                if (!s) return;
+                const pEl = document.getElementById(`shufflePairs_${d}`);
+                const dEl = document.getElementById(`shuffleDelay_${d}`);
+                if (pEl) pEl.value = s.pairs;
+                if (dEl) dEl.value = s.delay;
+            });
+        }
+
         // Fill CD settings from global vars
         const cdT = document.getElementById('cdEnabledToggle');
         const cdH = document.getElementById('dailyCdHours');
@@ -3896,11 +4013,19 @@
             };
             const revealTime  = parseInt(document.getElementById('dailyRevealTime').value)  || DEFAULT_REVEAL_TIME;
             const shuffleTime = parseInt(document.getElementById('dailyShuffleTime').value) || DEFAULT_SHUFFLE_TIME;
+            // Shuffle pairs/delay per difficulty
+            const shuffleSettings = {};
+            ['easy','medium','hard','vhard','god'].forEach(d => {
+                shuffleSettings[d] = {
+                    pairs: parseInt(document.getElementById(`shufflePairs_${d}`).value) || 1,
+                    delay: parseInt(document.getElementById(`shuffleDelay_${d}`).value) || 400,
+                };
+            });
             // Read CD from daily tab toggle (synced with main)
             const cdEnabledVal = document.getElementById('cdEnabledToggle').checked;
             const cdHoursVal   = parseInt(document.getElementById('dailyCdHours').value) || 24;
 
-            await setDoc(doc(db, 'configs', 'dailyReward'), { slots, multipliers, revealTime, shuffleTime }, { merge: true });
+            await setDoc(doc(db, 'configs', 'dailyReward'), { slots, multipliers, revealTime, shuffleTime, shuffleSettings }, { merge: true });
             // Also persist cd settings in roulette config
             await setDoc(doc(db, 'configs', 'roulette'), { cdEnabled: cdEnabledVal, cdHours: cdHoursVal }, { merge: true });
             cdEnabled = cdEnabledVal;
@@ -3914,6 +4039,11 @@
     /* ─── HOOK INTO showPage TO TRIGGER DAILY CHECK ─── */
     const _origShowPage = window.showPage;
     window.showPage = (pageId, btn) => {
+        // Block navigation if daily card game is in progress
+        if (user && isDailyActive(user.uid) && pageId !== 'daily') {
+            notify('⚠️ Спочатку завершіть міні-гру щоденної нагороди!');
+            return;
+        }
         _origShowPage(pageId, btn);
         if (pageId === 'daily') {
             dailyConfigLoaded = false;
