@@ -1152,8 +1152,35 @@ window.addEventListener('hashchange', checkPublicHash);
 async function showPublicDonate(collId) {
   try {
     const snap = await getDoc(doc(db, 'collections', collId));
-    if (!snap.exists()) { alert('Збір не знайдено'); return; }
+    if (!snap.exists()) {
+      document.getElementById('publicDonate').style.display = 'block';
+      document.getElementById('publicDonate').innerHTML =
+        '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;">' +
+        '<div style="font-size:60px;margin-bottom:20px;">🔍</div>' +
+        '<div style="font-size:22px;font-weight:900;color:white;margin-bottom:10px;">Збір не знайдено</div>' +
+        '<div style="font-size:14px;color:var(--text-gray);font-weight:600;">Посилання недійсне або збір видалено.</div>' +
+        '</div>';
+      return;
+    }
     const d = snap.data();
+
+    // If closed — show a clean closed screen, no DOM errors
+    if (d.status === 'closed') {
+      document.getElementById('publicDonate').style.display = 'block';
+      document.getElementById('publicDonate').innerHTML =
+        '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 20px;">' +
+        '<div style="display:inline-block;background:rgba(0,255,68,0.15);border:1px solid rgba(0,255,68,0.3);color:var(--primary);font-size:13px;font-weight:800;letter-spacing:2px;padding:5px 14px;border-radius:8px;text-transform:uppercase;margin-bottom:20px;">ДШВ</div>' +
+        '<div style="font-size:60px;margin-bottom:16px;">🔒</div>' +
+        '<div style="font-size:24px;font-weight:900;color:white;margin-bottom:8px;">' + (d.title || 'Збір') + '</div>' +
+        '<div style="display:inline-block;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);color:var(--danger);font-size:11px;font-weight:800;letter-spacing:2px;padding:4px 12px;border-radius:8px;text-transform:uppercase;margin-bottom:20px;">🔴 ЗБІР ЗАКРИТО</div>' +
+        '<div style="background:var(--card-bg);border:1px solid rgba(239,68,68,0.2);border-radius:20px;padding:24px 32px;max-width:400px;margin:0 auto;">' +
+        '<div style="font-size:32px;font-weight:900;color:#3b82f6;margin-bottom:4px;">' + formatMoney(d.raised||0) + ' грн</div>' +
+        '<div style="font-size:12px;color:var(--text-gray);font-weight:600;margin-bottom:4px;">зібрано під час збору · ' + (d.donorsCount||0) + ' донатів</div>' +
+        '<div style="font-size:14px;color:var(--text-gray);font-weight:600;margin-top:12px;">Приймання донатів призупинено.<br><span style="color:var(--primary);font-weight:800;">Дякуємо за підтримку! 💙</span></div>' +
+        '</div></div>';
+      return;
+    }
+
     document.getElementById('donateTitlePub').textContent = d.title || 'Збір';
     document.getElementById('donateDescPub').textContent = d.desc || '';
     const raised = d.raised || 0;
@@ -1163,25 +1190,6 @@ async function showPublicDonate(collId) {
     const pct = goal ? Math.min(100, (raised/goal)*100) : 0;
     document.getElementById('donateProgressFill').style.width = pct + '%';
     document.getElementById('donateDonorsPub').textContent = (d.donorsCount||0) + ' донатів';
-
-    // status
-    const badge = document.getElementById('donateBadge');
-    const isClosed = d.status === 'closed';
-    if (isClosed) {
-      badge.textContent = '🔴 ЗБІР ЗАКРИТО';
-      badge.style.background = 'rgba(239,68,68,0.12)';
-      badge.style.borderColor = 'rgba(239,68,68,0.3)';
-      badge.style.color = 'var(--danger)';
-      // Hide form, show closed message
-      const formCard = document.getElementById('donateFormCard');
-      if (formCard) {
-        formCard.innerHTML = '<div style="text-align:center;padding:24px 0;">' +
-          '<div style="font-size:40px;margin-bottom:12px;">🔒</div>' +
-          '<div style="font-size:15px;font-weight:800;color:var(--danger);">Збір закрито</div>' +
-          '<div style="font-size:12px;color:var(--text-gray);margin-top:8px;font-weight:600;">Приймання донатів призупинено.<br>Дякуємо за підтримку!</div>' +
-        '</div>';
-      }
-    }
 
     // settings — requisites
     const settSnap = await getDoc(doc(db, 'settings', 'budget'));
@@ -1556,7 +1564,7 @@ window.doDeposit = async () => {
       timestamp: serverTimestamp(), archived: false
     });
     await sendWebhook(budgetSettings.webhookDeposit, {
-      username:'Бюджет ДШВ 💰',
+      username:'ДШВ Банк 💰',
       embeds:[{ title:'💳 Поповнення рахунку', color:0x00ff44,
         fields:[
           {name:'💵 Сума', value:`+${formatMoney(amount)} ${CURRENCY_SYMBOLS[cur.currency]||''}`, inline:true},
@@ -1607,7 +1615,7 @@ window.doWithdraw = async () => {
       timestamp: serverTimestamp(), archived: false
     });
     await sendWebhook(budgetSettings.webhookWithdraw, {
-      username:'Бюджет ДШВ 💸',
+      username:'ДШВ Банк 💸',
       embeds:[{ title:'🏧 Зняття коштів', color:0xef4444,
         fields:[
           {name:'💸 Сума', value:`-${formatMoney(amount)} ${CURRENCY_SYMBOLS[cur.currency]||''}`, inline:true},
@@ -1706,7 +1714,7 @@ window.generateReport = () => {
   openModal('reportPreviewModal');
 
   sendWebhook(budgetSettings.webhookReport, {
-    username:'Бюджет ДШВ 📊',
+    username:'ДШВ Банк 📊',
     embeds:[{title:'📊 '+title, color:0xfbbf24,
       description:`Звіт за **${fromStr} — ${toStr}**`,
       fields:[
