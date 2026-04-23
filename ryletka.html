@@ -1348,8 +1348,13 @@
             <div id="tabSettings" class="admin-tab" style="display:none;">
                 <div class="settings-grid">
                     <div class="setting-card">
-                        <h4>🔗 Discord Webhook</h4>
+                        <h4>🔗 Discord Webhook (рулетка/магазин)</h4>
                         <input type="text" id="webhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
+                    </div>
+                    <div class="setting-card">
+                        <h4>🎁 Discord Webhook (щоденні нагороди)</h4>
+                        <input type="text" id="dailyWebhookUrl" class="input" placeholder="https://discord.com/api/webhooks/...">
+                        <small style="color:var(--text-gray); font-size:11px; margin-top:6px; display:block;">Якщо порожньо — використовується основний вебхук</small>
                     </div>
                     <div class="setting-card">
                         <h4>💱 Курс обміну (1 бал = ? грн)</h4>
@@ -1408,6 +1413,72 @@
                             </label>
                             <span>💸 Вивід грошей</span>
                         </div>
+                    </div>
+                </div>
+
+                <!-- COOLDOWN BLOCK IN MAIN SETTINGS -->
+                <div style="margin-top: 20px;">
+                    <h4 style="font-size: 12px; color: var(--text-gray); margin-bottom: 15px; text-transform: uppercase;">⏰ КУЛДАУН ЩОДЕННОЇ НАГОРОДИ</h4>
+                    <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px; margin-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                            <label class="switch">
+                                <input type="checkbox" id="cdEnabledToggle_main" checked onchange="syncCdToggle(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-size:13px; font-weight:800;">Кулдаун між нагородами увімкнений</span>
+                        </div>
+                        <div id="cdSettingsBlock_main">
+                            <label style="font-size:11px; color:var(--text-gray); display:block; margin-bottom:6px;">ЧАС КУЛДАУНУ (годин)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <input type="number" id="dailyCdHours_main" class="input" value="24" min="1" max="168" style="max-width:120px;" oninput="syncCdHours(this.value)">
+                                <span style="font-size:12px; color:var(--text-gray);">год (1–168, до 7 днів)</span>
+                            </div>
+                            <p style="color:var(--text-gray); font-size:11px; margin-top:8px;">За замовчуванням: 24 год (раз на добу)</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SHUFFLE QUICK SETTINGS IN MAIN SETTINGS -->
+                <div style="margin-top: 20px;">
+                    <h4 style="font-size: 12px; color: var(--text-gray); margin-bottom: 15px; text-transform: uppercase;">🃏 ПЕРЕМІШУВАННЯ КАРТОК (швидке редагування)</h4>
+                    <div style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px; margin-bottom:10px; overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                            <thead>
+                                <tr style="color:var(--text-gray);">
+                                    <th style="padding:8px 6px; text-align:left;">Складність</th>
+                                    <th style="padding:8px 6px; text-align:center;">Пар перем.</th>
+                                    <th style="padding:8px 6px; text-align:center;">Затримка (мс)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="padding:8px 6px; color:#22c55e; font-weight:700;">😊 Легко</td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sp_easy_main"  class="diff-mult-input" value="1"  min="1" max="30" style="width:60px;" oninput="syncShuffleField('easy','Pairs',this.value)"></td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sd_easy_main"  class="diff-mult-input" value="600" min="100" max="2000" style="width:70px;" oninput="syncShuffleField('easy','Delay',this.value)"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 6px; color:#fbbf24; font-weight:700;">😐 Середня</td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sp_medium_main" class="diff-mult-input" value="2"  min="1" max="30" style="width:60px;" oninput="syncShuffleField('medium','Pairs',this.value)"></td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sd_medium_main" class="diff-mult-input" value="500" min="100" max="2000" style="width:70px;" oninput="syncShuffleField('medium','Delay',this.value)"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 6px; color:#f97316; font-weight:700;">😤 Складна</td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sp_hard_main"  class="diff-mult-input" value="4"  min="1" max="30" style="width:60px;" oninput="syncShuffleField('hard','Pairs',this.value)"></td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sd_hard_main"  class="diff-mult-input" value="400" min="100" max="2000" style="width:70px;" oninput="syncShuffleField('hard','Delay',this.value)"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 6px; color:#ef4444; font-weight:700;">😈 Дуже складна</td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sp_vhard_main" class="diff-mult-input" value="6"  min="1" max="30" style="width:60px;" oninput="syncShuffleField('vhard','Pairs',this.value)"></td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sd_vhard_main" class="diff-mult-input" value="320" min="100" max="2000" style="width:70px;" oninput="syncShuffleField('vhard','Delay',this.value)"></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding:8px 6px; color:#a855f7; font-weight:700;">👑 Рівень БОГ</td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sp_god_main"   class="diff-mult-input" value="9"  min="1" max="30" style="width:60px;" oninput="syncShuffleField('god','Pairs',this.value)"></td>
+                                    <td style="padding:8px 6px; text-align:center;"><input type="number" id="sd_god_main"   class="diff-mult-input" value="240" min="100" max="2000" style="width:70px;" oninput="syncShuffleField('god','Delay',this.value)"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <small style="color:var(--text-gray); font-size:11px; margin-top:8px; display:block;">Зміни застосовуються при збереженні налаштувань нижче</small>
                     </div>
                 </div>
 
@@ -1847,7 +1918,8 @@
     const db = getFirestore(app);
 
     let user = null, userData = null, isSpinning = false, prizePool = [], editingId = null;
-    let isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "";
+    let isAutoOdds = false, exchangeRate = 10000, infoText = "", webhookUrl = "", dailyWebhookUrl = "";
+    let cdEnabled = true, cdHours = 24;
     let ticketPrice = 100, saleActive = false, salePercent = 0;
     let exchangePointsEnabled = true, exchangeCurrencyEnabled = true;
     let currentExchangeType = 'points';
@@ -1963,6 +2035,36 @@
             priceDisplay.innerText = `ВАРТІСТЬ: ${ticketPrice} ⚪`;
         }
     }
+
+    // ── CD toggle helpers (sync both tabs) ──
+    window.toggleCdSettings = (enabled) => {
+        ['', '_main'].forEach(sfx => {
+            const block = document.getElementById('cdSettingsBlock' + sfx);
+            const toggle = document.getElementById('cdEnabledToggle' + sfx);
+            if (block) block.style.display = enabled ? '' : 'none';
+            if (toggle && toggle.checked !== enabled) toggle.checked = enabled;
+        });
+    };
+
+    window.syncCdToggle = (enabled) => {
+        window.toggleCdSettings(enabled);
+    };
+
+    window.syncCdHours = (val) => {
+        ['', '_main'].forEach(sfx => {
+            const el = document.getElementById('dailyCdHours' + sfx);
+            if (el && el.value !== val) el.value = val;
+        });
+    };
+
+    // ── Shuffle field sync (main ↔ daily tab) ──
+    window.syncShuffleField = (diff, field, val) => {
+        const origId  = `shuffle${field}_${diff}`;
+        const mainId  = `s${field.toLowerCase().replace('airs','p').replace('elay','d')}_${diff}_main`;
+        // more robust: just map by known ids
+        const origEl = document.getElementById(origId);
+        if (origEl && origEl.value !== val) origEl.value = val;
+    };
 
     window.toggleSaleSettings = (enabled) => {
         const section = document.getElementById('saleSettingsSection');
@@ -2180,19 +2282,40 @@
                 exchangeRate = data.exchangeRate || 10000;
                 infoText = data.infoText || "Інформація відсутня.";
                 webhookUrl = data.webhookUrl || "";
+                dailyWebhookUrl = data.dailyWebhookUrl || "";
                 isAutoOdds = data.autoOdds || false;
                 ticketPrice = data.ticketPrice || 100;
                 saleActive = data.saleActive || false;
                 salePercent = data.salePercent || 0;
                 exchangePointsEnabled = data.exchangePointsEnabled !== false;
                 exchangeCurrencyEnabled = data.exchangeCurrencyEnabled !== false;
+                cdEnabled = data.cdEnabled !== false;
+                cdHours = data.cdHours || 24;
                 
                 const toggle = document.getElementById('autoOddsToggle');
                 if(toggle) toggle.checked = isAutoOdds;
                 if(document.getElementById('exchangeRateInput')) document.getElementById('exchangeRateInput').value = exchangeRate;
                 if(document.getElementById('infoTextInput')) document.getElementById('infoTextInput').value = infoText;
                 if(document.getElementById('webhookUrl')) document.getElementById('webhookUrl').value = webhookUrl;
+                if(document.getElementById('dailyWebhookUrl')) document.getElementById('dailyWebhookUrl').value = dailyWebhookUrl;
                 if(document.getElementById('ticketPriceInput')) document.getElementById('ticketPriceInput').value = ticketPrice;
+                // Sync CD settings in both tabs
+                ['', '_main'].forEach(sfx => {
+                    const cdT = document.getElementById('cdEnabledToggle' + sfx);
+                    const cdH = document.getElementById('dailyCdHours' + sfx);
+                    const cdB = document.getElementById('cdSettingsBlock' + sfx);
+                    if (cdT) { cdT.checked = cdEnabled; if (cdB) cdB.style.display = cdEnabled ? '' : 'none'; }
+                    if (cdH) cdH.value = cdHours;
+                });
+                // Sync shuffle fields in main settings tab
+                ['easy','medium','hard','vhard','god'].forEach(d => {
+                    const spMain = document.getElementById(`sp_${d}_main`);
+                    const sdMain = document.getElementById(`sd_${d}_main`);
+                    const spOrig = document.getElementById(`shufflePairs_${d}`);
+                    const sdOrig = document.getElementById(`shuffleDelay_${d}`);
+                    if (spOrig && spMain) spMain.value = spOrig.value;
+                    if (sdOrig && sdMain) sdMain.value = sdOrig.value;
+                });
                 if(document.getElementById('saleToggle')) {
                     document.getElementById('saleToggle').checked = saleActive;
                     toggleSaleSettings(saleActive);
@@ -2228,11 +2351,29 @@
             const rate = parseFloat(document.getElementById('exchangeRateInput').value);
             const text = document.getElementById('infoTextInput').value;
             const url = document.getElementById('webhookUrl').value;
+            const dailyUrl = document.getElementById('dailyWebhookUrl').value;
             const price = parseInt(document.getElementById('ticketPriceInput').value) || 100;
             const saleOn = document.getElementById('saleToggle').checked;
             const saleVal = parseInt(document.getElementById('saleRange').value) || 0;
             const exPointsOn = document.getElementById('exchangePointsToggle').checked;
             const exCurrencyOn = document.getElementById('exchangeCurrencyToggle').checked;
+            // CD settings from main tab
+            const cdEnabledVal = document.getElementById('cdEnabledToggle_main').checked;
+            const cdHoursVal = parseInt(document.getElementById('dailyCdHours_main').value) || 24;
+            // Shuffle settings from main tab — sync to daily tab fields before saving
+            ['easy','medium','hard','vhard','god'].forEach(d => {
+                const spMain = document.getElementById(`sp_${d}_main`);
+                const sdMain = document.getElementById(`sd_${d}_main`);
+                const spOrig = document.getElementById(`shufflePairs_${d}`);
+                const sdOrig = document.getElementById(`shuffleDelay_${d}`);
+                if (spMain && spOrig) spOrig.value = spMain.value;
+                if (sdMain && sdOrig) sdOrig.value = sdMain.value;
+            });
+            // Also sync to daily admin cd toggle
+            const cdToggleDaily = document.getElementById('cdEnabledToggle');
+            const cdHoursDaily = document.getElementById('dailyCdHours');
+            if (cdToggleDaily) { cdToggleDaily.checked = cdEnabledVal; toggleCdSettings(cdEnabledVal); }
+            if (cdHoursDaily) cdHoursDaily.value = cdHoursVal;
 
             if (!rate) throw new Error("Заповніть курс!");
             
@@ -2243,11 +2384,14 @@
                 exchangeRate: rate, 
                 infoText: text, 
                 webhookUrl: url,
+                dailyWebhookUrl: dailyUrl,
                 ticketPrice: price,
                 saleActive: saleOn,
                 salePercent: saleVal,
                 exchangePointsEnabled: exPointsOn,
-                exchangeCurrencyEnabled: exCurrencyOn
+                exchangeCurrencyEnabled: exCurrencyOn,
+                cdEnabled: cdEnabledVal,
+                cdHours: cdHoursVal,
             }, { merge: true });
             
             if (saleOn && (!oldSaleActive || oldSalePercent !== saleVal)) {
@@ -3178,15 +3322,41 @@
     /* ─── COOLDOWN CHECK ─── */
     async function checkDailyCooldown() {
         if (!user) return;
+        // Load cd config from roulette config
+        try {
+            const cfgSnap = await getDoc(doc(db, 'configs', 'roulette'));
+            if (cfgSnap.exists()) {
+                const cfg = cfgSnap.data();
+                cdEnabled = cfg.cdEnabled !== false;
+                cdHours   = cfg.cdHours || 24;
+                // Sync UI in both cd blocks
+                ['', '_main'].forEach(sfx => {
+                    const cdT = document.getElementById('cdEnabledToggle' + sfx);
+                    const cdH = document.getElementById('dailyCdHours' + sfx);
+                    const cdB = document.getElementById('cdSettingsBlock' + sfx);
+                    if (cdT) { cdT.checked = cdEnabled; if (cdB) cdB.style.display = cdEnabled ? '' : 'none'; }
+                    if (cdH) cdH.value = cdHours;
+                });
+            }
+        } catch(e) { /* use defaults */ }
+
+        if (!cdEnabled) {
+            // CD disabled — go straight to wheel
+            loadDailyConfig();
+            showDailyPhase('wheel');
+            drawWheel();
+            return;
+        }
+
         const snap = await getDoc(doc(db, 'users', user.uid));
         const data = snap.data();
         const lastClaim = data.lastDailyClaim ? data.lastDailyClaim.toDate() : null;
         if (lastClaim) {
             const now     = new Date();
             const elapsed = now - lastClaim;
-            const msIn24h = 24 * 60 * 60 * 1000;
-            if (elapsed < msIn24h) {
-                const remaining = msIn24h - elapsed;
+            const msCd    = cdHours * 60 * 60 * 1000;
+            if (elapsed < msCd) {
+                const remaining = msCd - elapsed;
                 startCooldownTimer(remaining);
                 showDailyPhase('cooldown');
                 return;
@@ -3564,9 +3734,12 @@
             await addLog(userData.name, 'DAILY', `Щоденна нагорода (${currentDifficulty.label}): ${reward.type}`, resultTitle);
 
             // ── Discord webhook ──
-            if (webhookUrl && webhookUrl.startsWith('https://discord')) {
+            const effectiveDailyWebhook = (dailyWebhookUrl && dailyWebhookUrl.startsWith('https://discord')) 
+                ? dailyWebhookUrl 
+                : (webhookUrl && webhookUrl.startsWith('https://discord') ? webhookUrl : null);
+            if (effectiveDailyWebhook) {
                 try {
-                    await fetch(webhookUrl, {
+                    await fetch(effectiveDailyWebhook, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -3574,14 +3747,16 @@
                             avatar_url: 'https://cdn-icons-png.flaticon.com/512/2454/2454288.png',
                             embeds: [{
                                 title: '🎁 Щоденна нагорода отримана',
-                                description: `**${uData.name}** зіграв у щоденну міні-гру!`,
+                                description: `**${uData.name}** зіграв у щоденну міні-гру!\n\n**Нагорода:** ${resultTitle}\n**Результат:** ${resultDesc}`,
                                 color: discordColor,
                                 fields: [
                                     { name: '🎯 Складність', value: currentDifficulty.label, inline: true },
                                     { name: '🎁 Нагорода',   value: resultTitle,              inline: true },
                                     { name: '💬 Результат',  value: resultDesc,               inline: false },
+                                    { name: '👤 Гравець',    value: uData.name,               inline: true },
+                                    { name: '🆔 ID',         value: user.uid,                 inline: true },
                                 ],
-                                footer: { text: 'ДШВ | UKRAINE GTA' },
+                                footer: { text: 'ДШВ | UKRAINE GTA • Щоденна нагорода' },
                                 timestamp: new Date().toISOString(),
                             }]
                         })
@@ -3679,6 +3854,23 @@
         // Fill timing
         document.getElementById('dailyRevealTime').value  = dailyConfig.revealTime  || DEFAULT_REVEAL_TIME;
         document.getElementById('dailyShuffleTime').value = dailyConfig.shuffleTime || DEFAULT_SHUFFLE_TIME;
+
+        // Fill CD settings from global vars
+        const cdT = document.getElementById('cdEnabledToggle');
+        const cdH = document.getElementById('dailyCdHours');
+        const cdB = document.getElementById('cdSettingsBlock');
+        if (cdT) { cdT.checked = cdEnabled; if (cdB) cdB.style.display = cdEnabled ? '' : 'none'; }
+        if (cdH) cdH.value = cdHours;
+
+        // Sync shuffle fields to main tab
+        ['easy','medium','hard','vhard','god'].forEach(d => {
+            const spVal = document.getElementById(`shufflePairs_${d}`)?.value;
+            const sdVal = document.getElementById(`shuffleDelay_${d}`)?.value;
+            const spMain = document.getElementById(`sp_${d}_main`);
+            const sdMain = document.getElementById(`sd_${d}_main`);
+            if (spMain && spVal) spMain.value = spVal;
+            if (sdMain && sdVal) sdMain.value = sdVal;
+        });
     }
 
     window.updateSlotPreview = (i) => {
@@ -3704,8 +3896,15 @@
             };
             const revealTime  = parseInt(document.getElementById('dailyRevealTime').value)  || DEFAULT_REVEAL_TIME;
             const shuffleTime = parseInt(document.getElementById('dailyShuffleTime').value) || DEFAULT_SHUFFLE_TIME;
+            // Read CD from daily tab toggle (synced with main)
+            const cdEnabledVal = document.getElementById('cdEnabledToggle').checked;
+            const cdHoursVal   = parseInt(document.getElementById('dailyCdHours').value) || 24;
 
             await setDoc(doc(db, 'configs', 'dailyReward'), { slots, multipliers, revealTime, shuffleTime }, { merge: true });
+            // Also persist cd settings in roulette config
+            await setDoc(doc(db, 'configs', 'roulette'), { cdEnabled: cdEnabledVal, cdHours: cdHoursVal }, { merge: true });
+            cdEnabled = cdEnabledVal;
+            cdHours   = cdHoursVal;
             dailyConfig = { slots, multipliers, revealTime, shuffleTime };
             dailyConfigLoaded = true;
             notify('✅ Налаштування щоденної нагороди збережено!');
