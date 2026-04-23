@@ -1664,10 +1664,10 @@
                     <!-- SHUFFLE SETTINGS PER DIFFICULTY -->
                     <div class="category-label" style="margin-top:25px;">🔀 ПАРАМЕТРИ ПЕРЕМІШУВАННЯ (по складності)</div>
                     <p style="color:var(--text-gray); font-size:12px; margin-bottom:15px;">
-                        <b>Пари свопів</b> — скільки разів карточки міняються місцями (більше = складніше).<br>
-                        <b>Затримка (мс)</b> — швидкість руху карточок при свопі: <span style="color:#22c55e">100мс = дуже швидко</span>, <span style="color:#fbbf24">500мс = середньо</span>, <span style="color:#ef4444">1000мс+ = повільно</span>. <b>Менше = швидше!</b><br>
-                        <b>Час переміш. (сек)</b> — загальна тривалість фази перемішування (обміни рівномірно розподіляються по цьому часу).<br>
-                        <span style="color:#f97316;">⚠️ Для ЛЕГКОГО: рекомендовані значення — Пари=1, Затримка=300-500мс, Час=3-5сек</span>
+                        <b>Пари свопів</b> — інтенсивність перемішування. Більше пар = частіші обміни. Формула: <code style="background:#111;padding:2px 5px;border-radius:4px;">інтервал = Затримка ÷ Пари</code><br>
+                        <b>Затримка (мс)</b> — час одного свопу (анімація): <span style="color:#22c55e">100мс = дуже швидко</span>, <span style="color:#fbbf24">400мс = середньо</span>, <span style="color:#ef4444">800мс+ = повільно</span>. Менше = швидше!<br>
+                        <b>Час переміш. (сек)</b> — загальна тривалість фази. Карточки перемішуються БЕЗПЕРЕРВНО весь цей час.<br>
+                        <span style="color:#f97316;">💡 Приклад для ЛЕГКОГО: Пари=2, Затримка=400мс → своп кожні 200мс протягом усього часу</span>
                     </p>
                     <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
@@ -3728,32 +3728,36 @@
         const cfg       = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
                             ? dailyConfig.shuffleSettings[diffId] : {};
 
-        // Per-difficulty shuffle time (new field), fallback to global dailyConfig.shuffleTime
+        // Per-difficulty shuffle time, fallback to global
         const shuffleMs = ((cfg.time != null ? cfg.time : null) || dailyConfig.shuffleTime || 4) * 1000;
 
         const pairs     = cfg.pairs  != null ? cfg.pairs  : (currentDifficulty.shufflePairs || 2);
+        // swapDelay = час одного свопу (мс). Менше = швидше.
         const swapDelay = cfg.delay  != null ? cfg.delay  : (currentDifficulty.shuffleDelay || 450);
+
+        const startTime = Date.now();
 
         runCountdown(shuffleMs, '#f97316', '🔀 Перемішую...', () => {
             setTimeout(() => startPickPhase(), 400);
         });
 
-        // Distribute swaps evenly across the full shuffle duration
-        const totalSwaps = pairs * 3;
-        // Use swapDelay as the interval: cards swap at the configured speed
-        // Math.min ensures all swaps fit within the shuffle time window
-        const maxInterval = Math.floor(shuffleMs / (totalSwaps + 1));
-        const interval    = maxInterval > 0 && maxInterval < swapDelay ? maxInterval : swapDelay;
+        // Свопи йдуть БЕЗПЕРЕРВНО протягом всього shuffleMs.
+        // pairs визначає скільки свопів відбувається одночасно (інтенсивність).
+        // interval між свопами = swapDelay / pairs (більше пар = частіше свопи).
+        const interval = Math.max(80, Math.floor(swapDelay / Math.max(1, pairs)));
 
-        let swapCount = 0;
         function doSwap() {
-            if (swapCount >= totalSwaps || cardGamePhase !== 'shuffle') return;
+            if (cardGamePhase !== 'shuffle') return;
+            const elapsed = Date.now() - startTime;
+            // Зупинитись за ~400мс до кінця щоб плавно завершити
+            if (elapsed >= shuffleMs - 400) return;
+
             let a = Math.floor(Math.random() * cardPositions.length);
             let b;
             do { b = Math.floor(Math.random() * cardPositions.length); } while (b === a);
             animateSwap(a, b, swapDelay);
             [cardPositions[a], cardPositions[b]] = [cardPositions[b], cardPositions[a]];
-            swapCount++;
+
             setTimeout(doSwap, interval);
         }
         doSwap();
