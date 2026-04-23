@@ -1665,7 +1665,8 @@
                     <div class="category-label" style="margin-top:25px;">🔀 ПАРАМЕТРИ ПЕРЕМІШУВАННЯ (по складності)</div>
                     <p style="color:var(--text-gray); font-size:12px; margin-bottom:15px;">
                         <b>Пари свопів</b> — скільки разів карточки міняються місцями.<br>
-                        <b>Затримка (мс)</b> — швидкість одного свопу (менше = швидше).
+                        <b>Затримка (мс)</b> — швидкість одного свопу (менше = швидше).<br>
+                        <b>Час переміш. (сек)</b> — тривалість фази перемішування для цієї складності.
                     </p>
                     <div style="overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse; font-size:12px;">
@@ -1674,6 +1675,7 @@
                                 <th style="text-align:left; padding:8px 6px; color:var(--text-gray); font-weight:900; letter-spacing:1px;">СКЛАДНІСТЬ</th>
                                 <th style="text-align:center; padding:8px 6px; color:var(--text-gray); font-weight:900; letter-spacing:1px;">ПАРИ СВОПІВ</th>
                                 <th style="text-align:center; padding:8px 6px; color:var(--text-gray); font-weight:900; letter-spacing:1px;">ЗАТРИМКА (мс)</th>
+                                <th style="text-align:center; padding:8px 6px; color:var(--text-gray); font-weight:900; letter-spacing:1px;">ЧАС ПЕРЕМІШ. (сек)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1681,26 +1683,31 @@
                                 <td style="padding:10px 6px; color:#22c55e; font-weight:700;">😊 ЛЕГКО</td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shufflePairs_easy"  class="diff-mult-input" value="1" min="1" max="30" style="width:60px;"></td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleDelay_easy"  class="diff-mult-input" value="600" min="100" max="2000" style="width:70px;"></td>
+                                <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleTime_easy"   class="diff-mult-input" value="4" min="1" max="60" style="width:60px;"></td>
                             </tr>
                             <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                                 <td style="padding:10px 6px; color:#fbbf24; font-weight:700;">😐 СЕРЕДНЯ</td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shufflePairs_medium" class="diff-mult-input" value="2" min="1" max="30" style="width:60px;"></td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleDelay_medium" class="diff-mult-input" value="500" min="100" max="2000" style="width:70px;"></td>
+                                <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleTime_medium"  class="diff-mult-input" value="5" min="1" max="60" style="width:60px;"></td>
                             </tr>
                             <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                                 <td style="padding:10px 6px; color:#f97316; font-weight:700;">😤 СКЛАДНА</td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shufflePairs_hard"  class="diff-mult-input" value="4" min="1" max="30" style="width:60px;"></td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleDelay_hard"  class="diff-mult-input" value="400" min="100" max="2000" style="width:70px;"></td>
+                                <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleTime_hard"   class="diff-mult-input" value="7" min="1" max="60" style="width:60px;"></td>
                             </tr>
                             <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
                                 <td style="padding:10px 6px; color:#ef4444; font-weight:700;">😈 ДУЖЕ СКЛАДНА</td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shufflePairs_vhard" class="diff-mult-input" value="6" min="1" max="30" style="width:60px;"></td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleDelay_vhard" class="diff-mult-input" value="320" min="100" max="2000" style="width:70px;"></td>
+                                <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleTime_vhard"  class="diff-mult-input" value="9" min="1" max="60" style="width:60px;"></td>
                             </tr>
                             <tr>
                                 <td style="padding:10px 6px; color:#a855f7; font-weight:700;">👑 РІВЕНЬ БОГ</td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shufflePairs_god"   class="diff-mult-input" value="9" min="1" max="30" style="width:60px;"></td>
                                 <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleDelay_god"   class="diff-mult-input" value="240" min="100" max="2000" style="width:70px;"></td>
+                                <td style="padding:10px 6px; text-align:center;"><input type="number" id="shuffleTime_god"    class="diff-mult-input" value="12" min="1" max="60" style="width:60px;"></td>
                             </tr>
                         </tbody>
                     </table>
@@ -3636,6 +3643,10 @@
         await loadDailyConfig();
 
         secondChanceUsed = false;
+        // ── Fix: clear previous result banner before starting ──
+        const prevBanner = document.getElementById('cardResultBanner');
+        if (prevBanner) prevBanner.classList.remove('show');
+
         setDailyActive(user.uid);   // mark game in progress
         lockNavForDaily();           // disable nav buttons
         showDailyPhase('cards');
@@ -3710,33 +3721,34 @@
         document.getElementById('cardsStatusMsg').textContent = 'Слідкуй за карточками!';
         document.getElementById('cardCountdownLabel').textContent = 'Перемішую...';
 
-        const shuffleMs  = (dailyConfig.shuffleTime || 4) * 1000;
-        // Read pairs/delay from saved config (admin-editable), fallback to DIFFICULTIES hardcode
-        const diffId     = currentDifficulty.id;
-        const cfgPairs   = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
-                            ? dailyConfig.shuffleSettings[diffId].pairs : null;
-        const cfgDelay   = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
-                            ? dailyConfig.shuffleSettings[diffId].delay : null;
-        const pairs      = cfgPairs  != null ? cfgPairs  : (currentDifficulty.shufflePairs || 2);
-        const swapDelay  = cfgDelay  != null ? cfgDelay  : (currentDifficulty.shuffleDelay || 450);
-        const totalSwaps = pairs * 3;
+        const diffId    = currentDifficulty.id;
+        const cfg       = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
+                            ? dailyConfig.shuffleSettings[diffId] : {};
+
+        // Per-difficulty shuffle time (new field), fallback to global dailyConfig.shuffleTime
+        const shuffleMs = ((cfg.time != null ? cfg.time : null) || dailyConfig.shuffleTime || 4) * 1000;
+
+        const pairs     = cfg.pairs  != null ? cfg.pairs  : (currentDifficulty.shufflePairs || 2);
+        const swapDelay = cfg.delay  != null ? cfg.delay  : (currentDifficulty.shuffleDelay || 450);
 
         runCountdown(shuffleMs, '#f97316', '🔀 Перемішую...', () => {
             setTimeout(() => startPickPhase(), 400);
         });
 
+        // Distribute swaps evenly across the full shuffle duration
+        const totalSwaps = pairs * 3;
+        const interval   = Math.max(swapDelay, Math.floor(shuffleMs / (totalSwaps + 1)));
+
         let swapCount = 0;
         function doSwap() {
             if (swapCount >= totalSwaps || cardGamePhase !== 'shuffle') return;
-            // Pick two different positions
             let a = Math.floor(Math.random() * cardPositions.length);
             let b;
             do { b = Math.floor(Math.random() * cardPositions.length); } while (b === a);
             animateSwap(a, b, swapDelay);
-            // Update logical positions
             [cardPositions[a], cardPositions[b]] = [cardPositions[b], cardPositions[a]];
             swapCount++;
-            setTimeout(doSwap, swapDelay);
+            setTimeout(doSwap, interval);
         }
         doSwap();
     }
