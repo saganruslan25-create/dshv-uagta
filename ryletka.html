@@ -1739,6 +1739,19 @@
                         </div>
                     </div>
 
+                    <!-- ONE-TIME PLAY TOGGLE -->
+                    <div class="category-label" style="margin-top:5px;">🎟️ РАЗОВИЙ ДОСТУП</div>
+                    <div style="background:rgba(249,115,22,0.08); border:1px solid rgba(249,115,22,0.35); border-radius:14px; padding:18px; margin-bottom:20px;">
+                        <div style="display:flex; align-items:center; gap:15px; margin-bottom:10px;">
+                            <label class="switch">
+                                <input type="checkbox" id="allowOneTimePlayToggle" onchange="onOneTimePlayToggleChange(this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                            <span style="font-size:13px; font-weight:800; color:var(--accent);">Дозволити зіграти ще раз (один раз для всіх)</span>
+                        </div>
+                        <p style="font-size:11px; color:var(--text-gray); margin:0;">Увімкніть, щоб всі користувачі змогли зіграти в міні-гру позачергово. Прапор автоматично вимкнеться після першого проходження кожного гравця.</p>
+                    </div>
+
                     <button class="btn-main btn-buy" style="width:100%; max-width:none;" onclick="saveDailyConfig()">💾 ЗБЕРЕГТИ НАЛАШТУВАННЯ</button>
                 </div>
             </div>
@@ -1948,6 +1961,7 @@
     let cdEnabled = true, cdHours = 24;
     let ticketPrice = 100, saleActive = false, salePercent = 0;
     let exchangePointsEnabled = true, exchangeCurrencyEnabled = true;
+    let allowOneTimePlay = false;
     let currentExchangeType = 'points';
     let currentRefillType = 'add_points';
     let pendingPrize = null;
@@ -2089,6 +2103,15 @@
             priceDisplay.innerText = `ВАРТІСТЬ: ${ticketPrice} ⚪`;
         }
     }
+
+    // ── One-time play toggle: instant save ──
+    window.onOneTimePlayToggleChange = async (enabled) => {
+        try {
+            await setDoc(doc(db, 'configs', 'roulette'), { allowOneTimePlay: enabled }, { merge: true });
+            allowOneTimePlay = enabled;
+            notify(enabled ? '✅ Разовий доступ увімкнено!' : '🔒 Разовий доступ вимкнено!');
+        } catch(e) { notify('Помилка збереження: ' + e.message); }
+    };
 
     // ── CD toggle helpers (sync both tabs) ──
     window.toggleCdSettings = (enabled) => {
@@ -2345,6 +2368,10 @@
                 exchangeCurrencyEnabled = data.exchangeCurrencyEnabled !== false;
                 cdEnabled = data.cdEnabled !== false;
                 cdHours = data.cdHours || 24;
+                allowOneTimePlay = data.allowOneTimePlay || false;
+                // Sync allowOneTimePlay toggle
+                const otpToggle = document.getElementById('allowOneTimePlayToggle');
+                if (otpToggle) otpToggle.checked = allowOneTimePlay;
                 
                 const toggle = document.getElementById('autoOddsToggle');
                 if(toggle) toggle.checked = isAutoOdds;
@@ -3414,6 +3441,17 @@
             return;
         }
 
+        // ── One-time play override: allow bypassing cooldown ──
+        if (allowOneTimePlay) {
+            // Clear local completed flag so user can play again
+            const localKey = `${DAILY_COMPLETED_KEY}_${user.uid}_${new Date().toDateString()}`;
+            localStorage.removeItem(localKey);
+            loadDailyConfig();
+            showDailyPhase('wheel');
+            drawWheel();
+            return;
+        }
+
         // ── If no CD: check if already completed today ──
         if (!cdEnabled) {
             if (isDailyCompleted(user.uid)) {
@@ -3867,6 +3905,17 @@
             clearDailyActive();
             setDailyCompleted(user.uid);
             unlockNavForDaily();
+
+            // ── If one-time play was used, disable it in Firestore ──
+            if (allowOneTimePlay) {
+                try {
+                    await setDoc(doc(db, 'configs', 'roulette'), { allowOneTimePlay: false }, { merge: true });
+                    allowOneTimePlay = false;
+                    const otpToggle = document.getElementById('allowOneTimePlayToggle');
+                    if (otpToggle) otpToggle.checked = false;
+                } catch(e) { console.warn('Could not reset allowOneTimePlay:', e); }
+            }
+
             showCardResult(resultIcon, resultTitle, resultDesc, borderColor);
         } catch(e) {
             notify('Помилка нарахування: ' + e.message);
@@ -4024,12 +4073,14 @@
             // Read CD from daily tab toggle (synced with main)
             const cdEnabledVal = document.getElementById('cdEnabledToggle').checked;
             const cdHoursVal   = parseInt(document.getElementById('dailyCdHours').value) || 24;
+            const allowOneTimePlayVal = document.getElementById('allowOneTimePlayToggle').checked;
 
             await setDoc(doc(db, 'configs', 'dailyReward'), { slots, multipliers, revealTime, shuffleTime, shuffleSettings }, { merge: true });
-            // Also persist cd settings in roulette config
-            await setDoc(doc(db, 'configs', 'roulette'), { cdEnabled: cdEnabledVal, cdHours: cdHoursVal }, { merge: true });
+            // Also persist cd settings + one-time play flag in roulette config
+            await setDoc(doc(db, 'configs', 'roulette'), { cdEnabled: cdEnabledVal, cdHours: cdHoursVal, allowOneTimePlay: allowOneTimePlayVal }, { merge: true });
             cdEnabled = cdEnabledVal;
             cdHours   = cdHoursVal;
+            allowOneTimePlay = allowOneTimePlayVal;
             dailyConfig = { slots, multipliers, revealTime, shuffleTime };
             dailyConfigLoaded = true;
             notify('✅ Налаштування щоденної нагороди збережено!');
