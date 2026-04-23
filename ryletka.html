@@ -3347,8 +3347,19 @@
         document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).style.display = 'block';
         document.querySelectorAll('.admin-box .menu-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if (tabId === 'daily') renderDailyAdminSlots();
-    };
+// Fill shuffle pairs/delay/time per difficulty from saved config
+if (dailyConfig.shuffleSettings) {
+    ['easy','medium','hard','vhard','god'].forEach(d => {
+        const s = dailyConfig.shuffleSettings[d];
+        if (!s) return;
+        const pEl = document.getElementById(`shufflePairs_${d}`);
+        const dEl = document.getElementById(`shuffleDelay_${d}`);
+        const tEl = document.getElementById(`shuffleTime_${d}`);   // ← ДОДАЙ ЦЕ
+        if (pEl) pEl.value = s.pairs;
+        if (dEl) dEl.value = s.delay;
+        if (tEl && s.time != null) tEl.value = s.time;             // ← І ЦЕ
+    });
+}
 
     // ================================================================
     //  DAILY REWARD MINI-GAME  (wheel → cards → Firebase cooldown)
@@ -4058,46 +4069,50 @@
         valEl.disabled = typeEl.value === 'second_chance';
     };
 
-    window.saveDailyConfig = async () => {
-        if (userData.role !== 'admin') return notify('Тільки адмін!');
-        try {
-            const slots = DEFAULT_CARD_SLOTS.map((_, i) => ({
-                type:  document.getElementById(`slotType_${i}`).value,
-                value: parseInt(document.getElementById(`slotVal_${i}`).value) || 0,
-            }));
-            const multipliers = {
-                easy:   parseFloat(document.getElementById('multEasy').value)   || 1,
-                medium: parseFloat(document.getElementById('multMedium').value) || 1.5,
-                hard:   parseFloat(document.getElementById('multHard').value)   || 2,
-                vhard:  parseFloat(document.getElementById('multVhard').value)  || 3,
-                god:    parseFloat(document.getElementById('multGod').value)    || 5,
-            };
-            const revealTime  = parseInt(document.getElementById('dailyRevealTime').value)  || DEFAULT_REVEAL_TIME;
-            const shuffleTime = parseInt(document.getElementById('dailyShuffleTime').value) || DEFAULT_SHUFFLE_TIME;
-            // Shuffle pairs/delay per difficulty
-            const shuffleSettings = {};
-            ['easy','medium','hard','vhard','god'].forEach(d => {
-                shuffleSettings[d] = {
-                    pairs: parseInt(document.getElementById(`shufflePairs_${d}`).value) || 1,
-                    delay: parseInt(document.getElementById(`shuffleDelay_${d}`).value) || 400,
-                };
-            });
-            // Read CD from daily tab toggle (synced with main)
-            const cdEnabledVal = document.getElementById('cdEnabledToggle').checked;
-            const cdHoursVal   = parseInt(document.getElementById('dailyCdHours').value) || 24;
-            const allowOneTimePlayVal = document.getElementById('allowOneTimePlayToggle').checked;
+window.saveDailyConfig = async () => {
+    if (userData.role !== 'admin') return notify('Тільки адмін!');
+    try {
+        const slots = DEFAULT_CARD_SLOTS.map((_, i) => ({
+            type:  document.getElementById(`slotType_${i}`).value,
+            value: parseInt(document.getElementById(`slotVal_${i}`).value) || 0,
+        }));
+        const multipliers = {
+            easy:   parseFloat(document.getElementById('multEasy').value)   || 1,
+            medium: parseFloat(document.getElementById('multMedium').value) || 1.5,
+            hard:   parseFloat(document.getElementById('multHard').value)   || 2,
+            vhard:  parseFloat(document.getElementById('multVhard').value)  || 3,
+            god:    parseFloat(document.getElementById('multGod').value)    || 5,
+        };
+        const revealTime  = parseInt(document.getElementById('dailyRevealTime').value)  || DEFAULT_REVEAL_TIME;
+        const shuffleTime = parseInt(document.getElementById('dailyShuffleTime').value) || DEFAULT_SHUFFLE_TIME;
 
-            await setDoc(doc(db, 'configs', 'dailyReward'), { slots, multipliers, revealTime, shuffleTime, shuffleSettings }, { merge: true });
-            // Also persist cd settings + one-time play flag in roulette config
-            await setDoc(doc(db, 'configs', 'roulette'), { cdEnabled: cdEnabledVal, cdHours: cdHoursVal, allowOneTimePlay: allowOneTimePlayVal }, { merge: true });
-            cdEnabled = cdEnabledVal;
-            cdHours   = cdHoursVal;
-            allowOneTimePlay = allowOneTimePlayVal;
-            dailyConfig = { slots, multipliers, revealTime, shuffleTime, shuffleSettings };
-            dailyConfigLoaded = true;
-            notify('✅ Налаштування щоденної нагороди збережено!');
-        } catch(e) { notify('Помилка: ' + e.message); }
-    };
+        // Shuffle pairs/delay/time per difficulty — зчитуємо всі 3 поля
+        const shuffleSettings = {};
+        ['easy','medium','hard','vhard','god'].forEach(d => {
+            shuffleSettings[d] = {
+                pairs: parseInt(document.getElementById(`shufflePairs_${d}`).value) || 1,
+                delay: parseInt(document.getElementById(`shuffleDelay_${d}`).value) || 400,
+                time:  parseInt(document.getElementById(`shuffleTime_${d}`).value)  || 4,
+            };
+        });
+
+        const cdEnabledVal        = document.getElementById('cdEnabledToggle').checked;
+        const cdHoursVal          = parseInt(document.getElementById('dailyCdHours').value) || 24;
+        const allowOneTimePlayVal = document.getElementById('allowOneTimePlayToggle').checked;
+
+        await setDoc(doc(db, 'configs', 'dailyReward'), { slots, multipliers, revealTime, shuffleTime, shuffleSettings }, { merge: true });
+        await setDoc(doc(db, 'configs', 'roulette'), { cdEnabled: cdEnabledVal, cdHours: cdHoursVal, allowOneTimePlay: allowOneTimePlayVal }, { merge: true });
+
+        cdEnabled        = cdEnabledVal;
+        cdHours          = cdHoursVal;
+        allowOneTimePlay = allowOneTimePlayVal;
+
+        // ✅ ВИПРАВЛЕНО: зберігаємо shuffleSettings в локальний стан
+        dailyConfig = { slots, multipliers, revealTime, shuffleTime, shuffleSettings };
+        dailyConfigLoaded = true;
+        notify('✅ Налаштування щоденної нагороди збережено!');
+    } catch(e) { notify('Помилка: ' + e.message); }
+};
 
     /* ─── HOOK INTO showPage TO TRIGGER DAILY CHECK ─── */
     const _origShowPage = window.showPage;
