@@ -413,6 +413,76 @@
             .staff-section { padding: 20px; }
             .staff-toggle-btn { max-width: 90%; }
         }
+
+        /* ── BUDGET DRAWER ── */
+        #budgetDrawer {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%);
+            width: 100%; max-width: 700px;
+            background: rgba(7,9,14,0.98); border: 1px solid rgba(0,255,68,0.35);
+            border-bottom: none; border-radius: 24px 24px 0 0;
+            z-index: 4000; transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+            box-shadow: 0 -10px 60px rgba(0,255,68,0.15);
+            backdrop-filter: blur(20px);
+        }
+        #budgetDrawer.open { transform: translateX(-50%) translateY(0); }
+        .budget-drawer-handle {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 14px 24px 10px; cursor: pointer;
+            border-bottom: 1px solid rgba(0,255,68,0.12);
+        }
+        .budget-drawer-pill {
+            width: 40px; height: 4px; background: rgba(0,255,68,0.3); border-radius: 4px;
+        }
+        .budget-drawer-title {
+            font-size: 11px; font-weight: 800; letter-spacing: 3px; color: var(--primary);
+            text-transform: uppercase;
+        }
+        .budget-drawer-body {
+            padding: 16px 20px 28px; display: flex; gap: 12px; align-items: center;
+            overflow-x: auto; scrollbar-width: none;
+        }
+        .budget-drawer-body::-webkit-scrollbar { display: none; }
+        .budget-wallet-chip {
+            flex-shrink: 0; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(0,255,68,0.25); border-radius: 16px;
+            padding: 14px 20px; text-align: center; min-width: 140px;
+            transition: 0.2s;
+        }
+        .budget-wallet-chip:hover { border-color: var(--primary); background: rgba(0,255,68,0.07); }
+        .budget-wallet-chip-name { font-size: 10px; font-weight: 800; letter-spacing: 2px; color: var(--text-gray); text-transform: uppercase; margin-bottom: 6px; }
+        .budget-wallet-chip-bal { font-size: 22px; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px rgba(0,255,68,0.4); }
+        .budget-wallet-chip-bal.usd { color: #22c55e; }
+        .budget-wallet-chip-bal.eur { color: #3b82f6; }
+        .budget-wallet-chip-bal.uah { color: #fbbf24; }
+        .budget-wallet-chip-cur { font-size: 12px; color: var(--text-gray); font-weight: 600; margin-top: 3px; }
+        .budget-drawer-empty { font-size: 13px; color: var(--text-gray); font-weight: 600; text-align: center; padding: 20px; width: 100%; }
+        .budget-drawer-loading { font-size: 12px; color: var(--text-gray); font-weight: 600; text-align: center; width: 100%; animation: pulse 1.5s infinite; }
+        /* Toggle tab at bottom of screen */
+        #budgetTab {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            background: rgba(0,255,68,0.12); border: 1px solid rgba(0,255,68,0.35);
+            border-bottom: none; border-radius: 14px 14px 0 0;
+            padding: 8px 24px 6px; cursor: pointer; z-index: 3999;
+            font-size: 11px; font-weight: 800; color: var(--primary);
+            letter-spacing: 2px; text-transform: uppercase;
+            display: none; align-items: center; gap: 8px;
+            transition: 0.2s; box-shadow: 0 -4px 20px rgba(0,255,68,0.1);
+        }
+        #budgetTab:hover { background: rgba(0,255,68,0.2); }
+        #budgetTab.visible { display: flex; }
+        /* Admin budget header button */
+        #headerBudgetBtn {
+            background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.4);
+            color: #fbbf24; width: 38px; height: 38px; border-radius: 10px;
+            font-weight: 900; cursor: pointer; font-size: 18px;
+            display: none; align-items: center; justify-content: center;
+            text-decoration: none; flex-shrink: 0;
+            box-shadow: 0 0 8px rgba(251,191,36,0.15);
+        }
+        #headerBudgetBtn:hover {
+            background: #fbbf24; color: black;
+            box-shadow: 0 0 15px rgba(251,191,36,0.6); transform: translateY(-1px);
+        }
     </style>
 </head>
 <body oncontextmenu="return false;">
@@ -434,6 +504,7 @@
             <a href="gallery.html" class="btn-small-header" style="text-decoration: none;">📸 ГАЛЕРЕЯ</a>
             <a href="applications.html" id="headerAppBtn" class="btn-square-header" style="display:none;" title="Перевірка рапортів">📝</a>
             <a href="ryletka.html" id="headerRyletkaBtn" class="btn-square-header" style="display:none;" title="Рулетка Удачі">🎲</a>
+            <a href="budget.html" id="headerBudgetBtn" title="Фінансовий центр">💰</a>
             <div class="notif-wrapper" onclick="toggleNotifs(event)">
                 <span class="bell-icon">🔔</span>
                 <div id="bellBadge" class="bell-badge">0</div>
@@ -601,6 +672,20 @@
             </div>
             <div id="modalReportsList"></div>
             <span onclick="document.getElementById('reportsModal').style.display='none'" style="position: absolute; top: 15px; right: 20px; font-size: 35px; cursor: pointer; color: #555;">&times;</span>
+        </div>
+    </div>
+
+
+    <!-- BUDGET DRAWER -->
+    <div id="budgetTab" onclick="toggleBudgetDrawer()">💰 БЮДЖЕТ ▲</div>
+    <div id="budgetDrawer">
+        <div class="budget-drawer-handle" onclick="toggleBudgetDrawer()">
+            <div class="budget-drawer-pill"></div>
+            <div class="budget-drawer-title">💰 Бюджет підрозділу</div>
+            <div class="budget-drawer-pill"></div>
+        </div>
+        <div class="budget-drawer-body" id="budgetDrawerBody">
+            <div class="budget-drawer-loading">Завантаження...</div>
         </div>
     </div>
 
@@ -781,8 +866,15 @@
                 document.getElementById('toggleStaffBtn').classList.add('visible');
                 document.getElementById('lockBtn').style.display = 'block';
                 loadStaffList();
+                // Budget: admin gets header button + drawer tab
+                document.getElementById('headerBudgetBtn').style.display = 'flex';
+                document.getElementById('budgetTab').classList.add('visible');
+                loadBudgetDrawer();
             } else {
                 document.getElementById('toggleStaffBtn').style.display = 'none';
+                // Non-admin: only drawer tab (read-only public balances)
+                document.getElementById('budgetTab').classList.add('visible');
+                loadBudgetDrawer();
             }
             
             // Доступ до Ролетки (для Адмінів, Інструкторів та Користувачів)
@@ -1173,6 +1265,76 @@
                 });
             });
         }
+
+
+        // ── BUDGET DRAWER ──
+        let budgetDrawerOpen = false;
+        let budgetDrawerLoaded = false;
+
+        window.toggleBudgetDrawer = () => {
+            budgetDrawerOpen = !budgetDrawerOpen;
+            const drawer = document.getElementById('budgetDrawer');
+            const tab = document.getElementById('budgetTab');
+            drawer.classList.toggle('open', budgetDrawerOpen);
+            tab.textContent = budgetDrawerOpen ? '💰 БЮДЖЕТ ▼' : '💰 БЮДЖЕТ ▲';
+            // Close if clicking outside
+            if (budgetDrawerOpen && !budgetDrawerLoaded) loadBudgetDrawer();
+        };
+
+        async function loadBudgetDrawer() {
+            budgetDrawerLoaded = true;
+            const body = document.getElementById('budgetDrawerBody');
+            body.innerHTML = '<div class="budget-drawer-loading">Завантаження...</div>';
+            try {
+                const snap = await getDocs(collection(db, 'wallets'));
+                const wallets = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                if (!wallets.length) {
+                    body.innerHTML = '<div class="budget-drawer-empty">Рахунків ще немає</div>';
+                    return;
+                }
+                const SYMS = { UAH: 'грн', USD: '$', EUR: '€' };
+                const CLS  = { UAH: 'uah', USD: 'usd', EUR: 'eur' };
+                const arrowsNeeded = wallets.length > 3;
+                let html = '';
+                if (arrowsNeeded) {
+                    html += '<button onclick="scrollBudget(-1)" style="flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid rgba(0,255,68,0.2);border-radius:10px;width:32px;height:32px;color:var(--primary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>';
+                }
+                html += '<div id="budgetChipRow" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;flex:1;">';
+                wallets.forEach(w => {
+                    const sym = SYMS[w.currency] || w.currency;
+                    const cls = CLS[w.currency] || '';
+                    html += `<div class="budget-wallet-chip">
+                        <div class="budget-wallet-chip-name">${w.name}</div>
+                        <div class="budget-wallet-chip-bal ${cls}">${Number(w.balance||0).toLocaleString('uk-UA',{minimumFractionDigits:0,maximumFractionDigits:0})}</div>
+                        <div class="budget-wallet-chip-cur">${sym}</div>
+                    </div>`;
+                });
+                html += '</div>';
+                if (arrowsNeeded) {
+                    html += '<button onclick="scrollBudget(1)" style="flex-shrink:0;background:rgba(255,255,255,0.05);border:1px solid rgba(0,255,68,0.2);border-radius:10px;width:32px;height:32px;color:var(--primary);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>';
+                }
+                body.innerHTML = html;
+            } catch(e) {
+                body.innerHTML = '<div class="budget-drawer-empty">Помилка завантаження</div>';
+                console.error(e);
+            }
+        }
+
+        window.scrollBudget = (dir) => {
+            const row = document.getElementById('budgetChipRow');
+            if (row) row.scrollBy({ left: dir * 160, behavior: 'smooth' });
+        };
+
+        // Close drawer on outside click
+        document.addEventListener('click', (e) => {
+            if (budgetDrawerOpen &&
+                !e.target.closest('#budgetDrawer') &&
+                !e.target.closest('#budgetTab')) {
+                budgetDrawerOpen = false;
+                document.getElementById('budgetDrawer').classList.remove('open');
+                document.getElementById('budgetTab').textContent = '💰 БЮДЖЕТ ▲';
+            }
+        });
 
         window.onclick = function(event) {
             if (!event.target.closest('.notif-wrapper') && !event.target.closest('#notifDropdown')) {
