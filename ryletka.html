@@ -3725,15 +3725,12 @@
         document.getElementById('cardCountdownLabel').textContent = 'Перемішую...';
 
         const diffId    = currentDifficulty.id;
-        const cfg       = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
-                            ? dailyConfig.shuffleSettings[diffId] : {};
+        const cfg       = (dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]) || {};
 
-        // Per-difficulty shuffle time, fallback to global
         const shuffleMs = ((cfg.time != null ? cfg.time : null) || dailyConfig.shuffleTime || 4) * 1000;
-
-        const pairs     = cfg.pairs  != null ? cfg.pairs  : (currentDifficulty.shufflePairs || 2);
-        // swapDelay = час одного свопу (мс). Менше = швидше.
-        const swapDelay = cfg.delay  != null ? cfg.delay  : (currentDifficulty.shuffleDelay || 450);
+        const pairs     = cfg.pairs != null ? cfg.pairs : (currentDifficulty.shufflePairs || 2);
+        // swapDelay = час анімації одного свопу в мс. Менше = швидше.
+        const swapDelay = cfg.delay != null ? cfg.delay : (currentDifficulty.shuffleDelay || 450);
 
         const startTime = Date.now();
 
@@ -3741,91 +3738,73 @@
             setTimeout(() => startPickPhase(), 400);
         });
 
-        // Свопи йдуть БЕЗПЕРЕРВНО протягом всього shuffleMs.
-        // pairs визначає скільки свопів відбувається одночасно (інтенсивність).
-        // interval між свопами = swapDelay / pairs (більше пар = частіше свопи).
-        const interval = Math.max(80, Math.floor(swapDelay / Math.max(1, pairs)));
+        // Свопи виконуються ПОСЛІДОВНО: один завершився → починається наступний.
+        // pairs = скільки пар за один цикл (потім пауза pauseMs перед наступним циклом).
+        // Це гарантує що ніколи два свопи не йдуть паралельно → без телепортації.
+        const pauseMs = Math.max(50, Math.round(swapDelay * 0.15));
 
-        function doSwap() {
+        function runCycle() {
             if (cardGamePhase !== 'shuffle') return;
-            const elapsed = Date.now() - startTime;
-            // Зупинитись за ~400мс до кінця щоб плавно завершити
-            if (elapsed >= shuffleMs - 400) return;
+            if (Date.now() - startTime >= shuffleMs - swapDelay - 300) return;
 
-            let a = Math.floor(Math.random() * cardPositions.length);
-            let b;
-            do { b = Math.floor(Math.random() * cardPositions.length); } while (b === a);
-            animateSwap(a, b, swapDelay);
-            [cardPositions[a], cardPositions[b]] = [cardPositions[b], cardPositions[a]];
+            let todo = pairs;
 
-            setTimeout(doSwap, interval);
+            function nextSwap() {
+                if (cardGamePhase !== 'shuffle') return;
+                if (todo <= 0) {
+                    setTimeout(runCycle, pauseMs);
+                    return;
+                }
+                todo--;
+                let a = Math.floor(Math.random() * cardPositions.length);
+                let b;
+                do { b = Math.floor(Math.random() * cardPositions.length); } while (b === a);
+                [cardPositions[a], cardPositions[b]] = [cardPositions[b], cardPositions[a]];
+                animateSwap(a, b, swapDelay, nextSwap);
+            }
+            nextSwap();
         }
-        doSwap();
+        runCycle();
     }
 
-    function animateSwap(posA, posB, swapDelay) {
-        if (swapDelay == null) {
-            const diffId   = currentDifficulty.id;
-            const cfgDelay = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
-                              ? dailyConfig.shuffleSettings[diffId].delay : null;
-            swapDelay = cfgDelay != null ? cfgDelay : (currentDifficulty.shuffleDelay || 450);
-        }
-        const animMs = Math.max(80, swapDelay * 0.75);
+    // animateSwap: плавно переміщує дві карточки CSS-анімацією.
+    // Використовує окремийinner-wrapper щоб не конфліктувати з flip-transform карточки.
+    // onDone викликається після завершення анімації.
+    function animateSwap(posA, posB, swapDelay, onDone) {
+        const animMs = Math.max(80, Math.round(swapDelay * 0.85));
 
         const grid  = document.getElementById('cardsGrid');
         const cards = Array.from(grid.children);
         const cardA = cards[posA];
         const cardB = cards[posB];
-        if (!cardA || !cardB) return;
+        if (!cardA || !cardB) { onDone && onDone(); return; }
 
         const rectA = cardA.getBoundingClientRect();
         const rectB = cardB.getBoundingClientRect();
-        const gridRect = grid.getBoundingClientRect();
+        const dx = rectB.left - rectA.left;
+        const dy = rectB.top  - rectA.top;
 
-        // Використовуємо псевдо-елементи поверх гріду замість трансформування реальних карточок.
-        // Це повністю ізолює анімацію переміщення від flip-transform карточки.
-        function makeGhost(rect, el) {
-            const g = el.cloneNode(true);
-            g.style.cssText = `
-                position: fixed;
-                left: ${rect.left}px;
-                top: ${rect.top}px;
-                width: ${rect.width}px;
-                height: ${rect.height}px;
-                margin: 0;
-                pointer-events: none;
-                z-index: 999;
-                transition: left ${animMs}ms cubic-bezier(0.4,0,0.2,1),
-                            top  ${animMs}ms cubic-bezier(0.4,0,0.2,1);
-            `;
-            document.body.appendChild(g);
-            return g;
-        }
+        const easing = `${animMs}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
 
-        // Сховати реальні карточки на час анімації
-        cardA.style.visibility = 'hidden';
-        cardB.style.visibility = 'hidden';
+        // Зберігаємо flipped-стан і додаємо translate поверх (одним рядком transform)
+        cardA.style.transition = `transform ${easing}`;
+        cardB.style.transition = `transform ${easing}`;
 
-        const ghostA = makeGhost(rectA, cardA);
-        const ghostB = makeGhost(rectB, cardB);
+        const aFlipped = cardA.classList.contains('flipped');
+        const bFlipped = cardB.classList.contains('flipped');
 
-        // Запустити анімацію (потрібен один кадр щоб браузер "побачив" початкову позицію)
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                ghostA.style.left = rectB.left + 'px';
-                ghostA.style.top  = rectB.top  + 'px';
-                ghostB.style.left = rectA.left + 'px';
-                ghostB.style.top  = rectA.top  + 'px';
-            });
-        });
+        // Зберігаємо базовий transform (flip або нічого) і додаємо translate поверх
+        cardA.style.transform = `translate(${dx}px, ${dy}px)${aFlipped ? ' rotateY(180deg)' : ''}`;
+        cardB.style.transform = `translate(${-dx}px, ${-dy}px)${bFlipped ? ' rotateY(180deg)' : ''}`;
 
         setTimeout(() => {
-            // Прибрати ghosts
-            ghostA.remove();
-            ghostB.remove();
+            // Вимикаємо transition перед DOM swap
+            cardA.style.transition = 'none';
+            cardB.style.transition = 'none';
+            cardA.style.transform  = aFlipped ? 'rotateY(180deg)' : '';
+            cardB.style.transform  = bFlipped ? 'rotateY(180deg)' : '';
 
-            // Поміняти DOM позиції
-            const nextA = cardA.nextSibling === cardB ? cardA : cardA.nextSibling;
+            // Міняємо місцями в DOM
             if (posA < posB) {
                 grid.insertBefore(cardB, cardA);
                 grid.insertBefore(cardA, cards[posB + 1] || null);
@@ -3834,10 +3813,13 @@
                 grid.insertBefore(cardB, cards[posA + 1] || null);
             }
 
-            // Показати реальні карточки
-            cardA.style.visibility = '';
-            cardB.style.visibility = '';
-        }, animMs + 16);
+            // Відновлюємо CSS transition для flip (потрібен мікро-таймаут щоб браузер застосував 'none')
+            requestAnimationFrame(() => {
+                cardA.style.transition = '';
+                cardB.style.transition = '';
+                onDone && onDone();
+            });
+        }, animMs);
     }
 
     function startPickPhase() {
