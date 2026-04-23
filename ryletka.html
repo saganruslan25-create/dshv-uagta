@@ -3344,12 +3344,12 @@
         document.getElementById('footerPageLabel').innerText = pageId.toUpperCase();
     };
 
-    window.switchAdminTab = (tabId, btn) => {
+    window.switchAdminTab = async (tabId, btn) => {
         document.querySelectorAll('.admin-tab').forEach(el => el.style.display = 'none');
         document.getElementById('tab' + tabId.charAt(0).toUpperCase() + tabId.slice(1)).style.display = 'block';
         document.querySelectorAll('.admin-box .menu-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if (tabId === 'daily') renderDailyAdminSlots();
+        if (tabId === 'daily') await renderDailyAdminSlots();
     };
 
     // ================================================================
@@ -3986,9 +3986,23 @@
     }
 
     /* ─── DAILY ADMIN ─── */
-    function renderDailyAdminSlots() {
+    async function renderDailyAdminSlots() {
         const container = document.getElementById('cardSlotsConfig');
         if (!container) return;
+
+        // Always load fresh data from Firebase before rendering
+        try {
+            const snap = await getDoc(doc(db, 'configs', 'dailyReward'));
+            if (snap.exists()) {
+                const d = snap.data();
+                dailyConfig.slots           = d.slots           || DEFAULT_CARD_SLOTS;
+                dailyConfig.multipliers     = d.multipliers     || DEFAULT_MULTIPLIERS;
+                dailyConfig.revealTime      = d.revealTime      || DEFAULT_REVEAL_TIME;
+                dailyConfig.shuffleTime     = d.shuffleTime     || DEFAULT_SHUFFLE_TIME;
+                dailyConfig.shuffleSettings = d.shuffleSettings || null;
+            }
+        } catch(e) { console.error('renderDailyAdminSlots load error', e); }
+
         container.innerHTML = '';
         (dailyConfig.slots || DEFAULT_CARD_SLOTS).forEach((slot, i) => {
             const typeInfo = CARD_TYPES.find(t => t.id === slot.type) || CARD_TYPES[0];
@@ -4023,7 +4037,7 @@
         document.getElementById('dailyRevealTime').value  = dailyConfig.revealTime  || DEFAULT_REVEAL_TIME;
         document.getElementById('dailyShuffleTime').value = dailyConfig.shuffleTime || DEFAULT_SHUFFLE_TIME;
 
-        // Fill shuffle pairs/delay per difficulty from saved config
+        // Fill shuffle pairs/delay/time per difficulty from saved config
         if (dailyConfig.shuffleSettings) {
             ['easy','medium','hard','vhard','god'].forEach(d => {
                 const s = dailyConfig.shuffleSettings[d];
@@ -4099,7 +4113,7 @@
             cdHours   = cdHoursVal;
             allowOneTimePlay = allowOneTimePlayVal;
             dailyConfig = { slots, multipliers, revealTime, shuffleTime, shuffleSettings };
-            dailyConfigLoaded = true;
+            dailyConfigLoaded = false; // force reload on next renderDailyAdminSlots
             notify('✅ Налаштування щоденної нагороди збережено!');
         } catch(e) { notify('Помилка: ' + e.message); }
     };
