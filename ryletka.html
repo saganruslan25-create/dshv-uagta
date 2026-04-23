@@ -3765,12 +3765,13 @@
 
     function animateSwap(posA, posB, swapDelay) {
         if (swapDelay == null) {
-            // fallback: read from currentDifficulty
             const diffId   = currentDifficulty.id;
             const cfgDelay = dailyConfig.shuffleSettings && dailyConfig.shuffleSettings[diffId]
                               ? dailyConfig.shuffleSettings[diffId].delay : null;
             swapDelay = cfgDelay != null ? cfgDelay : (currentDifficulty.shuffleDelay || 450);
         }
+        const animMs = Math.max(80, swapDelay * 0.75);
+
         const grid  = document.getElementById('cardsGrid');
         const cards = Array.from(grid.children);
         const cardA = cards[posA];
@@ -3779,24 +3780,52 @@
 
         const rectA = cardA.getBoundingClientRect();
         const rectB = cardB.getBoundingClientRect();
-        const dx    = rectB.left - rectA.left;
-        const dy    = rectB.top  - rectA.top;
+        const gridRect = grid.getBoundingClientRect();
 
-        // Move A → B
-        cardA.style.transition = `transform ${swapDelay * 0.8}ms ease`;
-        cardA.style.transform  = `translate(${dx}px,${dy}px)`;
-        // Move B → A
-        cardB.style.transition = `transform ${swapDelay * 0.8}ms ease`;
-        cardB.style.transform  = `translate(${-dx}px,${-dy}px)`;
+        // Використовуємо псевдо-елементи поверх гріду замість трансформування реальних карточок.
+        // Це повністю ізолює анімацію переміщення від flip-transform карточки.
+        function makeGhost(rect, el) {
+            const g = el.cloneNode(true);
+            g.style.cssText = `
+                position: fixed;
+                left: ${rect.left}px;
+                top: ${rect.top}px;
+                width: ${rect.width}px;
+                height: ${rect.height}px;
+                margin: 0;
+                pointer-events: none;
+                z-index: 999;
+                transition: left ${animMs}ms cubic-bezier(0.4,0,0.2,1),
+                            top  ${animMs}ms cubic-bezier(0.4,0,0.2,1);
+            `;
+            document.body.appendChild(g);
+            return g;
+        }
+
+        // Сховати реальні карточки на час анімації
+        cardA.style.visibility = 'hidden';
+        cardB.style.visibility = 'hidden';
+
+        const ghostA = makeGhost(rectA, cardA);
+        const ghostB = makeGhost(rectB, cardB);
+
+        // Запустити анімацію (потрібен один кадр щоб браузер "побачив" початкову позицію)
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                ghostA.style.left = rectB.left + 'px';
+                ghostA.style.top  = rectB.top  + 'px';
+                ghostB.style.left = rectA.left + 'px';
+                ghostB.style.top  = rectA.top  + 'px';
+            });
+        });
 
         setTimeout(() => {
-            // Reorder DOM
-            cardA.style.transition = 'none';
-            cardB.style.transition = 'none';
-            cardA.style.transform  = '';
-            cardB.style.transform  = '';
+            // Прибрати ghosts
+            ghostA.remove();
+            ghostB.remove();
 
-            // Swap DOM positions
+            // Поміняти DOM позиції
+            const nextA = cardA.nextSibling === cardB ? cardA : cardA.nextSibling;
             if (posA < posB) {
                 grid.insertBefore(cardB, cardA);
                 grid.insertBefore(cardA, cards[posB + 1] || null);
@@ -3804,7 +3833,11 @@
                 grid.insertBefore(cardA, cardB);
                 grid.insertBefore(cardB, cards[posA + 1] || null);
             }
-        }, swapDelay * 0.85);
+
+            // Показати реальні карточки
+            cardA.style.visibility = '';
+            cardB.style.visibility = '';
+        }, animMs + 16);
     }
 
     function startPickPhase() {
