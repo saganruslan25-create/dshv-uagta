@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ДШВ | АГІТАЦІЯ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- ══════════════════════════════════════════════════
+         FIREBASE SDK  (ті самі версії що у вашому файлі)
+         ════════════════════════════════════════════════ -->
+    <script type="module">
+    import { initializeApp }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getAuth, onAuthStateChanged }
+                                       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import { getFirestore, collection, doc,
+             getDocs, setDoc, updateDoc, deleteDoc, query, orderBy }
+                                       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // ─── ВСТАВТЕ СВІЙ firebaseConfig ───────────────────
+    const firebaseConfig = {
+        apiKey:            "ВАШЕ_API_KEY",
+        authDomain:        "ВАШЕ_AUTH_DOMAIN",
+        projectId:         "ВАШЕ_PROJECT_ID",
+        storageBucket:     "ВАШЕ_STORAGE_BUCKET",
+        messagingSenderId: "ВАШЕ_SENDER_ID",
+        appId:             "ВАШЕ_APP_ID"
+    };
+    // ───────────────────────────────────────────────────
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    // Колекція у Firestore де Zapier зберігає результати тестів
+    const COL = "examResults";           // ← назва колекції, узгодьте з Zapier
+
+    /* ── helpers ── */
+    const notify = (msg, type = 'success') => {
+        const t = document.createElement('div');
+        t.className = 'toast toast-' + type;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.classList.add('show'), 10);
+        setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3000);
+    };
+
+    /* ════════════════════════════════════════
+       WEBHOOK SETTINGS — збереження у localStorage
+       ════════════════════════════════════════ */
+    const WEBHOOK_KEY = 'agit_webhook_url';
+
+    function saveWebhook() {
+        const url = document.getElementById('webhookUrl').value.trim();
+        if (!url.startsWith('https://discord.com/api/webhooks/')) {
+            notify('Невірний URL вебхука!', 'error'); return;
+        }
+        localStorage.setItem(WEBHOOK_KEY, url);
+        notify('✅ Вебхук збережено!');
+    }
+
+    function loadWebhook() {
+        const saved = localStorage.getItem(WEBHOOK_KEY);
+        if (saved) document.getElementById('webhookUrl').value = saved;
+    }
+
+    async function testWebhook() {
+        const url = localStorage.getItem(WEBHOOK_KEY);
+        if (!url) { notify('Спочатку збережіть вебхук!', 'error'); return; }
+        try {
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    embeds: [{
+                        title: '🔗 Тест вебхука',
+                        description: 'Підключення до каналу агітації працює!',
+                        color: 0x22c55e
+                    }]
+                })
+            });
+            notify('✅ Тестове повідомлення надіслано!');
+        } catch (e) { notify('Помилка: ' + e.message, 'error'); }
+    }
+
+    /* ════════════════════════════════════════
+       SEND AGITATION via Discord Webhook
+       ════════════════════════════════════════ */
+    async function sendAgitation(row) {
+        const url = localStorage.getItem(WEBHOOK_KEY);
+        if (!url) { notify('Налаштуйте вебхук!', 'error'); return; }
+
+        const embed = {
+            title: '📢 АГІТАЦІЯ',
+            color: 0xf97316,
+            fields: [
+                { name: '👤 Discord нік',  value: row.discordNick || '—', inline: true },
+                { name: '🏷️ Discord ID',   value: row.discordId   || '—', inline: true },
+                { name: '📊 Сума балів',   value: String(row.score ?? '—'), inline: true },
+                { name: '📋 Тест',          value: row.testName    || '—', inline: true },
+                { name: '📅 Дата',          value: row.date        || '—', inline: true },
+            ],
+            footer: { text: 'ДШВ Система Агітації' },
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ embeds: [embed] })
+            });
+
+            // Відмітити у Firestore
+            await updateDoc(doc(db, COL, row.id), { agitated: true, agitatedAt: new Date().toISOString() });
+            notify('✅ Агітацію надіслано: ' + row.discordNick);
+            loadData(); // перезавантажити таблицю
+        } catch (e) { notify('Помилка: ' + e.message, 'error'); }
+    }
+
+    /* ════════════════════════════════════════
+       MANUAL ADD ROW (ручне додавання)
+       ════════════════════════════════════════ */
+    async function addManualRow() {
+        const discordNick = document.getElementById('mNick').value.trim();
+        const discordId   = document.getElementById('mId').value.trim();
+        const score       = parseInt(document.getElementById('mScore').value) || 0;
+        const testName    = document.getElementById('mTest').value.trim() || 'Google Form';
+        if (!discordNick) { notify('Введіть Discord нік!', 'error'); return; }
+
+        const id = 'manual_' + Date.now();
+        await setDoc(doc(db, COL, id), {
+            discordNick, discordId, score, testName,
+            date: new Date().toLocaleDateString('uk-UA'),
+            agitated: false,
+            source: 'manual'
+        });
+        notify('✅ Запис додано!');
+        document.getElementById('mNick').value = '';
+        document.getElementById('mId').value   = '';
+        document.getElementById('mScore').value = '';
+        loadData();
+    }
+
+    /* ════════════════════════════════════════
+       DELETE ROW
+       ════════════════════════════════════════ */
+    async function deleteRow(id) {
+        if (!confirm('Видалити цей запис?')) return;
+        await deleteDoc(doc(db, COL, id));
+        notify('🗑️ Видалено');
+        loadData();
+    }
+
+    /* ════════════════════════════════════════
+       LOAD DATA FROM FIRESTORE
+       ════════════════════════════════════════ */
+    let allRows = [];
+
+    async function loadData() {
+        document.getElementById('loadingSpinner').style.display = 'flex';
+        document.getElementById('tableBody').innerHTML = '';
+        try {
+            const snap = await getDocs(collection(db, COL));
+            allRows = [];
+            snap.forEach(d => allRows.push({ id: d.id, ...d.data() }));
+            allRows.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+            renderTable(allRows);
+        } catch (e) {
+            notify('Помилка завантаження: ' + e.message, 'error');
+        }
+        document.getElementById('loadingSpinner').style.display = 'none';
+        updateStats();
+    }
+
+    function renderTable(rows) {
+        const tbody = document.getElementById('tableBody');
+        const search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+        const filter = document.getElementById('filterSelect')?.value || 'all';
+
+        tbody.innerHTML = '';
+        let shown = rows;
+
+        if (search) shown = shown.filter(r =>
+            (r.discordNick || '').toLowerCase().includes(search) ||
+            (r.discordId   || '').toLowerCase().includes(search)
+        );
+        if (filter === 'sent')    shown = shown.filter(r => r.agitated);
+        if (filter === 'pending') shown = shown.filter(r => !r.agitated);
+
+        if (!shown.length) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--text-gray);padding:40px">Немає записів</td></tr>`;
+            return;
+        }
+
+        shown.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+            tr.className = row.agitated ? 'row-sent' : '';
+
+            tr.innerHTML = `
+                <td class="td-rank">${idx + 1}</td>
+                <td class="td-nick">
+                    <span class="nick-badge">${row.discordNick || '—'}</span>
+                </td>
+                <td class="td-id">${row.discordId || '—'}</td>
+                <td class="td-score">
+                    <span class="score-chip">${row.score ?? '—'}</span>
+                </td>
+                <td>${row.testName || '—'}</td>
+                <td class="td-date">${row.date || '—'}</td>
+                <td class="td-status">
+                    ${row.agitated
+                        ? `<span class="badge badge-sent">✅ Надіслано</span>`
+                        : `<button class="btn-agit" onclick="window._sendAgit('${row.id}')">📢 Кинути агіт</button>`
+                    }
+                    <button class="btn-del" onclick="window._delRow('${row.id}')">🗑️</button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateStats() {
+        const total   = allRows.length;
+        const sent    = allRows.filter(r => r.agitated).length;
+        const pending = total - sent;
+        const avgScore = total
+            ? Math.round(allRows.reduce((a, r) => a + (r.score ?? 0), 0) / total)
+            : 0;
+
+        document.getElementById('statTotal').textContent   = total;
+        document.getElementById('statSent').textContent    = sent;
+        document.getElementById('statPending').textContent = pending;
+        document.getElementById('statAvg').textContent     = avgScore;
+    }
+
+    /* ── expose to global scope for onclick ── */
+    window._sendAgit = (id) => {
+        const row = allRows.find(r => r.id === id);
+        if (row) sendAgitation(row);
+    };
+    window._delRow = deleteRow;
+    window.saveWebhook  = saveWebhook;
+    window.testWebhook  = testWebhook;
+    window.addManualRow = addManualRow;
+    window.loadData     = loadData;
+    window.renderTable  = () => renderTable(allRows);
+
+    /* ── AUTH GUARD (тільки admin) ── */
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) { window.location.href = 'index.html'; return; }
+        // Перевірка ролі (якщо у вас є userData в Firestore)
+        // const snap = await getDoc(doc(db, 'users', user.uid));
+        // if (snap.data()?.role !== 'admin') { window.location.href = 'index.html'; return; }
+        loadWebhook();
+        loadData();
+    });
+    </script>
+
+    <style>
+        :root {
+            --primary:      #22c55e;
+            --primary-glow: rgba(34, 197, 94, 0.4);
+            --accent:       #f97316;
+            --accent-glow:  rgba(249, 115, 22, 0.4);
+            --bg:           #020305;
+            --card-bg:      rgba(10, 15, 25, 0.92);
+            --glass-border: rgba(34, 197, 94, 0.25);
+            --text-gray:    #94a3b8;
+            --danger:       #ef4444;
+            --currency:     #fbbf24;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: var(--bg);
+            background-image:
+                radial-gradient(circle at 60% -10%, var(--primary-glow) 0%, transparent 45%),
+                radial-gradient(circle at 0% 90%,   rgba(249,115,22,.08) 0%, transparent 40%);
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            padding: 0 0 60px;
+        }
+
+        /* ── HEADER ── */
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 5%; background: rgba(2,3,5,.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky; top: 0; z-index: 100;
+            gap: 12px; flex-wrap: wrap;
+        }
+        .logo-text {
+            font-size: 18px; font-weight: 900; letter-spacing: 4px; text-transform: uppercase;
+            color: var(--primary); text-shadow: 0 0 20px var(--primary-glow);
+        }
+        .logo-sub { font-size: 11px; color: var(--text-gray); letter-spacing: 2px; }
+
+        .header-back {
+            padding: 10px 20px; border-radius: 12px;
+            background: rgba(255,255,255,.05); border: 1px solid var(--glass-border);
+            color: var(--text-gray); font-size: 13px; font-weight: 700; cursor: pointer;
+            transition: .3s; text-decoration: none; display: flex; align-items: center; gap: 8px;
+        }
+        .header-back:hover { color: var(--primary); border-color: var(--primary); }
+
+        /* ── PAGE WRAPPER ── */
+        .page { max-width: 1400px; margin: 30px auto; padding: 0 5%; display: flex; flex-direction: column; gap: 24px; }
+
+        /* ── CARDS / SECTIONS ── */
+        .card {
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 24px;
+        }
+        .card-title {
+            font-size: 16px; font-weight: 900; text-transform: uppercase;
+            letter-spacing: 2px; color: var(--primary); margin-bottom: 18px;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        /* ── STAT ROW ── */
+        .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .stat-box {
+            background: rgba(255,255,255,.04); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 16px 20px; text-align: center;
+        }
+        .stat-box .val { font-size: 32px; font-weight: 900; color: var(--primary); }
+        .stat-box .lbl { font-size: 11px; color: var(--text-gray); letter-spacing: 1px; margin-top: 4px; }
+
+        /* ── WEBHOOK SETTINGS ── */
+        .webhook-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+        .webhook-row input {
+            flex: 1; min-width: 280px;
+            background: rgba(255,255,255,.05); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 12px 16px; color: #fff; font-size: 13px;
+            font-family: 'Inter', sans-serif; outline: none;
+            transition: border-color .3s;
+        }
+        .webhook-row input:focus { border-color: var(--primary); }
+        .webhook-row input::placeholder { color: var(--text-gray); }
+
+        /* ── BUTTONS ── */
+        .btn {
+            padding: 12px 22px; border-radius: 12px; border: none; font-size: 13px;
+            font-weight: 800; cursor: pointer; transition: .3s; white-space: nowrap;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary  { background: var(--primary); color: #000; }
+        .btn-primary:hover  { box-shadow: 0 0 20px var(--primary-glow); transform: translateY(-1px); }
+        .btn-outline  { background: transparent; color: var(--primary); border: 1px solid var(--primary); }
+        .btn-outline:hover  { background: rgba(34,197,94,.15); }
+        .btn-danger   { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+        .btn-danger:hover   { background: rgba(239,68,68,.15); }
+
+        /* ── MANUAL ADD FORM ── */
+        .form-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px; margin-bottom: 14px;
+        }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 11px; color: var(--text-gray); letter-spacing: 1px; font-weight: 700; }
+        .form-group input {
+            background: rgba(255,255,255,.05); border: 1px solid var(--glass-border);
+            border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 13px;
+            font-family: 'Inter', sans-serif; outline: none; transition: border-color .3s;
+        }
+        .form-group input:focus { border-color: var(--primary); }
+        .form-group input::placeholder { color: rgba(255,255,255,.2); }
+
+        /* ── FILTER / SEARCH BAR ── */
+        .table-controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+        .search-box {
+            flex: 1; min-width: 200px;
+            background: rgba(255,255,255,.05); border: 1px solid var(--glass-border);
+            border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 13px;
+            font-family: 'Inter', sans-serif; outline: none;
+        }
+        .search-box:focus { border-color: var(--primary); }
+        .search-box::placeholder { color: var(--text-gray); }
+        .filter-select {
+            background: rgba(255,255,255,.05); border: 1px solid var(--glass-border);
+            border-radius: 10px; padding: 10px 14px; color: #fff; font-size: 13px;
+            font-family: 'Inter', sans-serif; outline: none; cursor: pointer;
+        }
+        .filter-select option { background: #0a0f19; }
+
+        /* ── TABLE ── */
+        .table-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--glass-border); }
+        table { width: 100%; border-collapse: collapse; min-width: 700px; }
+        thead th {
+            padding: 14px 16px; text-align: left; font-size: 11px; font-weight: 800;
+            letter-spacing: 2px; text-transform: uppercase; color: var(--text-gray);
+            background: rgba(255,255,255,.03); border-bottom: 1px solid var(--glass-border);
+        }
+        tbody tr {
+            border-bottom: 1px solid rgba(34,197,94,.08); transition: background .2s;
+        }
+        tbody tr:hover { background: rgba(34,197,94,.05); }
+        tbody tr.row-sent { opacity: .6; }
+        tbody td { padding: 14px 16px; font-size: 13px; vertical-align: middle; }
+
+        .td-rank  { color: var(--text-gray); font-weight: 800; width: 50px; }
+        .td-nick  { font-weight: 700; }
+        .td-id    { color: var(--text-gray); font-size: 12px; font-family: monospace; }
+        .td-score { }
+        .td-date  { color: var(--text-gray); font-size: 12px; }
+        .td-status { display: flex; gap: 8px; align-items: center; }
+
+        .nick-badge {
+            background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+            padding: 4px 10px; border-radius: 8px; color: var(--primary); font-size: 13px;
+        }
+        .score-chip {
+            background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.3);
+            padding: 4px 12px; border-radius: 8px; color: var(--accent); font-weight: 800;
+        }
+        .badge-sent {
+            background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.3);
+            color: var(--primary); font-size: 11px; font-weight: 700; padding: 5px 12px;
+            border-radius: 8px; white-space: nowrap;
+        }
+
+        .btn-agit {
+            background: var(--accent); color: #000; border: none;
+            padding: 7px 14px; border-radius: 9px; font-size: 12px; font-weight: 800;
+            cursor: pointer; transition: .3s; font-family: 'Inter', sans-serif; white-space: nowrap;
+        }
+        .btn-agit:hover { box-shadow: 0 0 16px var(--accent-glow); transform: translateY(-1px); }
+        .btn-del {
+            background: transparent; color: var(--danger); border: 1px solid rgba(239,68,68,.3);
+            padding: 7px 10px; border-radius: 9px; font-size: 12px; cursor: pointer;
+            transition: .3s; font-family: 'Inter', sans-serif;
+        }
+        .btn-del:hover { background: rgba(239,68,68,.1); }
+
+        /* ── LOADING ── */
+        #loadingSpinner {
+            display: flex; justify-content: center; align-items: center;
+            padding: 40px; gap: 14px; color: var(--text-gray); font-size: 14px;
+        }
+        .spinner {
+            width: 28px; height: 28px; border: 3px solid rgba(34,197,94,.2);
+            border-top-color: var(--primary); border-radius: 50%;
+            animation: spin .7s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 60px; left: 50%; transform: translateX(-50%) translateY(20px);
+            background: var(--card-bg); border: 1px solid var(--glass-border);
+            padding: 12px 24px; border-radius: 12px; font-size: 13px; font-weight: 700;
+            opacity: 0; transition: .3s; z-index: 9999; pointer-events: none;
+            white-space: nowrap;
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+        .toast-error { border-color: var(--danger); color: var(--danger); }
+        .toast-success { border-color: var(--primary); color: var(--primary); }
+
+        /* ── STATUS BAR ── */
+        .status-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 40px;
+            background: rgba(10,15,25,.95); backdrop-filter: blur(15px);
+            border-top: 1px solid var(--glass-border);
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 20px; z-index: 200; font-size: 10px; font-weight: 800;
+            color: var(--text-gray); letter-spacing: 1px;
+        }
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary);
+                      box-shadow: 0 0 8px var(--primary); display: inline-block; margin-right: 6px; }
+        .page-label { color: #fff; background: rgba(34,197,94,.1); padding: 4px 10px;
+                      border-radius: 4px; border: 1px solid var(--primary); }
+
+        /* ── GUIDE SECTION ── */
+        .guide-steps { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
+        .guide-step {
+            display: flex; gap: 16px; align-items: flex-start;
+            background: rgba(255,255,255,.03); border: 1px solid var(--glass-border);
+            border-radius: 14px; padding: 16px;
+        }
+        .step-num {
+            min-width: 32px; height: 32px; border-radius: 50%;
+            background: var(--primary); color: #000; font-weight: 900; font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .step-body h4 { font-size: 14px; font-weight: 800; margin-bottom: 6px; color: #fff; }
+        .step-body p  { font-size: 13px; color: var(--text-gray); line-height: 1.6; }
+        .step-body code {
+            background: rgba(34,197,94,.1); color: var(--primary);
+            padding: 2px 8px; border-radius: 6px; font-family: monospace; font-size: 12px;
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .stat-row { grid-template-columns: repeat(2, 1fr); }
+            .form-grid { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 480px) {
+            .stat-row { grid-template-columns: 1fr 1fr; }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══════ HEADER ══════ -->
+<header>
+    <div>
+        <div class="logo-text">⚡ ДШВ</div>
+        <div class="logo-sub">СИСТЕМА АГІТАЦІЇ</div>
+    </div>
+    <a href="javascript:history.back()" class="header-back">← Назад</a>
+</header>
+
+<!-- ══════ PAGE ══════ -->
+<div class="page">
+
+    <!-- STATS -->
+    <div class="stat-row">
+        <div class="stat-box">
+            <div class="val" id="statTotal">—</div>
+            <div class="lbl">ВСЬОГО ЗАПИСІВ</div>
+        </div>
+        <div class="stat-box">
+            <div class="val" id="statPending" style="color:var(--accent)">—</div>
+            <div class="lbl">ОЧІКУЮТЬ АГІТ</div>
+        </div>
+        <div class="stat-box">
+            <div class="val" id="statSent">—</div>
+            <div class="lbl">НАДІСЛАНО</div>
+        </div>
+        <div class="stat-box">
+            <div class="val" id="statAvg" style="color:var(--currency)">—</div>
+            <div class="lbl">СЕРЕДНІЙ БАЛ</div>
+        </div>
+    </div>
+
+    <!-- WEBHOOK SETTINGS -->
+    <div class="card">
+        <div class="card-title">⚙️ Налаштування Discord Вебхука</div>
+        <div class="webhook-row">
+            <input id="webhookUrl" type="text"
+                placeholder="https://discord.com/api/webhooks/XXXXXXXX/XXXXXXXX"
+                autocomplete="off">
+            <button class="btn btn-primary" onclick="saveWebhook()">💾 Зберегти</button>
+            <button class="btn btn-outline" onclick="testWebhook()">🔗 Тест</button>
+        </div>
+        <p style="font-size:12px;color:var(--text-gray);margin-top:10px">
+            Вебхук зберігається у вашому браузері. Кожен адмін вказує свій канал.
+        </p>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card">
+        <div class="card-title">📋 Результати Тестів</div>
+
+        <div class="table-controls">
+            <input class="search-box" id="searchInput"
+                placeholder="🔍 Пошук за ніком або ID..."
+                oninput="renderTable()">
+            <select class="filter-select" id="filterSelect" onchange="renderTable()">
+                <option value="all">Всі записи</option>
+                <option value="pending">Очікують агіт</option>
+                <option value="sent">Вже надіслано</option>
+            </select>
+            <button class="btn btn-outline" onclick="loadData()">🔄 Оновити</button>
+        </div>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Discord Нік</th>
+                        <th>Discord ID</th>
+                        <th>Бали</th>
+                        <th>Тест</th>
+                        <th>Дата</th>
+                        <th>Дія</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                </tbody>
+            </table>
+            <div id="loadingSpinner">
+                <div class="spinner"></div> Завантаження даних...
+            </div>
+        </div>
+    </div>
+
+    <!-- MANUAL ADD -->
+    <div class="card">
+        <div class="card-title">➕ Ручне Додавання</div>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Discord Нік</label>
+                <input id="mNick" type="text" placeholder="Username#0000">
+            </div>
+            <div class="form-group">
+                <label>Discord ID (необов'язково)</label>
+                <input id="mId" type="text" placeholder="123456789012345678">
+            </div>
+            <div class="form-group">
+                <label>Сума Балів</label>
+                <input id="mScore" type="number" placeholder="85">
+            </div>
+            <div class="form-group">
+                <label>Назва Тесту</label>
+                <input id="mTest" type="text" placeholder="Google Form — Вступний тест">
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="addManualRow()">➕ Додати запис</button>
+    </div>
+
+    <!-- ZAPIER GUIDE -->
+    <div class="card">
+        <div class="card-title">📖 Гайд: Zapier + Google Forms → Firebase</div>
+        <div class="guide-steps">
+
+            <div class="guide-step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <h4>Створіть аккаунт на Zapier</h4>
+                    <p>Перейдіть на <strong>zapier.com</strong> → зареєструйтесь безкоштовно. Безкоштовний план підтримує до 100 запусків/місяць, що достатньо для тестів.</p>
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <h4>Натисніть "Create Zap"</h4>
+                    <p>Зліва у меню → <strong>Create → Zap</strong>. Ви побачите редактор де є Trigger (подія що запускає) і Action (дія).</p>
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <h4>Trigger: Google Forms</h4>
+                    <p>
+                        Виберіть додаток <strong>Google Forms</strong> → подія <strong>"New Form Response"</strong>.<br>
+                        Підключіть свій Google-акаунт → виберіть потрібну форму (де є Discord нік і бали).<br>
+                        Натисніть <strong>"Test trigger"</strong> — Zapier підтягне зразок відповіді.
+                    </p>
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                    <h4>Action: Firebase / Webhooks</h4>
+                    <p>
+                        <strong>Варіант A (Простий):</strong> Виберіть <strong>Webhooks by Zapier</strong> → <strong>POST</strong>.<br>
+                        URL: <code>https://firestore.googleapis.com/v1/projects/ВАШ_PROJECT_ID/databases/(default)/documents/examResults</code><br>
+                        Headers: <code>Content-Type: application/json</code><br><br>
+                        Body (JSON):
+                    </p>
+                    <pre style="background:rgba(0,0,0,.4);padding:12px;border-radius:10px;font-size:12px;margin-top:8px;overflow-x:auto;color:#4ade80;line-height:1.6">{
+  "fields": {
+    "discordNick": {"stringValue": "{{відповідь про Discord нік}}"},
+    "discordId":   {"stringValue": "{{відповідь про Discord ID}}"},
+    "score":       {"integerValue": "{{відповідь про бали}}"},
+    "testName":    {"stringValue": "Назва вашого тесту"},
+    "date":        {"stringValue": "{{timestamp}}"},
+    "agitated":    {"booleanValue": false},
+    "source":      {"stringValue": "google_forms"}
+  }
+}</pre>
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                    <h4>Firebase Auth для Zapier (щоб можна було записувати)</h4>
+                    <p>
+                        У Firebase Console → <strong>Authentication</strong> → <strong>Sign-in methods</strong> → увімкніть <strong>Anonymous</strong>.<br>
+                        Або у <strong>Firestore Rules</strong> тимчасово (тільки для налаштування!) поставте:
+                    </p>
+                    <pre style="background:rgba(0,0,0,.4);padding:12px;border-radius:10px;font-size:12px;margin-top:8px;color:#4ade80">rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /examResults/{doc} {
+      allow write: if true; // ТІЛЬКИ ДЛЯ ТЕСТУ!
+      allow read: if request.auth != null;
+    }
+  }
+}</pre>
+                    <p style="margin-top:8px;color:var(--danger)">⚠️ Після налаштування поверніть нормальні rules!</p>
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-num">6</div>
+                <div class="step-body">
+                    <h4>Назви полів у Google Формі</h4>
+                    <p>
+                        Щоб Zapier правильно розпізнав поля, у формі назвіть питання так:<br>
+                        • <code>Discord нік</code> або <code>Ваш Discord Username</code><br>
+                        • <code>Discord ID</code> (або можна без нього — тоді не заповнюється)<br>
+                        • <code>Результат</code> / <code>Бали</code> — якщо форма не рахує автоматично, можна вручну вписувати або використовувати Google Apps Script.
+                    </p>
+                </div>
+            </div>
+
+            <div class="guide-step">
+                <div class="step-num">7</div>
+                <div class="step-body">
+                    <h4>Увімкніть Zap і тестуйте</h4>
+                    <p>
+                        Натисніть <strong>Publish</strong> → Zap активний. Заповніть тестову форму — через 1–2 хвилини запис з'явиться у таблиці на цій сторінці.<br>
+                        Після цього натисніть <strong>"📢 Кинути агіт"</strong> — повідомлення полетить у Discord-канал!
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div><!-- /page -->
+
+<!-- ══════ STATUS BAR ══════ -->
+<div class="status-bar">
+    <span><span class="status-dot"></span>СИСТЕМА АКТИВНА</span>
+    <span class="page-label">АГІТАЦІЯ</span>
+    <span id="adminLabel">ADMIN</span>
+</div>
+
+</body>
+</html>
