@@ -2341,38 +2341,35 @@ onSnapshot(q, snapshot => {
 });
 }
 
-function loadResultsFromFirebase() {
-const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
+let resultsPollInterval = null;
 
-// Якщо через 8 секунд результати ще не завантажились — авто-ретрай
-let resultsLoaded = false;
-const resultsRetryTimer = setTimeout(() => {
-  if (!resultsLoaded) {
-    console.warn('⚠️ Results timeout — retrying...');
-    resultsReady = true; // дозволяємо рендер навіть без результатів
+async function fetchResults() {
+  try {
+    const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    results = [];
+    snapshot.forEach(docSnap => { results.push({id: docSnap.id, ...docSnap.data()}); });
+    resultsReady = true;
+    const activeView = document.querySelector('.view.active');
+    if (activeView) {
+      if (activeView.id === 'viewReview') renderReview();
+      if (activeView.id === 'viewHistory') renderHistory();
+    }
     tryRenderHome();
+  } catch (e) {
+    console.error('❌ Помилка завантаження результатів:', e);
+    if (!resultsReady) {
+      resultsReady = true;
+      tryRenderHome();
+    }
   }
-}, 8000);
+}
 
-onSnapshot(q, snapshot => {
-  resultsLoaded = true;
-  clearTimeout(resultsRetryTimer);
-  results = [];
-  snapshot.forEach(docSnap => { results.push({id: docSnap.id, ...docSnap.data()}); });
-  resultsReady = true;
-  const activeView = document.querySelector('.view.active');
-  if (activeView) {
-    if (activeView.id === 'viewReview') renderReview();
-    if (activeView.id === 'viewHistory') renderHistory();
-  }
-  tryRenderHome();
-}, error => {
-  resultsLoaded = true;
-  clearTimeout(resultsRetryTimer);
-  console.error('❌ Помилка завантаження результатів:', error);
-  resultsReady = true; // дозволяємо рендер іспитів навіть якщо результати не завантажились
-  tryRenderHome();
-});
+function loadResultsFromFirebase() {
+  fetchResults();
+  // Polling кожні 30 секунд — надійніше ніж onSnapshot при нестабільному з'єднанні
+  if (resultsPollInterval) clearInterval(resultsPollInterval);
+  resultsPollInterval = setInterval(fetchResults, 30000);
 }
 
 async function loadSettingsFromFirebase() {
@@ -3467,10 +3464,12 @@ document.onkeydown = e => {
 if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) return false;
 };
 
-console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.6');
+console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.7');
 console.log('✅ Фікс 1: beforeunload тільки під час проходження тесту');
 console.log('✅ Фікс 2: Авто-показ кнопки "Оновити" якщо іспити не завантажились за 8с');
-console.log('✅ Фікс 3: Таймаут + авто-ретрай для results, усунуто race condition між tests/results');
+console.log('✅ Фікс 3: Race condition між tests/results усунуто');
+console.log('✅ Фікс 4: Results — getDocs + polling замість onSnapshot (усуває 404 WebChannel)');
+
 </script>
 </body>
 </html>
