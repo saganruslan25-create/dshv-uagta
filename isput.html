@@ -2289,9 +2289,19 @@ loadResultsFromFirebase();
 
 // ============================================================
 // ВИПРАВЛЕННЯ 2: Авто-ретрай якщо іспити не завантажились
+// ВИПРАВЛЕННЯ 3: Race condition — рендер Home тільки коли обидва завантажені
 // ============================================================
 let testsLoaded = false;
 let testsRetryTimer = null;
+let testsReady = false;
+let resultsReady = false;
+
+function tryRenderHome() {
+  if (testsReady && resultsReady) {
+    const activeView = document.querySelector('.view.active');
+    if (!activeView || activeView.id === 'viewHome') renderHome();
+  }
+}
 
 function loadTestsFromFirebase() {
 const q = query(collection(db, 'tests'), orderBy('createdAt', 'desc'));
@@ -2312,13 +2322,13 @@ onSnapshot(q, snapshot => {
   clearTimeout(testsRetryTimer);
   tests = [];
   snapshot.forEach(docSnap => { tests.push({id: docSnap.id, ...docSnap.data()}); });
+  testsReady = true;
   const activeView = document.querySelector('.view.active');
   if (activeView) {
-    if (activeView.id === 'viewHome') renderHome();
     if (activeView.id === 'viewManage') renderManage();
     if (activeView.id === 'viewHistory') renderHistory();
   }
-  if (!activeView || activeView.id === 'viewHome') renderHome();
+  tryRenderHome();
 }, error => {
   testsLoaded = true;
   clearTimeout(testsRetryTimer);
@@ -2333,15 +2343,35 @@ onSnapshot(q, snapshot => {
 
 function loadResultsFromFirebase() {
 const q = query(collection(db, 'results'), orderBy('createdAt', 'desc'));
+
+// Якщо через 8 секунд результати ще не завантажились — авто-ретрай
+let resultsLoaded = false;
+const resultsRetryTimer = setTimeout(() => {
+  if (!resultsLoaded) {
+    console.warn('⚠️ Results timeout — retrying...');
+    resultsReady = true; // дозволяємо рендер навіть без результатів
+    tryRenderHome();
+  }
+}, 8000);
+
 onSnapshot(q, snapshot => {
-results = [];
-snapshot.forEach(docSnap => { results.push({id: docSnap.id, ...docSnap.data()}); });
-const activeView = document.querySelector('.view.active');
-if (activeView) {
-if (activeView.id === 'viewHome') renderHome();
-if (activeView.id === 'viewReview') renderReview();
-if (activeView.id === 'viewHistory') renderHistory();
-}
+  resultsLoaded = true;
+  clearTimeout(resultsRetryTimer);
+  results = [];
+  snapshot.forEach(docSnap => { results.push({id: docSnap.id, ...docSnap.data()}); });
+  resultsReady = true;
+  const activeView = document.querySelector('.view.active');
+  if (activeView) {
+    if (activeView.id === 'viewReview') renderReview();
+    if (activeView.id === 'viewHistory') renderHistory();
+  }
+  tryRenderHome();
+}, error => {
+  resultsLoaded = true;
+  clearTimeout(resultsRetryTimer);
+  console.error('❌ Помилка завантаження результатів:', error);
+  resultsReady = true; // дозволяємо рендер іспитів навіть якщо результати не завантажились
+  tryRenderHome();
 });
 }
 
@@ -3437,9 +3467,10 @@ document.onkeydown = e => {
 if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && [73, 74, 67].includes(e.keyCode)) || (e.ctrlKey && e.keyCode === 85)) return false;
 };
 
-console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.5');
+console.log('✅ ДШВ ІСПИТ ЦЕНТР v2.6');
 console.log('✅ Фікс 1: beforeunload тільки під час проходження тесту');
 console.log('✅ Фікс 2: Авто-показ кнопки "Оновити" якщо іспити не завантажились за 8с');
+console.log('✅ Фікс 3: Таймаут + авто-ретрай для results, усунуто race condition між tests/results');
 </script>
 </body>
 </html>
